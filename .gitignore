@@ -13,12 +13,10 @@ build/
 # Logs
 *.log
 
-# Claude / spec-kit (estado local y credenciales del agente)
-# Se mantienen versionados los skills de spec-kit (.claude/skills/) para
-# compartirlos con el equipo, pero se ignoran los artefactos locales/credenciales.
-.claude/settings.local.json
-.claude/*.local.json
-.claude/local/
+# Claude Code (comandos del agente, local a cada máquina).
+# El trabajo colaborativo de SDD vive en .specify/ (constitución, specs), que SÍ se versiona.
+# Cada quien regenera .claude/ con `specify integration install claude` al clonar.
+.claude/
 
 # OS
 .DS_Store
