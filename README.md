@@ -16,27 +16,30 @@
 ## Requisitos previos
 
 - Node.js >= 20
-- npm
+- [pnpm](https://pnpm.io) (gestor de paquetes del proyecto)
 
+> Este repo usa **pnpm** como gestor de paquetes en todo el monorepo. No uses `npm`
+> (no hay `package-lock.json`; el lockfile es `pnpm-lock.yaml`).
+
+Si no tenés pnpm, instalalo con `npm install -g pnpm` o `corepack enable pnpm`.
 Verificá tus versiones con:
 
 ```bash
 node -v
-npm -v
+pnpm -v
 ```
 
 ## Instalación (al clonar el repo)
 
-Lo único que necesitás para **correr el proyecto** es Node.js y npm. Cada carpeta es un
-proyecto npm independiente, así que la **primera vez** hay que instalar las dependencias
-en ambas:
+Cada carpeta es un proyecto independiente, así que la **primera vez** hay que instalar
+las dependencias en ambas:
 
 ```bash
 cd backend
-npm install
+pnpm install
 
 cd ../frontend
-npm install
+pnpm install
 ```
 
 > No hay nada más que instalar para levantar la app. Para trabajar con Spec-Driven
@@ -48,7 +51,7 @@ npm install
 
 ```bash
 cd backend
-npm run dev
+pnpm dev
 ```
 
 Queda corriendo en http://localhost:3000 (modo watch, recarga automática).
@@ -61,7 +64,7 @@ Endpoints disponibles:
 
 ```bash
 cd frontend
-npm run dev
+pnpm dev
 ```
 
 Queda corriendo en http://localhost:5173
@@ -72,18 +75,18 @@ Queda corriendo en http://localhost:5173
 ### Backend
 | Comando | Descripción |
 |---------|-------------|
-| `npm run dev` | Levanta el servidor en modo watch |
-| `npm run build` | Compila a `dist/` |
-| `npm run start` | Levanta el servidor (sin watch) |
-| `npm run start:prod` | Ejecuta la build de producción (`dist/main`) |
+| `pnpm dev` | Levanta el servidor en modo watch |
+| `pnpm build` | Compila a `dist/` |
+| `pnpm start` | Levanta el servidor (sin watch) |
+| `pnpm start:prod` | Ejecuta la build de producción (`dist/main`) |
 
 ### Frontend
 | Comando | Descripción |
 |---------|-------------|
-| `npm run dev` | Levanta el dev server de Vite |
-| `npm run build` | Genera la build de producción |
-| `npm run preview` | Previsualiza la build |
-| `npm run lint` | Corre ESLint |
+| `pnpm dev` | Levanta el dev server de Vite |
+| `pnpm build` | Genera la build de producción |
+| `pnpm preview` | Previsualiza la build |
+| `pnpm lint` | Corre ESLint |
 
 ## Spec-Driven Development (spec-kit)
 
