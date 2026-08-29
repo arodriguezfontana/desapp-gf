@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Variables de entorno
+.env
+.env.local
+*.local
+
+# Logs
+*.log
+
+# Claude / spec-kit (estado local y credenciales del agente)
+# Se mantienen versionados los skills de spec-kit (.claude/skills/) para
+# compartirlos con el equipo, pero se ignoran los artefactos locales/credenciales.
+.claude/settings.local.json
+.claude/*.local.json
+.claude/local/
+
+# OS
+.DS_Store
+Thumbs.db
