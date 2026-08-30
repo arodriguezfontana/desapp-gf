@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Variables de entorno
+.env
+.env.local
+*.local
+
+# Logs
+*.log
+
+# Claude Code (comandos del agente, local a cada máquina).
+# El trabajo colaborativo de SDD vive en .specify/ (constitución, specs), que SÍ se versiona.
+# Cada quien regenera .claude/ con `specify integration install claude` al clonar.
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
