@@ -11,6 +11,9 @@ jobs:
     name: Backend (lint, test, build)
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: "postgresql://user:password@localhost:5432/desapp?schema=public"
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -18,7 +21,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -58,7 +61,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4
