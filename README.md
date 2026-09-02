@@ -1,20 +1,12 @@
-# DESAPP
-
-Plataforma de valuación de mercado de jugadores de fútbol. Monorepo con `backend/` (NestJS)
-y `frontend/` (React + Vite).
-
 ## Stack
 
-- **Backend**: NestJS 11 · TypeScript · Prisma + PostgreSQL · Jest
+- **Backend**: NestJS 11 · TypeScript · Prisma + PostgreSQL · Jest 
 - **Frontend**: React 19 · Vite 8 · TypeScript · Tailwind CSS 4 · axios
-- **Tooling**: pnpm · ESLint
 
 ## Requisitos
 
 - Node.js >= 20
 - pnpm (`corepack enable pnpm` o `npm i -g pnpm`)
-
-El gestor es **pnpm** en todo el monorepo (lockfile `pnpm-lock.yaml`, no usar npm).
 
 ## Setup
 
@@ -35,21 +27,17 @@ cd backend  && pnpm dev   # http://localhost:3000
 cd frontend && pnpm dev   # http://localhost:5173
 ```
 
+## Documentación de la API
+
+Con el backend corriendo:
+
+- Swagger UI → http://localhost:3000/docs
+- Spec OpenAPI v3 (JSON) → http://localhost:3000/docs-json
+
 ## Scripts
 
 **Backend**: `dev` · `build` · `start` · `start:prod` · `lint` · `test` · `test:watch` · `test:cov`
 **Frontend**: `dev` · `build` · `preview` · `lint`
-
-## Estructura del backend
-
-```
-src/
-├── modules/            # features (controllers → services → repositories)
-├── database/prisma/    # acceso a datos
-├── shared/             # dto/ e interfaces/ compartidas
-├── config/
-└── tests/
-```
 
 ## Spec-Driven Development
 
