@@ -1,34 +1,36 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (uninitialized template) → 1.0.0
-Rationale: Initial ratification. First concrete constitution replacing the unfilled
-scaffold; establishes the full governing principle set for the project.
+Version change: 1.0.0 → 1.1.0
+Rationale: MINOR. Se agrega un nuevo principio (Integridad transaccional) y se expande
+materialmente la guía del Principio IV (Autenticación). Sin remociones ni redefiniciones
+incompatibles.
 
-Modified principles: none (initial adoption)
+Modified principles:
+  - IV. Autenticación: la prohibición de loguear/persistir en texto plano se extiende de
+    "token ni contraseña" a "cualquier dato personal del usuario" y se aclara que rige en
+    todas las capas del sistema, no solo en la de autenticación.
 
 Added sections:
-  - Core Principles (11 principles):
-      I. Arquitectura en capas
-      II. Modelo de dominio rico
-      III. Cada validación en su nivel
-      IV. Autenticación
-      V. Auditoría inmutable
-      VI. Observabilidad
-      VII. Documentación de la API
-      VIII. Testing
-      IX. Definición de terminado
-      X. Idioma
-      XI. Spec-first
-  - Technology Stack & Constraints
-  - Development Workflow & Quality Gates
-  - Governance
+  - VI. Integridad transaccional (nuevo principio, insertado después de V. Auditoría
+    inmutable).
+
+Renumbered principles (consecuencia mecánica de la inserción, sin cambio de contenido):
+  - VI. Observabilidad          → VII. Observabilidad
+  - VII. Documentación de la API → VIII. Documentación de la API
+  - VIII. Testing               → IX. Testing
+  - IX. Definición de terminado → X. Definición de terminado
+  - X. Idioma                   → XI. Idioma
+  - XI. Spec-first              → XII. Spec-first
 
 Removed sections: none
 
+Updated cross-references:
+  - Development Workflow & Quality Gates: "(Principios VII y IX)" → "(Principios VIII y X)"
+    tras la renumeración.
+
 Follow-up TODOs:
-  - RATIFICATION_DATE set to 2026-09-02 (date of first formal adoption). Adjust if the
-    team agrees on an earlier adoption date.
+  - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -99,8 +101,10 @@ garantiza respuestas de error consistentes y sin fugas de información.
 
 Un usuario nuevo MUST recibir, al darse de alta, un JWT que actúa como su ApiKey. Ese
 token MUST exigirse en todos los endpoints salvo el de alta de usuario. Las contraseñas
-MUST almacenarse hasheadas (bcrypt o argon2). Ningún token ni contraseña MUST loguearse
-ni persistirse en texto plano.
+MUST almacenarse hasheadas (bcrypt o argon2). Ningún token, contraseña ni dato personal
+del usuario MUST loguearse ni persistirse en texto plano, y esta regla rige en todas las
+capas del sistema (Controller, Service, dominio, Repository, Adapter y logs), no solo en
+la de autenticación.
 
 **Rationale**: Un único mecanismo de credencial simplifica el modelo de acceso; hashing
 y ausencia de secretos en logs son mínimos de seguridad no negociables.
@@ -114,7 +118,23 @@ auditoría MUST NOT modificarse ni borrarse nunca.
 **Rationale**: La traza inmutable es la fuente de verdad para reconstruir posiciones y
 resolver disputas sobre operaciones.
 
-### VI. Observabilidad
+### VI. Integridad transaccional
+
+Cuando una operación modifica más de un estado a la vez —por ejemplo comprar o vender
+tokens, que altera la disponibilidad de tokens, la posición del usuario, el saldo y el
+registro de auditoría— todos esos cambios MUST aplicarse como una unidad atómica: o se
+confirman todos o no se aplica ninguno. Una operación de este tipo MUST NOT quedar
+parcialmente aplicada ante un error, dejando el sistema a mitad de camino. La lógica que
+define qué cambios forman la unidad y que garantiza que se confirmen o se descarten
+juntos MUST vivir en el dominio, no en el Service.
+
+**Rationale**: Un estado a medio camino (tokens descontados sin registrar la posición,
+saldo cobrado sin asiento de auditoría) corrompe la fuente de verdad y es irreconciliable
+con la auditoría inmutable; concentrar la regla de atomicidad en el dominio la hace
+testeable sin infraestructura y evita que cada Service reinvente el manejo de
+consistencia.
+
+### VII. Observabilidad
 
 El backend MUST emitir logs estructurados, MUST propagar un Correlation ID mediante
 middleware en toda la cadena de una request, y MUST exponer un endpoint de health check.
@@ -122,7 +142,7 @@ middleware en toda la cadena de una request, y MUST exponer un endpoint de healt
 **Rationale**: Sin logs estructurados y correlación no se puede diagnosticar un
 problema que cruza capas o servicios.
 
-### VII. Documentación de la API
+### VIII. Documentación de la API
 
 La API MUST documentarse con OpenAPI v3 vía `@nestjs/swagger`, generada desde los DTOs y
 decoradores. La especificación OpenAPI MUST NOT escribirse ni editarse a mano.
@@ -130,7 +150,7 @@ decoradores. La especificación OpenAPI MUST NOT escribirse ni editarse a mano.
 **Rationale**: Documentación derivada del código no se desincroniza del comportamiento
 real.
 
-### VIII. Testing
+### IX. Testing
 
 - Los tests unitarios de dominio MUST ejecutarse sin NestJS y sin base de datos, y
   cubrir las estrategias de valuación y las clases de dominio en aislamiento.
@@ -148,7 +168,7 @@ real.
 mapeo y persistencia; la regla sobre no tocar tests protege la red de seguridad del
 grupo.
 
-### IX. Definición de terminado
+### X. Definición de terminado
 
 Un requerimiento MUST considerarse terminado solo cuando:
 
@@ -159,7 +179,7 @@ Un requerimiento MUST considerarse terminado solo cuando:
 **Rationale**: Un criterio explícito y compartido evita entregar trabajo a medias y
 discusiones sobre qué cuenta como listo.
 
-### X. Idioma
+### XI. Idioma
 
 Los identificadores de código (clases, variables, funciones) MUST estar en inglés,
 siguiendo la convención estándar del ecosistema TypeScript/NestJS. Los nombres de
@@ -170,7 +190,7 @@ inglés.
 **Rationale**: El código sigue la convención del ecosistema y las herramientas; la
 comunicación de negocio queda en el idioma de la cátedra y del enunciado.
 
-### XI. Spec-first
+### XII. Spec-first
 
 Cada feature MUST nacer de una spec antes de escribir código. Toda ambigüedad del
 enunciado MUST resolverse como una decisión explícita en la spec, con su justificación.
@@ -201,7 +221,7 @@ constitución:
   en CI antes de integrarse.
 - Un cambio MUST NOT integrarse si viola una capa (Principio I), mueve lógica de negocio
   fuera del dominio (Principio II), o deja la documentación Swagger desactualizada
-  (Principios VII y IX).
+  (Principios VIII y X).
 - La revisión de cada cambio MUST verificar explícitamente el cumplimiento de los
   principios afectados.
 
@@ -222,4 +242,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-02
+**Version**: 1.1.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-08
