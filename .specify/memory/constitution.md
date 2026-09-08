@@ -1,33 +1,29 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.0.0 → 1.1.0
-Rationale: MINOR. Se agrega un nuevo principio (Integridad transaccional) y se expande
-materialmente la guía del Principio IV (Autenticación). Sin remociones ni redefiniciones
-incompatibles.
+Version change: 1.1.0 → 1.2.0
+Rationale: MINOR. Se expande materialmente la guía de tres principios y de la sección
+Technology Stack & Constraints. Sin nuevos principios, sin remociones ni redefiniciones
+incompatibles, sin renumeración.
 
 Modified principles:
-  - IV. Autenticación: la prohibición de loguear/persistir en texto plano se extiende de
-    "token ni contraseña" a "cualquier dato personal del usuario" y se aclara que rige en
-    todas las capas del sistema, no solo en la de autenticación.
+  - I. Arquitectura en capas: se agrega la regla de degradación ante fallo del proveedor
+    externo — el sistema MUST seguir funcionando con los datos ya guardados localmente en
+    la medida de lo posible; rationale ampliado en consecuencia.
+  - V. Auditoría inmutable: el asiento MUST guardar además el detalle de los cambios de la
+    operación como campo propio y explícito, no inferido comparando estado anterior con
+    posterior; rationale ampliado.
+  - VII. Observabilidad: el backend MUST exponer también métricas de latencia y de tasa
+    de error; rationale ampliado.
 
-Added sections:
-  - VI. Integridad transaccional (nuevo principio, insertado después de V. Auditoría
-    inmutable).
+Modified sections:
+  - Technology Stack & Constraints → Frontend: MUST ser una aplicación web responsiva y
+    comunicarse con el backend vía HTTP/REST.
 
-Renumbered principles (consecuencia mecánica de la inserción, sin cambio de contenido):
-  - VI. Observabilidad          → VII. Observabilidad
-  - VII. Documentación de la API → VIII. Documentación de la API
-  - VIII. Testing               → IX. Testing
-  - IX. Definición de terminado → X. Definición de terminado
-  - X. Idioma                   → XI. Idioma
-  - XI. Spec-first              → XII. Spec-first
-
+Added sections: none
 Removed sections: none
-
-Updated cross-references:
-  - Development Workflow & Quality Gates: "(Principios VII y IX)" → "(Principios VIII y X)"
-    tras la renumeración.
+Renumbered principles: none
+Updated cross-references: none
 
 Follow-up TODOs:
   - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
@@ -61,10 +57,16 @@ El backend MUST organizarse en capas con dependencias en un único sentido
   persistencia ni el mapper.
 - **Adapter**: única puerta de entrada a sistemas externos (p. ej. WhoScored,
   Football-Data.org), detrás de una interfaz de dominio propia.
+- **Degradación ante fallo del proveedor externo**: si un proveedor externo falla o no
+  responde, el sistema MUST seguir funcionando con los datos que ya tiene guardados
+  localmente, en la medida de lo posible. Una operación que sólo depende de datos ya
+  persistidos MUST NOT bloquearse por la caída del proveedor; sólo las funcionalidades
+  que requieren datos frescos e inexistentes localmente pueden quedar indisponibles.
 
 **Rationale**: El sentido único de dependencias mantiene el dominio testeable en
 aislamiento y permite cambiar framework, ORM o proveedor externo sin reescribir reglas
-de negocio.
+de negocio. Aislar el proveedor detrás de un Adapter además permite que su caída degrade
+sólo una parte del sistema y no lo tumbe entero.
 
 ### II. Modelo de dominio rico
 
@@ -112,11 +114,14 @@ y ausencia de secretos en logs son mínimos de seguridad no negociables.
 ### V. Auditoría inmutable
 
 Toda operación de compra/venta de tokens MUST quedar registrada en un log de auditoría
-append-only con: autor, timestamp, estado anterior y estado posterior. Un asiento de
-auditoría MUST NOT modificarse ni borrarse nunca.
+append-only con: autor, timestamp, estado anterior y estado posterior. El asiento MUST
+además guardar el detalle de los cambios realizados en esa operación como un campo
+propio y explícito, no algo que se infiere comparando el estado anterior con el
+posterior. Un asiento de auditoría MUST NOT modificarse ni borrarse nunca.
 
 **Rationale**: La traza inmutable es la fuente de verdad para reconstruir posiciones y
-resolver disputas sobre operaciones.
+resolver disputas sobre operaciones; registrar el detalle del cambio como campo propio
+evita reconstrucciones ambiguas y sobrevive a cambios de esquema en el estado.
 
 ### VI. Integridad transaccional
 
@@ -137,10 +142,12 @@ consistencia.
 ### VII. Observabilidad
 
 El backend MUST emitir logs estructurados, MUST propagar un Correlation ID mediante
-middleware en toda la cadena de una request, y MUST exponer un endpoint de health check.
+middleware en toda la cadena de una request, MUST exponer un endpoint de health check, y
+MUST exponer métricas de latencia y de tasa de error.
 
 **Rationale**: Sin logs estructurados y correlación no se puede diagnosticar un
-problema que cruza capas o servicios.
+problema que cruza capas o servicios; las métricas de latencia y tasa de error permiten
+detectar degradaciones antes de que se conviertan en incidentes.
 
 ### VIII. Documentación de la API
 
@@ -204,7 +211,8 @@ El proyecto MUST mantenerse dentro del siguiente stack salvo enmienda de esta
 constitución:
 
 - **Backend**: Node.js, NestJS 11, TypeScript 5.7 en modo `strict`.
-- **Frontend**: React 19, Vite 8, TypeScript, Tailwind CSS 4.
+- **Frontend**: React 19, Vite 8, TypeScript, Tailwind CSS 4. MUST ser una aplicación
+  web responsiva y comunicarse con el backend vía HTTP/REST.
 - **Persistencia**: PostgreSQL, accedida vía TypeORM.
 - **Base local**: PostgreSQL levantado con Docker (`docker-compose`).
 - **CI**: PostgreSQL corre como servicio del propio workflow de GitHub Actions; los
@@ -242,4 +250,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-08
+**Version**: 1.2.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-08
