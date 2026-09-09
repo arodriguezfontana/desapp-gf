@@ -1,24 +1,17 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.1.0 → 1.2.0
-Rationale: MINOR. Se expande materialmente la guía de tres principios y de la sección
-Technology Stack & Constraints. Sin nuevos principios, sin remociones ni redefiniciones
-incompatibles, sin renumeración.
+Version change: 1.2.0 → 1.3.0
+Rationale: MINOR. Se expande materialmente la guía del Principio X (Definición de
+terminado) con un cuarto criterio de completitud. Sin nuevos principios, sin remociones
+ni redefiniciones incompatibles, sin renumeración.
 
 Modified principles:
-  - I. Arquitectura en capas: se agrega la regla de degradación ante fallo del proveedor
-    externo — el sistema MUST seguir funcionando con los datos ya guardados localmente en
-    la medida de lo posible; rationale ampliado en consecuencia.
-  - V. Auditoría inmutable: el asiento MUST guardar además el detalle de los cambios de la
-    operación como campo propio y explícito, no inferido comparando estado anterior con
-    posterior; rationale ampliado.
-  - VII. Observabilidad: el backend MUST exponer también métricas de latencia y de tasa
-    de error; rationale ampliado.
+  - X. Definición de terminado: se agrega un cuarto punto — la colección de Postman del
+    proyecto MUST quedar actualizada con los endpoints nuevos o modificados, en paralelo
+    a lo que ya se exige para la documentación Swagger.
 
-Modified sections:
-  - Technology Stack & Constraints → Frontend: MUST ser una aplicación web responsiva y
-    comunicarse con el backend vía HTTP/REST.
+Modified sections: none
 
 Added sections: none
 Removed sections: none
@@ -27,6 +20,9 @@ Updated cross-references: none
 
 Follow-up TODOs:
   - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
+  - Development Workflow & Quality Gates menciona sólo Swagger como gate de documentación
+    (Principios VIII y X); evaluar en una futura enmienda si sumar allí la referencia a
+    la colección de Postman. No modificado en esta enmienda por pedido explícito.
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -182,6 +178,8 @@ Un requerimiento MUST considerarse terminado solo cuando:
 1. Tiene tests unitarios y de integración, felices y borde, y todos pasan.
 2. La aplicación compila y levanta con la configuración local.
 3. La documentación Swagger quedó actualizada con los endpoints nuevos.
+4. La colección de Postman del proyecto quedó actualizada con los endpoints nuevos o
+   modificados, igual que se exige para Swagger.
 
 **Rationale**: Un criterio explícito y compartido evita entregar trabajo a medias y
 discusiones sobre qué cuenta como listo.
@@ -250,4 +248,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-08
+**Version**: 1.3.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-09

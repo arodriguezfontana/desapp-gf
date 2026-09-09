@@ -12,9 +12,6 @@ jobs:
     name: Backend (lint, test, build)
     runs-on: ubuntu-latest
 
-    env:
-      DATABASE_URL: "postgresql://user:password@localhost:5432/desapp?schema=public"
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -34,10 +31,6 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: pnpm install
-
-      - name: Generate Prisma Client
-        working-directory: backend
-        run: pnpm prisma generate
 
       - name: Lint
         working-directory: backend
@@ -86,8 +79,6 @@ jobs:
   sonarqube:
     name: SonarCloud
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: "postgresql://user:password@localhost:5432/desapp?schema=public"
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 
         with:

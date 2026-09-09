@@ -1,6 +1,6 @@
 ## Stack
 
-- **Backend**: NestJS 11 · TypeScript · Prisma + PostgreSQL · Jest 
+- **Backend**: NestJS 11 · TypeScript · Jest 
 - **Frontend**: React 19 · Vite 8 · TypeScript · Tailwind CSS 4 · axios
 
 ## Requisitos
@@ -17,7 +17,7 @@ pnpm install --dir frontend
 
 Variables de entorno (copiar los `.env.example`):
 
-- `backend/.env` → `PORT`, `DATABASE_URL`
+- `backend/.env` → `PORT`
 - `frontend/.env` → `VITE_API_URL` (ej. `http://localhost:3000`)
 
 ## Desarrollo
