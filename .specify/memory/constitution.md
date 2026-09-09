@@ -1,17 +1,19 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.2.0 → 1.3.0
-Rationale: MINOR. Se expande materialmente la guía del Principio X (Definición de
-terminado) con un cuarto criterio de completitud. Sin nuevos principios, sin remociones
-ni redefiniciones incompatibles, sin renumeración.
+Version change: 1.4.0 → 1.4.1
+Rationale: PATCH. Corrección de redacción en Development Workflow & Quality Gates: el gate
+de documentación mencionaba sólo "Swagger desactualizada" pese a citar los Principios VIII
+y X, cuando el Principio X ya exige también la colección de Postman. Se alinea la frase con
+lo que los principios ya requieren; sin cambio semántico de reglas, sin nuevos principios,
+sin renumeración.
 
-Modified principles:
-  - X. Definición de terminado: se agrega un cuarto punto — la colección de Postman del
-    proyecto MUST quedar actualizada con los endpoints nuevos o modificados, en paralelo
-    a lo que ya se exige para la documentación Swagger.
+Modified principles: none
 
-Modified sections: none
+Modified sections:
+  - Development Workflow & Quality Gates: la regla de no integración por documentación
+    desactualizada ahora menciona explícitamente tanto la documentación Swagger como la
+    colección de Postman (Principios VIII y X).
 
 Added sections: none
 Removed sections: none
@@ -20,9 +22,6 @@ Updated cross-references: none
 
 Follow-up TODOs:
   - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
-  - Development Workflow & Quality Gates menciona sólo Swagger como gate de documentación
-    (Principios VIII y X); evaluar en una futura enmienda si sumar allí la referencia a
-    la colección de Postman. No modificado en esta enmienda por pedido explícito.
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -97,15 +96,23 @@ garantiza respuestas de error consistentes y sin fugas de información.
 
 ### IV. Autenticación
 
-Un usuario nuevo MUST recibir, al darse de alta, un JWT que actúa como su ApiKey. Ese
-token MUST exigirse en todos los endpoints salvo el de alta de usuario. Las contraseñas
-MUST almacenarse hasheadas (bcrypt o argon2). Ningún token, contraseña ni dato personal
-del usuario MUST loguearse ni persistirse en texto plano, y esta regla rige en todas las
-capas del sistema (Controller, Service, dominio, Repository, Adapter y logs), no solo en
-la de autenticación.
+La autenticación MUST basarse en JWT. El alta de usuario y el login son operaciones
+distintas: el alta crea la cuenta; el login es un endpoint explícito e independiente del
+alta que valida credenciales y emite un JWT, de modo que la sesión pueda renovarse sin
+volver a registrarse. Todo endpoint que necesite saber qué usuario está operando MUST
+exigir un JWT válido; el alta de usuario y el login son las únicas excepciones. El JWT
+MUST tener un vencimiento definido; el valor concreto de esa expiración es un detalle de
+la spec de autenticación, no de esta constitución. Las contraseñas MUST almacenarse
+hasheadas (bcrypt o argon2). Ningún JWT, contraseña ni dato personal del usuario MUST
+loguearse ni persistirse en texto plano, y esta regla rige en todas las capas del sistema
+(Controller, Service, dominio, Repository, Adapter y logs), no solo en la de
+autenticación.
 
-**Rationale**: Un único mecanismo de credencial simplifica el modelo de acceso; hashing
-y ausencia de secretos en logs son mínimos de seguridad no negociables.
+**Rationale**: Autenticar con un JWT evita transmitir las credenciales en cada request;
+que el token venza acota en el tiempo el daño si el JWT se filtra; y separar el login del
+alta permite renovar la sesión sin volver a registrarse. El hashing de contraseñas y la
+ausencia de secretos —en logs o en almacenamiento en texto plano— son mínimos de
+seguridad no negociables.
 
 ### V. Auditoría inmutable
 
@@ -226,8 +233,8 @@ constitución:
 - Todo cambio MUST pasar `lint` y la suite de tests completa (unit + integración + e2e)
   en CI antes de integrarse.
 - Un cambio MUST NOT integrarse si viola una capa (Principio I), mueve lógica de negocio
-  fuera del dominio (Principio II), o deja la documentación Swagger desactualizada
-  (Principios VIII y X).
+  fuera del dominio (Principio II), o deja desactualizada la documentación Swagger o la
+  colección de Postman (Principios VIII y X).
 - La revisión de cada cambio MUST verificar explícitamente el cumplimiento de los
   principios afectados.
 
@@ -248,4 +255,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.3.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-09
+**Version**: 1.4.1 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-09
