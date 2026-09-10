@@ -29,7 +29,7 @@ describe('AuthService', () => {
       save: jest.fn(),
       findById: jest.fn(),
     };
-    hasher = { hash: jest.fn(), compare: jest.fn() };
+    hasher = { hash: jest.fn(), compare: jest.fn(), timingSafeDummyHash: 'dummy-hash-para-test' };
     tokens = { issue: jest.fn(), verify: jest.fn() };
     service = new AuthService(users, hasher, tokens);
   });

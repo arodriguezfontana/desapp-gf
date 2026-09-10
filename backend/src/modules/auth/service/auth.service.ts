@@ -14,7 +14,6 @@ import { User } from '../domain/user';
 import { EmailAlreadyInUseError } from '../domain/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error';
 import { UserRepository } from '../repository/user.repository';
-import { TIMING_SAFE_DUMMY_HASH } from './dummy-password-hash';
 
 @Injectable()
 export class AuthService {
@@ -53,7 +52,7 @@ export class AuthService {
     const user = await this.users.findByEmail(email);
 
     if (!user) {
-      await this.hasher.compare(rawPassword, TIMING_SAFE_DUMMY_HASH);
+      await this.hasher.compare(rawPassword, this.hasher.timingSafeDummyHash);
       throw new InvalidCredentialsError();
     }
 

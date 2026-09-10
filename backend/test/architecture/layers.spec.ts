@@ -119,4 +119,15 @@ describe('Arquitectura en capas (Principio I)', () => {
       .matchingPattern('node_modules/(@nestjs/)?typeorm/');
     await expect(rule).toPassAsync();
   });
+
+  it('el Service no debe importar bcrypt directo, eso vive detrás del Adapter PasswordHasher', async () => {
+    // `import ... from 'bcrypt'` resuelve a @types/bcrypt (el paquete no trae
+    // sus propios .d.ts), asi que el patron cubre ambas formas.
+    const rule = project()
+      .inFolder('modules/auth/service')
+      .shouldNot()
+      .dependOnFiles()
+      .matchingPattern('node_modules/(@types/)?bcrypt/');
+    await expect(rule).toPassAsync();
+  });
 });
