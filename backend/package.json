@@ -16,7 +16,8 @@
     "test:integration": "jest --runInBand --selectProjects integration",
     "test:watch": "jest --watch --selectProjects unit",
     "test:cov": "jest --runInBand --coverage",
-    "test:e2e": "jest --runInBand --config ./test/jest-e2e.json"
+    "test:e2e": "jest --runInBand --config ./test/jest-e2e.json",
+    "test:e2e:cov": "jest --runInBand --coverage --config ./test/jest-e2e.json"
   },
   "jest": {
     "coverageDirectory": "coverage",

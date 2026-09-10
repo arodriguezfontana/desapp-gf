@@ -117,9 +117,12 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: pnpm install
-      - name: Test with coverage
+      - name: Test with coverage (unit + integration)
         working-directory: backend
         run: pnpm test:cov
+      - name: Test with coverage (e2e)
+        working-directory: backend
+        run: pnpm test:e2e:cov
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995
         with:
