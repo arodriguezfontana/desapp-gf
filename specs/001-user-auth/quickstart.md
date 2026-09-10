@@ -126,13 +126,18 @@ Los pasos 1 y 4 funcionan sin ningún header `Authorization`.
 
 ```bash
 cd backend
-pnpm test                 # unit (dominio, filtro) + integración (service/repo contra Postgres real)
+pnpm test:unit            # dominio, filtro, guards, arquitectura (tsarch) — SIN Docker
+pnpm test:integration     # AuthService + repo contra Postgres efímero (Testcontainers)
 pnpm test:e2e             # supertest: register -> login -> protegido (carpeta src/tests/auth/)
+pnpm test                 # = unit + integration
 pnpm lint
 pnpm build
 ```
 
-En CI el job de backend levanta Postgres como servicio y corre integración + e2e (Principio IX).
+`test:unit` corre sin Docker. `test:integration`, `test:e2e`, `test` y `test:cov` levantan
+un Postgres efímero con Testcontainers (constitución v1.5.0, Principio IX) y ya **no**
+dependen del Postgres nativo — requieren **Docker corriendo**. En CI (runners hosteados de
+GitHub, con Docker de fábrica) corre igual, sin `services:` ni Postgres persistente.
 
 ## Checklist de "terminado" (Principio X)
 

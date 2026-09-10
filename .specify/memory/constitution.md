@@ -235,7 +235,7 @@ de por qué se decidió cada cosa.
 El proyecto MUST mantenerse dentro del siguiente stack salvo enmienda de esta
 constitución:
 
-- **Backend**: Node.js, NestJS 11, TypeScript 5.7 en modo `strict`.
+- **Backend**: Node.js 20, NestJS 11, TypeScript 5.7 en modo `strict`.
 - **Frontend**: React 19, Vite 8, TypeScript, Tailwind CSS 4. MUST ser una aplicación
   web responsiva y comunicarse con el backend vía HTTP/REST.
 - **Persistencia**: PostgreSQL, accedida vía TypeORM.

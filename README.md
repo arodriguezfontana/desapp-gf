@@ -60,8 +60,11 @@ Con el backend corriendo:
 
 ## Scripts
 
-**Backend**: `dev` · `build` · `start` · `start:prod` · `lint` · `test` (unit + integración) · `test:e2e` · `test:watch` · `test:cov`
+**Backend**: `dev` · `build` · `start` · `start:prod` · `lint` · `test:unit` (sin Docker) · `test:integration` · `test:e2e` · `test` (unit + integración) · `test:watch` · `test:cov`
 **Frontend**: `dev` · `build` · `preview` · `lint`
+
+> `test:unit` no necesita Docker. `test:integration`, `test:e2e`, `test` y `test:cov`
+> levantan un Postgres efímero con Testcontainers y requieren Docker corriendo.
 
 ## Spec-Driven Development
 

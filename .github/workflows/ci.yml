@@ -12,24 +12,11 @@ jobs:
     name: Backend (lint, test, build)
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: desapp_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
+    # Los tests de integración/e2e levantan su propio Postgres efímero con
+    # Testcontainers (constitución, Principio IX). Los runners hosteados de GitHub
+    # ya traen Docker corriendo, así que no hace falta un `services:` ni DinD.
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/desapp_test
       JWT_SECRET: ci-test-secret-not-a-real-secret
 
     steps:
@@ -56,9 +43,13 @@ jobs:
         working-directory: backend
         run: pnpm lint
 
-      - name: Test (unit + integration)
+      - name: Test (unit)
         working-directory: backend
-        run: pnpm test
+        run: pnpm test:unit
+
+      - name: Test (integration)
+        working-directory: backend
+        run: pnpm test:integration
 
       - name: Test (e2e)
         working-directory: backend
@@ -104,24 +95,9 @@ jobs:
     name: SonarCloud
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: desapp_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
+    # Igual que el job backend: Testcontainers levanta el Postgres efímero.
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/desapp_test
       JWT_SECRET: ci-test-secret-not-a-real-secret
 
     steps:

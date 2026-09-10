@@ -12,36 +12,82 @@
     "start:prod": "node dist/src/main",
     "lint": "eslint .",
     "test": "jest --runInBand",
-    "test:watch": "jest --watch",
+    "test:unit": "jest --runInBand --selectProjects unit",
+    "test:integration": "jest --runInBand --selectProjects integration",
+    "test:watch": "jest --watch --selectProjects unit",
     "test:cov": "jest --runInBand --coverage",
     "test:e2e": "jest --runInBand --config ./test/jest-e2e.json"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "<rootDir>/tests/"
-    ],
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
+    "coverageDirectory": "coverage",
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s",
+      "!src/**/*.spec.ts",
+      "!src/tests/**"
     ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "<rootDir>/tests/",
-      "\\.module\\.ts$",
-      "main\\.ts$"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "projects": [
+      {
+        "displayName": "unit",
+        "rootDir": ".",
+        "roots": [
+          "<rootDir>/src",
+          "<rootDir>/test/architecture"
+        ],
+        "moduleFileExtensions": [
+          "js",
+          "json",
+          "ts"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "testPathIgnorePatterns": [
+          "/node_modules/",
+          "<rootDir>/src/tests/",
+          "\\.integration\\.spec\\.ts$"
+        ],
+        "transform": {
+          "^.+\\.(t|j)s$": "ts-jest"
+        },
+        "testEnvironment": "node",
+        "coveragePathIgnorePatterns": [
+          "/node_modules/",
+          "\\.module\\.ts$",
+          "[\\\\/]main\\.ts$",
+          "[\\\\/]tests[\\\\/]"
+        ]
+      },
+      {
+        "displayName": "integration",
+        "rootDir": ".",
+        "roots": [
+          "<rootDir>/src"
+        ],
+        "moduleFileExtensions": [
+          "js",
+          "json",
+          "ts"
+        ],
+        "testMatch": [
+          "**/*.integration.spec.ts"
+        ],
+        "transform": {
+          "^.+\\.(t|j)s$": "ts-jest"
+        },
+        "testEnvironment": "node",
+        "globalSetup": "<rootDir>/test/setup/global-setup.ts",
+        "globalTeardown": "<rootDir>/test/setup/global-teardown.ts",
+        "setupFiles": [
+          "<rootDir>/test/setup/apply-db-url.ts"
+        ],
+        "coveragePathIgnorePatterns": [
+          "/node_modules/",
+          "\\.module\\.ts$",
+          "[\\\\/]main\\.ts$",
+          "[\\\\/]tests[\\\\/]"
+        ]
+      }
+    ]
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -69,6 +115,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.2.3",
+    "@testcontainers/postgresql": "^10.28.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
@@ -80,6 +127,7 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
+    "tsarch": "^5.4.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.68.0"
   }
