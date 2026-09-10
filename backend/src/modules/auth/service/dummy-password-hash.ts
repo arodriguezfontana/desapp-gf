@@ -4,5 +4,5 @@
  * para que el tiempo de respuesta no delate si el email esta registrado
  * (spec FR-012, defensa de timing).
  */
-export const DUMMY_PASSWORD_HASH =
+export const TIMING_SAFE_DUMMY_HASH =
   '$2b$10$rUT3r5qX1hIp6w53TSVUN.ulqAaqwWyEHoTSCIzeB8/G2zEohNvr6';
