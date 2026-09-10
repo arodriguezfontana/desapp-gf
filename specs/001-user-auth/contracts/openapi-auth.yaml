@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: DesApp — Autenticación
+  version: "1.0"
+  description: >
+    Contrato de los endpoints de autenticación. La especificación OpenAPI real
+    del backend se genera desde los DTOs con @nestjs/swagger (Principio VIII);
+    este archivo es el contrato de referencia de la feature, no se edita a mano
+    en el backend.
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Alta de cuenta (no inicia sesión, no devuelve token)
+      security: []   # público
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Cuenta creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          description: Body inválido, email mal formado o contraseña que incumple la política
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: El email ya está registrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Inicio de sesión — devuelve un JWT válido por 24 h
+      security: []   # público
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Credenciales correctas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Falta email o password
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: >
+            Credenciales inválidas. Respuesta IDÉNTICA para email inexistente y
+            para contraseña incorrecta (no revela qué emails están registrados).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+              example:
+                statusCode: 401
+                error: Unauthorized
+                message: "Credenciales inválidas."
+                timestamp: "2026-09-09T14:03:22.123Z"
+                path: "/auth/login"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+          example: ana@mail.com
+        password:
+          type: string
+          description: 8–16 chars, ≥1 mayúscula, ≥1 minúscula, ≥1 dígito, ≥1 carácter especial (no [A-Za-z0-9])
+          example: "Abcd1234!"
+    RegisterResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        createdAt: { type: string, format: date-time }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email, example: ana@mail.com }
+        password: { type: string, example: "Abcd1234!" }
+    LoginResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, enum: [Bearer], example: Bearer }
+        expiresIn: { type: integer, example: 86400, description: segundos hasta el vencimiento }
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode: { type: integer, example: 409 }
+        error: { type: string, example: Conflict }
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        timestamp: { type: string, format: date-time }
+        path: { type: string, example: /auth/register }
+
+security:
+  - bearerAuth: []

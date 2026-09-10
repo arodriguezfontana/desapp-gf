@@ -3,7 +3,7 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: [main, dev]
+    branches: [main, dev, 'feat/**', 'feature/**']
   pull_request:
     branches: [main, dev]
 
@@ -11,6 +11,26 @@ jobs:
   backend:
     name: Backend (lint, test, build)
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: desapp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/desapp_test
+      JWT_SECRET: ci-test-secret-not-a-real-secret
 
     steps:
       - name: Checkout repo
@@ -36,9 +56,13 @@ jobs:
         working-directory: backend
         run: pnpm lint
 
-      - name: Test
+      - name: Test (unit + integration)
         working-directory: backend
         run: pnpm test
+
+      - name: Test (e2e)
+        working-directory: backend
+        run: pnpm test:e2e
 
       - name: Build
         working-directory: backend
@@ -75,14 +99,35 @@ jobs:
       - name: Build
         working-directory: frontend
         run: pnpm build
-        
+
   sonarqube:
     name: SonarCloud
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: desapp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/desapp_test
+      JWT_SECRET: ci-test-secret-not-a-real-secret
+
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
-          fetch-depth: 0  
+          fetch-depth: 0
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
