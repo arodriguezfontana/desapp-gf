@@ -24,4 +24,12 @@ describe('Email', () => {
       expect(() => Email.create(raw)).toThrow(InvalidEmailError);
     },
   );
+
+  it('acepta un dominio con subdominios (multi-nivel)', () => {
+    expect(() => Email.create('user@sub.domain.com')).not.toThrow();
+  });
+
+  it('rechaza un dominio que arranca con punto justo después de la @', () => {
+    expect(() => Email.create('a@.b.c')).toThrow(InvalidEmailError);
+  });
 });
