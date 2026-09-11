@@ -1,19 +1,25 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.4.0 → 1.4.1
-Rationale: PATCH. Corrección de redacción en Development Workflow & Quality Gates: el gate
-de documentación mencionaba sólo "Swagger desactualizada" pese a citar los Principios VIII
-y X, cuando el Principio X ya exige también la colección de Postman. Se alinea la frase con
-lo que los principios ya requieren; sin cambio semántico de reglas, sin nuevos principios,
-sin renumeración.
+Version change: 1.4.1 → 1.5.0
+Rationale: MINOR. Se expande materialmente la guía del Principio IX (Testing) con dos
+reglas nuevas: (1) toda base de datos real que necesiten los tests de integración o e2e
+MUST ser una instancia efímera de PostgreSQL levantada con Testcontainers, nunca la base
+persistente de desarrollo; (2) MUST existir un test de arquitectura escrito con tsarch que
+corra con la suite y verifique las reglas de capas del Principio I. Ningún principio se
+elimina ni se redefine de forma incompatible; el resto del Principio IX queda intacto.
+Se realinean por consistencia dos frases fuera del Principio IX que quedaban en conflicto
+con la nueva forma de provisionar Postgres para tests.
 
-Modified principles: none
+Modified principles:
+  - IX. Testing (guía expandida: Testcontainers para la base real de tests; test de
+    arquitectura tsarch obligatorio)
 
 Modified sections:
-  - Development Workflow & Quality Gates: la regla de no integración por documentación
-    desactualizada ahora menciona explícitamente tanto la documentación Swagger como la
-    colección de Postman (Principios VIII y X).
+  - Technology Stack & Constraints: la línea de CI ya no describe PostgreSQL como servicio
+    del workflow para tests; la línea de Testing suma Testcontainers y tsarch.
+  - Development Workflow & Quality Gates: el gate de suite completa menciona explícitamente
+    el test de arquitectura.
 
 Added sections: none
 Removed sections: none
@@ -22,6 +28,9 @@ Updated cross-references: none
 
 Follow-up TODOs:
   - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
+  - Cumplimiento pendiente: la feature ya implementada en specs/001-user-auth corre sus
+    tests de integración/e2e contra la base de desarrollo y no tiene test tsarch; debe
+    migrarse a Testcontainers y sumar el test de arquitectura para quedar conforme a v1.5.0.
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -96,14 +105,11 @@ garantiza respuestas de error consistentes y sin fugas de información.
 
 ### IV. Autenticación
 
-La autenticación MUST basarse en JWT. El alta de usuario y el login son operaciones
-distintas: el alta crea la cuenta; el login es un endpoint explícito e independiente del
-alta que valida credenciales y emite un JWT, de modo que la sesión pueda renovarse sin
-volver a registrarse. Todo endpoint que necesite saber qué usuario está operando MUST
+La autenticación MUST basarse en JWT. El JWT se obtiene mediante un login independiente del alta, de forma que la sesión pueda renovarse sin volver a registrarse. Todo endpoint que necesite saber qué usuario está operando MUST
 exigir un JWT válido; el alta de usuario y el login son las únicas excepciones. El JWT
 MUST tener un vencimiento definido; el valor concreto de esa expiración es un detalle de
 la spec de autenticación, no de esta constitución. Las contraseñas MUST almacenarse
-hasheadas (bcrypt o argon2). Ningún JWT, contraseña ni dato personal del usuario MUST
+hasheadas (bcrypt). Ningún JWT, contraseña ni dato personal del usuario MUST
 loguearse ni persistirse en texto plano, y esta regla rige en todas las capas del sistema
 (Controller, Service, dominio, Repository, Adapter y logs), no solo en la de
 autenticación.
@@ -165,9 +171,20 @@ real.
 - Los tests unitarios de dominio MUST ejecutarse sin NestJS y sin base de datos, y
   cubrir las estrategias de valuación y las clases de dominio en aislamiento.
 - Los tests de integración de Services y Repositories MUST correr contra una base
-  PostgreSQL real (no mocks de la base), levantada como servicio en el pipeline de CI.
+  PostgreSQL real (no mocks de la base).
 - Los tests end-to-end MUST usar supertest sobre la app NestJS en memoria, y MUST vivir
   en su propia carpeta, nunca mezclados dentro de un test de Service.
+- Toda base de datos real que necesiten los tests de integración o end-to-end MUST ser
+  una instancia de PostgreSQL efímera levantada con Testcontainers, creada y destruida
+  por la propia corrida de tests. Estos tests MUST NOT correr nunca contra la base
+  persistente de desarrollo —ni en local ni en CI—: así los datos de prueba no se mezclan
+  con los de desarrollo y las corridas pueden paralelizarse sin pisarse entre sí.
+- MUST existir un test de arquitectura escrito con tsarch que corra junto al resto de la
+  suite (y que falle el build igual que cualquier otro test) y verifique que se respeten
+  las reglas de capas del Principio I: el sentido único de dependencias
+  Controller → Service → {Dominio, Repository, Adapter}, el dominio sin decoradores de
+  TypeORM ni imports de NestJS, y el Service sin ver la entidad de persistencia ni el
+  mapper.
 - Todo comportamiento MUST cubrirse con casos felices y casos borde.
 - Ningún test existente MUST modificarse ni borrarse para hacerlo pasar, en ninguna fase
   del desarrollo, sin pedir permiso explícito y recibir un "sí" primero. Si un test
@@ -175,8 +192,11 @@ real.
   de tocarlo.
 
 **Rationale**: La pirámide de tests con base real en integración detecta errores de
-mapeo y persistencia; la regla sobre no tocar tests protege la red de seguridad del
-grupo.
+mapeo y persistencia; hacer esa base efímera con Testcontainers evita contaminar el
+entorno de desarrollo y habilita la paralelización. El test de tsarch convierte las
+reglas de capas del Principio I en un chequeo automático que no depende de que un
+reviewer se acuerde de mirarlas. La regla sobre no tocar tests protege la red de
+seguridad del grupo.
 
 ### X. Definición de terminado
 
@@ -215,14 +235,15 @@ de por qué se decidió cada cosa.
 El proyecto MUST mantenerse dentro del siguiente stack salvo enmienda de esta
 constitución:
 
-- **Backend**: Node.js, NestJS 11, TypeScript 5.7 en modo `strict`.
+- **Backend**: Node.js 20, NestJS 11, TypeScript 5.7 en modo `strict`.
 - **Frontend**: React 19, Vite 8, TypeScript, Tailwind CSS 4. MUST ser una aplicación
   web responsiva y comunicarse con el backend vía HTTP/REST.
 - **Persistencia**: PostgreSQL, accedida vía TypeORM.
 - **Base local**: PostgreSQL levantado con Docker (`docker-compose`).
-- **CI**: PostgreSQL corre como servicio del propio workflow de GitHub Actions; los
-  tests de integración y e2e MUST correr en CI contra esa base.
-- **Testing**: Jest + supertest.
+- **CI**: los tests de integración y end-to-end MUST correr en CI usando la base efímera
+  de Testcontainers (el runner MUST tener Docker disponible); MUST NOT depender de un
+  PostgreSQL provisto como servicio del workflow ni de ninguna base persistente.
+- **Testing**: Jest + supertest + Testcontainers + tsarch.
 - **Estructura**: monorepo único con `backend/` y `frontend/`.
 
 ## Development Workflow & Quality Gates
@@ -230,8 +251,8 @@ constitución:
 - El flujo de trabajo es Spec-Driven Development (spec-kit):
   `/speckit-constitution` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` →
   `/speckit-implement`. Los artefactos de `.specify/` se versionan.
-- Todo cambio MUST pasar `lint` y la suite de tests completa (unit + integración + e2e)
-  en CI antes de integrarse.
+- Todo cambio MUST pasar `lint` y la suite de tests completa (unit + integración + e2e +
+  el test de arquitectura tsarch del Principio IX) en CI antes de integrarse.
 - Un cambio MUST NOT integrarse si viola una capa (Principio I), mueve lógica de negocio
   fuera del dominio (Principio II), o deja desactualizada la documentación Swagger o la
   colección de Postman (Principios VIII y X).
@@ -255,4 +276,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.4.1 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-09
+**Version**: 1.5.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-10

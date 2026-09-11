@@ -11,48 +11,124 @@
     "dev": "nest start --watch",
     "start:prod": "node dist/src/main",
     "lint": "eslint .",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test": "jest --runInBand",
+    "test:unit": "jest --runInBand --selectProjects unit",
+    "test:integration": "jest --runInBand --selectProjects integration",
+    "test:watch": "jest --watch --selectProjects unit",
+    "test:cov": "jest --runInBand --coverage",
+    "test:e2e": "jest --runInBand --config ./test/jest-e2e.json",
+    "test:e2e:cov": "jest --runInBand --coverage --config ./test/jest-e2e.json"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
+    "coverageDirectory": "coverage",
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s",
+      "!src/**/*.spec.ts",
+      "!src/tests/**"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "projects": [
+      {
+        "displayName": "unit",
+        "rootDir": ".",
+        "roots": [
+          "<rootDir>/src",
+          "<rootDir>/test/architecture"
+        ],
+        "moduleFileExtensions": [
+          "js",
+          "json",
+          "ts"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "testPathIgnorePatterns": [
+          "/node_modules/",
+          "<rootDir>/src/tests/",
+          "\\.integration\\.spec\\.ts$"
+        ],
+        "transform": {
+          "^.+\\.(t|j)s$": "ts-jest"
+        },
+        "testEnvironment": "node",
+        "coveragePathIgnorePatterns": [
+          "/node_modules/",
+          "\\.module\\.ts$",
+          "[\\\\/]main\\.ts$",
+          "[\\\\/]tests[\\\\/]"
+        ]
+      },
+      {
+        "displayName": "integration",
+        "rootDir": ".",
+        "roots": [
+          "<rootDir>/src"
+        ],
+        "moduleFileExtensions": [
+          "js",
+          "json",
+          "ts"
+        ],
+        "testMatch": [
+          "**/*.integration.spec.ts"
+        ],
+        "transform": {
+          "^.+\\.(t|j)s$": "ts-jest"
+        },
+        "testEnvironment": "node",
+        "globalSetup": "<rootDir>/test/setup/global-setup.ts",
+        "globalTeardown": "<rootDir>/test/setup/global-teardown.ts",
+        "setupFiles": [
+          "<rootDir>/test/setup/apply-db-url.ts"
+        ],
+        "coveragePathIgnorePatterns": [
+          "/node_modules/",
+          "\\.module\\.ts$",
+          "[\\\\/]main\\.ts$",
+          "[\\\\/]tests[\\\\/]"
+        ]
+      }
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt"
+    ]
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.7",
+    "@nestjs/typeorm": "^11.0.3",
+    "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "typeorm": "^1.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.2.3",
+    "@testcontainers/postgresql": "^10.28.0",
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.0",
+    "@types/supertest": "^7.2.1",
     "eslint": "^10.9.1",
     "globals": "^17.11.0",
     "jest": "^30.5.0",
+    "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
+    "tsarch": "^5.4.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.68.0"
   }

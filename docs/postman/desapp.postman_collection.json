@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "DesApp — Autenticación",
+    "description": "Alta, login y endpoint protegido de referencia. Ver specs/001-user-auth/.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"ana@mail.com\",\n  \"password\": \"Abcd1234!\"\n}"
+        },
+        "description": "201 Created. No devuelve token. 409 si el email ya existe. 400 si la contraseña incumple la política."
+      }
+    },
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set('accessToken', pm.response.json().accessToken);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"ana@mail.com\",\n  \"password\": \"Abcd1234!\"\n}"
+        },
+        "description": "200 con { accessToken, tokenType, expiresIn: 86400 }. 401 idéntico para email inexistente y contraseña incorrecta. El test-script guarda accessToken en la variable de colección."
+      }
+    },
+    {
+      "name": "Me (protegido)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+        "description": "200 con { id, email } del dueño del token. 401 sin JWT, con uno inválido o vencido."
+      }
+    }
+  ]
+}
