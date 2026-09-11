@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: DesApp — Emisión de ApiKey
+  version: "1.0"
+  description: >
+    Contrato OpenAPI de referencia para el endpoint de emisión de ApiKey.
+    La especificación OpenAPI real se genera desde los decoradores de NestJS y DTOs
+    vía @nestjs/swagger (Principio VIII).
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /auth/api-key:
+    post:
+      tags: [auth]
+      summary: Emisión o rotación de ApiKey para el usuario autenticado
+      description: >
+        Genera una nueva ApiKey criptográfica (prefijo pmk_). Si el usuario ya
+        poseía una ApiKey activa, queda invalidada de inmediato. La ApiKey en texto
+        plano sólo se devuelve en esta respuesta y nunca podrá volver a consultarse.
+      security:
+        - BearerAuth: []
+      responses:
+        "201":
+          description: ApiKey emitida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssueApiKeyResponse"
+        "401":
+          description: No autenticado (sin JWT, token inválido o vencido)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    IssueApiKeyResponse:
+      type: object
+      required:
+        - id
+        - apiKey
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "7b8c2d1e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"
+        apiKey:
+          type: string
+          pattern: "^pmk_[0-9a-f]{64}$"
+          example: "pmk_e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-09-11T16:00:00.000Z"
+
+    ErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - timestamp
+        - path
+        - error
+        - message
+      properties:
+        statusCode:
+          type: integer
+          example: 401
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-09-11T16:00:00.000Z"
+        path:
+          type: string
+          example: "/auth/api-key"
+        error:
+          type: string
+          example: "Unauthorized"
+        message:
+          type: string
+          example: "No autenticado."
+
