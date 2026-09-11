@@ -1,25 +1,25 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.4.1 → 1.5.0
-Rationale: MINOR. Se expande materialmente la guía del Principio IX (Testing) con dos
-reglas nuevas: (1) toda base de datos real que necesiten los tests de integración o e2e
-MUST ser una instancia efímera de PostgreSQL levantada con Testcontainers, nunca la base
-persistente de desarrollo; (2) MUST existir un test de arquitectura escrito con tsarch que
-corra con la suite y verifique las reglas de capas del Principio I. Ningún principio se
-elimina ni se redefine de forma incompatible; el resto del Principio IX queda intacto.
-Se realinean por consistencia dos frases fuera del Principio IX que quedaban en conflicto
-con la nueva forma de provisionar Postgres para tests.
+Version change: 1.5.0 → 1.6.0
+Rationale: MINOR. Se generaliza el rol de Adapter del Principio I: ya no se limita a
+"sistemas externos" (WhoScored, Football-Data.org), también MUST cubrir librerías de
+infraestructura (hasheo, generación de valores aleatorios criptográficos), detrás de una
+interfaz de dominio propia y sin que el Service pueda importarlas directamente. Motivo:
+la regla ya se había aplicado dos veces por separado como caso puntual
+(BcryptPasswordHasher para contraseñas, y ahora TokenHasher/Sha256TokenHasher para
+ApiKeys) sin estar generalizada en la constitución. Consistentemente, el test de
+arquitectura tsarch obligatorio del Principio IX ahora también MUST verificar que el
+Service no importe esas librerías de infraestructura de forma directa. Ningún principio
+se elimina ni se redefine de forma incompatible; el resto de ambos principios queda
+intacto.
 
 Modified principles:
-  - IX. Testing (guía expandida: Testcontainers para la base real de tests; test de
-    arquitectura tsarch obligatorio)
-
-Modified sections:
-  - Technology Stack & Constraints: la línea de CI ya no describe PostgreSQL como servicio
-    del workflow para tests; la línea de Testing suma Testcontainers y tsarch.
-  - Development Workflow & Quality Gates: el gate de suite completa menciona explícitamente
-    el test de arquitectura.
+  - I. Arquitectura en capas (el rol de Adapter se generaliza de "sistemas externos" a
+    "sistemas externos y librerías de infraestructura"; se agrega la prohibición
+    explícita de que el Service las importe directamente)
+  - IX. Testing (el test de arquitectura tsarch obligatorio suma la verificación de que
+    el Service no importe librerías de infraestructura directamente)
 
 Added sections: none
 Removed sections: none
@@ -28,9 +28,10 @@ Updated cross-references: none
 
 Follow-up TODOs:
   - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
-  - Cumplimiento pendiente: la feature ya implementada en specs/001-user-auth corre sus
-    tests de integración/e2e contra la base de desarrollo y no tiene test tsarch; debe
-    migrarse a Testcontainers y sumar el test de arquitectura para quedar conforme a v1.5.0.
+  - Cumplimiento pendiente: verificar que el test tsarch existente se actualice para
+    cubrir la nueva regla (Service sin imports directos de librerías de hasheo o de
+    generación de aleatoriedad criptográfica) antes de dar por conforme a v1.6.0 el
+    trabajo en curso de specs/002-api-key-issuance.
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -60,7 +61,10 @@ El backend MUST organizarse en capas con dependencias en un único sentido
   y un mapper explícito sin lógica de negocio. El Service MUST NOT ver la entidad de
   persistencia ni el mapper.
 - **Adapter**: única puerta de entrada a sistemas externos (p. ej. WhoScored,
-  Football-Data.org), detrás de una interfaz de dominio propia.
+  Football-Data.org) y a librerías de infraestructura (p. ej. hasheo, generación de
+  valores aleatorios criptográficos), detrás de una interfaz de dominio propia. El
+  Service MUST NOT importar esas librerías directamente: siempre pasa por el Adapter
+  correspondiente.
 - **Degradación ante fallo del proveedor externo**: si un proveedor externo falla o no
   responde, el sistema MUST seguir funcionando con los datos que ya tiene guardados
   localmente, en la medida de lo posible. Una operación que sólo depende de datos ya
@@ -70,7 +74,11 @@ El backend MUST organizarse en capas con dependencias en un único sentido
 **Rationale**: El sentido único de dependencias mantiene el dominio testeable en
 aislamiento y permite cambiar framework, ORM o proveedor externo sin reescribir reglas
 de negocio. Aislar el proveedor detrás de un Adapter además permite que su caída degrade
-sólo una parte del sistema y no lo tumbe entero.
+sólo una parte del sistema y no lo tumbe entero. La misma lógica aplica a librerías de
+infraestructura como hasheo o generación de aleatoriedad criptográfica: aislarlas detrás
+de un Adapter permite reemplazarlas o testearlas con un doble sin tocar el Service, y
+evita que la regla se resuelva caso por caso cada vez que aparece una librería nueva
+(ya pasó con el hasheo de contraseñas y de nuevo con el hasheo de API keys).
 
 ### II. Modelo de dominio rico
 
@@ -183,8 +191,10 @@ real.
   suite (y que falle el build igual que cualquier otro test) y verifique que se respeten
   las reglas de capas del Principio I: el sentido único de dependencias
   Controller → Service → {Dominio, Repository, Adapter}, el dominio sin decoradores de
-  TypeORM ni imports de NestJS, y el Service sin ver la entidad de persistencia ni el
-  mapper.
+  TypeORM ni imports de NestJS, el Service sin ver la entidad de persistencia ni el
+  mapper, y el Service sin importar directamente librerías de infraestructura (hasheo,
+  generación de valores aleatorios criptográficos): esas dependencias sólo MUST aparecer
+  detrás de un Adapter.
 - Todo comportamiento MUST cubrirse con casos felices y casos borde.
 - Ningún test existente MUST modificarse ni borrarse para hacerlo pasar, en ninguna fase
   del desarrollo, sin pedir permiso explícito y recibir un "sí" primero. Si un test
@@ -276,4 +286,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.5.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-10
+**Version**: 1.6.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-11
