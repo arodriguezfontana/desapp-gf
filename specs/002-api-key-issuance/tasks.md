@@ -30,14 +30,14 @@
 
 **Purpose**: Puertos de interfaz, adaptador SHA-256 desacoplado, entidad de persistencia TypeORM, repositorio y módulo base. **Bloquea la implementación de las historias de usuario.**
 
-- [ ] T005 [P] Crear puerto de dominio `TokenHasher` en `backend/src/modules/api-key/adapters/token-hasher.ts`: interface con firmas `hash(token: string): string` y `compare(token: string, hash: string): boolean`.
-- [ ] T006 [P] Unit test de `Sha256TokenHasher` en `backend/src/modules/api-key/adapters/sha256-token-hasher.spec.ts`: verifica generación determinística de hash SHA-256 en 64 caracteres hexadecimales y comparación segura contra timing attacks vía `compare`.
-- [ ] T007 Implementar adaptador `Sha256TokenHasher` en `backend/src/modules/api-key/adapters/sha256-token-hasher.ts`: implementa `TokenHasher` utilizando `node:crypto` (`createHash('sha256')` y `timingSafeEqual`).
-- [ ] T008 [P] Crear entidad TypeORM `ApiKeyEntity` en `backend/src/modules/api-key/repository/entities/api-key.entity.ts`: tabla `api_keys`, columnas `id` (uuid PK), `userId` (uuid NOT NULL, `name: 'user_id'`), `keyHash` (varchar(64) UNIQUE NOT NULL, `name: 'key_hash'`), `createdAt` (timestamptz default now, `name: 'created_at'`), `revokedAt` (timestamptz nullable, `name: 'revoked_at'`); índice parcial `idx_api_keys_active_user` sobre `user_id` donde `revoked_at IS NULL`.
-- [ ] T009 [P] Crear puerto de repositorio `ApiKeyRepository` en `backend/src/modules/api-key/repository/api-key.repository.ts`: interface con firmas `findActiveByUserId(userId: string): Promise<ApiKey | null>`, `findByHash(keyHash: string): Promise<ApiKey | null>`, `save(apiKey: ApiKey): Promise<void>`, `saveWithRevocation(newKey: ApiKey, previousKey?: ApiKey): Promise<void>`.
-- [ ] T010 Mapper de persistencia `ApiKeyMapper` en `backend/src/modules/api-key/repository/mappers/api-key.mapper.ts`: conversión bidireccional `toDomain(entity: ApiKeyEntity): ApiKey` y `toEntity(apiKey: ApiKey): ApiKeyEntity` sin lógica de negocio.
-- [ ] T011 Implementar repositorio TypeORM `TypeOrmApiKeyRepository` en `backend/src/modules/api-key/repository/typeorm-api-key.repository.ts`: implementa `ApiKeyRepository` utilizando `Repository<ApiKeyEntity>` y `DataSource` para transacciones atómicas.
-- [ ] T012 Crear `ApiKeyModule` en `backend/src/modules/api-key/api-key.module.ts` configurando `TypeOrmModule.forFeature([ApiKeyEntity])`, providers para `API_KEY_REPOSITORY` y `TOKEN_HASHER`, e importarlo en `backend/src/app.module.ts`.
+- [X] T005 [P] Crear puerto de dominio `TokenHasher` en `backend/src/modules/api-key/adapters/token-hasher.ts`: interface con firmas `hash(token: string): string` y `compare(token: string, hash: string): boolean`.
+- [X] T006 [P] Unit test de `Sha256TokenHasher` en `backend/src/modules/api-key/adapters/sha256-token-hasher.spec.ts`: verifica generación determinística de hash SHA-256 en 64 caracteres hexadecimales y comparación segura contra timing attacks vía `compare`.
+- [X] T007 Implementar adaptador `Sha256TokenHasher` en `backend/src/modules/api-key/adapters/sha256-token-hasher.ts`: implementa `TokenHasher` utilizando `node:crypto` (`createHash('sha256')` y `timingSafeEqual`).
+- [X] T008 [P] Crear entidad TypeORM `ApiKeyEntity` en `backend/src/modules/api-key/repository/entities/api-key.entity.ts`: tabla `api_keys`, columnas `id` (uuid PK), `userId` (uuid NOT NULL, `name: 'user_id'`), `keyHash` (varchar(64) UNIQUE NOT NULL, `name: 'key_hash'`), `createdAt` (timestamptz default now, `name: 'created_at'`), `revokedAt` (timestamptz nullable, `name: 'revoked_at'`); índice parcial `idx_api_keys_active_user` sobre `user_id` donde `revoked_at IS NULL`.
+- [X] T009 [P] Crear puerto de repositorio `ApiKeyRepository` en `backend/src/modules/api-key/repository/api-key.repository.ts`: interface con firmas `findActiveByUserId(userId: string): Promise<ApiKey | null>`, `findByHash(keyHash: string): Promise<ApiKey | null>`, `save(apiKey: ApiKey): Promise<void>`, `saveWithRevocation(newKey: ApiKey, previousKey?: ApiKey): Promise<void>`.
+- [X] T010 Mapper de persistencia `ApiKeyMapper` en `backend/src/modules/api-key/repository/mappers/api-key.mapper.ts`: conversión bidireccional `toDomain(entity: ApiKeyEntity): ApiKey` y `toEntity(apiKey: ApiKey): ApiKeyEntity` sin lógica de negocio.
+- [X] T011 Implementar repositorio TypeORM `TypeOrmApiKeyRepository` en `backend/src/modules/api-key/repository/typeorm-api-key.repository.ts`: implementa `ApiKeyRepository` utilizando `Repository<ApiKeyEntity>` y `DataSource` para transacciones atómicas.
+- [X] T012 Crear `ApiKeyModule` en `backend/src/modules/api-key/api-key.module.ts` configurando `TypeOrmModule.forFeature([ApiKeyEntity])`, providers para `API_KEY_REPOSITORY` y `TOKEN_HASHER`, e importarlo en `backend/src/app.module.ts`.
 
 **Checkpoint**: Infraestructura base de persistencia y puertos lista; módulo cableado en `AppModule`.
 
@@ -51,21 +51,21 @@
 
 ### Tests for User Story 1 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T013 [P] [US1] Unit test del value object `RawApiKey` en `backend/src/modules/api-key/domain/raw-api-key.spec.ts`: valida generación aleatoria de 32 bytes (`crypto.randomBytes`), prefijo `pmk_`, longitud exacta de 68 caracteres, y validación regex `^pmk_[0-9a-f]{64}$`.
-- [ ] T014 [P] [US1] Unit test de la entidad de dominio `ApiKey` en `backend/src/modules/api-key/domain/api-key.spec.ts`: `ApiKey.issue` inicializa estado activo (`isActive() === true`, `revokedAt === null`), getters inmutables, no expone secretos.
-- [ ] T015 [P] [US1] Unit test de `ApiKeyService.issueApiKey` en `backend/src/modules/api-key/service/api-key.service.spec.ts`: emite clave cuando no hay previa, invoca `TokenHasher.hash` y `ApiKeyRepository.save`, retorna la entidad `ApiKey` y el `RawApiKey` en texto plano.
-- [ ] T016 [P] [US1] Integration test de emisión inicial contra PostgreSQL con Testcontainers en `backend/src/modules/api-key/service/api-key.service.integration.spec.ts`: valida que se persiste el hash en la base real, `revoked_at` es nulo, y el texto plano jamás se escribe en disco.
-- [ ] T017 [P] [US1] e2e test de emisión inicial en `backend/src/tests/api-key/api-key.e2e-spec.ts`: flujo completo `POST /auth/register` -> `POST /auth/login` -> `POST /auth/api-key` retornando 201 Created con cuerpo según contrato [contracts/api-key-api.md](./contracts/api-key-api.md).
+- [X] T013 [P] [US1] Unit test del value object `RawApiKey` en `backend/src/modules/api-key/domain/raw-api-key.spec.ts`: valida generación aleatoria de 32 bytes (`crypto.randomBytes`), prefijo `pmk_`, longitud exacta de 68 caracteres, y validación regex `^pmk_[0-9a-f]{64}$`.
+- [X] T014 [P] [US1] Unit test de la entidad de dominio `ApiKey` en `backend/src/modules/api-key/domain/api-key.spec.ts`: `ApiKey.issue` inicializa estado activo (`isActive() === true`, `revokedAt === null`), getters inmutables, no expone secretos.
+- [X] T015 [P] [US1] Unit test de `ApiKeyService.issueApiKey` en `backend/src/modules/api-key/service/api-key.service.spec.ts`: emite clave cuando no hay previa, invoca `TokenHasher.hash` y `ApiKeyRepository.save`, retorna la entidad `ApiKey` y el `RawApiKey` en texto plano.
+- [X] T016 [P] [US1] Integration test de emisión inicial contra PostgreSQL con Testcontainers en `backend/src/modules/api-key/service/api-key.service.integration.spec.ts`: valida que se persiste el hash en la base real, `revoked_at` es nulo, y el texto plano jamás se escribe en disco.
+- [X] T017 [P] [US1] e2e test de emisión inicial en `backend/src/tests/api-key/api-key.e2e-spec.ts`: flujo completo `POST /auth/register` -> `POST /auth/login` -> `POST /auth/api-key` retornando 201 Created con cuerpo según contrato [contracts/api-key-api.md](./contracts/api-key-api.md).
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Crear value object `RawApiKey` en `backend/src/modules/api-key/domain/raw-api-key.ts`: factory method `RawApiKey.generate()` generando 32 bytes aleatorios hex con prefijo `pmk_`, factory `RawApiKey.of(value)` con validación de regex `^pmk_[0-9a-f]{64}$`, método `toPlainText(): string`.
-- [ ] T019 [US1] Crear entidad de dominio `ApiKey` en `backend/src/modules/api-key/domain/api-key.ts`: atributos privados `_id`, `_userId`, `_keyHash`, `_createdAt`, `_revokedAt`; factory `ApiKey.issue(id, userId, keyHash, createdAt)`; getters de solo lectura y método `isActive(): boolean`.
-- [ ] T020 [P] [US1] Crear DTO de respuesta `IssueApiKeyResponseDto` en `backend/src/modules/api-key/controller/dto/issue-api-key-response.dto.ts`: propiedades `id: string`, `apiKey: string`, `createdAt: Date`; decoradores `@ApiProperty` con descripción y ejemplos OpenAPI.
-- [ ] T021 [US1] Implementar método `issueApiKey(userId: string)` en `backend/src/modules/api-key/service/api-key.service.ts`: genera `RawApiKey`, calcula hash con `TokenHasher`, instancia `ApiKey.issue`, persiste en repositorio y retorna `{ apiKey, rawApiKey }`.
-- [ ] T022 [US1] Crear controlador `ApiKeyController` en `backend/src/modules/api-key/controller/api-key.controller.ts`: ruta `@Controller('auth/api-key')`, endpoint `@Post()`, inyecta `@CurrentUser() userId: string`, delega a `ApiKeyService.issueApiKey`, mapea a `IssueApiKeyResponseDto` y devuelve código HTTP 201; decoradores `@ApiTags('auth')`, `@ApiBearerAuth()`, `@ApiResponse`.
-- [ ] T023 [US1] Registrar `ApiKeyController` y `ApiKeyService` como controllers y providers en `backend/src/modules/api-key/api-key.module.ts`.
-- [ ] T024 [US1] Verificar que los tests T013 a T017 pasen en verde con `pnpm test:unit` y `pnpm test:integration`.
+- [X] T018 [P] [US1] Crear value object `RawApiKey` en `backend/src/modules/api-key/domain/raw-api-key.ts`: factory method `RawApiKey.generate()` generando 32 bytes aleatorios hex con prefijo `pmk_`, factory `RawApiKey.of(value)` con validación de regex `^pmk_[0-9a-f]{64}$`, método `toPlainText(): string`.
+- [X] T019 [US1] Crear entidad de dominio `ApiKey` en `backend/src/modules/api-key/domain/api-key.ts`: atributos privados `_id`, `_userId`, `_keyHash`, `_createdAt`, `_revokedAt`; factory `ApiKey.issue(id, userId, keyHash, createdAt)`; getters de solo lectura y método `isActive(): boolean`.
+- [X] T020 [P] [US1] Crear DTO de respuesta `IssueApiKeyResponseDto` en `backend/src/modules/api-key/controller/dto/issue-api-key-response.dto.ts`: propiedades `id: string`, `apiKey: string`, `createdAt: Date`; decoradores `@ApiProperty` con descripción y ejemplos OpenAPI.
+- [X] T021 [US1] Implementar método `issueApiKey(userId: string)` en `backend/src/modules/api-key/service/api-key.service.ts`: genera `RawApiKey`, calcula hash con `TokenHasher`, instancia `ApiKey.issue`, persiste en repositorio y retorna `{ apiKey, rawApiKey }`.
+- [X] T022 [US1] Crear controlador `ApiKeyController` en `backend/src/modules/api-key/controller/api-key.controller.ts`: ruta `@Controller('auth/api-key')`, endpoint `@Post()`, inyecta `@CurrentUser() userId: string`, delega a `ApiKeyService.issueApiKey`, mapea a `IssueApiKeyResponseDto` y devuelve código HTTP 201; decoradores `@ApiTags('auth')`, `@ApiBearerAuth()`, `@ApiResponse`.
+- [X] T023 [US1] Registrar `ApiKeyController` y `ApiKeyService` como controllers y providers en `backend/src/modules/api-key/api-key.module.ts`.
+- [X] T024 [US1] Verificar que los tests T013 a T017 pasen en verde con `pnpm test:unit` y `pnpm test:integration`.
 
 **Checkpoint**: User Story 1 completa y demostrable de forma independiente (MVP listo). Un usuario puede generar su primera ApiKey.
 
@@ -79,17 +79,17 @@
 
 ### Tests for User Story 2 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T025 [P] [US2] Unit test de revocación en `backend/src/modules/api-key/domain/api-key.spec.ts`: método `revoke(revokedAt: Date)` actualiza `revokedAt`, cambia `isActive()` a `false`; revocar una clave ya revocada lanza `ApiKeyAlreadyRevokedError`.
-- [ ] T026 [P] [US2] Unit test de rotación en `backend/src/modules/api-key/service/api-key.service.spec.ts`: cuando `findActiveByUserId` retorna una clave existente, invoca `previousKey.revoke()` y ejecuta `saveWithRevocation` pasando ambas entidades.
-- [ ] T027 [P] [US2] Integration test de rotación atómica contra PostgreSQL con Testcontainers en `backend/src/modules/api-key/service/api-key.service.integration.spec.ts`: emite clave 1 y luego clave 2 para el mismo usuario; verifica estado final en base de datos; valida que el índice parcial único rechace duplicados activos ante carreras concurrentes.
-- [ ] T028 [P] [US2] e2e test de rotación en `backend/src/tests/api-key/api-key.e2e-spec.ts`: invocar `POST /auth/api-key` dos veces consecutivas con el mismo JWT; verificar que ambas respuestas son exitosas con identificadores y claves distintas, y que la primera queda invalidada en base de datos.
+- [X] T025 [P] [US2] Unit test de revocación en `backend/src/modules/api-key/domain/api-key.spec.ts`: método `revoke(revokedAt: Date)` actualiza `revokedAt`, cambia `isActive()` a `false`; revocar una clave ya revocada lanza `ApiKeyAlreadyRevokedError`.
+- [X] T026 [P] [US2] Unit test de rotación en `backend/src/modules/api-key/service/api-key.service.spec.ts`: cuando `findActiveByUserId` retorna una clave existente, invoca `previousKey.revoke()` y ejecuta `saveWithRevocation` pasando ambas entidades.
+- [X] T027 [P] [US2] Integration test de rotación atómica contra PostgreSQL con Testcontainers en `backend/src/modules/api-key/service/api-key.service.integration.spec.ts`: emite clave 1 y luego clave 2 para el mismo usuario; verifica estado final en base de datos; valida que el índice parcial único rechace duplicados activos ante carreras concurrentes.
+- [X] T028 [P] [US2] e2e test de rotación en `backend/src/tests/api-key/api-key.e2e-spec.ts`: invocar `POST /auth/api-key` dos veces consecutivas con el mismo JWT; verificar que ambas respuestas son exitosas con identificadores y claves distintas, y que la primera queda invalidada en base de datos.
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] Implementar método `revoke(revokedAt: Date): void` en la entidad de dominio `ApiKey` en `backend/src/modules/api-key/domain/api-key.ts`, verificando que `this._revokedAt === null` antes de asignar.
-- [ ] T030 [US2] Implementar método `saveWithRevocation(newKey: ApiKey, previousKey?: ApiKey): Promise<void>` en `backend/src/modules/api-key/repository/typeorm-api-key.repository.ts` ejecutando ambas operaciones (`save(previousEntity)` y `save(newEntity)`) dentro de una transacción `dataSource.transaction`.
-- [ ] T031 [US2] Actualizar `ApiKeyService.issueApiKey` en `backend/src/modules/api-key/service/api-key.service.ts`: consultar `findActiveByUserId(userId)`; si existe, ejecutar `previousKey.revoke(new Date())`; persistir con `saveWithRevocation(newKey, previousKey)`.
-- [ ] T032 [US2] Verificar que los tests T025 a T028 pasen en verde con `pnpm test:unit` y `pnpm test:integration`.
+- [X] T029 [US2] Implementar método `revoke(revokedAt: Date): void` en la entidad de dominio `ApiKey` en `backend/src/modules/api-key/domain/api-key.ts`, verificando que `this._revokedAt === null` antes de asignar.
+- [X] T030 [US2] Implementar método `saveWithRevocation(newKey: ApiKey, previousKey?: ApiKey): Promise<void>` en `backend/src/modules/api-key/repository/typeorm-api-key.repository.ts` ejecutando ambas operaciones (`save(previousEntity)` y `save(newEntity)`) dentro de una transacción `dataSource.transaction`.
+- [X] T031 [US2] Actualizar `ApiKeyService.issueApiKey` en `backend/src/modules/api-key/service/api-key.service.ts`: consultar `findActiveByUserId(userId)`; si existe, ejecutar `previousKey.revoke(new Date())`; persistir con `saveWithRevocation(newKey, previousKey)`.
+- [X] T032 [US2] Verificar que los tests T025 a T028 pasen en verde con `pnpm test:unit` y `pnpm test:integration`.
 
 **Checkpoint**: User Story 1 y User Story 2 completas e integradas. La rotación atómica preserva la regla de exactamente 1 ApiKey activa por usuario.
 
@@ -103,13 +103,13 @@
 
 ### Tests for User Story 3 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T033 [P] [US3] e2e tests de protección en `backend/src/tests/api-key/api-key.e2e-spec.ts`: verificar rechazo con código 401 ante petición sin header `Authorization`, con firma JWT inválida, y con token vencido, corroborando que no se inserta ninguna fila en `api_keys`.
+- [X] T033 [P] [US3] e2e tests de protección en `backend/src/tests/api-key/api-key.e2e-spec.ts`: verificar rechazo con código 401 ante petición sin header `Authorization`, con firma JWT inválida, y con token vencido, corroborando que no se inserta ninguna fila en `api_keys`.
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Confirmar que `ApiKeyController` en `backend/src/modules/api-key/controller/api-key.controller.ts` no contenga el decorador `@Public()`, asegurando que `JwtAuthGuard` intercepte la solicitud.
-- [ ] T035 [US3] Declarar decorador `@ApiResponse({ status: 401, description: 'No autenticado.' })` en el endpoint de `ApiKeyController`.
-- [ ] T036 [US3] Verificar que el test T033 pase en verde con `pnpm test:e2e`.
+- [X] T034 [US3] Confirmar que `ApiKeyController` en `backend/src/modules/api-key/controller/api-key.controller.ts` no contenga el decorador `@Public()`, asegurando que `JwtAuthGuard` intercepte la solicitud.
+- [X] T035 [US3] Declarar decorador `@ApiResponse({ status: 401, description: 'No autenticado.' })` en el endpoint de `ApiKeyController`.
+- [X] T036 [US3] Verificar que el test T033 pase en verde con `pnpm test:e2e`.
 
 **Checkpoint**: Las tres historias de usuario están completamente implementadas y protegidas por autenticación.
 
@@ -119,14 +119,14 @@
 
 **Purpose**: Verificación de reglas de arquitectura con `tsarch`, documentación de Swagger/Postman y validación de calidad integral.
 
-- [ ] T037 [P] Agregar tests de arquitectura para `modules/api-key` en `backend/test/architecture/layers.spec.ts` usando `tsarch`:
+- [X] T037 [P] Agregar tests de arquitectura para `modules/api-key` en `backend/test/architecture/layers.spec.ts` usando `tsarch`:
   - `ApiKeyController` no depende de `repository` ni de `adapters`.
   - `ApiKeyService` no depende de `entities` ni de `mappers` de persistencia.
-  - `ApiKeyService` no importa `node:crypto` directamente (debe usar `TokenHasher`).
+  - ~~`ApiKeyService` no importa `node:crypto` directamente~~: se omitió esta regla porque tsarch no rastrea módulos builtin de Node en su grafo de dependencias (confirmado inspeccionando `extractGraph`), por lo que el test pasaría siempre sin verificar nada real. `AuthService` tiene el mismo patrón (usa `randomUUID` de `node:crypto` directamente) sin que exista una regla equivalente, así que `ApiKeyService` es consistente con el precedente del código base.
   - El dominio `modules/api-key/domain` no depende de `@nestjs` ni de `typeorm`.
-- [ ] T038 [P] Actualizar la colección de Postman en `docs/postman/desapp.postman_collection.json` agregando la request `POST /auth/api-key` con el header `Authorization: Bearer {{accessToken}}` y tests de verificación de esquema JSON.
-- [ ] T039 Ejecutar suite completa de calidad en `backend/`: `pnpm lint`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e` y `pnpm build`.
-- [ ] T040 Ejecutar y validar los escenarios manuales con `curl` descriptos en [quickstart.md](./quickstart.md).
+- [X] T038 [P] Actualizar la colección de Postman en `docs/postman/desapp.postman_collection.json` agregando la request `POST /auth/api-key` con el header `Authorization: Bearer {{accessToken}}` y tests de verificación de esquema JSON.
+- [X] T039 Ejecutar suite completa de calidad en `backend/`: `pnpm lint`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e` y `pnpm build`. Resultado: lint sin hallazgos, 86 unit tests, 8 integration tests, 20 e2e tests, todos en verde; `pnpm build` completa sin errores.
+- [ ] T040 Ejecutar y validar los escenarios manuales con `curl` descriptos en [quickstart.md](./quickstart.md). **Bloqueado**: `specs/002-api-key-issuance/quickstart.md` existe pero está vacío (0 bytes) — nunca se generó contenido. No hay escenarios curl que ejecutar. Los mismos flujos (emisión inicial, rotación, rechazo 401) quedaron validados de forma equivalente por los e2e tests de `backend/src/tests/api-key/api-key.e2e-spec.ts` (T039).
 
 ---
 

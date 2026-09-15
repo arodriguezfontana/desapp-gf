@@ -130,4 +130,58 @@ describe('Arquitectura en capas (Principio I)', () => {
       .matchingPattern('node_modules/(@types/)?bcrypt/');
     await expect(rule).toPassAsync();
   });
+
+  it('el Controller de api-key no depende del Repository', async () => {
+    const rule = project()
+      .inFolder('modules/api-key/controller')
+      .shouldNot()
+      .dependOnFiles()
+      .inFolder('modules/api-key/repository');
+    await expect(rule).toPassAsync();
+  });
+
+  it('el Controller de api-key no depende de los Adapters', async () => {
+    const rule = project()
+      .inFolder('modules/api-key/controller')
+      .shouldNot()
+      .dependOnFiles()
+      .inFolder('modules/api-key/adapters');
+    await expect(rule).toPassAsync();
+  });
+
+  it('el Service de api-key no depende de la entidad de persistencia', async () => {
+    const rule = project()
+      .inFolder('modules/api-key/service')
+      .shouldNot()
+      .dependOnFiles()
+      .inFolder('modules/api-key/repository/entities');
+    await expect(rule).toPassAsync();
+  });
+
+  it('el Service de api-key no depende del mapper de persistencia', async () => {
+    const rule = project()
+      .inFolder('modules/api-key/service')
+      .shouldNot()
+      .dependOnFiles()
+      .inFolder('modules/api-key/repository/mappers');
+    await expect(rule).toPassAsync();
+  });
+
+  it('el dominio de api-key no depende de NestJS', async () => {
+    const rule = project()
+      .inFolder('modules/api-key/domain')
+      .shouldNot()
+      .dependOnFiles()
+      .matchingPattern('node_modules/@nestjs/');
+    await expect(rule).toPassAsync();
+  });
+
+  it('el dominio de api-key no depende de TypeORM', async () => {
+    const rule = project()
+      .inFolder('modules/api-key/domain')
+      .shouldNot()
+      .dependOnFiles()
+      .matchingPattern('node_modules/(@nestjs/)?typeorm/');
+    await expect(rule).toPassAsync();
+  });
 });

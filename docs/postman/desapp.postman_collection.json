@@ -56,6 +56,34 @@
         "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
         "description": "200 con { id, email } del dueño del token. 401 sin JWT, con uno inválido o vencido."
       }
+    },
+    {
+      "name": "Emitir ApiKey",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "pm.test('cuerpo cumple el esquema { id, apiKey, createdAt }', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('id').that.is.a('string');",
+              "  pm.expect(body).to.have.property('apiKey').that.matches(/^pmk_[0-9a-f]{64}$/);",
+              "  pm.expect(body).to.have.property('createdAt');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+        "description": "201 Created con { id, apiKey, createdAt }. La ApiKey en texto plano solo se muestra en esta respuesta. Si el usuario ya tenía una ApiKey activa, queda invalidada de inmediato. 401 sin JWT, con uno inválido o vencido. Ver specs/002-api-key-issuance/."
+      }
     }
   ]
 }
