@@ -1,37 +1,27 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.5.0 → 1.6.0
-Rationale: MINOR. Se generaliza el rol de Adapter del Principio I: ya no se limita a
-"sistemas externos" (WhoScored, Football-Data.org), también MUST cubrir librerías de
-infraestructura (hasheo, generación de valores aleatorios criptográficos), detrás de una
-interfaz de dominio propia y sin que el Service pueda importarlas directamente. Motivo:
-la regla ya se había aplicado dos veces por separado como caso puntual
-(BcryptPasswordHasher para contraseñas, y ahora TokenHasher/Sha256TokenHasher para
-ApiKeys) sin estar generalizada en la constitución. Consistentemente, el test de
-arquitectura tsarch obligatorio del Principio IX ahora también MUST verificar que el
-Service no importe esas librerías de infraestructura de forma directa. Ningún principio
-se elimina ni se redefine de forma incompatible; el resto de ambos principios queda
-intacto.
+Version change: 1.6.0 → 1.7.0
+Rationale: MINOR. Se expande materialmente la guía de "Estructura" en Technology Stack
+& Constraints: además de "monorepo único con backend/ y frontend/", ahora se fija cómo
+se organiza `backend/src/` (por capa arquitectónica —controllers/, services/, domain/,
+repositories/, adapters/, guards/— nunca por feature) y dónde viven los distintos tipos
+de test (unitarios e integración junto al archivo que testean, dentro de su capa;
+end-to-end y el test de arquitectura tsarch del Principio IX en `backend/test/`, fuera
+de `src/`). No redefine ni elimina ningún principio existente; es consistente con el
+Principio IX, que ya exigía que los e2e vivan en su propia carpeta separada de los
+tests de Service.
 
-Modified principles:
-  - I. Arquitectura en capas (el rol de Adapter se generaliza de "sistemas externos" a
-    "sistemas externos y librerías de infraestructura"; se agrega la prohibición
-    explícita de que el Service las importe directamente)
-  - IX. Testing (el test de arquitectura tsarch obligatorio suma la verificación de que
-    el Service no importe librerías de infraestructura directamente)
+Modified sections:
+  - Technology Stack & Constraints (bullet "Estructura": se agrega la organización por
+    capa dentro de `backend/src/` y la ubicación de cada tipo de test)
 
 Added sections: none
 Removed sections: none
 Renumbered principles: none
 Updated cross-references: none
 
-Follow-up TODOs:
-  - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
-  - Cumplimiento pendiente: verificar que el test tsarch existente se actualice para
-    cubrir la nueva regla (Service sin imports directos de librerías de hasheo o de
-    generación de aleatoriedad criptográfica) antes de dar por conforme a v1.6.0 el
-    trabajo en curso de specs/002-api-key-issuance.
+Follow-up TODOs: ninguno.
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -112,7 +102,7 @@ garantiza respuestas de error consistentes y sin fugas de información.
 
 ### IV. Autenticación
 
-La autenticación MUST basarse en JWT. El JWT se obtiene mediante un login independiente del alta, de forma que la sesión pueda renovarse sin volver a registrarse. Todo endpoint que necesite saber qué usuario está operando MUST
+La autenticación MUST basarse en JWT, obtenido mediante un login independiente del alta. Todo endpoint que necesite saber qué usuario está operando MUST
 exigir un JWT válido; el alta de usuario y el login son las únicas excepciones. El JWT
 MUST tener un vencimiento definido; el valor concreto de esa expiración es un detalle de
 la spec de autenticación, no de esta constitución. Las contraseñas MUST almacenarse
@@ -177,15 +167,9 @@ real.
 
 - Los tests unitarios de dominio MUST ejecutarse sin NestJS y sin base de datos, y
   cubrir las estrategias de valuación y las clases de dominio en aislamiento.
-- Los tests de integración de Services y Repositories MUST correr contra una base
-  PostgreSQL real (no mocks de la base).
+- Los tests de integración de Services y Repositories, y los tests end-to-end, MUST correr contra una instancia de PostgreSQL real y efímera levantada con Testcontainers, creada y destruida por la propia corrida de tests — nunca contra la base persistente de desarrollo, ni en local ni en CI. Así los datos de prueba no se mezclan con los de desarrollo y las corridas pueden paralelizarse sin pisarse entre sí.
 - Los tests end-to-end MUST usar supertest sobre la app NestJS en memoria, y MUST vivir
   en su propia carpeta, nunca mezclados dentro de un test de Service.
-- Toda base de datos real que necesiten los tests de integración o end-to-end MUST ser
-  una instancia de PostgreSQL efímera levantada con Testcontainers, creada y destruida
-  por la propia corrida de tests. Estos tests MUST NOT correr nunca contra la base
-  persistente de desarrollo —ni en local ni en CI—: así los datos de prueba no se mezclan
-  con los de desarrollo y las corridas pueden paralelizarse sin pisarse entre sí.
 - MUST existir un test de arquitectura escrito con tsarch que corra junto al resto de la
   suite (y que falle el build igual que cualquier otro test) y verifique que se respeten
   las reglas de capas del Principio I: el sentido único de dependencias
@@ -249,11 +233,15 @@ constitución:
   web responsiva y comunicarse con el backend vía HTTP/REST.
 - **Persistencia**: PostgreSQL, accedida vía TypeORM.
 - **Base local**: PostgreSQL levantado con Docker (`docker-compose`).
-- **CI**: los tests de integración y end-to-end MUST correr en CI usando la base efímera
-  de Testcontainers (el runner MUST tener Docker disponible); MUST NOT depender de un
-  PostgreSQL provisto como servicio del workflow ni de ninguna base persistente.
+- **CI**: el runner MUST tener Docker disponible para levantar los Testcontainers de integración y end-to-end (Principio IX); MUST NOT depender de un PostgreSQL provisto como servicio del workflow.
 - **Testing**: Jest + supertest + Testcontainers + tsarch.
-- **Estructura**: monorepo único con `backend/` y `frontend/`.
+- **Estructura**: monorepo único con `backend/` y `frontend/`. Dentro de
+  `backend/src/`, la organización MUST ser por capa arquitectónica (`controllers/`,
+  `services/`, `domain/`, `repositories/`, `adapters/`, `guards/`), nunca por feature:
+  cada capa contiene los archivos de todas las features que la tocan. Los tests
+  unitarios y de integración viven junto al archivo que testean, dentro de su misma
+  capa; los tests end-to-end y el test de arquitectura tsarch (Principio IX) viven en
+  `backend/test/`, fuera de `src/`.
 
 ## Development Workflow & Quality Gates
 
@@ -285,4 +273,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.6.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-11
+**Version**: 1.7.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-15

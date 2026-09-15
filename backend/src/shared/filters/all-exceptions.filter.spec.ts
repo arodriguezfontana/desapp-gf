@@ -1,9 +1,9 @@
 import { ArgumentsHost, BadRequestException, HttpException } from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter';
-import { EmailAlreadyInUseError } from '../../modules/auth/domain/errors/email-already-in-use.error';
-import { InvalidCredentialsError } from '../../modules/auth/domain/errors/invalid-credentials.error';
-import { InvalidEmailError } from '../../modules/auth/domain/errors/invalid-email.error';
-import { InvalidPasswordError } from '../../modules/auth/domain/errors/invalid-password.error';
+import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
+import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
+import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
+import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 
 describe('AllExceptionsFilter', () => {
   const filter = new AllExceptionsFilter();
