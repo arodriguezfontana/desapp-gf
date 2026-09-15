@@ -61,8 +61,7 @@ El backend MUST organizarse en capas con dependencias en un único sentido
   y un mapper explícito sin lógica de negocio. El Service MUST NOT ver la entidad de
   persistencia ni el mapper.
 - **Adapter**: única puerta de entrada a sistemas externos (p. ej. WhoScored,
-  Football-Data.org) y a librerías de infraestructura (p. ej. hasheo, generación de
-  valores aleatorios criptográficos), detrás de una interfaz de dominio propia. El
+  Football-Data.org) y a librerías de hasheo o verificación de secretos, detrás de una interfaz de dominio propia. El
   Service MUST NOT importar esas librerías directamente: siempre pasa por el Adapter
   correspondiente.
 - **Degradación ante fallo del proveedor externo**: si un proveedor externo falla o no
