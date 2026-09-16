@@ -4,8 +4,8 @@ import { APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { ApiKeyModule } from './modules/api-key/api-key.module';
+import { AuthModule } from './auth.module';
+import { ApiKeyModule } from './api-key.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({

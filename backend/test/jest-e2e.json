@@ -1,6 +1,6 @@
 {
   "rootDir": "..",
-  "roots": ["<rootDir>/src/tests"],
+  "roots": ["<rootDir>/test"],
   "moduleFileExtensions": ["js", "json", "ts"],
   "testEnvironment": "node",
   "testRegex": "\\.e2e-spec\\.ts$",
@@ -11,15 +11,10 @@
   "globalTeardown": "<rootDir>/test/setup/global-teardown.ts",
   "setupFiles": ["<rootDir>/test/setup/apply-db-url.ts"],
   "coverageDirectory": "coverage-e2e",
-  "collectCoverageFrom": [
-    "src/**/*.(t|j)s",
-    "!src/**/*.spec.ts",
-    "!src/tests/**"
-  ],
+  "collectCoverageFrom": ["src/**/*.(t|j)s", "!src/**/*.spec.ts"],
   "coveragePathIgnorePatterns": [
     "/node_modules/",
     "\\.module\\.ts$",
-    "[\\\\/]main\\.ts$",
-    "[\\\\/]tests[\\\\/]"
+    "[\\\\/]main\\.ts$"
   ]
 }
