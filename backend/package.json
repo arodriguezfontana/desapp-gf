@@ -23,8 +23,7 @@
     "coverageDirectory": "coverage",
     "collectCoverageFrom": [
       "src/**/*.(t|j)s",
-      "!src/**/*.spec.ts",
-      "!src/tests/**"
+      "!src/**/*.spec.ts"
     ],
     "projects": [
       {
@@ -32,7 +31,7 @@
         "rootDir": ".",
         "roots": [
           "<rootDir>/src",
-          "<rootDir>/test/architecture"
+          "<rootDir>/test"
         ],
         "moduleFileExtensions": [
           "js",
@@ -44,7 +43,6 @@
         ],
         "testPathIgnorePatterns": [
           "/node_modules/",
-          "<rootDir>/src/tests/",
           "\\.integration\\.spec\\.ts$"
         ],
         "transform": {
@@ -54,8 +52,7 @@
         "coveragePathIgnorePatterns": [
           "/node_modules/",
           "\\.module\\.ts$",
-          "[\\\\/]main\\.ts$",
-          "[\\\\/]tests[\\\\/]"
+          "[\\\\/]main\\.ts$"
         ]
       },
       {
@@ -84,8 +81,7 @@
         "coveragePathIgnorePatterns": [
           "/node_modules/",
           "\\.module\\.ts$",
-          "[\\\\/]main\\.ts$",
-          "[\\\\/]tests[\\\\/]"
+          "[\\\\/]main\\.ts$"
         ]
       }
     ]

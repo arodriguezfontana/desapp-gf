@@ -8,12 +8,12 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { DomainError } from '../errors/domain-error';
-import { EmailAlreadyInUseError } from '../../modules/auth/domain/errors/email-already-in-use.error';
-import { InvalidCredentialsError } from '../../modules/auth/domain/errors/invalid-credentials.error';
-import { InvalidEmailError } from '../../modules/auth/domain/errors/invalid-email.error';
-import { InvalidPasswordError } from '../../modules/auth/domain/errors/invalid-password.error';
-import { InvalidApiKeyFormatError } from '../../modules/api-key/domain/errors/invalid-api-key-format.error';
-import { ApiKeyAlreadyRevokedError } from '../../modules/api-key/domain/errors/api-key-already-revoked.error';
+import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
+import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
+import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
+import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
+import { InvalidApiKeyFormatError } from '../../domain/api-key/errors/invalid-api-key-format.error';
+import { ApiKeyAlreadyRevokedError } from '../../domain/api-key/errors/api-key-already-revoked.error';
 
 interface ErrorBody {
   statusCode: number;

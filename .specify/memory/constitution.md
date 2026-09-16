@@ -178,8 +178,7 @@ real.
 
 - Los tests unitarios de dominio MUST ejecutarse sin NestJS y sin base de datos, y
   cubrir las estrategias de valuación y las clases de dominio en aislamiento.
-- Los tests de integración de Services y Repositories MUST correr contra una base
-  PostgreSQL real (no mocks de la base).
+- Los tests de integración de Services y Repositories, y los tests end-to-end, MUST correr contra una instancia de PostgreSQL real y efímera levantada con Testcontainers, creada y destruida por la propia corrida de tests — nunca contra la base persistente de desarrollo, ni en local ni en CI. Así los datos de prueba no se mezclan con los de desarrollo y las corridas pueden paralelizarse sin pisarse entre sí.
 - Los tests end-to-end MUST usar supertest sobre la app NestJS en memoria, y MUST vivir
   en su propia carpeta, nunca mezclados dentro de un test de Service.
 - Toda base de datos real que necesiten los tests de integración o end-to-end MUST ser
