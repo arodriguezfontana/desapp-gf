@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ApiKeyModule } from './modules/api-key/api-key.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -12,6 +13,7 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     AuthModule,
+    ApiKeyModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],

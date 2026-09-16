@@ -16,4 +16,33 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: ['src/modules/*/service/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'node:crypto',
+              allowImportNames: ['randomUUID'],
+              message:
+                'El Service no debe hashear directamente: usá el Adapter correspondiente (TokenHasher, PasswordHasher). Solo se permite randomUUID para generar identificadores.',
+            },
+            {
+              name: 'crypto',
+              allowImportNames: ['randomUUID'],
+              message:
+                'El Service no debe hashear directamente: usá el Adapter correspondiente (TokenHasher, PasswordHasher). Solo se permite randomUUID para generar identificadores.',
+            },
+            {
+              name: 'bcrypt',
+              message:
+                'El Service no debe hashear directamente: usá el Adapter correspondiente (PasswordHasher).',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

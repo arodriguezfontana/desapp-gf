@@ -12,6 +12,8 @@ import { EmailAlreadyInUseError } from '../../modules/auth/domain/errors/email-a
 import { InvalidCredentialsError } from '../../modules/auth/domain/errors/invalid-credentials.error';
 import { InvalidEmailError } from '../../modules/auth/domain/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../modules/auth/domain/errors/invalid-password.error';
+import { InvalidApiKeyFormatError } from '../../modules/api-key/domain/errors/invalid-api-key-format.error';
+import { ApiKeyAlreadyRevokedError } from '../../modules/api-key/domain/errors/api-key-already-revoked.error';
 
 interface ErrorBody {
   statusCode: number;
@@ -71,7 +73,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
   } {
     if (
       exception instanceof InvalidEmailError ||
-      exception instanceof InvalidPasswordError
+      exception instanceof InvalidPasswordError ||
+      exception instanceof InvalidApiKeyFormatError
     ) {
       return { status: HttpStatus.BAD_REQUEST, message: exception.message };
     }
@@ -80,7 +83,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return { status: HttpStatus.UNAUTHORIZED, message: exception.message };
     }
 
-    if (exception instanceof EmailAlreadyInUseError) {
+    if (
+      exception instanceof EmailAlreadyInUseError ||
+      exception instanceof ApiKeyAlreadyRevokedError
+    ) {
       return { status: HttpStatus.CONFLICT, message: exception.message };
     }
 
