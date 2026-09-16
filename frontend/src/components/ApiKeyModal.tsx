@@ -15,42 +15,54 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback si clipboard falla
+      // fallback
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4">
-      <div className="w-full max-w-lg bg-white border-2 border-primary p-6 shadow-xl">
-        <h2 className="text-xl font-black uppercase tracking-wider text-primary mb-3">
-          Tu ApiKey
-        </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="w-full max-w-lg bg-white border-2 border-primary p-6 sm:p-8 shadow-2xl rounded-xs relative overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-secondary absolute top-0 inset-x-0" />
 
-        <div className="mb-4 p-3 bg-accent/10 border-l-4 border-accent text-foreground text-sm font-semibold">
+        <div className="flex items-center justify-between mb-4 pt-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse" />
+            <h2 className="text-xl font-black uppercase tracking-wider text-primary">
+              Tu ApiKey
+            </h2>
+          </div>
+        </div>
+
+        <div className="mb-6 p-4 bg-orange-50 border-l-4 border-accent text-accent font-black text-xs uppercase tracking-wider shadow-sm">
           Guardá esta clave ahora. No podrás volver a consultarla.
         </div>
 
-        <div className="mb-6 flex gap-2">
-          <input
-            type="text"
-            readOnly
-            value={apiKey}
-            className="w-full p-2 border border-foreground/30 bg-background font-mono text-sm select-all focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-primary text-white hover:bg-primary/90 transition-colors whitespace-nowrap"
-          >
-            {copied ? '¡Copiado!' : 'Copiar'}
-          </button>
+        <div className="mb-6">
+          <label className="block text-[11px] font-black uppercase tracking-widest text-slate-700 mb-1.5">
+            Clave de Acceso
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={apiKey}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-300 text-slate-900 font-mono text-xs select-all focus:outline-none rounded-xs shadow-inner"
+            />
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="px-5 py-3 text-xs font-black uppercase tracking-widest bg-accent hover:bg-accent-hover text-white shadow-md transition-all whitespace-nowrap rounded-xs active:scale-95"
+            >
+              {copied ? '¡Copiado!' : 'Copiar'}
+            </button>
+          </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2 text-sm font-bold uppercase tracking-wider border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+            className="px-6 py-2.5 text-xs font-black uppercase tracking-widest bg-primary hover:bg-primary-bright text-white transition-all rounded-xs shadow-md"
           >
             Cerrar
           </button>
@@ -59,4 +71,3 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
     </div>
   );
 }
-
