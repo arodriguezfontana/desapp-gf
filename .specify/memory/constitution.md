@@ -2,26 +2,36 @@
 Sync Impact Report
 ==================
 Version change: 1.6.0 → 1.7.0
-Rationale: MINOR. Se expande materialmente la guía de "Estructura" en Technology Stack
-& Constraints: además de "monorepo único con backend/ y frontend/", ahora se fija cómo
-se organiza `backend/src/` (por capa arquitectónica —controllers/, services/, domain/,
-repositories/, adapters/, guards/— nunca por feature) y dónde viven los distintos tipos
-de test (unitarios e integración junto al archivo que testean, dentro de su capa;
-end-to-end y el test de arquitectura tsarch del Principio IX en `backend/test/`, fuera
-de `src/`). No redefine ni elimina ningún principio existente; es consistente con el
-Principio IX, que ya exigía que los e2e vivan en su propia carpeta separada de los
-tests de Service.
+Rationale: MINOR. Cuatro enmiendas aditivas que expanden secciones existentes sin redefinir
+ningún principio ya establecido:
+  1. Technology Stack → Frontend: nuevo requisito de cliente de API propio (módulo por recurso)
+     y adopción de Vitest + React Testing Library para tests de componentes.
+  2. Principio IX → Testing: nuevo bullet sobre tests de componentes frontend que ejercitan
+     el cliente de API corriendo contra backend real + Testcontainers.
+  3. Principio X → Definición de terminado: los 4 criterios cubren explícitamente backend y
+     frontend; Swagger y Postman pasan a condicional ("si la feature agrega o modifica un
+     endpoint").
+  4. Technology Stack → Estructura: nuevo requisito de organización por capa dentro de
+     frontend/src/ (service/, hooks/, contexts/, components/, layout/, pages/, types/,
+     data/, assets/, utils/) y regla de ubicación de tests de componentes.
+
+Modified principles:
+  - IX. Testing (se agrega bullet de tests de componentes frontend)
+  - X. Definición de terminado (criterios expandidos a backend + frontend; Swagger y Postman
+     condicionados)
 
 Modified sections:
-  - Technology Stack & Constraints (bullet "Estructura": se agrega la organización por
-    capa dentro de `backend/src/` y la ubicación de cada tipo de test)
+  - Technology Stack & Constraints → bullet "Frontend" (cliente de API + Vitest + RTL)
+  - Technology Stack & Constraints → bullet "Estructura" (organización por capa en frontend/src/)
 
 Added sections: none
 Removed sections: none
 Renumbered principles: none
-Updated cross-references: none
 
-Follow-up TODOs: ninguno.
+Follow-up TODOs:
+  - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
+  - Los tests de componentes de frontend que ejercitan el cliente de API todavía no existen;
+    esta enmienda los hace obligatorios desde la próxima feature que exponga un endpoint.
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -51,9 +61,9 @@ El backend MUST organizarse en capas con dependencias en un único sentido
   y un mapper explícito sin lógica de negocio. El Service MUST NOT ver la entidad de
   persistencia ni el mapper.
 - **Adapter**: única puerta de entrada a sistemas externos (p. ej. WhoScored,
-  Football-Data.org) y a librerías de hasheo o verificación de secretos, detrás de una interfaz de dominio propia. El
-  Service MUST NOT importar esas librerías directamente: siempre pasa por el Adapter
-  correspondiente.
+  Football-Data.org) y a librerías de hasheo o verificación de secretos, detrás de una
+  interfaz de dominio propia. El Service MUST NOT importar esas librerías directamente:
+  siempre pasa por el Adapter correspondiente.
 - **Degradación ante fallo del proveedor externo**: si un proveedor externo falla o no
   responde, el sistema MUST seguir funcionando con los datos que ya tiene guardados
   localmente, en la medida de lo posible. Una operación que sólo depende de datos ya
@@ -102,14 +112,15 @@ garantiza respuestas de error consistentes y sin fugas de información.
 
 ### IV. Autenticación
 
-La autenticación MUST basarse en JWT, obtenido mediante un login independiente del alta. Todo endpoint que necesite saber qué usuario está operando MUST
-exigir un JWT válido; el alta de usuario y el login son las únicas excepciones. El JWT
-MUST tener un vencimiento definido; el valor concreto de esa expiración es un detalle de
-la spec de autenticación, no de esta constitución. Las contraseñas MUST almacenarse
-hasheadas (bcrypt). Ningún JWT, contraseña ni dato personal del usuario MUST
-loguearse ni persistirse en texto plano, y esta regla rige en todas las capas del sistema
-(Controller, Service, dominio, Repository, Adapter y logs), no solo en la de
-autenticación.
+La autenticación MUST basarse en JWT. El JWT se obtiene mediante un login independiente
+del alta, de forma que la sesión pueda renovarse sin volver a registrarse. Todo endpoint
+que necesite saber qué usuario está operando MUST exigir un JWT válido; el alta de
+usuario y el login son las únicas excepciones. El JWT MUST tener un vencimiento definido;
+el valor concreto de esa expiración es un detalle de la spec de autenticación, no de esta
+constitución. Las contraseñas MUST almacenarse hasheadas (bcrypt). Ningún JWT, contraseña
+ni dato personal del usuario MUST loguearse ni persistirse en texto plano, y esta regla
+rige en todas las capas del sistema (Controller, Service, dominio, Repository, Adapter y
+logs), no solo en la de autenticación.
 
 **Rationale**: Autenticar con un JWT evita transmitir las credenciales en cada request;
 que el token venza acota en el tiempo el daño si el JWT se filtra; y separar el login del
@@ -170,6 +181,16 @@ real.
 - Los tests de integración de Services y Repositories, y los tests end-to-end, MUST correr contra una instancia de PostgreSQL real y efímera levantada con Testcontainers, creada y destruida por la propia corrida de tests — nunca contra la base persistente de desarrollo, ni en local ni en CI. Así los datos de prueba no se mezclan con los de desarrollo y las corridas pueden paralelizarse sin pisarse entre sí.
 - Los tests end-to-end MUST usar supertest sobre la app NestJS en memoria, y MUST vivir
   en su propia carpeta, nunca mezclados dentro de un test de Service.
+- Toda base de datos real que necesiten los tests de integración o end-to-end MUST ser
+  una instancia de PostgreSQL efímera levantada con Testcontainers, creada y destruida
+  por la propia corrida de tests. Estos tests MUST NOT correr nunca contra la base
+  persistente de desarrollo —ni en local ni en CI—: así los datos de prueba no se mezclan
+  con los de desarrollo y las corridas pueden paralelizarse sin pisarse entre sí.
+- Los tests de componentes de frontend (Vitest + React Testing Library) que ejercitan el
+  cliente de API MUST correr contra una instancia real del backend, levantada junto con
+  su propia base PostgreSQL efímera de Testcontainers, creadas y destruidas por la propia
+  corrida de tests. MUST NOT usar mocks de la API ni de la base: el mismo criterio que ya
+  rige para la integración de backend.
 - MUST existir un test de arquitectura escrito con tsarch que corra junto al resto de la
   suite (y que falle el build igual que cualquier otro test) y verifique que se respeten
   las reglas de capas del Principio I: el sentido único de dependencias
@@ -186,23 +207,31 @@ real.
 
 **Rationale**: La pirámide de tests con base real en integración detecta errores de
 mapeo y persistencia; hacer esa base efímera con Testcontainers evita contaminar el
-entorno de desarrollo y habilita la paralelización. El test de tsarch convierte las
-reglas de capas del Principio I en un chequeo automático que no depende de que un
-reviewer se acuerde de mirarlas. La regla sobre no tocar tests protege la red de
-seguridad del grupo.
+entorno de desarrollo y habilita la paralelización. Extender este criterio al frontend
+garantiza que el cliente de API se valide contra el comportamiento real del backend, no
+contra un contrato asumido en un mock. El test de tsarch convierte las reglas de capas
+del Principio I en un chequeo automático que no depende de que un reviewer se acuerde de
+mirarlas. La regla sobre no tocar tests protege la red de seguridad del grupo.
 
 ### X. Definición de terminado
 
 Un requerimiento MUST considerarse terminado solo cuando:
 
-1. Tiene tests unitarios y de integración, felices y borde, y todos pasan.
-2. La aplicación compila y levanta con la configuración local.
-3. La documentación Swagger quedó actualizada con los endpoints nuevos.
-4. La colección de Postman del proyecto quedó actualizada con los endpoints nuevos o
-   modificados, igual que se exige para Swagger.
+1. Tiene tests unitarios y de integración de backend (felices y borde) y tests de
+   componentes de frontend con Vitest + React Testing Library (cuando la feature incluye
+   UI), y todos pasan en verde.
+2. La aplicación compila y levanta con la configuración local: `nest build` sin errores
+   en backend y `vite build` sin errores en frontend (cuando la feature incluye UI).
+3. Si la feature agrega o modifica un endpoint: la documentación Swagger quedó
+   actualizada con los nuevos o modificados endpoints.
+4. Si la feature agrega o modifica un endpoint: la colección de Postman del proyecto
+   quedó actualizada con los nuevos o modificados endpoints.
 
 **Rationale**: Un criterio explícito y compartido evita entregar trabajo a medias y
-discusiones sobre qué cuenta como listo.
+discusiones sobre qué cuenta como listo. Cubrir explícitamente backend y frontend cierra
+el hueco de features con UI entregadas sin tests de componentes ni build verificado.
+Condicionar Swagger y Postman a la existencia de endpoints evita exigir actualizar
+documentación de API cuando la feature es puramente de frontend o de lógica interna.
 
 ### XI. Idioma
 
@@ -230,18 +259,39 @@ constitución:
 
 - **Backend**: Node.js 20, NestJS 11, TypeScript 5.7 en modo `strict`.
 - **Frontend**: React 19, Vite 8, TypeScript, Tailwind CSS 4. MUST ser una aplicación
-  web responsiva y comunicarse con el backend vía HTTP/REST.
+  web responsiva y comunicarse con el backend vía HTTP/REST. Toda llamada HTTP al backend
+  MUST pasar por un cliente de API propio (un módulo por recurso, en `frontend/src/service/`),
+  nunca invocada directamente desde un componente de UI: centraliza en un solo lugar la
+  base URL, los headers y el manejo de errores de red. El testing de componentes se realiza
+  con Vitest + React Testing Library.
 - **Persistencia**: PostgreSQL, accedida vía TypeORM.
 - **Base local**: PostgreSQL levantado con Docker (`docker-compose`).
-- **CI**: el runner MUST tener Docker disponible para levantar los Testcontainers de integración y end-to-end (Principio IX); MUST NOT depender de un PostgreSQL provisto como servicio del workflow.
-- **Testing**: Jest + supertest + Testcontainers + tsarch.
-- **Estructura**: monorepo único con `backend/` y `frontend/`. Dentro de
-  `backend/src/`, la organización MUST ser por capa arquitectónica (`controllers/`,
-  `services/`, `domain/`, `repositories/`, `adapters/`, `guards/`), nunca por feature:
-  cada capa contiene los archivos de todas las features que la tocan. Los tests
-  unitarios y de integración viven junto al archivo que testean, dentro de su misma
-  capa; los tests end-to-end y el test de arquitectura tsarch (Principio IX) viven en
-  `backend/test/`, fuera de `src/`.
+- **CI**: los tests de integración y end-to-end MUST correr en CI usando la base efímera
+  de Testcontainers (el runner MUST tener Docker disponible); MUST NOT depender de un
+  PostgreSQL provisto como servicio del workflow ni de ninguna base persistente.
+- **Testing**: Jest + supertest + Testcontainers + tsarch (backend); Vitest + React
+  Testing Library (frontend).
+- **Estructura**: monorepo único con `backend/` y `frontend/`. Dentro de `backend/src/`
+  la organización MUST ser por capa (según el Principio I). Dentro de `frontend/src/` la
+  organización también MUST ser por capa, nunca por feature:
+  - `service/` — clientes de API por recurso (el módulo del bullet "Frontend") y servicios
+    que los consumen. Es la única capa que accede a la red.
+  - `hooks/` y `contexts/` — únicas capas que MUST invocar `service/`. `contexts/` solo
+    si la feature necesita estado compartido entre componentes lejanos en el árbol de React.
+  - `components/` — todo lo que pueda componentizarse; MUST NOT contener llamadas HTTP
+    propias. Mantiene la UI escalable y reutilizable.
+  - `layout/` — estructura común de página, incluida la resolución de metadatos de SEO
+    y el comportamiento responsivo ya exigido en el bullet "Frontend".
+  - `pages/` — vistas de nivel de ruta, solo si la feature las necesita.
+  - `types/` — tipos e interfaces TypeScript, separados del resto.
+  - `data/` — contenido estático o de configuración.
+  - `assets/` — imágenes y otros estáticos, si la feature los requiere.
+  - `utils/` — funciones auxiliares puras, si la feature las requiere.
+
+  Los tests de componentes que **no** ejercitan el cliente de API viven junto al archivo
+  que testean (co-located). Los tests de componentes que **sí** ejercitan el cliente de
+  API viven en `frontend/test/`, fuera de `src/`, igual que los tests end-to-end del
+  backend viven en `backend/src/tests/`.
 
 ## Development Workflow & Quality Gates
 
@@ -252,7 +302,7 @@ constitución:
   el test de arquitectura tsarch del Principio IX) en CI antes de integrarse.
 - Un cambio MUST NOT integrarse si viola una capa (Principio I), mueve lógica de negocio
   fuera del dominio (Principio II), o deja desactualizada la documentación Swagger o la
-  colección de Postman (Principios VIII y X).
+  colección de Postman cuando la feature agrega o modifica endpoints (Principios VIII y X).
 - La revisión de cada cambio MUST verificar explícitamente el cumplimiento de los
   principios afectados.
 
@@ -273,4 +323,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.7.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-15
+**Version**: 1.7.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-16
