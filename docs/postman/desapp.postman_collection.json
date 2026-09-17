@@ -1,12 +1,14 @@
 {
   "info": {
-    "name": "DesApp — Autenticación",
-    "description": "Alta, login y endpoint protegido de referencia. Ver specs/001-user-auth/.",
+    "name": "DesApp — Autenticación y Catálogo",
+    "description": "Alta, login, ApiKey y catálogo de jugadores de prueba. Ver specs/001-user-auth/, specs/002-api-key-issuance/ y specs/004-player-catalog/.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "accessToken", "value": "" }
+    { "key": "accessToken", "value": "" },
+    { "key": "apiKey", "value": "" },
+    { "key": "playerId", "value": "" }
   ],
   "item": [
     {
@@ -73,7 +75,10 @@
               "  pm.expect(body).to.have.property('id').that.is.a('string');",
               "  pm.expect(body).to.have.property('apiKey').that.matches(/^pmk_[0-9a-f]{64}$/);",
               "  pm.expect(body).to.have.property('createdAt');",
-              "});"
+              "});",
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('apiKey', pm.response.json().apiKey);",
+              "}"
             ]
           }
         }
@@ -82,7 +87,51 @@
         "method": "POST",
         "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
         "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
-        "description": "201 Created con { id, apiKey, createdAt }. La ApiKey en texto plano solo se muestra en esta respuesta. Si el usuario ya tenía una ApiKey activa, queda invalidada de inmediato. 401 sin JWT, con uno inválido o vencido. Ver specs/002-api-key-issuance/."
+        "description": "201 Created con { id, apiKey, createdAt }. La ApiKey en texto plano solo se muestra en esta respuesta. Si el usuario ya tenía una ApiKey activa, queda invalidada de inmediato. 401 sin JWT, con uno inválido o vencido. El test-script guarda apiKey en la variable de colección para las requests del catálogo. Ver specs/002-api-key-issuance/."
+      }
+    },
+    {
+      "name": "Listar Jugadores",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  if (body.items && body.items.length > 0) {",
+              "    pm.collectionVariables.set('playerId', body.items[0].id);",
+              "  }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/players?league=La Liga&position=GK&page=1&pageSize=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["players"],
+          "query": [
+            { "key": "league", "value": "La Liga" },
+            { "key": "position", "value": "GK" },
+            { "key": "page", "value": "1" },
+            { "key": "pageSize", "value": "10" }
+          ]
+        },
+        "description": "200 con { items, total, page, pageSize }. Filtros por liga/equipo/posición combinables con AND; sin coincidencias devuelve items: [] y total: 0 (no un error). 400 si liga/posición no son válidas o page/pageSize están fuera de rango. 401 sin ApiKey, con una inválida o revocada; un JWT no alcanza como alternativa. El test-script guarda el primer id en playerId. Ver specs/004-player-catalog/."
+      }
+    },
+    {
+      "name": "Detalle de Jugador",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+        "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] },
+        "description": "200 con { id, name, league, team, position } del jugador. 404 si el id no corresponde a ningún jugador del catálogo (formado o no). 401 sin ApiKey, con una inválida o revocada. Ver specs/004-player-catalog/."
       }
     }
   ]
