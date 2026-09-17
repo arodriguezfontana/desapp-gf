@@ -63,5 +63,29 @@ describe('AccountPage', () => {
       expect(screen.getByDisplayValue('pmk_99999999999999999999999999999999')).toBeInTheDocument();
     });
   });
+
+  it('muestra el mensaje de error si generateApiKey falla con un Error', async () => {
+    vi.spyOn(authServiceModule.authService, 'generateApiKey').mockRejectedValueOnce(
+      new Error('Backend caído'),
+    );
+
+    render(<AccountPage />);
+    fireEvent.click(screen.getByRole('button', { name: /generar apikey/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Backend caído');
+    });
+  });
+
+  it('muestra un mensaje genérico si el error no es una instancia de Error', async () => {
+    vi.spyOn(authServiceModule.authService, 'generateApiKey').mockRejectedValueOnce('boom');
+
+    render(<AccountPage />);
+    fireEvent.click(screen.getByRole('button', { name: /generar apikey/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Error al generar la ApiKey.');
+    });
+  });
 });
 

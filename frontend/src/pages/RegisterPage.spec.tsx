@@ -79,5 +79,30 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('button', { name: /registrando/i })).toBeDisabled();
     await waitFor(() => resolve!());
   });
+
+  it('muestra el requisito de contraseña si no cumple el formato', () => {
+    renderRegister();
+    fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'abc' } });
+    expect(screen.getByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
+  });
+
+  it('no muestra el requisito de contraseña una vez que cumple el formato', () => {
+    renderRegister();
+    fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'Abcd1234!' } });
+    expect(screen.queryByText(/mínimo 8 caracteres/i)).not.toBeInTheDocument();
+  });
+
+  it('muestra un mensaje genérico si el error no es una instancia de Error', async () => {
+    vi.spyOn(authServiceModule.authService, 'register').mockRejectedValueOnce('boom');
+    renderRegister();
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'x@mail.com' } });
+    fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'Abcd1234!' } });
+    fireEvent.click(screen.getByRole('button', { name: /registr/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Error al registrar la cuenta.'),
+    );
+  });
 });
 
