@@ -87,6 +87,10 @@ jobs:
         working-directory: frontend
         run: pnpm lint
 
+      - name: Test (unit)
+        working-directory: frontend
+        run: pnpm test:unit
+
       - name: Build
         working-directory: frontend
         run: pnpm build
@@ -113,20 +117,26 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dependency-path: backend/pnpm-lock.yaml
-      - name: Install dependencies
+          cache-dependency-path: |
+            backend/pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
+      - name: Install dependencies (backend)
         working-directory: backend
         run: pnpm install
-      - name: Test with coverage (unit + integration)
+      - name: Install dependencies (frontend)
+        working-directory: frontend
+        run: pnpm install
+      - name: Test with coverage (backend unit + integration)
         working-directory: backend
         run: pnpm test:cov
-      - name: Test with coverage (e2e)
+      - name: Test with coverage (backend e2e)
         working-directory: backend
         run: pnpm test:e2e:cov
+      - name: Test with coverage (frontend)
+        working-directory: frontend
+        run: pnpm test:cov
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995
-        with:
-          projectBaseDir: backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io

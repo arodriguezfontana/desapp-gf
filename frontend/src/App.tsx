@@ -1,18 +1,8 @@
-import { useEffect, useState } from 'react';
-import { api } from './api/axios';
-
-interface ApiResponse {
-  message: string;
-}
+import { RouterProvider } from 'react-router-dom';
+import { router } from './routes/router';
 
 function App() {
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    api.get<ApiResponse>('/').then((res) => setMessage(res.data.message));
-  }, []);
-
-  return <div>{message}</div>;
+  return <RouterProvider router={router} />;
 }
 
 export default App;

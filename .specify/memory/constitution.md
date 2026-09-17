@@ -1,37 +1,42 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.6.0 → 1.7.0
-Rationale: MINOR. Cuatro enmiendas aditivas que expanden secciones existentes sin redefinir
-ningún principio ya establecido:
-  1. Technology Stack → Frontend: nuevo requisito de cliente de API propio (módulo por recurso)
-     y adopción de Vitest + React Testing Library para tests de componentes.
-  2. Principio IX → Testing: nuevo bullet sobre tests de componentes frontend que ejercitan
-     el cliente de API corriendo contra backend real + Testcontainers.
-  3. Principio X → Definición de terminado: los 4 criterios cubren explícitamente backend y
-     frontend; Swagger y Postman pasan a condicional ("si la feature agrega o modifica un
-     endpoint").
-  4. Technology Stack → Estructura: nuevo requisito de organización por capa dentro de
-     frontend/src/ (service/, hooks/, contexts/, components/, layout/, pages/, types/,
-     data/, assets/, utils/) y regla de ubicación de tests de componentes.
+Version change: 1.7.0 → 1.8.0
+Rationale: MINOR. Se detectó en la práctica que el frontend podía tener "tests" y aun así
+dejar una capa entera sin ejecutarse nunca: los tests de página mockean `authService`, y
+con `authService` mockeado el `httpClient` real (fetch, headers, manejo de 401, parseo de
+errores) queda con 0% de ejecución real pese a que el proyecto pasa CI. Esta enmienda
+cierra ese hueco:
+  1. Principio IX → Testing: nuevo bullet que exige tests unitarios directos (no heredados
+     de mocks) para `service/`, `hooks/` y `contexts/` del frontend, y exceptúa
+     explícitamente los archivos de bootstrap/wiring (`main.tsx`, `App.tsx`,
+     `routes/router.tsx`, `routes/RootLayout.tsx`), simétrico a la excepción ya existente
+     de `main.ts`/`*.module.ts` en el backend.
+  2. Development Workflow & Quality Gates: aclara que el gate de CI cubre unit tests tanto
+     de backend como de frontend, y que un job de frontend que solo corra lint+build es un
+     gate incompleto, no una excepción tácita.
+  3. Fix de referencia obsoleta: la sección Estructura todavía decía que los e2e de backend
+     viven en `backend/src/tests/`; desde el refactor por capas (Principio I / Estructura)
+     viven en `backend/test/`.
+
+Ningún principio se elimina ni se redefine de forma incompatible; el resto de ambos
+principios queda intacto.
 
 Modified principles:
-  - IX. Testing (se agrega bullet de tests de componentes frontend)
-  - X. Definición de terminado (criterios expandidos a backend + frontend; Swagger y Postman
-     condicionados)
+  - IX. Testing (nuevo bullet de tests unitarios directos en service/hooks/contexts +
+    excepción de wiring; rationale actualizado)
 
 Modified sections:
-  - Technology Stack & Constraints → bullet "Frontend" (cliente de API + Vitest + RTL)
-  - Technology Stack & Constraints → bullet "Estructura" (organización por capa en frontend/src/)
+  - Technology Stack & Constraints → bullet "Estructura" (fix de ruta: backend/test/)
+  - Development Workflow & Quality Gates (aclara el alcance del gate de CI en frontend)
 
 Added sections: none
 Removed sections: none
 Renumbered principles: none
 
-Follow-up TODOs:
-  - RATIFICATION_DATE se mantiene en 2026-09-02 (fecha de la primera adopción formal).
-  - Los tests de componentes de frontend que ejercitan el cliente de API todavía no existen;
-    esta enmienda los hace obligatorios desde la próxima feature que exponga un endpoint.
+Follow-up TODOs: ninguno. El gate de CI (`pnpm test:unit` en el job frontend de
+ci.yml) y los tests directos de service/hooks/contexts que esta enmienda exige ya se
+implementaron en el mismo cambio.
 -->
 
 # DesApp — Plataforma de Valuación de Jugadores Constitution
@@ -191,6 +196,16 @@ real.
   su propia base PostgreSQL efímera de Testcontainers, creadas y destruidas por la propia
   corrida de tests. MUST NOT usar mocks de la API ni de la base: el mismo criterio que ya
   rige para la integración de backend.
+- Las capas `service/`, `hooks/` y `contexts/` del frontend MUST tener tests unitarios
+  propios y directos (Vitest), no solo cobertura indirecta heredada de tests de
+  componentes que las mockean. En particular, el cliente de API (`service/httpClient` o
+  equivalente) MUST testearse mockeando `fetch`, nunca mockeando el propio cliente desde
+  un test de página: mockear `authService` en un test de `LoginPage` cubre `LoginPage`,
+  no el cliente HTTP que `authService` usa por debajo. Quedan exceptuados de este
+  requisito los archivos de bootstrap/wiring del frontend (`main.tsx`, `App.tsx`,
+  `routes/router.tsx`, `routes/RootLayout.tsx` o equivalentes): no contienen lógica
+  propia que testear en aislamiento, igual que `main.ts` y `*.module.ts` lo están en el
+  backend.
 - MUST existir un test de arquitectura escrito con tsarch que corra junto al resto de la
   suite (y que falle el build igual que cualquier otro test) y verifique que se respeten
   las reglas de capas del Principio I: el sentido único de dependencias
@@ -209,8 +224,13 @@ real.
 mapeo y persistencia; hacer esa base efímera con Testcontainers evita contaminar el
 entorno de desarrollo y habilita la paralelización. Extender este criterio al frontend
 garantiza que el cliente de API se valide contra el comportamiento real del backend, no
-contra un contrato asumido en un mock. El test de tsarch convierte las reglas de capas
-del Principio I en un chequeo automático que no depende de que un reviewer se acuerde de
+contra un contrato asumido en un mock. Exigir tests unitarios directos en `service/`,
+`hooks/` y `contexts/` cierra un hueco real detectado en la práctica: mockear
+`authService` en los tests de página dejaba a `httpClient` con 0% de ejecución real pese
+a que el proyecto "tenía tests" — el mock oculta que la capa de abajo nunca corre.
+Exceptuar los archivos de wiring evita perseguir cobertura en código que no tiene
+lógica propia que romperse. El test de tsarch convierte las reglas de capas del
+Principio I en un chequeo automático que no depende de que un reviewer se acuerde de
 mirarlas. La regla sobre no tocar tests protege la red de seguridad del grupo.
 
 ### X. Definición de terminado
@@ -291,15 +311,18 @@ constitución:
   Los tests de componentes que **no** ejercitan el cliente de API viven junto al archivo
   que testean (co-located). Los tests de componentes que **sí** ejercitan el cliente de
   API viven en `frontend/test/`, fuera de `src/`, igual que los tests end-to-end del
-  backend viven en `backend/src/tests/`.
+  backend viven en `backend/test/`.
 
 ## Development Workflow & Quality Gates
 
 - El flujo de trabajo es Spec-Driven Development (spec-kit):
   `/speckit-constitution` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` →
   `/speckit-implement`. Los artefactos de `.specify/` se versionan.
-- Todo cambio MUST pasar `lint` y la suite de tests completa (unit + integración + e2e +
-  el test de arquitectura tsarch del Principio IX) en CI antes de integrarse.
+- Todo cambio MUST pasar `lint` y la suite de tests completa en CI antes de integrarse:
+  en backend, unit + integración + e2e + el test de arquitectura tsarch del Principio IX;
+  en frontend, los tests unitarios de `service/`, `hooks/` y `contexts/` exigidos por el
+  mismo Principio IX. Que el job de CI del frontend corra solo `lint` y `build` sin correr
+  tests MUST considerarse un gate incompleto, no una excepción tácita al Principio IX.
 - Un cambio MUST NOT integrarse si viola una capa (Principio I), mueve lógica de negocio
   fuera del dominio (Principio II), o deja desactualizada la documentación Swagger o la
   colección de Postman cuando la feature agrega o modifica endpoints (Principios VIII y X).
@@ -323,4 +346,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.7.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-16
+**Version**: 1.8.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-16
