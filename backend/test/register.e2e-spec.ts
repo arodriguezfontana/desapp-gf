@@ -69,5 +69,19 @@ describe('POST /auth/register (e2e)', () => {
       .post('/auth/register')
       .send({ email: 'c@mail.com', password: 'Abcd1234!', role: 'admin' });
     expect(res.status).toBe(400);
+    expect(res.body.message).toEqual([
+      "La propiedad 'role' no está permitida en la solicitud.",
+    ]);
+  });
+
+  it('400 con mensaje en español (no el default de class-validator) si el email tiene formato inválido', async () => {
+    const res = await request(server())
+      .post('/auth/register')
+      .send({ email: 'no-es-un-email', password: 'Abcd1234!' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toEqual([
+      "El campo 'email' debe ser un email válido.",
+    ]);
   });
 });

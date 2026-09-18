@@ -90,6 +90,25 @@ describe('Catálogo de Jugadores (e2e)', () => {
       expect(res.body.total).toBe(0);
     });
 
+    it('200: acepta league, team y position combinados (AND) sin rechazarlos por whitelist', async () => {
+      const { apiKey } = await registerLoginAndIssueApiKey('combinado3@mail.com');
+
+      const res = await request(server())
+        .get('/players')
+        .query({
+          league: 'Premier League',
+          team: 'Northbridge FC',
+          position: 'GK',
+        })
+        .set('x-api-key', apiKey);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(1);
+      expect(res.body.items[0].league).toBe('Premier League');
+      expect(res.body.items[0].team).toBe('Northbridge FC');
+      expect(res.body.items[0].position).toBe('GK');
+    });
+
     it('200: pagina con page/pageSize explícitos', async () => {
       const { apiKey } = await registerLoginAndIssueApiKey('paginado@mail.com');
 
@@ -105,13 +124,16 @@ describe('Catálogo de Jugadores (e2e)', () => {
       expect(res.body.items).toHaveLength(5);
     });
 
-    it('400: pageSize por encima del máximo permitido (50)', async () => {
+    it('400: pageSize por encima del máximo permitido (50), con mensaje en español', async () => {
       const { apiKey } = await registerLoginAndIssueApiKey('rango1@mail.com');
       const res = await request(server())
         .get('/players')
         .query({ pageSize: 51 })
         .set('x-api-key', apiKey);
       expect(res.status).toBe(400);
+      expect(res.body.message).toEqual([
+        "El campo 'pageSize' debe ser menor o igual a 50.",
+      ]);
     });
 
     it('400: page menor a 1', async () => {
