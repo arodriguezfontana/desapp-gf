@@ -6,6 +6,8 @@ import { RegisterPage } from '../pages/RegisterPage';
 import { LoginPage } from '../pages/LoginPage';
 import { HomePage } from '../pages/HomePage';
 import { AccountPage } from '../pages/AccountPage';
+import { CatalogPage } from '../pages/CatalogPage';
+import { PlayerDetailPage } from '../pages/PlayerDetailPage';
 
 export const router = createBrowserRouter([
   {
@@ -13,7 +15,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <Navigate to="/login" replace />,
+        element: <Navigate to="/catalog" replace />,
       },
       {
         path: '/register',
@@ -22,6 +24,13 @@ export const router = createBrowserRouter([
       {
         path: '/login',
         element: <LoginPage />,
+      },
+      {
+        element: <AppLayout />,
+        children: [
+          { path: '/catalog', element: <CatalogPage /> },
+          { path: '/catalog/:id', element: <PlayerDetailPage /> },
+        ],
       },
       {
         element: <ProtectedRoute />,
@@ -38,4 +47,3 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
-

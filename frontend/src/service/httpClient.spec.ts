@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { httpClient, httpEvents, ApiError } from './httpClient';
 import { authStorage } from './authStorage';
+import { apiKeyStorage } from './apiKeyStorage';
 
 function fakeResponse(overrides: {
   status: number;
@@ -51,7 +52,39 @@ describe('httpClient', () => {
     expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer jwt-abc');
   });
 
-  it('ante un 401 limpia el token y emite el evento unauthorized', async () => {
+  it('GET con useApiKey: true usa el header X-Api-Key de apiKeyStorage', async () => {
+    apiKeyStorage.setApiKey('test-api-key-xyz');
+    vi.mocked(fetch).mockResolvedValueOnce(
+      fakeResponse({ status: 200, ok: true, json: () => Promise.resolve({ data: [] }) }),
+    );
+
+    await httpClient.get('/players', { useApiKey: true });
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    const headers = init?.headers as Record<string, string>;
+    expect(headers['X-Api-Key']).toBe('test-api-key-xyz');
+    expect(headers.Authorization).toBeUndefined();
+  });
+
+  it('ante un 401 con useApiKey: true limpia la apiKey y emite apiKeyUnauthorized', async () => {
+    apiKeyStorage.setApiKey('api-key-invalida');
+    vi.mocked(fetch).mockResolvedValueOnce(fakeResponse({ status: 401, ok: false }));
+
+    const handler = vi.fn();
+    httpEvents.addEventListener('apiKeyUnauthorized', handler);
+
+    await expect(httpClient.get('/players', { useApiKey: true })).rejects.toMatchObject({
+      statusCode: 401,
+      message: 'ApiKey no válida o expirada.',
+    });
+
+    expect(apiKeyStorage.getApiKey()).toBeNull();
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    httpEvents.removeEventListener('apiKeyUnauthorized', handler);
+  });
+
+  it('ante un 401 sin useApiKey limpia el token JWT y emite el evento unauthorized', async () => {
     authStorage.setToken('jwt-vencido');
     vi.mocked(fetch).mockResolvedValueOnce(fakeResponse({ status: 401, ok: false }));
 

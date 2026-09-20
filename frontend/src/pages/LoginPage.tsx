@@ -19,7 +19,7 @@ export function LoginPage() {
     try {
       const res = await authService.login(email, password);
       login(res.accessToken);
-      navigate('/home');
+      navigate('/catalog');
     } catch {
       setError('Credenciales inválidas.');
     } finally {
