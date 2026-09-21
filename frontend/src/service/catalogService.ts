@@ -8,6 +8,14 @@ export interface GetPlayersParams {
   position?: string;
 }
 
+/** Forma real que devuelve `GET /players` en el backend (no trae `data`/`meta`). */
+interface BackendPlayerListResponse {
+  items: Player[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export const catalogService = {
   async getPlayers(params: GetPlayersParams = {}): Promise<PlayerListResponseDto> {
     const query = new URLSearchParams();
@@ -31,7 +39,19 @@ export const catalogService = {
     const queryString = query.toString();
     const url = queryString ? `/players?${queryString}` : '/players';
 
-    return httpClient.get<PlayerListResponseDto>(url, { useApiKey: true });
+    const response = await httpClient.get<BackendPlayerListResponse>(url, {
+      useApiKey: true,
+    });
+
+    return {
+      data: response.items,
+      meta: {
+        total: response.total,
+        page: response.page,
+        pageSize: response.pageSize,
+        totalPages: Math.max(1, Math.ceil(response.total / response.pageSize)),
+      },
+    };
   },
 
   async getPlayerById(id: string): Promise<Player> {
