@@ -14,6 +14,7 @@ import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error'
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { InvalidApiKeyFormatError } from '../../domain/api-key/errors/invalid-api-key-format.error';
 import { ApiKeyAlreadyRevokedError } from '../../domain/api-key/errors/api-key-already-revoked.error';
+import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 
 interface ErrorBody {
   statusCode: number;
@@ -81,6 +82,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof InvalidCredentialsError) {
       return { status: HttpStatus.UNAUTHORIZED, message: exception.message };
+    }
+
+    if (exception instanceof PlayerNotFoundError) {
+      return { status: HttpStatus.NOT_FOUND, message: exception.message };
     }
 
     if (

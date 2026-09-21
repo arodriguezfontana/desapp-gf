@@ -1,89 +1,1057 @@
 {
   "info": {
-    "name": "DesApp — Autenticación",
-    "description": "Alta, login y endpoint protegido de referencia. Ver specs/001-user-auth/.",
+    "name": "DesApp — Autenticación y Catálogo",
+    "description": "Alta, login, ApiKey y catálogo de jugadores de prueba. Casos positivos y negativos completos para testear el back a mano o con el Collection Runner / newman. Correr en orden (folder por folder, request por request): varias requests dependen de variables que setean las anteriores (userEmail, accessToken, apiKey, previousApiKey, playerId). Ver specs/001-user-auth/, specs/002-api-key-issuance/ y specs/004-player-catalog/.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "accessToken", "value": "" }
+    { "key": "userEmail", "value": "" },
+    { "key": "accessToken", "value": "" },
+    { "key": "apiKey", "value": "" },
+    { "key": "previousApiKey", "value": "" },
+    { "key": "playerId", "value": "" }
   ],
   "item": [
     {
-      "name": "Register",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"ana@mail.com\",\n  \"password\": \"Abcd1234!\"\n}"
-        },
-        "description": "201 Created. No devuelve token. 409 si el email ya existe. 400 si la contraseña incumple la política."
-      }
-    },
-    {
-      "name": "Login",
-      "event": [
+      "name": "Feature 1 — Auth (register, login, me)",
+      "description": "Casos no reproducibles a mano en esta colección (sólo cubiertos por los e2e automatizados en backend/test/): JWT vencido (requiere firmar con el JWT_SECRET real del servidor, que no vive acá) y JWT válido de un usuario borrado (requiere manipular la base entre requests).",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "if (pm.response.code === 200) {",
-              "  pm.collectionVariables.set('accessToken', pm.response.json().accessToken);",
-              "}"
-            ]
+          "name": "Register — alta válida (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('no devuelve token ni contraseña', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.not.have.property('accessToken');",
+                  "  pm.expect(body).to.not.have.property('password');",
+                  "  pm.expect(body).to.not.have.property('passwordHash');",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('userEmail', pm.response.json().email);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
+            },
+            "description": "201 Created con { id, email, createdAt }. El test-script guarda el email real (devuelto por el server) en userEmail para las siguientes requests."
+          }
+        },
+        {
+          "name": "Register — email ya existe (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', function () { pm.response.to.have.status(409); });",
+                  "pm.test('mensaje en español', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('El email ya está registrado.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
+            },
+            "description": "Requiere haber corrido antes 'Register — alta válida' (usa userEmail). 409 porque el email ya está registrado."
+          }
+        },
+        {
+          "name": "Register — password incumple la política (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"password\"\n}"
+            },
+            "description": "'password' no tiene mayúscula, dígito ni carácter especial -> 400 (error de dominio, InvalidPasswordError)."
+          }
+        },
+        {
+          "name": "Register — campo no declarado en el body (400, whitelist en español)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('mensaje en español, no el default de class-validator', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql([",
+                  "    \"La propiedad 'role' no está permitida en la solicitud.\"",
+                  "  ]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"role\": \"admin\"\n}"
+            },
+            "description": "`forbidNonWhitelisted` global rechaza cualquier campo no declarado en el DTO. Regresión del mecanismo global de traducción de mensajes."
+          }
+        },
+        {
+          "name": "Register — email con formato inválido (400, mensaje traducido)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('mensaje en español, no en inglés', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql([",
+                  "    \"El campo 'email' debe ser un email válido.\"",
+                  "  ]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"no-es-un-email\",\n  \"password\": \"Abcd1234!\"\n}"
+            },
+            "description": "`@IsEmail()` del DTO, traducido por el mecanismo global (backend/src/shared/validation/)."
+          }
+        },
+        {
+          "name": "Register — falta el campo email (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('mensaje en español', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql([",
+                  "    \"El campo 'email' debe ser un email válido.\"",
+                  "  ]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Abcd1234!\"\n}"
+            },
+            "description": "Caso simétrico al de login ('falta un campo'), pero para register: falta 'email' por completo. El DTO sólo tiene @IsEmail() en email (sin @IsNotEmpty), así que 'undefined' dispara ese único constraint, traducido por el mecanismo global."
+          }
+        },
+        {
+          "name": "Login — credenciales válidas (200, guarda jwt)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('cuerpo cumple el esquema { accessToken, tokenType, expiresIn }', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.tokenType).to.eql('Bearer');",
+                  "  pm.expect(body.expiresIn).to.eql(86400);",
+                  "  pm.expect(body.accessToken).to.be.a('string');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('accessToken', pm.response.json().accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
+            },
+            "description": "Requiere haber corrido antes 'Register — alta válida' (usa userEmail). Guarda accessToken para el resto de la colección."
+          }
+        },
+        {
+          "name": "Login — email inexistente (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });",
+                  "pm.test('mensaje genérico (no revela que el email no existe)', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Credenciales inválidas.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
+            },
+            "description": "Email generado al azar, casi seguro no registrado. Debe dar el mismo mensaje que 'password incorrecta' (indistinguible)."
+          }
+        },
+        {
+          "name": "Login — password incorrecta (401, mismo mensaje que email inexistente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });",
+                  "pm.test('mensaje idéntico al de email inexistente', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Credenciales inválidas.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Incorrecta9$\"\n}"
+            },
+            "description": "Requiere userEmail ya registrado. FR-012/SC-004: mismo status y mismo mensaje que email inexistente, para no revelar qué emails existen."
+          }
+        },
+        {
+          "name": "Login — falta un campo (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
+            },
+            "description": "Falta 'password' -> 400 de forma (class-validator, DTO)."
+          }
+        },
+        {
+          "name": "Me — con JWT válido (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('devuelve id y email del dueño del token', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('id');",
+                  "  pm.expect(body.email).to.eql(pm.collectionVariables.get('userEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "description": "Endpoint protegido de referencia con JwtAuthGuard global. Requiere accessToken (correr 'Login — credenciales válidas' antes)."
+          }
+        },
+        {
+          "name": "Me — sin header Authorization (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });",
+                  "pm.test('mensaje No autenticado.', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('No autenticado.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "description": "Sin Authorization -> 401."
+          }
+        },
+        {
+          "name": "Me — JWT malformado (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer no-es-un-jwt" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "description": "Token con firma/forma inválida -> 401."
+          }
+        },
+        {
+          "name": "Root y Health — públicos, sin token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] },
+            "description": "GET / y GET /health son @Public(): responden 200 sin ningún token. Esta request cubre /health; probar /{{baseUrl}} manualmente cubre la raíz."
           }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"ana@mail.com\",\n  \"password\": \"Abcd1234!\"\n}"
-        },
-        "description": "200 con { accessToken, tokenType, expiresIn: 86400 }. 401 idéntico para email inexistente y contraseña incorrecta. El test-script guarda accessToken en la variable de colección."
-      }
+      ]
     },
     {
-      "name": "Me (protegido)",
-      "request": {
-        "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
-        "description": "200 con { id, email } del dueño del token. 401 sin JWT, con uno inválido o vencido."
-      }
-    },
-    {
-      "name": "Emitir ApiKey",
-      "event": [
+      "name": "Feature 2 — ApiKey (emisión y rotación)",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('201 Created', function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "pm.test('cuerpo cumple el esquema { id, apiKey, createdAt }', function () {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body).to.have.property('id').that.is.a('string');",
-              "  pm.expect(body).to.have.property('apiKey').that.matches(/^pmk_[0-9a-f]{64}$/);",
-              "  pm.expect(body).to.have.property('createdAt');",
-              "});"
-            ]
+          "name": "Emitir ApiKey — con JWT válido (201, guarda apiKey)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('cuerpo cumple el esquema { id, apiKey, createdAt }', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('id').that.is.a('string');",
+                  "  pm.expect(body).to.have.property('apiKey').that.matches(/^pmk_[0-9a-f]{64}$/);",
+                  "  pm.expect(body).to.have.property('createdAt');",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('apiKey', pm.response.json().apiKey);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "description": "201 Created con { id, apiKey, createdAt }. La ApiKey en texto plano solo se muestra en esta respuesta. Requiere accessToken."
+          }
+        },
+        {
+          "name": "Emitir ApiKey — rotación, invalida la anterior (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('la nueva ApiKey es distinta de la anterior', function () {",
+                  "  const nueva = pm.response.json().apiKey;",
+                  "  pm.expect(nueva).to.not.eql(pm.collectionVariables.get('apiKey'));",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('previousApiKey', pm.collectionVariables.get('apiKey'));",
+                  "  pm.collectionVariables.set('apiKey', pm.response.json().apiKey);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "description": "Correr después de la request anterior. Guarda la ApiKey vieja en previousApiKey (queda revocada) — la usa 'Listar — ApiKey revocada' en Feature 3."
+          }
+        },
+        {
+          "name": "Emitir ApiKey — sin JWT (401, no crea ninguna clave)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "description": "Sin Authorization -> 401."
+          }
+        },
+        {
+          "name": "Emitir ApiKey — JWT malformado (401, no crea ninguna clave)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer no-es-un-jwt" }],
+            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "description": "Token con forma/firma inválida -> 401."
           }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
-        "description": "201 Created con { id, apiKey, createdAt }. La ApiKey en texto plano solo se muestra en esta respuesta. Si el usuario ya tenía una ApiKey activa, queda invalidada de inmediato. 401 sin JWT, con uno inválido o vencido. Ver specs/002-api-key-issuance/."
-      }
+      ]
+    },
+    {
+      "name": "Feature 3 — Catálogo de jugadores",
+      "description": "Requiere haber corrido Feature 1 (Login) y Feature 2 (Emitir ApiKey x2) antes, para tener accessToken, apiKey y previousApiKey. Datos de referencia del seed: liga 'Premier League' + equipo 'Northbridge FC' + posición GK/DF/MF/FW.",
+      "item": [
+        {
+          "name": "Listar — sin filtros (200, total=20, page=1, pageSize=10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('total=20, 10 items, page=1, pageSize=10', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.total).to.eql(20);",
+                  "  pm.expect(body.items).to.have.lengthOf(10);",
+                  "  pm.expect(body.page).to.eql(1);",
+                  "  pm.expect(body.pageSize).to.eql(10);",
+                  "});",
+                  "if (pm.response.code === 200 && pm.response.json().items.length > 0) {",
+                  "  pm.collectionVariables.set('playerId', pm.response.json().items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "description": "Defaults page=1/pageSize=10. Guarda el primer id en playerId para el folder de Detalle."
+          }
+        },
+        {
+          "name": "Listar — filtro por liga (200, 4 resultados: una por posición)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('las 4 posiciones de esa liga', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.total).to.eql(4);",
+                  "  body.items.forEach((p) => pm.expect(p.league).to.eql('Premier League'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?league=Premier League",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "league", "value": "Premier League" }]
+            }
+          }
+        },
+        {
+          "name": "Listar — filtro por equipo (200, 4 resultados)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('las 4 posiciones de ese equipo', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.total).to.eql(4);",
+                  "  body.items.forEach((p) => pm.expect(p.team).to.eql('Northbridge FC'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?team=Northbridge FC",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "team", "value": "Northbridge FC" }]
+            }
+          }
+        },
+        {
+          "name": "Listar — filtro por posición (200, 5 resultados: una por liga)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('una por cada una de las 5 ligas', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.total).to.eql(5);",
+                  "  body.items.forEach((p) => pm.expect(p.position).to.eql('GK'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?position=GK",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "position", "value": "GK" }]
+            }
+          }
+        },
+        {
+          "name": "Listar — liga+equipo+posición combinados con AND (200, exactamente 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('exactamente 1 resultado, el jugador esperado', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.total).to.eql(1);",
+                  "  pm.expect(body.items[0]).to.include({",
+                  "    league: 'Premier League', team: 'Northbridge FC', position: 'GK',",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?league=Premier League&team=Northbridge FC&position=GK",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [
+                { "key": "league", "value": "Premier League" },
+                { "key": "team", "value": "Northbridge FC" },
+                { "key": "position", "value": "GK" }
+              ]
+            },
+            "description": "Reproduce el bug ya corregido de 'property liga/equipo/posicion should not exist': los 3 filtros combinados no deben ser rechazados por whitelist."
+          }
+        },
+        {
+          "name": "Listar — combinación sin resultados (200, items:[], total:0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK, no un error', function () { pm.response.to.have.status(200); });",
+                  "pm.test('items vacío y total 0', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.items).to.eql([]);",
+                  "  pm.expect(body.total).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?team=Equipo Que No Existe",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "team", "value": "Equipo Que No Existe" }]
+            }
+          }
+        },
+        {
+          "name": "Listar — paginación page=2&pageSize=5 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('5 items, total sigue siendo 20', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.total).to.eql(20);",
+                  "  pm.expect(body.items).to.have.lengthOf(5);",
+                  "  pm.expect(body.page).to.eql(2);",
+                  "  pm.expect(body.pageSize).to.eql(5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?page=2&pageSize=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [
+                { "key": "page", "value": "2" },
+                { "key": "pageSize", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar — pageSize por encima de 50 (400, mensaje en español)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('mensaje traducido', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql([",
+                  "    \"El campo 'pageSize' debe ser menor o igual a 50.\"",
+                  "  ]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?pageSize=51",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "pageSize", "value": "51" }]
+            },
+            "description": "No debe capear en 50 silenciosamente: rechaza con 400."
+          }
+        },
+        {
+          "name": "Listar — page menor a 1 (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        },
+        {
+          "name": "Listar — posición fuera del enum (400, error de dominio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?position=XX",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "position", "value": "XX" }]
+            },
+            "description": "'XX' no es GK/DF/MF/FW -> InvalidPositionError (dominio) -> 400."
+          }
+        },
+        {
+          "name": "Listar — liga fuera del enum (400, error de dominio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?league=Eredivisie",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "league", "value": "Eredivisie" }]
+            },
+            "description": "No es una de las 5 ligas soportadas -> InvalidLeagueError (dominio) -> 400."
+          }
+        },
+        {
+          "name": "Listar — propiedad de query no declarada (400, whitelist en español)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('mensaje de whitelist en español', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql([",
+                  "    \"La propiedad 'campoInventado' no está permitida en la solicitud.\"",
+                  "  ]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players?campoInventado=x",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [{ "key": "campoInventado", "value": "x" }]
+            }
+          }
+        },
+        {
+          "name": "Listar — sin ApiKey (401, sin exponer datos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });",
+                  "pm.test('no expone items del catálogo', function () {",
+                  "  pm.expect(pm.response.json().items).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] }
+          }
+        },
+        {
+          "name": "Listar — ApiKey inexistente/adulterada (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "pmk_no-existe-esta-clave" }],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "description": "Adulterada: ni siquiera tiene el formato pmk_ + 64 hex. No confundir con el caso de abajo (formato válido, pero nunca emitida)."
+          }
+        },
+        {
+          "name": "Listar — ApiKey con formato válido pero nunca emitida (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "pmk_d2fb4261d866dbcfc7448ad8b018721db8b87306e6a0eed7f8c3f7d8059f290a" }],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "description": "A diferencia de la request anterior, esta clave SÍ cumple el formato pmk_ + 64 hex (pasaría un `RawApiKey.of()`), pero jamás fue emitida por POST /auth/api-key: no matchea ningún hash guardado. Distingue 'formato inválido' de 'formato correcto pero inexistente en la base' — ApiKeyGuard no hace esa distinción y da 401 en ambos casos por diseño (research.md §3 de 004-player-catalog)."
+          }
+        },
+        {
+          "name": "Listar — ApiKey revocada (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{previousApiKey}}" }],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "description": "Requiere haber corrido las 2 requests de 'Emitir ApiKey' en Feature 2 (previousApiKey queda seteada con la clave ya reemplazada)."
+          }
+        },
+        {
+          "name": "Listar — sólo JWT en vez de ApiKey (401, un JWT no alcanza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "description": "El catálogo NO acepta JWT como alternativa a la ApiKey (constitución, Principio IV / spec Design Decisions)."
+          }
+        },
+        {
+          "name": "Detalle — id existente (200, mismos datos que en el listado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('id coincide con el pedido', function () {",
+                  "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('playerId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] },
+            "description": "Requiere haber corrido 'Listar — sin filtros' antes (guarda playerId)."
+          }
+        },
+        {
+          "name": "Detalle — id bien formado pero inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/players/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "Detalle — id con formato inválido, no-UUID (404, no 500)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found (no 500)', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "url": { "raw": "{{baseUrl}}/players/no-es-un-uuid", "host": ["{{baseUrl}}"], "path": ["players", "no-es-un-uuid"] },
+            "description": "Postgres rechaza el uuid inválido (22P02) antes de buscar; el repo lo traduce a 'no encontrado', no a un 500."
+          }
+        },
+        {
+          "name": "Detalle — sin ApiKey (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] }
+          }
+        },
+        {
+          "name": "Detalle — sólo JWT en vez de ApiKey (401, un JWT no alcanza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] },
+            "description": "Mismo criterio que el listado: GET /players/:id también exige ApiKeyGuard y está marcado @Public() respecto de JwtAuthGuard, así que un JWT válido solo no alcanza."
+          }
+        }
+      ]
     }
   ]
 }

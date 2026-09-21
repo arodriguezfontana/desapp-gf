@@ -18,5 +18,6 @@ import { ApiKeyService } from './services/api-key.service';
     { provide: API_KEY_REPOSITORY, useClass: TypeOrmApiKeyRepository },
     { provide: TOKEN_HASHER, useClass: Sha256TokenHasher },
   ],
+  exports: [API_KEY_REPOSITORY, TOKEN_HASHER],
 })
 export class ApiKeyModule {}
