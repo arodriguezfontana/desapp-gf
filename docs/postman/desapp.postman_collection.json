@@ -956,10 +956,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('id coincide con el pedido', function () {",
-                  "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('playerId'));",
-                  "});"
+                  "const playerId = pm.collectionVariables.get('playerId');",
+                  "if (!playerId) {",
+                  "  pm.test.skip('200 OK', function () {});",
+                  "  pm.test.skip('id coincide con el pedido', function () {});",
+                  "  console.warn('Catálogo vacío (playerId no capturado por \"Listar — sin filtros\"): se omite esta validación en vez de pegarle a GET /players/ (que matchea la ruta de listado, no la de detalle, y da un resultado confuso).');",
+                  "} else {",
+                  "  pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "  pm.test('id coincide con el pedido', function () {",
+                  "    pm.expect(pm.response.json().id).to.eql(playerId);",
+                  "  });",
+                  "}"
                 ]
               }
             }
@@ -968,7 +975,7 @@
             "method": "GET",
             "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
             "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] },
-            "description": "Requiere haber corrido 'Listar — sin filtros' antes (guarda playerId) y que el catálogo no esté vacío (al menos una sincronización con WhoScored ya corrida con éxito)."
+            "description": "Requiere haber corrido 'Listar — sin filtros' antes (guarda playerId) y que el catálogo no esté vacío (al menos una sincronización con WhoScored ya corrida con éxito). Si el catálogo está vacío, el test se omite (pm.test.skip) en vez de fallar confuso contra GET /players/ (matchea la ruta de listado)."
           }
         },
         {
