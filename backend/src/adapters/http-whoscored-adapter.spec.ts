@@ -160,6 +160,29 @@ describe('HttpWhoScoredAdapter', () => {
       const teammate = roster.find((p) => p.externalId !== '123761')!;
       expect(teammate.metricsFetchFailed).toBe(false);
     });
+
+    it('lanza si la página del jugador semilla no tiene ningún <option> en el breadcrumb (selector no matchea nada, p. ej. WhoScored cambió la estructura de la página)', async () => {
+      const PLAYER_PAGE_WITHOUT_SQUAD_HTML = `
+        <html><body>
+          <div id="breadcrumb-nav">
+            <span class="separator">&raquo;</span>
+          </div>
+        </body></html>
+      `;
+      mockGetByUrl({
+        playerstatistics: PLAYER_STATISTICS_HTML,
+        '/regions/252/tournaments/2/': LEAGUE_TEAMS_HTML,
+        '/show/': PLAYER_PAGE_WITHOUT_SQUAD_HTML,
+      });
+      await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE); // cosecha la semilla del equipo 32
+
+      await expect(
+        adapter.fetchTeamRoster({
+          externalTeamId: '32',
+          team: 'Manchester United',
+        }),
+      ).rejects.toThrow(/plantel.*vino vacío/i);
+    });
   });
 });
 

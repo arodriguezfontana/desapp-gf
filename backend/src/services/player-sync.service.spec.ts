@@ -105,6 +105,24 @@ describe('PlayerSyncService', () => {
     );
   });
 
+  it('si fetchTeamRoster lanza porque el plantel vino vacío (selector del Adapter no matchea nada), no se llama a applyTeamRosterSync para ese equipo y no se toca su roster anterior', async () => {
+    whoScored.fetchLeagueTeams.mockImplementation((league) =>
+      league === League.PREMIER_LEAGUE
+        ? Promise.resolve([{ externalTeamId: 't1', team: 'Equipo Uno' }])
+        : Promise.resolve([]),
+    );
+    whoScored.fetchTeamRoster.mockRejectedValue(
+      new Error(
+        'El plantel de Equipo Uno (t1) vino vacío al parsear la página del jugador semilla 123; probablemente cambió la estructura de la página.',
+      ),
+    );
+
+    await expect(service.sync()).resolves.toBeUndefined();
+
+    expect(players.findActiveExternalIdsByTeam).not.toHaveBeenCalled();
+    expect(players.applyTeamRosterSync).not.toHaveBeenCalled();
+  });
+
   it('calcula las bajas combinando los activos previos con los entrantes (computePlayersToRemove)', async () => {
     whoScored.fetchLeagueTeams.mockImplementation((league) =>
       league === League.PREMIER_LEAGUE

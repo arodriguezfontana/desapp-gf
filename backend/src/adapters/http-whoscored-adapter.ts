@@ -124,6 +124,11 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
     }
 
     const squad = await this.fetchSquadFromPlayerPage(seedPlayerId);
+    if (squad.length === 0) {
+      throw new Error(
+        `El plantel de ${team.team} (${team.externalTeamId}) vino vacío al parsear la página del jugador semilla ${seedPlayerId}; probablemente cambió la estructura de la página. No se puede confiar en este resultado esta corrida.`,
+      );
+    }
 
     const players: WhoScoredRawPlayer[] = [];
     for (const member of squad) {
