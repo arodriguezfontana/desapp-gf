@@ -5,56 +5,27 @@ const HERO_SLIDES = [
   {
     id: 1,
     image: '/assets/stadium_hero.jpg',
-    badge: 'KYLIAN MBAPPÉ: COTIZACIÓN SEMANAL +8%',
-    badgeColor: 'bg-[#ff6b00] text-white',
+    badge: 'MERCADO OFICIAL DE FICHAJES',
+    badgeColor: 'bg-[#d4af37] text-[#0b3332]',
     title: 'BIENVENIDO A DESAPP FÚTBOL',
-    subtitle: 'MERCADO AL ALZA: LIGA SANTANDER — Sistema oficial de cotizaciones y valoración periódica de jugadores en tiempo real.',
-    cta: 'ACTUALIZAR COTIZACIONES',
+    subtitle: 'Plataforma oficial de consulta de catálogo de jugadores y cotización en tiempo real para las 5 ligas europeas principales.',
+    ctaText: 'EXPLORAR CATÁLOGO DE JUGADORES',
+    ctaLink: '/catalog',
   },
   {
     id: 2,
     image: '/assets/soccer_player.jpg',
-    badge: 'CREDENCIALES DE ACCESO & APIKEY',
-    badgeColor: 'bg-[#10b981] text-[#071a12]',
+    badge: 'ACCESO PERSONAL & SEGURIDAD',
+    badgeColor: 'bg-[#2dd4bf] text-[#0b3332]',
     title: 'GESTIÓN DE SEGURIDAD & APIKEY',
-    subtitle: 'Administrá tus claves de acceso personales para vincular aplicaciones y servicios autorizados con la máxima protección.',
-    cta: 'VER MI CUENTA & APIKEY',
+    subtitle: 'Administrá tus claves de acceso personales para consultar el catálogo de futbolistas con total seguridad y privacidad.',
+    ctaText: 'IR A MI CUENTA & CLAVE',
+    ctaLink: '/account',
   },
-];
-
-// 3x3 Mock Players Grid data for Hero Section
-const QUOTATION_CARDS = [
-  { id: 1, name: 'Kylian Mbappé', team: 'Real Madrid', pos: 'FW', change: '+8%', positive: true, price: '180.000 CR' },
-  { id: 2, name: 'Erling Haaland', team: 'Man. City', pos: 'FW', change: '+12%', positive: true, price: '175.000 CR' },
-  { id: 3, name: 'Jude Bellingham', team: 'Real Madrid', pos: 'MF', change: '+5%', positive: true, price: '150.000 CR' },
-  { id: 4, name: 'Vinícius Jr.', team: 'Real Madrid', pos: 'FW', change: '-4%', positive: false, price: '145.000 CR' },
-  { id: 5, name: 'Lamine Yamal', team: 'FC Barcelona', pos: 'FW', change: '+15%', positive: true, price: '130.000 CR' },
-  { id: 6, name: 'Lautaro Martínez', team: 'Inter Milan', pos: 'FW', change: '+6%', positive: true, price: '110.000 CR' },
-  { id: 7, name: 'Harry Kane', team: 'Bayern München', pos: 'FW', change: '-2%', positive: false, price: '105.000 CR' },
-  { id: 8, name: 'Rodri', team: 'Man. City', pos: 'MF', change: '+9%', positive: true, price: '125.000 CR' },
-  { id: 9, name: 'Pedri', team: 'FC Barcelona', pos: 'MF', change: '-7%', positive: false, price: '95.000 CR' },
-];
-
-// Ranking Table Mock Data (5 Ligas Principales)
-const PLAYER_RANKING = [
-  { rank: 1, name: 'Kylian Mbappé', team: 'Real Madrid', league: 'La Liga', score: 98.4, val: '180.000 CR', change: '+8%' },
-  { rank: 2, name: 'Erling Haaland', team: 'Manchester City', league: 'Premier League', score: 97.9, val: '175.000 CR', change: '+12%' },
-  { rank: 3, name: 'Jude Bellingham', team: 'Real Madrid', league: 'La Liga', score: 96.5, val: '150.000 CR', change: '+5%' },
-  { rank: 4, name: 'Vinícius Jr.', team: 'Real Madrid', league: 'La Liga', score: 95.8, val: '145.000 CR', change: '-4%' },
-  { rank: 5, name: 'Lamine Yamal', team: 'FC Barcelona', league: 'La Liga', score: 94.7, val: '130.000 CR', change: '+15%' },
-];
-
-// Token Market Mock Data
-const TOKEN_MARKET = [
-  { id: 't1', name: 'TOKEN MBAPPÉ', symbol: 'FMT-KMB', price: '450 CR' },
-  { id: 't2', name: 'TOKEN HAALAND', symbol: 'FMT-EHA', price: '420 CR' },
-  { id: 't3', name: 'TOKEN YAMAL', symbol: 'FMT-LYA', price: '310 CR' },
 ];
 
 export function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [quotations, setQuotations] = useState(QUOTATION_CARDS);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   // Rotación automática de slides cada 5 segundos
   useEffect(() => {
@@ -64,154 +35,76 @@ export function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleUpdateQuotations = () => {
-    setIsUpdating(true);
-    setTimeout(() => {
-      setQuotations((prev) =>
-        prev.map((q) => {
-          const randDelta = Math.floor(Math.random() * 5) - 2;
-          const newPositive = randDelta >= 0;
-          return {
-            ...q,
-            change: `${newPositive ? '+' : ''}${randDelta === 0 ? 3 : randDelta * 4}%`,
-            positive: newPositive,
-          };
-        }),
-      );
-      setIsUpdating(false);
-    }, 600);
-  };
-
   const currentSlide = HERO_SLIDES[activeSlide];
 
   return (
-    <div className="space-y-12 animate-fade-in">
-      <title>Football Market — Valoración de Mercado & Fichajes</title>
+    <div className="w-full animate-fade-in">
+      <title>Inicio — Football Market</title>
 
-      {/* SECTION 1: HERO SECTION (3x3 Grid on Left + Dynamic Banner Slider on Right) */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        {/* Left: 3x3 Quotation Grid */}
-        <div className="lg:col-span-7 bg-[#0d2b1e] border border-[#123828] rounded-2xl p-6 shadow-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#ff6b00] bg-[#123828] px-2.5 py-1 rounded-md">
-                COTIZACIONES EN VIVO
-              </span>
-              <h2 className="text-xl font-black uppercase tracking-wider text-white mt-1">
-                Panel de Fichajes Europeo
-              </h2>
-            </div>
-            <span className="text-xs font-bold text-[#10b981] bg-[#071a12] px-3 py-1 rounded-full border border-[#10b981]/30 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
-              Mercado Abierto
-            </span>
-          </div>
-
-          {/* 3x3 Grid of Player Cards */}
-          <div className="grid grid-cols-3 gap-3.5">
-            {quotations.map((p) => (
-              <div
-                key={p.id}
-                className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between ${
-                  p.positive
-                    ? 'bg-[#071a12]/90 border-[#10b981]/40 hover:border-[#10b981]'
-                    : 'bg-[#071a12]/90 border-[#ea580c]/40 hover:border-[#ea580c]'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-[#123828] text-gray-300">
-                      {p.pos}
-                    </span>
-                    <span
-                      className={`text-xs font-extrabold px-1.5 py-0.5 rounded ${
-                        p.positive
-                          ? 'bg-[#10b981]/20 text-[#10b981]'
-                          : 'bg-[#ea580c]/20 text-[#ea580c]'
-                      }`}
-                    >
-                      {p.change}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xs font-bold text-white line-clamp-1">
-                    {p.name}
-                  </h3>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    {p.team}
-                  </p>
-                </div>
-
-                <p className="text-xs font-black text-[#ff6b00] mt-2 pt-2 border-t border-[#123828]">
-                  {p.price}
-                </p>
-              </div>
-            ))}
-          </div>
+      {/* FULL WIDTH HERO SLIDER SECTION (EDGE-TO-EDGE) */}
+      <section className="relative w-full bg-[#0b3332] border-b border-[#1a6866] min-h-[460px] sm:min-h-[500px] flex flex-col justify-between overflow-hidden group">
+        {/* Background Slide Image with Full Bleed */}
+        <div key={currentSlide.id} className="absolute inset-0 z-0 animate-hero-fade">
+          <img
+            src={currentSlide.image}
+            alt="Estadio de fútbol profesional"
+            className="w-full h-full object-cover filter brightness-50 contrast-110 group-hover:scale-105 transition-transform duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b3332]/95 via-[#0b3332]/60 to-transparent" />
         </div>
 
-        {/* Right: Dynamic Animated Banner Slider */}
-        <div className="lg:col-span-5 relative overflow-hidden rounded-2xl bg-[#0d2b1e] border-2 border-[#ff6b00]/40 shadow-2xl flex flex-col justify-between group">
-          {/* Background Slide Image with Fade */}
-          <div key={currentSlide.id} className="absolute inset-0 z-0 animate-hero-fade">
-            <img
-              src={currentSlide.image}
-              alt="Jugadores de fútbol celebrando"
-              className="w-full h-full object-cover filter brightness-70 contrast-110 group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#071a12] via-[#071a12]/75 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#071a12]/90 via-transparent to-[#071a12]/50" />
-          </div>
-
-          {/* Top Banner Badge */}
-          <div className="relative z-10 p-6 flex justify-between items-start">
-            <span className={`px-3.5 py-1.5 font-black text-xs uppercase tracking-widest rounded-lg shadow-lg ${currentSlide.badgeColor}`}>
+        {/* Content Container (Centered Content within Full Bleed Hero) */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
+          {/* Top Floating Badge */}
+          <div className="flex justify-between items-start mb-6">
+            <span className={`px-4 py-1.5 font-black text-[11px] uppercase tracking-widest rounded-xl shadow-lg ${currentSlide.badgeColor}`}>
               {currentSlide.badge}
             </span>
+
+            <div className="flex items-center gap-2 bg-[#072221]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#d4af37]/30">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-ping" />
+              <span className="text-xs font-black uppercase tracking-widest text-white">
+                TEMPORADA 2026 / 2027
+              </span>
+            </div>
           </div>
 
-          {/* Banner Text Content */}
-          <div className="relative z-10 p-6 sm:p-8">
-            <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white mb-2 leading-tight drop-shadow">
+          {/* Hero Main Copy */}
+          <div className="max-w-3xl my-4 sm:my-8">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-wider text-white leading-tight mb-4 drop-shadow-md">
               {currentSlide.title}
             </h1>
-            <p className="text-xs sm:text-sm text-gray-200 font-medium mb-6 max-w-md drop-shadow">
+            <p className="text-sm sm:text-base lg:text-lg font-medium text-gray-200 leading-relaxed mb-8 max-w-2xl drop-shadow">
               {currentSlide.subtitle}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <button
-                type="button"
-                onClick={handleUpdateQuotations}
-                disabled={isUpdating}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#ff6b00] hover:bg-[#e05e00] text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-xl hover:shadow-[#ff6b00]/50 transition-all cursor-pointer border border-white/20 active:scale-95 disabled:opacity-50"
-              >
-                <span>{isUpdating ? 'ACTUALIZANDO...' : 'ACTUALIZAR COTIZACIONES'}</span>
-                <span className="text-base">↻</span>
-              </button>
-
+            <div className="flex flex-wrap items-center gap-4">
               <Link
-                to="/account"
-                className="inline-flex items-center justify-center px-4 py-3.5 bg-[#123828] hover:bg-[#10b981] text-white hover:text-[#071a12] font-black uppercase tracking-widest text-xs rounded-xl border border-[#ff6b00]/30 transition-all shadow-md"
+                to={currentSlide.ctaLink}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#d4af37] hover:bg-[#b89528] text-[#0b3332] font-black uppercase tracking-widest text-xs sm:text-sm shadow-xl hover:shadow-[#d4af37]/40 transition-all rounded-xl active:scale-95 border border-white/20"
               >
-                Mi Cuenta
+                <span>{currentSlide.ctaText}</span>
+                <span className="text-lg">&rarr;</span>
               </Link>
             </div>
           </div>
+        </div>
 
-          {/* Slide Progress Indicators */}
-          <div className="relative z-10 px-6 pb-6 flex items-center gap-2">
+        {/* Bottom Slide Indicators */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="flex items-center gap-3 max-w-xs">
             {HERO_SLIDES.map((slide, index) => (
               <button
                 key={slide.id}
                 onClick={() => setActiveSlide(index)}
-                className="flex-1 py-1.5 focus:outline-none cursor-pointer"
+                className="flex-1 py-2 group/btn focus:outline-none cursor-pointer"
                 aria-label={`Ver slide ${index + 1}`}
               >
-                <div className="h-1.5 w-full bg-white/30 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-500 ${
-                      index === activeSlide ? 'bg-[#ff6b00] w-full' : 'bg-transparent w-0'
+                      index === activeSlide ? 'bg-[#d4af37] w-full' : 'bg-transparent w-0'
                     }`}
                   />
                 </div>
@@ -221,157 +114,129 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 2: TABLES, TOKEN MARKET & PORTFOLIO */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column (8 cols): Player Ranking Table */}
-        <div className="lg:col-span-8 bg-[#0d2b1e] border border-[#123828] rounded-2xl p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-6">
+      {/* CLEAN MINIMALIST FEATURE MODULES */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] bg-[#104443] px-3.5 py-1.5 rounded-full border border-[#d4af37]/30 inline-block mb-3">
+            FUNCIONALIDADES PRINCIPALES
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white">
+            Explorá el Mercado de Fútbol
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-300 mt-2 font-medium">
+            Accedé a información relevante, cotizaciones y datos de jugadores de las 5 grandes ligas de Europa.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+          {/* Module 1: Catálogo de Jugadores */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#d4af37] p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#ff6b00] bg-[#123828] px-2.5 py-1 rounded-md">
-                TOP RANKING EUROPEO (5 LIGAS)
+              <div className="w-12 h-12 rounded-xl bg-[#0b3332] border border-[#d4af37]/40 text-[#d4af37] font-black text-xl flex items-center justify-center mb-6 shadow-inner">
+                📋
+              </div>
+
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] block mb-1">
+                FUTBOLISTAS & CLUBES
               </span>
-              <h2 className="text-xl font-black uppercase tracking-wider text-white mt-1">
-                Ranking de Jugadores
-              </h2>
+              <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#d4af37] transition-colors">
+                Catálogo de Jugadores
+              </h3>
+              <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                Consultá futbolistas de Premier League, La Liga, Serie A, Bundesliga y Ligue 1. Filtrá por posición, equipo o competencia con paginación integrada.
+              </p>
+
+              <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-8">
+                <li className="flex items-center gap-2">
+                  <span className="text-[#2dd4bf] font-black">✓</span>
+                  <span>Filtros combinados por liga y club.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#2dd4bf] font-black">✓</span>
+                  <span>Búsqueda instantánea por nombre de equipo.</span>
+                </li>
+              </ul>
             </div>
 
             <Link
               to="/catalog"
-              className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b00] hover:text-[#ffedd5] transition-colors flex items-center gap-1"
+              className="w-full py-3 bg-[#d4af37] hover:bg-[#b89528] text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center shadow-md hover:shadow-lg active:scale-95"
             >
-              <span>Ver catálogo completo</span>
-              <span>&rarr;</span>
+              Ir al Catálogo &rarr;
             </Link>
           </div>
 
-          {/* Detailed Financial Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-[#123828] text-gray-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-3">#</th>
-                  <th className="py-3 px-4">Jugador</th>
-                  <th className="py-3 px-4">Equipo</th>
-                  <th className="py-3 px-4">Liga</th>
-                  <th className="py-3 px-3 text-center">Score</th>
-                  <th className="py-3 px-4 text-right">Valor de Mercado (CR)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#123828]/60">
-                {PLAYER_RANKING.map((row) => (
-                  <tr key={row.rank} className="hover:bg-[#123828]/40 transition-colors">
-                    <td className="py-3.5 px-3 font-black text-[#ff6b00]">{row.rank}</td>
-                    <td className="py-3.5 px-4 font-bold text-white">{row.name}</td>
-                    <td className="py-3.5 px-4 text-gray-300 font-medium">{row.team}</td>
-                    <td className="py-3.5 px-4 text-gray-400 font-medium">{row.league}</td>
-                    <td className="py-3.5 px-3 text-center">
-                      <span className="bg-[#123828] text-[#34d399] font-black px-2 py-0.5 rounded text-[11px]">
-                        {row.score}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-black text-white">
-                      {row.val}{' '}
-                      <span
-                        className={`text-[10px] ml-1 font-bold ${
-                          row.change.startsWith('+') ? 'text-[#10b981]' : 'text-[#ea580c]'
-                        }`}
-                      >
-                        ({row.change})
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          {/* Module 2: Claves de Acceso Personal */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#d4af37] p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group">
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-[#0b3332] border border-[#d4af37]/40 text-[#d4af37] font-black text-xl flex items-center justify-center mb-6 shadow-inner">
+                🔑
+              </div>
 
-        {/* Right Column (4 cols): Token Market & My Portfolio Panels */}
-        <div className="lg:col-span-4 space-y-8">
-          {/* Panel 1: Mercado de Tokens */}
-          <div className="bg-[#0d2b1e] border border-[#123828] rounded-2xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ff6b00]"></span>
-                Mercado de Tokens
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] block mb-1">
+                ACCESO SEGURO
+              </span>
+              <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#d4af37] transition-colors">
+                Gestión de Clave
               </h3>
-              <span className="text-[10px] font-bold text-[#10b981] uppercase bg-[#071a12] px-2 py-0.5 rounded border border-[#10b981]/30">
-                En Vivo
-              </span>
-            </div>
+              <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                Generá tu clave de acceso personal en tu panel de cuenta para ingresar de forma segura y consultar la información completa del catálogo.
+              </p>
 
-            <div className="space-y-4">
-              {TOKEN_MARKET.map((tok) => (
-                <div
-                  key={tok.id}
-                  className="bg-[#071a12] p-4 rounded-xl border border-[#123828] flex flex-col gap-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-black text-white">{tok.name}</h4>
-                      <span className="text-[10px] text-gray-400 font-bold">{tok.symbol}</span>
-                    </div>
-                    <span className="text-sm font-black text-[#ff6b00]">{tok.price}</span>
-                  </div>
-
-                  {/* Differentiated Action Buttons: COMPRAR (Naranja) y VENDER (Verde Claro) */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      type="button"
-                      className="py-2 bg-[#ff6b00] hover:bg-[#e05e00] text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-sm"
-                    >
-                      COMPRAR
-                    </button>
-                    <button
-                      type="button"
-                      className="py-2 bg-[#10b981] hover:bg-[#059669] text-[#071a12] font-extrabold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-sm"
-                    >
-                      VENDER
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Panel 2: Mi Portfolio */}
-          <div className="bg-[#0d2b1e] border-2 border-[#10b981]/30 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#10b981] bg-[#071a12] px-2.5 py-1 rounded-md border border-[#10b981]/30">
-                MI PORTFOLIO
-              </span>
-              <span className="text-xs font-extrabold text-[#10b981]">+14.2% Total</span>
-            </div>
-
-            <h3 className="text-2xl font-black text-white mb-1">
-              45.280 <span className="text-sm font-bold text-[#ff6b00]">CR</span>
-            </h3>
-            <p className="text-xs text-gray-400 mb-4 font-medium">
-              Posición activa en tokens de jugadores
-            </p>
-
-            {/* Upward Trend SVG Chart Graphic */}
-            <div className="h-20 w-full bg-[#071a12] rounded-xl p-2 border border-[#123828] mb-4 flex items-end">
-              <svg className="w-full h-full text-[#10b981]" viewBox="0 0 100 40" fill="none">
-                <path
-                  d="M0 35 Q 20 30, 40 20 T 70 15 T 100 5"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                />
-                <path
-                  d="M0 35 Q 20 30, 40 20 T 70 15 T 100 5 L 100 40 L 0 40 Z"
-                  fill="currentColor"
-                  fillOpacity="0.15"
-                />
-              </svg>
+              <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-8">
+                <li className="flex items-center gap-2">
+                  <span className="text-[#d4af37] font-black">✓</span>
+                  <span>Generación instantánea desde tu cuenta.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#d4af37] font-black">✓</span>
+                  <span>Renovación segura de claves en 1 clic.</span>
+                </li>
+              </ul>
             </div>
 
             <Link
               to="/account"
-              className="w-full py-3 bg-[#123828] hover:bg-[#10b981] text-white hover:text-[#071a12] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center block shadow-md font-bold"
+              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#d4af37]/40 shadow-md active:scale-95"
             >
-              Gestionar mi Posición &rarr;
+              Mi Cuenta & Clave &rarr;
+            </Link>
+          </div>
+
+          {/* Module 3: Fichas Técnicas & Valoración */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#d4af37] p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group">
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-[#0b3332] border border-[#d4af37]/40 text-[#d4af37] font-black text-xl flex items-center justify-center mb-6 shadow-inner">
+                ⚽
+              </div>
+
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] block mb-1">
+                DETALLE TÉCNICO
+              </span>
+              <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#d4af37] transition-colors">
+                Fichas de Jugadores
+              </h3>
+              <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                Accedé al detalle individual de cada futbolista para consultar su demarcación, club de procedencia y liga de origen en un formato claro.
+              </p>
+
+              <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-8">
+                <li className="flex items-center gap-2">
+                  <span className="text-[#2dd4bf] font-black">✓</span>
+                  <span>Vistas individuales completas por jugador.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#2dd4bf] font-black">✓</span>
+                  <span>Navegación fluida y diseño responsivo.</span>
+                </li>
+              </ul>
+            </div>
+
+            <Link
+              to="/catalog"
+              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-[#d4af37] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#d4af37]/40 shadow-md active:scale-95"
+            >
+              Explorar Jugadores &rarr;
             </Link>
           </div>
         </div>

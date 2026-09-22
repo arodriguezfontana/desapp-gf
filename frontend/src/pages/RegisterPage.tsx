@@ -35,11 +35,11 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-[#071a12] flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-[#ff6b00] selection:text-white">
+    <div className="relative min-h-screen w-full bg-[#0b3332] flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-[#d4af37] selection:text-[#0b3332]">
       <title>Registrarse — Football Market</title>
 
       {/* Top Accent Strip */}
-      <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#ff6b00] via-[#10b981] to-[#ff6b00] shadow-md z-20" />
+      <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#d4af37] via-[#1a6866] to-[#d4af37] shadow-md z-20" />
 
       {/* Background Hero Image with Dark Overlay */}
       <div className="absolute inset-0 z-0">
@@ -48,29 +48,29 @@ export function RegisterPage() {
           alt="Jugador de fútbol en acción"
           className="w-full h-full object-cover object-center filter brightness-40 contrast-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#071a12] via-[#071a12]/90 to-[#071a12]/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/90 to-[#0b3332]/50" />
       </div>
 
       {/* Main Container */}
       <div className="relative z-10 w-full max-w-md">
         {/* Floating Category Badge */}
         <div className="flex justify-center mb-4 gap-2">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#ff6b00] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#d4af37] text-[#0b3332] rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-[#0b3332] animate-pulse" />
             NUEVO USUARIO
           </span>
-          <span className="px-3.5 py-1.5 bg-[#0d2b1e] border border-[#10b981]/40 text-[#34d399] text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+          <span className="px-3.5 py-1.5 bg-[#104443] border border-[#d4af37]/40 text-[#d4af37] text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
             ALTA GRATUITA
           </span>
         </div>
 
         {/* Card Surface */}
-        <div className="bg-[#0d2b1e] border-2 border-[#123828] p-8 sm:p-9 shadow-2xl rounded-2xl relative overflow-hidden text-white">
+        <div className="bg-[#104443] border-2 border-[#1a6866] p-8 sm:p-9 shadow-2xl rounded-2xl relative overflow-hidden text-white">
           {/* Card Top Accent Strip */}
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#10b981] via-[#ff6b00] to-[#10b981]" />
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#d4af37] via-[#1a6866] to-[#d4af37]" />
 
           <div className="text-center mb-6 pt-2">
-            <div className="w-14 h-14 bg-[#071a12] border-2 border-[#ff6b00] text-[#ff6b00] font-black text-2xl mx-auto mb-3 flex items-center justify-center rounded-xl shadow-lg">
+            <div className="w-14 h-14 bg-[#0b3332] border-2 border-[#d4af37] text-[#d4af37] font-black text-2xl mx-auto mb-3 flex items-center justify-center rounded-xl shadow-lg">
               ⚽
             </div>
             <h1 className="text-3xl font-black uppercase tracking-wider text-white leading-none mb-2">
@@ -84,7 +84,7 @@ export function RegisterPage() {
           {error && (
             <div
               role="alert"
-              className="mb-6 p-4 bg-[#ea580c]/20 border-l-4 border-[#ea580c] text-white text-xs font-black uppercase tracking-wider shadow-md rounded-md"
+              className="mb-6 p-4 bg-[#f43f5e]/20 border-l-4 border-[#f43f5e] text-white text-xs font-black uppercase tracking-wider shadow-md rounded-md"
             >
               {error}
             </div>
@@ -94,7 +94,7 @@ export function RegisterPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-[11px] font-black uppercase tracking-widest text-[#ff6b00] mb-1.5"
+                className="block text-[11px] font-black uppercase tracking-widest text-[#d4af37] mb-1.5"
               >
                 Email
               </label>
@@ -104,7 +104,7 @@ export function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-[#071a12] border border-[#123828] text-white placeholder-gray-500 text-sm font-medium focus:border-[#ff6b00] focus:outline-none focus:ring-2 focus:ring-[#ff6b00]/20 transition-all rounded-xl shadow-inner"
+                className="w-full px-4 py-3 bg-[#0b3332] border border-[#1a6866] text-white placeholder-gray-500 text-sm font-medium focus:border-[#d4af37] focus:outline-none focus:ring-2 focus:ring-[#d4af37]/20 transition-all rounded-xl shadow-inner"
                 placeholder="tu@email.com"
               />
             </div>
@@ -112,7 +112,7 @@ export function RegisterPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-[11px] font-black uppercase tracking-widest text-[#ff6b00] mb-1.5"
+                className="block text-[11px] font-black uppercase tracking-widest text-[#d4af37] mb-1.5"
               >
                 Contraseña
               </label>
@@ -122,11 +122,11 @@ export function RegisterPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-[#071a12] border border-[#123828] text-white placeholder-gray-500 text-sm font-medium focus:border-[#ff6b00] focus:outline-none focus:ring-2 focus:ring-[#ff6b00]/20 transition-all rounded-xl shadow-inner"
+                className="w-full px-4 py-3 bg-[#0b3332] border border-[#1a6866] text-white placeholder-gray-500 text-sm font-medium focus:border-[#d4af37] focus:outline-none focus:ring-2 focus:ring-[#d4af37]/20 transition-all rounded-xl shadow-inner"
                 placeholder="••••••••"
               />
               {password.length > 0 && !isPasswordValid && (
-                <p className="mt-2 text-[11px] text-[#ff6b00] font-black uppercase tracking-wider">
+                <p className="mt-2 text-[11px] text-[#d4af37] font-black uppercase tracking-wider">
                   Requisito: Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.
                 </p>
               )}
@@ -136,17 +136,17 @@ export function RegisterPage() {
               type="submit"
               disabled={isLoading}
               aria-busy={isLoading}
-              className="mt-2 w-full bg-[#ff6b00] hover:bg-[#e05e00] text-white py-3.5 px-6 font-black uppercase tracking-widest text-xs shadow-xl hover:shadow-[#ff6b00]/40 transition-all rounded-xl border border-white/20 disabled:opacity-50 active:scale-98 cursor-pointer"
+              className="mt-2 w-full bg-[#d4af37] hover:bg-[#b89528] text-[#0b3332] py-3.5 px-6 font-black uppercase tracking-widest text-xs shadow-xl hover:shadow-[#d4af37]/40 transition-all rounded-xl border border-white/20 disabled:opacity-50 active:scale-98 cursor-pointer"
             >
               {isLoading ? 'Registrando…' : 'Registrarse'}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-[#123828] text-center text-xs">
+          <div className="mt-8 pt-6 border-t border-[#1a6866] text-center text-xs">
             <span className="text-gray-400 font-medium">¿Ya tenés una cuenta? </span>
             <Link
               to="/login"
-              className="font-black text-[#ff6b00] hover:text-white uppercase tracking-wider transition-colors ml-1"
+              className="font-black text-[#d4af37] hover:text-white uppercase tracking-wider transition-colors ml-1"
             >
               Iniciar sesión
             </Link>

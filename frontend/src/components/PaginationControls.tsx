@@ -26,11 +26,11 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   const isNextDisabled = currentPage >= totalPages || isLoading;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-[#0d2b1e] px-6 py-4 rounded-2xl border border-[#123828] shadow-xl">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-[#104443] px-6 py-4 rounded-2xl border border-[#1a6866] shadow-xl">
       <div className="text-xs sm:text-sm text-gray-300 font-semibold">
-        Mostrando <span className="font-black text-[#ff6b00]">{startRange}</span> -{' '}
-        <span className="font-black text-[#ff6b00]">{endRange}</span> de{' '}
-        <span className="font-black text-[#ff6b00]">{totalItems}</span> jugadores
+        Mostrando <span className="font-black text-[#d4af37]">{startRange}</span> -{' '}
+        <span className="font-black text-[#d4af37]">{endRange}</span> de{' '}
+        <span className="font-black text-[#d4af37]">{totalItems}</span> jugadores
       </div>
 
       <div className="flex items-center space-x-3">
@@ -40,8 +40,8 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           onClick={() => onPageChange(currentPage - 1)}
           className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
             isPrevDisabled
-              ? 'bg-[#071a12] text-gray-600 border-[#123828] cursor-not-allowed'
-              : 'bg-[#ff6b00] text-white border-[#ff6b00] hover:bg-[#e05e00] shadow-md shadow-[#ff6b00]/30'
+              ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
+              : 'bg-[#d4af37] text-[#0b3332] border-[#d4af37] hover:bg-[#b89528] shadow-md shadow-[#d4af37]/30'
           }`}
         >
           &larr; Anterior
@@ -57,8 +57,8 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           onClick={() => onPageChange(currentPage + 1)}
           className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
             isNextDisabled
-              ? 'bg-[#071a12] text-gray-600 border-[#123828] cursor-not-allowed'
-              : 'bg-[#ff6b00] text-white border-[#ff6b00] hover:bg-[#e05e00] shadow-md shadow-[#ff6b00]/30'
+              ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
+              : 'bg-[#d4af37] text-[#0b3332] border-[#d4af37] hover:bg-[#b89528] shadow-md shadow-[#d4af37]/30'
           }`}
         >
           Siguiente &rarr;

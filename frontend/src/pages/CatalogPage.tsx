@@ -111,20 +111,20 @@ export const CatalogPage: React.FC = () => {
 
   if (!hasApiKey) {
     return (
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <div className="bg-[#0d2b1e] border-2 border-[#ff6b00]/50 rounded-2xl p-8 text-center shadow-2xl">
-          <div className="w-16 h-16 bg-[#071a12] border border-[#ff6b00] text-[#ff6b00] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+      <div className="max-w-4xl mx-auto py-16 px-4">
+        <div className="bg-[#104443] border border-[#d4af37]/40 rounded-2xl p-8 sm:p-12 text-center shadow-2xl">
+          <div className="w-16 h-16 bg-[#0b3332] border border-[#d4af37] text-[#d4af37] rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-inner">
             🔑
           </div>
-          <h2 className="text-2xl font-black uppercase tracking-wider text-white mb-3">
+          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white mb-3">
             Clave de Acceso Requerida
           </h2>
-          <p className="text-base text-gray-300 font-medium mb-6">
+          <p className="text-sm sm:text-base text-gray-300 font-medium mb-8 max-w-md mx-auto">
             Necesitás generar una ApiKey para ver el catálogo.
           </p>
           <Link
             to="/account"
-            className="inline-flex items-center gap-2 bg-[#ff6b00] hover:bg-[#e05e00] text-white font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xl hover:shadow-[#ff6b00]/40 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#d4af37] hover:bg-[#b89528] text-[#0b3332] font-black uppercase tracking-widest px-8 py-4 rounded-xl transition-all shadow-xl hover:shadow-[#d4af37]/40 cursor-pointer text-xs sm:text-sm"
           >
             Ir a Mi Cuenta para generar ApiKey &rarr;
           </Link>
@@ -134,23 +134,23 @@ export const CatalogPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
       {/* Banner de Título Mercado */}
-      <div className="bg-gradient-to-r from-[#0d2b1e] via-[#123828] to-[#0d2b1e] text-white rounded-2xl p-6 sm:p-8 shadow-2xl border border-[#ff6b00]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-[#104443] text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-[#1a6866] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#ff6b00] bg-[#071a12] px-3 py-1 rounded-md border border-[#ff6b00]/30">
-            FÚTBOL EUROPEO (5 LIGAS PRINCIPALES)
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] bg-[#0b3332] px-3.5 py-1 rounded-full border border-[#d4af37]/30 inline-block mb-2">
+            MERCADO DE JUGADORES
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider mt-2.5">
-            Catálogo de Jugadores
+          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white">
+            Catálogo de Futbolistas
           </h1>
           <p className="text-gray-300 text-xs sm:text-sm mt-1 max-w-xl font-medium">
             Explorá el mercado completo de futbolistas, filtrá por liga, equipo y posición, y consultá sus fichas técnicas.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-[#071a12] px-4 py-2.5 rounded-xl border border-[#10b981]/30">
-          <div className="w-3 h-3 rounded-full bg-[#10b981] animate-pulse" />
+        <div className="flex items-center gap-3 bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#d4af37]/30">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#d4af37] animate-pulse" />
           <span className="text-xs font-black uppercase tracking-wider text-white">
             {meta.total} Jugadores Registrados
           </span>
@@ -170,17 +170,17 @@ export const CatalogPage: React.FC = () => {
 
       {/* Contenido Principal: Carga, Error o Lista */}
       {isLoading ? (
-        <div className="text-center py-16 bg-[#0d2b1e] rounded-2xl border border-[#123828] shadow-2xl">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#10b981] border-t-[#ff6b00] mb-4"></div>
-          <p className="text-xs font-black uppercase tracking-wider text-[#34d399]">Cargando jugadores del catálogo...</p>
+        <div className="text-center py-16 bg-[#104443] rounded-2xl border border-[#1a6866] shadow-xl">
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#d4af37] mb-4"></div>
+          <p className="text-xs font-black uppercase tracking-wider text-[#d4af37]">Cargando futbolistas del catálogo...</p>
         </div>
       ) : errorMsg ? (
-        <div className="bg-[#ea580c]/10 border border-[#ea580c] text-white p-6 rounded-2xl text-center shadow-2xl">
+        <div className="bg-[#f43f5e]/10 border border-[#f43f5e] text-white p-6 rounded-2xl text-center shadow-xl">
           <p className="text-xs font-bold uppercase tracking-wider">{errorMsg}</p>
         </div>
       ) : players.length === 0 ? (
-        <div className="bg-[#0d2b1e] border border-[#123828] rounded-2xl p-12 text-center shadow-2xl">
-          <div className="w-16 h-16 bg-[#071a12] border border-[#ff6b00]/40 text-[#ff6b00] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+        <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-12 text-center shadow-xl">
+          <div className="w-16 h-16 bg-[#0b3332] border border-[#d4af37]/40 text-[#d4af37] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
             🔍
           </div>
           <h3 className="text-lg font-black uppercase tracking-wider text-white mb-1">
@@ -193,7 +193,7 @@ export const CatalogPage: React.FC = () => {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="mt-5 text-xs font-black uppercase tracking-wider text-[#ff6b00] hover:text-white bg-[#071a12] px-4 py-2.5 rounded-xl border border-[#ff6b00]/40 transition-colors cursor-pointer"
+              className="mt-5 text-xs font-black uppercase tracking-wider text-[#d4af37] hover:text-white bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#d4af37]/40 transition-colors cursor-pointer"
             >
               Restablecer filtros de búsqueda
             </button>

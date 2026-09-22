@@ -24,8 +24,8 @@ describe('AppLayout', () => {
   it('renderiza la marca, la navegación y el contenido de la ruta activa', () => {
     renderLayout();
     expect(screen.getAllByText(/desapp/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: /inicio/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /mi cuenta/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /inicio/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: /mi cuenta/i }).length).toBeGreaterThan(0);
     expect(screen.getByText('Home Content')).toBeInTheDocument();
   });
 
@@ -38,10 +38,9 @@ describe('AppLayout', () => {
 
   it('marca "Mi cuenta" como activo y "Inicio" como inactivo en /account', () => {
     renderLayout(vi.fn(), '/account');
-    expect(screen.getByRole('link', { name: /mi cuenta/i })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    expect(screen.getByRole('link', { name: /inicio/i })).not.toHaveAttribute('aria-current');
+    const accountLink = screen.getAllByRole('link', { name: /mi cuenta/i })[0];
+    const homeLink = screen.getAllByRole('link', { name: /inicio/i })[0];
+    expect(accountLink).toHaveAttribute('aria-current', 'page');
+    expect(homeLink).not.toHaveAttribute('aria-current');
   });
 });
