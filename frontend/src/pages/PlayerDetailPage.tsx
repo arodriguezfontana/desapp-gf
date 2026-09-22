@@ -67,19 +67,19 @@ export const PlayerDetailPage: React.FC = () => {
   if (!hasApiKey) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">
-        <div className="bg-amber-50 border-2 border-amber-400/50 rounded-2xl p-8 text-center shadow-md">
-          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+        <div className="bg-[#0d2b1e] border-2 border-[#ff6b00]/50 rounded-2xl p-8 text-center shadow-2xl">
+          <div className="w-16 h-16 bg-[#071a12] border border-[#ff6b00] text-[#ff6b00] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
             🔑
           </div>
-          <h2 className="text-2xl font-extrabold text-emerald-950 mb-3">
+          <h2 className="text-2xl font-black uppercase tracking-wider text-white mb-3">
             Clave de Acceso Requerida
           </h2>
-          <p className="text-base text-gray-700 font-medium mb-6">
+          <p className="text-base text-gray-300 font-medium mb-6">
             Necesitás generar una ApiKey para ver el catálogo.
           </p>
           <Link
             to="/account"
-            className="inline-flex items-center gap-2 bg-emerald-900 hover:bg-emerald-800 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#ff6b00] hover:bg-[#e05e00] text-white font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xl hover:shadow-[#ff6b00]/40 cursor-pointer"
           >
             Ir a Mi Cuenta para generar ApiKey &rarr;
           </Link>
@@ -89,71 +89,71 @@ export const PlayerDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6">
+    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
       <Link
         to="/catalog"
-        className="inline-flex items-center gap-2 text-sm font-bold text-emerald-900 hover:text-amber-600 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#ff6b00] hover:text-white mb-6 transition-colors"
       >
         &larr; Volver al catálogo
       </Link>
 
       {isLoading ? (
-        <div className="bg-white rounded-2xl p-12 border border-emerald-900/10 text-center shadow-sm">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-emerald-900 border-t-amber-500 mb-4"></div>
-          <p className="text-sm font-semibold text-emerald-900">
+        <div className="bg-[#0d2b1e] rounded-2xl p-12 border border-[#123828] text-center shadow-2xl">
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#10b981] border-t-[#ff6b00] mb-4"></div>
+          <p className="text-xs font-black uppercase tracking-wider text-[#34d399]">
             Cargando ficha del jugador...
           </p>
         </div>
       ) : errorMessage ? (
-        <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-8 text-center shadow-sm">
-          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl">
+        <div className="bg-[#0d2b1e] border-2 border-[#ea580c] rounded-2xl p-8 text-center shadow-2xl">
+          <div className="w-12 h-12 bg-[#ea580c]/20 text-[#ea580c] border border-[#ea580c]/40 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl">
             !
           </div>
-          <h2 className="text-xl font-bold text-red-950 mb-2">Información de Jugador</h2>
-          <p className="text-base font-semibold text-red-800">{errorMessage}</p>
+          <h2 className="text-xl font-black uppercase tracking-wider text-white mb-2">Información de Jugador</h2>
+          <p className="text-sm font-bold text-gray-200">{errorMessage}</p>
         </div>
       ) : player ? (
-        <div className="bg-white rounded-2xl border border-emerald-900/15 shadow-md overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 p-8 text-white">
+        <div className="bg-[#0d2b1e] rounded-2xl border border-[#ff6b00]/30 shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-[#071a12] via-[#0d2b1e] to-[#071a12] p-8 text-white border-b border-[#123828]">
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="bg-amber-500 text-emerald-950 font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider">
+              <span className="bg-[#ff6b00] text-white font-black text-xs px-3.5 py-1 rounded-md uppercase tracking-widest">
                 {player.position}
               </span>
-              <span className="bg-emerald-800/80 text-emerald-100 font-bold text-xs px-3 py-1 rounded-full border border-emerald-700">
+              <span className="bg-[#123828] text-[#34d399] font-bold text-xs px-3.5 py-1 rounded-md border border-[#10b981]/30">
                 {player.league}
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-wider uppercase mb-2">
               {player.name}
             </h1>
 
-            <p className="text-amber-400 font-bold text-lg flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+            <p className="text-[#ff6b00] font-bold text-lg flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ff6b00] inline-block"></span>
               {player.team}
             </p>
           </div>
 
-          <div className="p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 bg-emerald-50/20">
-            <div className="bg-white p-5 rounded-xl border border-emerald-900/10 shadow-sm">
-              <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+          <div className="p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 bg-[#071a12]/60">
+            <div className="bg-[#071a12] p-5 rounded-xl border border-[#123828] shadow-md">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-[#ff6b00] mb-1">
                 Competencia
               </span>
-              <span className="text-base font-bold text-emerald-950">{player.league}</span>
+              <span className="text-base font-black text-white">{player.league}</span>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-emerald-900/10 shadow-sm">
-              <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            <div className="bg-[#071a12] p-5 rounded-xl border border-[#123828] shadow-md">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-[#ff6b00] mb-1">
                 Club Actual
               </span>
-              <span className="text-base font-bold text-amber-600">{player.team}</span>
+              <span className="text-base font-black text-[#34d399]">{player.team}</span>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-emerald-900/10 shadow-sm">
-              <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            <div className="bg-[#071a12] p-5 rounded-xl border border-[#123828] shadow-md">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-[#ff6b00] mb-1">
                 Posición
               </span>
-              <span className="text-base font-bold text-emerald-950">{player.position}</span>
+              <span className="text-base font-black text-white">{player.position}</span>
             </div>
           </div>
         </div>
@@ -161,4 +161,3 @@ export const PlayerDetailPage: React.FC = () => {
     </div>
   );
 };
-

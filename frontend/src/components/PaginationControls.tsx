@@ -26,11 +26,11 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   const isNextDisabled = currentPage >= totalPages || isLoading;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-white px-6 py-4 rounded-xl border border-emerald-900/10 shadow-sm">
-      <div className="text-sm text-gray-700 font-medium">
-        Mostrando <span className="font-bold text-emerald-900">{startRange}</span> -{' '}
-        <span className="font-bold text-emerald-900">{endRange}</span> de{' '}
-        <span className="font-bold text-emerald-900">{totalItems}</span> jugadores
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-[#0d2b1e] px-6 py-4 rounded-2xl border border-[#123828] shadow-xl">
+      <div className="text-xs sm:text-sm text-gray-300 font-semibold">
+        Mostrando <span className="font-black text-[#ff6b00]">{startRange}</span> -{' '}
+        <span className="font-black text-[#ff6b00]">{endRange}</span> de{' '}
+        <span className="font-black text-[#ff6b00]">{totalItems}</span> jugadores
       </div>
 
       <div className="flex items-center space-x-3">
@@ -38,16 +38,16 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           type="button"
           disabled={isPrevDisabled}
           onClick={() => onPageChange(currentPage - 1)}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
             isPrevDisabled
-              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              : 'bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 shadow-sm'
+              ? 'bg-[#071a12] text-gray-600 border-[#123828] cursor-not-allowed'
+              : 'bg-[#ff6b00] text-white border-[#ff6b00] hover:bg-[#e05e00] shadow-md shadow-[#ff6b00]/30'
           }`}
         >
           &larr; Anterior
         </button>
 
-        <span className="text-xs font-semibold text-gray-500 px-2">
+        <span className="text-xs font-bold text-gray-400 px-2">
           Página {currentPage} de {totalPages || 1}
         </span>
 
@@ -55,10 +55,10 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           type="button"
           disabled={isNextDisabled}
           onClick={() => onPageChange(currentPage + 1)}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
             isNextDisabled
-              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              : 'bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 shadow-sm'
+              ? 'bg-[#071a12] text-gray-600 border-[#123828] cursor-not-allowed'
+              : 'bg-[#ff6b00] text-white border-[#ff6b00] hover:bg-[#e05e00] shadow-md shadow-[#ff6b00]/30'
           }`}
         >
           Siguiente &rarr;
@@ -67,4 +67,3 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     </div>
   );
 };
-
