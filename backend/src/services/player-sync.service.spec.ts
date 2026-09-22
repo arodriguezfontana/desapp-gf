@@ -1,6 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { PlayerSyncService } from './player-sync.service';
-import { WhoScoredAdapter, WhoScoredRawPlayer } from '../adapters/whoscored-adapter';
+import {
+  WhoScoredAdapter,
+  WhoScoredLeagueTeams,
+  WhoScoredRawPlayer,
+  WhoScoredTeamRef,
+} from '../adapters/whoscored-adapter';
 import { PlayerRepository } from '../repositories/player.repository';
 import { League } from '../domain/player/league';
 import { Position } from '../domain/player/position';
@@ -15,6 +20,30 @@ const rawPlayer = (
   metricsFetchFailed: false,
   ...overrides,
 });
+
+const DEFAULT_TOURNAMENT_ID = 2;
+
+/**
+ * Arma el resultado de `fetchLeagueTeams` (research.md §1 de
+ * 006-whoscored-catalog-sync: `tournamentId` y el jugador semilla de cada
+ * equipo viajan en el valor de retorno, no en un campo del Adapter). Por
+ * default arma un jugador semilla `seed-<externalTeamId>` por cada equipo,
+ * para que el nuevo chequeo de "sin jugador semilla" de `syncTeam` no salga
+ * a mitad de camino en los tests que no están probando específicamente ese
+ * caso.
+ */
+function leagueTeamsResult(
+  teams: WhoScoredTeamRef[],
+  options: { tournamentId?: number; seedPlayerByTeam?: Map<string, string> } = {},
+): WhoScoredLeagueTeams {
+  return {
+    tournamentId: options.tournamentId ?? DEFAULT_TOURNAMENT_ID,
+    teams,
+    seedPlayerByTeam:
+      options.seedPlayerByTeam ??
+      new Map(teams.map((t) => [t.externalTeamId, `seed-${t.externalTeamId}`])),
+  };
+}
 
 describe('PlayerSyncService', () => {
   let whoScored: jest.Mocked<WhoScoredAdapter>;
@@ -34,9 +63,13 @@ describe('PlayerSyncService', () => {
 
   it('sincroniza cada equipo de cada liga con éxito: upsert correcto por equipo', async () => {
     whoScored.fetchLeagueTeams.mockImplementation((league) =>
-      league === League.PREMIER_LEAGUE
-        ? Promise.resolve([{ externalTeamId: 't1', team: 'Equipo Uno' }])
-        : Promise.resolve([]),
+      Promise.resolve(
+        leagueTeamsResult(
+          league === League.PREMIER_LEAGUE
+            ? [{ externalTeamId: 't1', team: 'Equipo Uno' }]
+            : [],
+        ),
+      ),
     );
     whoScored.fetchTeamRoster.mockResolvedValue([
       rawPlayer({ externalId: 'ws-1', rawPosition: 'GK' }),
@@ -44,6 +77,11 @@ describe('PlayerSyncService', () => {
 
     await service.sync();
 
+    expect(whoScored.fetchTeamRoster).toHaveBeenCalledWith(
+      { externalTeamId: 't1', team: 'Equipo Uno' },
+      DEFAULT_TOURNAMENT_ID,
+      'seed-t1',
+    );
     expect(players.findActiveExternalIdsByTeam).toHaveBeenCalledWith(
       League.PREMIER_LEAGUE,
       'Equipo Uno',
@@ -68,7 +106,9 @@ describe('PlayerSyncService', () => {
       if (league === League.PREMIER_LEAGUE) {
         return Promise.reject(new Error('WhoScored caído'));
       }
-      return Promise.resolve([{ externalTeamId: 't2', team: 'Equipo Dos' }]);
+      return Promise.resolve(
+        leagueTeamsResult([{ externalTeamId: 't2', team: 'Equipo Dos' }]),
+      );
     });
     whoScored.fetchTeamRoster.mockResolvedValue([rawPlayer()]);
 
@@ -81,12 +121,16 @@ describe('PlayerSyncService', () => {
 
   it('un equipo que falla no afecta a los demás equipos de su liga (FR-014 nivel equipo)', async () => {
     whoScored.fetchLeagueTeams.mockImplementation((league) =>
-      league === League.PREMIER_LEAGUE
-        ? Promise.resolve([
-            { externalTeamId: 'falla', team: 'Equipo Falla' },
-            { externalTeamId: 'ok', team: 'Equipo OK' },
-          ])
-        : Promise.resolve([]),
+      Promise.resolve(
+        leagueTeamsResult(
+          league === League.PREMIER_LEAGUE
+            ? [
+                { externalTeamId: 'falla', team: 'Equipo Falla' },
+                { externalTeamId: 'ok', team: 'Equipo OK' },
+              ]
+            : [],
+        ),
+      ),
     );
     whoScored.fetchTeamRoster.mockImplementation((team) =>
       team.externalTeamId === 'falla'
@@ -107,13 +151,17 @@ describe('PlayerSyncService', () => {
 
   it('si fetchTeamRoster lanza porque el plantel vino vacío (selector del Adapter no matchea nada), no se llama a applyTeamRosterSync para ese equipo y no se toca su roster anterior', async () => {
     whoScored.fetchLeagueTeams.mockImplementation((league) =>
-      league === League.PREMIER_LEAGUE
-        ? Promise.resolve([{ externalTeamId: 't1', team: 'Equipo Uno' }])
-        : Promise.resolve([]),
+      Promise.resolve(
+        leagueTeamsResult(
+          league === League.PREMIER_LEAGUE
+            ? [{ externalTeamId: 't1', team: 'Equipo Uno' }]
+            : [],
+        ),
+      ),
     );
     whoScored.fetchTeamRoster.mockRejectedValue(
       new Error(
-        'El plantel de Equipo Uno (t1) vino vacío al parsear la página del jugador semilla 123; probablemente cambió la estructura de la página.',
+        'El plantel de Equipo Uno (t1) vino vacío al parsear la página del jugador semilla seed-t1; probablemente cambió la estructura de la página.',
       ),
     );
 
@@ -123,11 +171,51 @@ describe('PlayerSyncService', () => {
     expect(players.applyTeamRosterSync).not.toHaveBeenCalled();
   });
 
+  it('si no hay un jugador semilla conocido para un equipo (según el mapa de esa liga), no llama a fetchTeamRoster ni a applyTeamRosterSync para ese equipo', async () => {
+    whoScored.fetchLeagueTeams.mockImplementation((league) =>
+      Promise.resolve(
+        leagueTeamsResult(
+          league === League.PREMIER_LEAGUE
+            ? [
+                { externalTeamId: 'sin-semilla', team: 'Equipo Sin Semilla' },
+                { externalTeamId: 'con-semilla', team: 'Equipo Con Semilla' },
+              ]
+            : [],
+          {
+            // Sólo 'con-semilla' tiene jugador semilla en el mapa de esta liga.
+            seedPlayerByTeam: new Map([['con-semilla', 'seed-1']]),
+          },
+        ),
+      ),
+    );
+    whoScored.fetchTeamRoster.mockResolvedValue([rawPlayer()]);
+
+    await service.sync();
+
+    expect(whoScored.fetchTeamRoster).not.toHaveBeenCalledWith(
+      expect.objectContaining({ externalTeamId: 'sin-semilla' }),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(whoScored.fetchTeamRoster).toHaveBeenCalledTimes(1);
+    expect(players.applyTeamRosterSync).toHaveBeenCalledTimes(1);
+    expect(players.applyTeamRosterSync).toHaveBeenCalledWith(
+      League.PREMIER_LEAGUE,
+      'Equipo Con Semilla',
+      expect.any(Array),
+      expect.any(Array),
+    );
+  });
+
   it('calcula las bajas combinando los activos previos con los entrantes (computePlayersToRemove)', async () => {
     whoScored.fetchLeagueTeams.mockImplementation((league) =>
-      league === League.PREMIER_LEAGUE
-        ? Promise.resolve([{ externalTeamId: 't1', team: 'Equipo Uno' }])
-        : Promise.resolve([]),
+      Promise.resolve(
+        leagueTeamsResult(
+          league === League.PREMIER_LEAGUE
+            ? [{ externalTeamId: 't1', team: 'Equipo Uno' }]
+            : [],
+        ),
+      ),
     );
     players.findActiveExternalIdsByTeam.mockResolvedValue(['ws-1', 'ws-viejo']);
     whoScored.fetchTeamRoster.mockResolvedValue([rawPlayer({ externalId: 'ws-1' })]);
@@ -148,9 +236,13 @@ describe('PlayerSyncService', () => {
     beforeEach(() => {
       warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
       whoScored.fetchLeagueTeams.mockImplementation((league) =>
-        league === League.PREMIER_LEAGUE
-          ? Promise.resolve([{ externalTeamId: 't1', team: 'Equipo Uno' }])
-          : Promise.resolve([]),
+        Promise.resolve(
+          leagueTeamsResult(
+            league === League.PREMIER_LEAGUE
+              ? [{ externalTeamId: 't1', team: 'Equipo Uno' }]
+              : [],
+          ),
+        ),
       );
     });
 

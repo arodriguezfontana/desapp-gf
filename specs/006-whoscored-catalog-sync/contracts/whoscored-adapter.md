@@ -10,12 +10,46 @@ API pedida por el usuario final.
 ## Puerto (`adapters/whoscored-adapter.ts`)
 
 Ver data-model.md § "Puerto: WhoScoredAdapter" y research.md §3 para la
-interfaz completa. Resumen de contrato de comportamiento:
+interfaz completa. Resumen de contrato de comportamiento (firmas as-built —
+ver "Sin estado compartido entre llamadas" abajo para el porqué de los
+parámetros extra):
 
 | Método | Éxito | Falla |
 |--------|-------|-------|
-| `fetchLeagueTeams(league)` | `WhoScoredTeamRef[]` — todos los equipos vigentes de esa liga en la temporada en curso, según WhoScored. Puede ser `[]` si WhoScored no lista ningún equipo (no debería ocurrir para las 5 ligas soportadas, pero no es un error del Adapter). | Lanza (red, timeout de 15000ms, o estructura de página inesperada). `PlayerSyncService` lo trata como fallo de esa liga en esa corrida (spec FR-014/015 nivel liga): la liga entera se saltea, las demás siguen. |
-| `fetchTeamRoster(team)` | `WhoScoredRawPlayer[]` — el plantel completo del equipo, sin tope de cantidad (FR-005). Cada jugador trae su código de posición **sin mapear** y, si se pudo obtener, sus 4 métricas (`metrics`), o `metrics: null` + `metricsFetchFailed` distinguiendo "sin partidos" de "falla técnica" (ver abajo). | Lanza si no se pudo obtener el plantel del equipo en sí (lista de nombres/ids). `PlayerSyncService` lo trata como fallo de ese equipo en esa corrida (FR-014/015 nivel equipo): el equipo entero mantiene su última sincronización exitosa, los demás equipos siguen. Un fallo puntual de la página de stats de UN jugador **no** debe propagarse como excepción acá — ver siguiente fila. |
+| `fetchLeagueTeams(league)` | `WhoScoredLeagueTeams` — `{ tournamentId, teams, seedPlayerByTeam }`. `teams` son todos los equipos vigentes de esa liga en la temporada en curso (puede ser `[]` si WhoScored no lista ninguno; no debería ocurrir para las 5 ligas soportadas, pero no es un error del Adapter). `tournamentId` es el id de WhoScored de esa liga/temporada. `seedPlayerByTeam` es `externalTeamId → externalId de un jugador conocido de ese equipo`, best-effort (ver "Jugador semilla" abajo) — puede no tener entrada para todos los equipos devueltos en `teams`. | Lanza (red, timeout de 15000ms, o estructura de página inesperada). `PlayerSyncService` lo trata como fallo de esa liga en esa corrida (spec FR-014/015 nivel liga): la liga entera se saltea, las demás siguen. |
+| `fetchTeamRoster(team, tournamentId, seedPlayerId)` | `WhoScoredRawPlayer[]` — el plantel completo del equipo, sin tope de cantidad (FR-005). `tournamentId` y `seedPlayerId` los recibe explícitos de quien orquesta (nunca los resuelve ni los recuerda el Adapter — ver abajo). Cada jugador trae su código de posición **sin mapear** y, si se pudo obtener, sus 4 métricas (`metrics`), o `metrics: null` + `metricsFetchFailed` distinguiendo "sin partidos" de "falla técnica" (ver abajo). | Lanza si no se pudo obtener el plantel del equipo en sí (incluido si vino vacío — 0 jugadores es indistinguible de "el selector no matcheó nada porque WhoScored cambió la estructura de la página", nunca un roster real de un club profesional). `PlayerSyncService` lo trata como fallo de ese equipo en esa corrida (FR-014/015 nivel equipo): el equipo entero mantiene su última sincronización exitosa, los demás equipos siguen. Un fallo puntual de la página de stats de UN jugador **no** debe propagarse como excepción acá — ver siguiente fila. |
+
+### Jugador semilla: responsabilidad de quien orquesta, no del Adapter
+
+El Adapter **no** valida que exista un jugador semilla para un equipo antes
+de llamar a `fetchTeamRoster`: quien orquesta (`PlayerSyncService`) MUST
+resolver `seedPlayerByTeam.get(team.externalTeamId)` él mismo y, si no hay
+entrada, tratarlo directamente como una falla de ese equipo (mismo log y
+mismo `return` sin persistir que usa para un `fetchTeamRoster` que lanza) —
+**sin llegar a invocar** `fetchTeamRoster` en absoluto. Antes esto lo
+resolvía el propio Adapter (lookup interno + `throw`); se movió al
+orquestador como parte de sacar todo el estado compartido del Adapter (ver
+abajo). El efecto observable para el equipo no cambia: se saltea, conserva su
+última sincronización exitosa, no afecta a los demás equipos ni a la liga.
+
+### Sin estado compartido entre llamadas (`HttpWhoScoredAdapter`)
+
+El Adapter es un singleton de Nest. En una versión anterior guardaba
+`tournamentId` y `seedPlayerByTeam` como campos de instancia, escritos por
+`fetchLeagueTeams` y leídos después por `fetchTeamRoster`/
+`fetchPlayerMetrics` — eso asumía implícitamente que nunca habría dos
+corridas de `sync()` en vuelo al mismo tiempo sobre la misma instancia, algo
+que el código no garantizaba (el `@Cron` no tenía `waitForCompletion`, así
+que dos corridas solapadas eran posibles y se hubiesen pisado ese estado
+entre sí). Se corrigió sacando ambos campos: `fetchLeagueTeams` devuelve
+`tournamentId` y `seedPlayerByTeam` como parte de su valor de retorno,
+`fetchTeamRoster` los recibe como parámetros explícitos. El Adapter no tiene
+ningún campo mutable entre llamadas (sólo el `logger`). Como defensa en
+profundidad adicional, `PlayerSyncService.sync()` usa
+`@Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })` para que el
+scheduler tampoco dispare una corrida nueva mientras la anterior sigue
+corriendo — pero la garantía de fondo es la ausencia de estado compartido,
+no ese flag.
 
 ### Semántica de `metrics` / `metricsFetchFailed` por jugador
 

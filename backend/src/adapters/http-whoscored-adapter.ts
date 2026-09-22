@@ -5,6 +5,7 @@ import { League } from '../domain/player/league';
 import { WHOSCORED_REQUEST_TIMEOUT_MS } from '../player-sync.constants';
 import {
   WhoScoredAdapter,
+  WhoScoredLeagueTeams,
   WhoScoredRawMetrics,
   WhoScoredRawPlayer,
   WhoScoredTeamRef,
@@ -59,40 +60,23 @@ interface WhoScoredAssistDataEntry {
  * Implementación concreta del puerto `WhoScoredAdapter` (axios + cheerio,
  * research.md §4 de 006-whoscored-catalog-sync). Única puerta de entrada a
  * WhoScored: `PlayerSyncService` no conoce nada de lo que hay acá.
+ *
+ * Deliberadamente sin campos de instancia mutables entre llamadas (más allá
+ * del `logger`, que no participa de ningún dato de una corrida). Este
+ * Adapter es un singleton de Nest: si `tournamentId` o el jugador semilla de
+ * un equipo se guardaran en `this`, dos invocaciones de
+ * `PlayerSyncService.sync()` — solapadas o no — podrían pisarse esos valores
+ * entre sí (una corrida leyendo el `tournamentId` que otra corrida ya
+ * sobreescribió). Por eso todo lo que un método necesita de una liga viaja
+ * como parámetro explícito o como parte del valor de retorno de
+ * `fetchLeagueTeams`, nunca como estado guardado acá.
  */
 @Injectable()
 export class HttpWhoScoredAdapter implements WhoScoredAdapter {
   private readonly logger = new Logger(HttpWhoScoredAdapter.name);
 
-  /**
-   * `teamId → un jugador conocido de ese equipo`, harvesteado una vez por
-   * liga en `fetchLeagueTeams` y consumido por `fetchTeamRoster` para
-   * bootstrapear el descubrimiento del plantel (ver
-   * `test/fixtures/whoscored/README.md` § "Limitación conocida": ni la
-   * página de un equipo ni la de fixtures exponen estáticamente ningún id de
-   * jugador; sólo la propia página de un jugador expone el plantel completo
-   * de su equipo). Cobertura best-effort: un equipo sin semilla ese día no
-   * se puede sincronizar esa corrida (FR-014, se trata como falla de ese
-   * equipo, no bloquea al resto de la liga).
-   */
-  private readonly seedPlayerByTeam = new Map<string, string>();
-
-  /**
-   * `TournamentId` de WhoScored de la liga que se está sincronizando en este
-   * momento, seteado por `fetchLeagueTeams` y leído por `fetchPlayerMetrics`
-   * (invocado indirectamente desde `fetchTeamRoster`) para tomar las
-   * métricas de la competencia correcta, nunca mezclar con Champions
-   * League/copas — mismo criterio de estado-por-corrida que
-   * `seedPlayerByTeam`. `PlayerSyncService` siempre llama
-   * `fetchLeagueTeams(liga)` antes de `fetchTeamRoster(equipo)` para los
-   * equipos de esa misma liga (ver `services/player-sync.service.ts`), así
-   * que este valor es correcto en el momento en que se usa.
-   */
-  private currentTournamentId: number | null = null;
-
-  async fetchLeagueTeams(league: League): Promise<WhoScoredTeamRef[]> {
+  async fetchLeagueTeams(league: League): Promise<WhoScoredLeagueTeams> {
     const config = LEAGUE_CONFIG[league];
-    this.currentTournamentId = config.tournamentId;
     const url = `${BASE_URL}/regions/${config.regionId}/tournaments/${config.tournamentId}/${config.slug}`;
     const html = await this.get(url);
     const $ = cheerio.load(html);
@@ -107,22 +91,23 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
       }
     });
 
-    await this.harvestSeedPlayers($, league);
+    const seedPlayerByTeam = await this.harvestSeedPlayers($, league);
 
-    return [...teams.entries()].map(([externalTeamId, team]) => ({
-      externalTeamId,
-      team,
-    }));
+    return {
+      tournamentId: config.tournamentId,
+      teams: [...teams.entries()].map(([externalTeamId, team]) => ({
+        externalTeamId,
+        team,
+      })),
+      seedPlayerByTeam,
+    };
   }
 
-  async fetchTeamRoster(team: WhoScoredTeamRef): Promise<WhoScoredRawPlayer[]> {
-    const seedPlayerId = this.seedPlayerByTeam.get(team.externalTeamId);
-    if (!seedPlayerId) {
-      throw new Error(
-        `No se encontró un jugador semilla para el equipo ${team.team} (${team.externalTeamId}); no se puede descubrir su plantel esta corrida.`,
-      );
-    }
-
+  async fetchTeamRoster(
+    team: WhoScoredTeamRef,
+    tournamentId: number,
+    seedPlayerId: string,
+  ): Promise<WhoScoredRawPlayer[]> {
     const squad = await this.fetchSquadFromPlayerPage(seedPlayerId);
     if (squad.length === 0) {
       throw new Error(
@@ -135,6 +120,7 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
       const { metrics, metricsFetchFailed } = await this.fetchPlayerMetrics(
         member.externalId,
         member.slug,
+        tournamentId,
       );
       players.push({
         externalId: member.externalId,
@@ -147,17 +133,19 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
     return players;
   }
 
-  /** Arma `seedPlayerByTeam` para esta liga a partir de `playerAssistData` (ver README de los fixtures). */
+  /** Cosecha `teamId → jugador semilla` para esta liga a partir de `playerAssistData` (ver README de los fixtures). Devuelve el mapa; no guarda nada en `this`. */
   private async harvestSeedPlayers(
     $: cheerio.CheerioAPI,
     league: League,
-  ): Promise<void> {
+  ): Promise<Map<string, string>> {
+    const seedPlayerByTeam = new Map<string, string>();
+
     const statsHref = $('a[href*="playerstatistics"]').first().attr('href');
     if (!statsHref) {
       this.logger.warn(
         `No se encontró el link de estadísticas de jugadores para ${league}; sin jugadores semilla nuevos esta corrida.`,
       );
-      return;
+      return seedPlayerByTeam;
     }
 
     try {
@@ -167,20 +155,15 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
         'playerAssistData',
       );
       for (const entry of assistData) {
-        this.seedPlayerByTeam.set(
-          String(entry.TeamId),
-          String(entry.GSPlayerId),
-        );
-        this.seedPlayerByTeam.set(
-          String(entry.TeamId),
-          String(entry.GAPlayerId),
-        );
+        seedPlayerByTeam.set(String(entry.TeamId), String(entry.GSPlayerId));
+        seedPlayerByTeam.set(String(entry.TeamId), String(entry.GAPlayerId));
       }
     } catch (error) {
       this.logger.warn(
         `No se pudieron cosechar jugadores semilla para ${league}: ${(error as Error).message}`,
       );
     }
+    return seedPlayerByTeam;
   }
 
   /** Plantel completo (id, nombre, código de posición crudo) vía el `<select>` de navegación de la página de un jugador. */
@@ -225,6 +208,7 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
   private async fetchPlayerMetrics(
     externalId: string,
     slug: string,
+    tournamentId: number,
   ): Promise<{ metrics: WhoScoredRawMetrics | null; metricsFetchFailed: boolean }> {
     try {
       const html = await this.get(
@@ -236,10 +220,12 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
       );
 
       // Sólo la competencia que se está sincronizando (nunca se mezcla con
-      // Champions League, copas domésticas, selección, etc.).
+      // Champions League, copas domésticas, selección, etc.). `tournamentId`
+      // llega por parámetro explícito, no de un campo de instancia: dos
+      // corridas de ligas distintas nunca se pueden pisar acá.
       const stats = tournaments.find(
         (t) =>
-          t.TournamentId === this.currentTournamentId &&
+          t.TournamentId === tournamentId &&
           (t.GameStarted ?? 0) + (t.SubOn ?? 0) > 0,
       );
       if (!stats) {

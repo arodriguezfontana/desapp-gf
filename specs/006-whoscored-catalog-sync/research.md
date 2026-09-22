@@ -112,15 +112,44 @@ export interface WhoScoredRawMetrics {
   rating: number;
 }
 
+export interface WhoScoredLeagueTeams {
+  tournamentId: number;             // id de WhoScored de la liga/temporada
+  teams: WhoScoredTeamRef[];
+  seedPlayerByTeam: Map<string, string>; // externalTeamId -> externalId de un jugador conocido de ese equipo
+}
+
 export interface WhoScoredAdapter {
   /** @throws si no se puede obtener la lista de equipos vigentes de la liga (FR-014 nivel liga) */
-  fetchLeagueTeams(league: League): Promise<WhoScoredTeamRef[]>;
-  /** @throws si no se puede obtener el plantel del equipo (FR-014 nivel equipo). Un fallo
-   *  puntual de la página de stats de UN jugador no debe propagarse acá: se refleja como
-   *  `metricsFetchFailed: true` en ese jugador, sin abortar el resto del plantel. */
-  fetchTeamRoster(team: WhoScoredTeamRef): Promise<WhoScoredRawPlayer[]>;
+  fetchLeagueTeams(league: League): Promise<WhoScoredLeagueTeams>;
+  /** @throws si no se puede obtener el plantel del equipo (FR-014 nivel equipo), incluido si vino
+   *  vacío. Un fallo puntual de la página de stats de UN jugador no debe propagarse acá: se
+   *  refleja como `metricsFetchFailed: true` en ese jugador, sin abortar el resto del plantel. */
+  fetchTeamRoster(
+    team: WhoScoredTeamRef,
+    tournamentId: number,
+    seedPlayerId: string,
+  ): Promise<WhoScoredRawPlayer[]>;
 }
 ```
+
+**Corrección post-implementación**: la primera versión de este Adapter guardaba
+`tournamentId` y `seedPlayerByTeam` como campos de instancia (escritos por
+`fetchLeagueTeams`, leídos después por `fetchTeamRoster`/`fetchPlayerMetrics`),
+asumiendo implícitamente que nunca habría dos corridas de `sync()` en vuelo al
+mismo tiempo sobre el mismo Adapter — un singleton de Nest. Esa asunción no
+estaba garantizada por el código (el `@Cron` no tenía `waitForCompletion`), así
+que dos corridas solapadas podían pisarse ese estado entre sí (una corrida
+leyendo el `tournamentId` que otra ya había sobreescrito). Se corrigió sacando
+ambos campos: viajan en el valor de retorno de `fetchLeagueTeams` y como
+parámetros explícitos de `fetchTeamRoster` (firma ya actualizada arriba). El
+Adapter no tiene ningún campo mutable entre llamadas. El "jugador semilla
+faltante para un equipo" pasó de ser un `throw` interno del Adapter a una
+validación que hace `PlayerSyncService` antes de llamar a `fetchTeamRoster`
+(mismo efecto observable: el equipo se saltea esa corrida). Ver
+`contracts/whoscored-adapter.md` § "Sin estado compartido entre llamadas" para
+el detalle completo, y `backend/src/adapters/http-whoscored-adapter.spec.ts`
+para el test que ejercita dos corridas con `tournamentId` distintos vía
+`Promise.all` sobre la misma instancia.
 
 `metrics: null` (temporada sin partidos jugados) y `metricsFetchFailed: true`
 (no se pudo obtener/parsear la página) son casos distintos a propósito: el
@@ -193,7 +222,7 @@ una tabla de datos externa (WhoScored), no una regla intrínseca del enum
 códigos de WhoScored. Mezclaría dos responsabilidades distintas (validar un
 filtro de API vs. traducir una taxonomía externa) en la misma función.
 
-## §6. Volumen, timeout y ausencia de lock de solapamiento
+## §6. Volumen, timeout y solapamiento de corridas
 
 **Scale/Scope estimado**: 5 ligas × ~18-20 equipos × ~25-30 jugadores de
 plantel ≈ 2500-3000 páginas de `matchstatistics` por corrida completa, más
@@ -208,15 +237,36 @@ timeout, ese fetch se trata igual que cualquier otro fallo de red en su nivel
 (liga/equipo → salta esa unidad, FR-014/015; jugador puntual →
 `metricsFetchFailed: true`, FR-018).
 
-**Solapamiento de corridas**: no se agrega ningún mecanismo de lock/mutex entre
-corridas de `@Cron`. Con una cadencia semanal (§7) y una corrida completa que,
-aun en el peor caso, se espera que tome un orden de horas (no días), la
-probabilidad de que la corrida programada de la semana siguiente arranque
-mientras la anterior sigue viva es despreciable, y agregar un lock distribuido
-sería complejidad no pedida por la spec ni por el usuario para un caso límite
-sin evidencia de que vaya a ocurrir. Si en la práctica llegara a solaparse, el
-peor caso es upserts redundantes sobre el mismo equipo, no corrupción: cada
-`applyTeamRosterSync` sigue siendo una transacción atómica por equipo.
+**Solapamiento de corridas — corrección post-implementación**: la versión
+original de este research.md daba por sentado que solapar dos corridas de
+`sync()` era, en el peor caso, inofensivo ("upserts redundantes, no
+corrupción"), y que por eso no hacía falta ningún lock. Eso era **incorrecto**:
+`HttpWhoScoredAdapter` guardaba `tournamentId`/`seedPlayerByTeam` como campos
+de instancia, y dos corridas solapadas sobre el mismo singleton sí podían
+pisarse ese estado — una corrida de una liga podía terminar leyendo el
+`tournamentId` que otra corrida, sincronizando otra liga en simultáneo, ya
+había sobreescrito. El síntoma no era un error visible: un jugador con stats
+reales en su competencia podía terminar con métricas en `null` porque el
+filtro de temporada usó el `tournamentId` equivocado, sin lanzar excepción ni
+loguearse en ningún lado. Se corrigió en dos frentes (ver §3, "Corrección
+post-implementación", y `contracts/whoscored-adapter.md`):
+
+1. **La solución de fondo**: sacar todo el estado mutable del Adapter.
+   `tournamentId` y `seedPlayerByTeam` ahora viajan por el valor de retorno de
+   `fetchLeagueTeams` y como parámetros explícitos de `fetchTeamRoster`; el
+   Adapter no tiene ningún campo entre llamadas más allá del `logger`. Dos
+   corridas —solapadas o no— ya no tienen ningún dato compartido que puedan
+   pisarse.
+2. **Defensa en profundidad**: `PlayerSyncService.sync()` usa
+   `@Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })`, para que
+   el propio scheduler tampoco dispare una corrida nueva mientras la anterior
+   sigue corriendo. Esto reduce todavía más la chance de que dos corridas
+   lleguen a ejecutarse en simultáneo, pero no es la garantía real: la
+   garantía real es (1).
+
+La estimación de volumen/duración de la corrida (arriba) no cambia: sigue
+siendo la razón por la que una corrida podría en teoría extenderse más de lo
+esperado, sólo que ahora eso ya no es peligroso aunque ocurra.
 
 ## §7. Frecuencia del scheduler
 

@@ -8,6 +8,7 @@ import { WHOSCORED_ADAPTER } from '../player-sync.constants';
 import { PLAYER_REPOSITORY } from '../player.constants';
 import {
   WhoScoredAdapter,
+  WhoScoredLeagueTeams,
   WhoScoredRawPlayer,
   WhoScoredTeamRef,
 } from '../adapters/whoscored-adapter';
@@ -17,17 +18,33 @@ import { PlayerMapper } from '../repositories/mappers/player.mapper';
 import { TypeOrmPlayerRepository } from '../repositories/typeorm-player.repository';
 import { PlayerSyncService } from './player-sync.service';
 
-/** Fake sin HTTP: los tests de PlayerSyncService no dependen del parseo real de WhoScored (eso lo cubre http-whoscored-adapter.spec.ts). */
+/**
+ * Fake sin HTTP: los tests de PlayerSyncService no dependen del parseo real
+ * de WhoScored (eso lo cubre http-whoscored-adapter.spec.ts). Sin campos que
+ * un método escriba para que otro lea después (research.md §1 de
+ * 006-whoscored-catalog-sync): `tournamentId` es una constante fija y el
+ * jugador semilla de cada equipo se deriva de `teamsByLeague` en el momento,
+ * nunca se guarda entre llamadas.
+ */
 class FakeWhoScoredAdapter implements WhoScoredAdapter {
+  static readonly TOURNAMENT_ID = 2;
+
   rosterByTeam = new Map<string, WhoScoredRawPlayer[]>();
   teamsByLeague = new Map<League, WhoScoredTeamRef[]>();
   failingLeagues = new Set<League>();
 
-  fetchLeagueTeams(league: League): Promise<WhoScoredTeamRef[]> {
+  fetchLeagueTeams(league: League): Promise<WhoScoredLeagueTeams> {
     if (this.failingLeagues.has(league)) {
       return Promise.reject(new Error('WhoScored caído'));
     }
-    return Promise.resolve(this.teamsByLeague.get(league) ?? []);
+    const teams = this.teamsByLeague.get(league) ?? [];
+    return Promise.resolve({
+      tournamentId: FakeWhoScoredAdapter.TOURNAMENT_ID,
+      teams,
+      seedPlayerByTeam: new Map(
+        teams.map((t) => [t.externalTeamId, `seed-${t.externalTeamId}`]),
+      ),
+    });
   }
 
   fetchTeamRoster(team: WhoScoredTeamRef): Promise<WhoScoredRawPlayer[]> {

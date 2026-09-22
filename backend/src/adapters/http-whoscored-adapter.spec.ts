@@ -51,22 +51,27 @@ describe('HttpWhoScoredAdapter', () => {
     adapter = new HttpWhoScoredAdapter();
   });
 
+  const MANCHESTER_UNITED = { externalTeamId: '32', team: 'Manchester United' };
+  const PREMIER_LEAGUE_TOURNAMENT_ID = 2;
+  const BRUNO_FERNANDES_ID = '123761';
+
   describe('fetchLeagueTeams', () => {
-    it('parsea los equipos reales de la liga desde el fixture capturado, sin duplicados', async () => {
+    it('parsea los equipos reales de la liga desde el fixture capturado, sin duplicados, junto con tournamentId y el mapa de jugadores semilla', async () => {
       mockGetByUrl({
         playerstatistics: PLAYER_STATISTICS_HTML,
         '/regions/252/tournaments/2/': LEAGUE_TEAMS_HTML,
       });
 
-      const teams = await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
+      const result = await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
 
-      expect(teams.length).toBeGreaterThan(0);
-      const ids = teams.map((t) => t.externalTeamId);
+      expect(result.tournamentId).toBe(PREMIER_LEAGUE_TOURNAMENT_ID);
+      expect(result.teams.length).toBeGreaterThan(0);
+      const ids = result.teams.map((t) => t.externalTeamId);
       expect(new Set(ids).size).toBe(ids.length); // sin duplicados
-      expect(teams).toContainEqual({
-        externalTeamId: '32',
-        team: 'Manchester United',
-      });
+      expect(result.teams).toContainEqual(MANCHESTER_UNITED);
+      // playerAssistData del fixture: {"TeamId":32,"GSPlayerId":123761,"GAPlayerId":300713}
+      // — GAPlayerId pisa a GSPlayerId para el mismo TeamId (mismo orden de .set() que antes).
+      expect(result.seedPlayerByTeam.get('32')).toBe('300713');
     });
 
     it('propaga el error si no se puede obtener la página de la liga (FR-014 nivel liga)', async () => {
@@ -79,48 +84,38 @@ describe('HttpWhoScoredAdapter', () => {
   });
 
   describe('fetchTeamRoster', () => {
-    it('lanza si no hay un jugador semilla conocido para ese equipo (equipo nunca sincronizado con éxito)', async () => {
-      await expect(
-        adapter.fetchTeamRoster({ externalTeamId: '999', team: 'Desconocido' }),
-      ).rejects.toThrow(/jugador semilla/);
-    });
-
-    it('descubre el plantel completo (id, nombre, posición cruda normalizada) vía el jugador semilla', async () => {
+    it('descubre el plantel completo (id, nombre, posición cruda normalizada) vía el jugador semilla recibido por parámetro', async () => {
       mockGetByUrl({
-        playerstatistics: PLAYER_STATISTICS_HTML,
-        '/regions/252/tournaments/2/': LEAGUE_TEAMS_HTML,
         '/matchstatistics/': PLAYER_MATCHSTATS_HTML,
         '/show/': PLAYER_MATCHSTATS_HTML,
       });
-      await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE); // cosecha la semilla del equipo 32
 
-      const roster = await adapter.fetchTeamRoster({
-        externalTeamId: '32',
-        team: 'Manchester United',
-      });
+      const roster = await adapter.fetchTeamRoster(
+        MANCHESTER_UNITED,
+        PREMIER_LEAGUE_TOURNAMENT_ID,
+        BRUNO_FERNANDES_ID,
+      );
 
       expect(roster.length).toBe(20); // las 20 <option> del fixture real
-      const brunoFernandes = roster.find((p) => p.externalId === '123761');
+      const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID);
       expect(brunoFernandes).toBeDefined();
       expect(brunoFernandes!.name).toBe('Bruno Fernandes');
       expect(brunoFernandes!.rawPosition).toBe('MC'); // "M(CLR),FW" -> primer grupo, primera sub-posición
     });
 
-    it('trae las métricas de la competencia sincronizada, promedio por partido (valores reales del fixture)', async () => {
+    it('trae las métricas de la competencia (tournamentId) recibida por parámetro, promedio por partido (valores reales del fixture)', async () => {
       mockGetByUrl({
-        playerstatistics: PLAYER_STATISTICS_HTML,
-        '/regions/252/tournaments/2/': LEAGUE_TEAMS_HTML,
         '/matchstatistics/': PLAYER_MATCHSTATS_HTML,
         '/show/': PLAYER_MATCHSTATS_HTML,
       });
-      await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
 
-      const roster = await adapter.fetchTeamRoster({
-        externalTeamId: '32',
-        team: 'Manchester United',
-      });
+      const roster = await adapter.fetchTeamRoster(
+        MANCHESTER_UNITED,
+        PREMIER_LEAGUE_TOURNAMENT_ID,
+        BRUNO_FERNANDES_ID,
+      );
 
-      const brunoFernandes = roster.find((p) => p.externalId === '123761')!;
+      const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID)!;
       expect(brunoFernandes.metricsFetchFailed).toBe(false);
       expect(brunoFernandes.metrics).toEqual({
         passesCompleted: 55.6,
@@ -132,13 +127,7 @@ describe('HttpWhoScoredAdapter', () => {
 
     it('un jugador puntual con la página de estadísticas caída no aborta al resto del plantel (FR-018)', async () => {
       mockedAxios.get.mockImplementation((url: string) => {
-        if (url.includes('playerstatistics')) {
-          return Promise.resolve({ data: PLAYER_STATISTICS_HTML });
-        }
-        if (url.includes('/regions/252/tournaments/2/')) {
-          return Promise.resolve({ data: LEAGUE_TEAMS_HTML });
-        }
-        if (url.includes('/players/123761/matchstatistics/')) {
+        if (url.includes(`/players/${BRUNO_FERNANDES_ID}/matchstatistics/`)) {
           return Promise.reject(new Error('500'));
         }
         if (url.includes('/matchstatistics/') || url.includes('/show/')) {
@@ -146,18 +135,18 @@ describe('HttpWhoScoredAdapter', () => {
         }
         return Promise.reject(new Error(`URL no mockeada: ${url}`));
       });
-      await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
 
-      const roster = await adapter.fetchTeamRoster({
-        externalTeamId: '32',
-        team: 'Manchester United',
-      });
+      const roster = await adapter.fetchTeamRoster(
+        MANCHESTER_UNITED,
+        PREMIER_LEAGUE_TOURNAMENT_ID,
+        BRUNO_FERNANDES_ID,
+      );
 
       expect(roster).toHaveLength(20);
-      const brunoFernandes = roster.find((p) => p.externalId === '123761')!;
+      const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID)!;
       expect(brunoFernandes.metricsFetchFailed).toBe(true);
       expect(brunoFernandes.metrics).toBeNull();
-      const teammate = roster.find((p) => p.externalId !== '123761')!;
+      const teammate = roster.find((p) => p.externalId !== BRUNO_FERNANDES_ID)!;
       expect(teammate.metricsFetchFailed).toBe(false);
     });
 
@@ -169,19 +158,55 @@ describe('HttpWhoScoredAdapter', () => {
           </div>
         </body></html>
       `;
-      mockGetByUrl({
-        playerstatistics: PLAYER_STATISTICS_HTML,
-        '/regions/252/tournaments/2/': LEAGUE_TEAMS_HTML,
-        '/show/': PLAYER_PAGE_WITHOUT_SQUAD_HTML,
-      });
-      await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE); // cosecha la semilla del equipo 32
+      mockGetByUrl({ '/show/': PLAYER_PAGE_WITHOUT_SQUAD_HTML });
 
       await expect(
-        adapter.fetchTeamRoster({
-          externalTeamId: '32',
-          team: 'Manchester United',
-        }),
+        adapter.fetchTeamRoster(
+          MANCHESTER_UNITED,
+          PREMIER_LEAGUE_TOURNAMENT_ID,
+          BRUNO_FERNANDES_ID,
+        ),
       ).rejects.toThrow(/plantel.*vino vacío/i);
+    });
+
+    it('dos corridas "simultáneas" con tournamentId distintos no se pisan entre sí: el Adapter no tiene estado compartido', async () => {
+      // Mismo jugador semilla, mismo fixture: su página trae varias
+      // competencias embebidas (Premier League id=2, Champions League
+      // id=12, entre otras — valores reales, ver player-matchstatistics.html).
+      // Dos llamadas a fetchTeamRoster con distinto tournamentId, disparadas
+      // con Promise.all (interleaved a nivel de microtask, no secuenciales),
+      // deben resolver cada una con las métricas de SU PROPIO tournamentId.
+      // Antes del fix, ambas hubiesen leído el mismo `this.currentTournamentId`
+      // (lo que haya escrito la última en pisar el campo).
+      mockGetByUrl({
+        '/matchstatistics/': PLAYER_MATCHSTATS_HTML,
+        '/show/': PLAYER_MATCHSTATS_HTML,
+      });
+
+      const [premierLeagueRun, championsLeagueRun] = await Promise.all([
+        adapter.fetchTeamRoster(MANCHESTER_UNITED, 2, BRUNO_FERNANDES_ID),
+        adapter.fetchTeamRoster(MANCHESTER_UNITED, 12, BRUNO_FERNANDES_ID),
+      ]);
+
+      const brunoPremierLeague = premierLeagueRun.find(
+        (p) => p.externalId === BRUNO_FERNANDES_ID,
+      )!;
+      const brunoChampionsLeague = championsLeagueRun.find(
+        (p) => p.externalId === BRUNO_FERNANDES_ID,
+      )!;
+
+      expect(brunoPremierLeague.metrics).toEqual({
+        passesCompleted: 55.6,
+        shots: 3.8,
+        interceptions: 0,
+        rating: 7.391999999999999,
+      });
+      expect(brunoChampionsLeague.metrics).toEqual({
+        passesCompleted: 46,
+        shots: 3,
+        interceptions: 1,
+        rating: 8.47,
+      });
     });
   });
 });

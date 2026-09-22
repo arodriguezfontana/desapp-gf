@@ -2,7 +2,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WHOSCORED_ADAPTER } from '../player-sync.constants';
 import { PLAYER_REPOSITORY } from '../player.constants';
-import { WhoScoredAdapter, WhoScoredTeamRef } from '../adapters/whoscored-adapter';
+import {
+  WhoScoredAdapter,
+  WhoScoredTeamRef,
+} from '../adapters/whoscored-adapter';
 import { League } from '../domain/player/league';
 import { computePlayersToRemove } from '../domain/player/team-roster-sync';
 import { mapWhoScoredPosition } from '../domain/player/whoscored-position-mapping';
@@ -19,9 +22,10 @@ import { PlayerRepository } from '../repositories/player.repository';
  * demás (FR-014, research.md §1 — "todo-o-nada" acotado a la unidad que
  * falla, no a la corrida completa):
  * - **Liga**: si `fetchLeagueTeams` falla, se saltea sólo esa liga.
- * - **Equipo**: si `fetchTeamRoster` falla, se saltea sólo ese equipo — el
- *   upsert/baja de ese equipo (`applyTeamRosterSync`) es una única
- *   transacción atómica (FR-016).
+ * - **Equipo**: si no hay un jugador semilla conocido para el equipo, o si
+ *   `fetchTeamRoster` falla, se saltea sólo ese equipo — el upsert/baja de
+ *   ese equipo (`applyTeamRosterSync`) es una única transacción atómica
+ *   (FR-016).
  * - **Jugador**: un código de posición no reconocido (FR-012/013) o una
  *   falla puntual de la página de estadísticas (FR-018) no hacen fallar a su
  *   equipo; ambos casos generan una entrada en el log de revisión manual,
@@ -37,13 +41,25 @@ export class PlayerSyncService {
     @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
   ) {}
 
-  /** Frecuencia semanal (research.md §7 de 006-whoscored-catalog-sync). */
-  @Cron(CronExpression.EVERY_WEEK)
+  /**
+   * Frecuencia semanal (research.md §7 de 006-whoscored-catalog-sync).
+   * `waitForCompletion: true` es defensa en profundidad, no la solución de
+   * fondo: le pide al scheduler que nunca dispare una corrida nueva mientras
+   * la anterior sigue corriendo. La solución de fondo es que
+   * `HttpWhoScoredAdapter` ya no tiene ningún estado de instancia entre
+   * corridas (`tournamentId`, el jugador semilla de un equipo viajan acá
+   * como variables locales de esta misma invocación de `sync()`, nunca
+   * guardados en el Adapter) — así que aunque dos corridas llegaran a
+   * solaparse (dos instancias del scheduler, un `sync()` disparado a mano en
+   * paralelo, etc.), no hay ningún dato compartido entre ellas que puedan
+   * pisarse.
+   */
+  @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async sync(): Promise<void> {
     for (const league of Object.values(League)) {
-      let teams: WhoScoredTeamRef[];
+      let leagueTeams: Awaited<ReturnType<WhoScoredAdapter['fetchLeagueTeams']>>;
       try {
-        teams = await this.whoScored.fetchLeagueTeams(league);
+        leagueTeams = await this.whoScored.fetchLeagueTeams(league);
       } catch (error) {
         this.logger.error(
           `No se pudo obtener la lista de equipos de ${league}; se saltea esta liga en esta corrida.`,
@@ -52,16 +68,38 @@ export class PlayerSyncService {
         continue;
       }
 
-      for (const team of teams) {
-        await this.syncTeam(league, team);
+      for (const team of leagueTeams.teams) {
+        await this.syncTeam(
+          league,
+          team,
+          leagueTeams.tournamentId,
+          leagueTeams.seedPlayerByTeam,
+        );
       }
     }
   }
 
-  private async syncTeam(league: League, team: WhoScoredTeamRef): Promise<void> {
+  private async syncTeam(
+    league: League,
+    team: WhoScoredTeamRef,
+    tournamentId: number,
+    seedPlayerByTeam: Map<string, string>,
+  ): Promise<void> {
+    const seedPlayerId = seedPlayerByTeam.get(team.externalTeamId);
+    if (!seedPlayerId) {
+      this.logger.error(
+        `No se encontró un jugador semilla para el equipo ${team.team} (${league}); se saltea este equipo en esta corrida.`,
+      );
+      return;
+    }
+
     let roster: Awaited<ReturnType<WhoScoredAdapter['fetchTeamRoster']>>;
     try {
-      roster = await this.whoScored.fetchTeamRoster(team);
+      roster = await this.whoScored.fetchTeamRoster(
+        team,
+        tournamentId,
+        seedPlayerId,
+      );
     } catch (error) {
       this.logger.error(
         `No se pudo obtener el plantel de ${team.team} (${league}); se saltea este equipo en esta corrida.`,

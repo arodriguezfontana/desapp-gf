@@ -194,9 +194,17 @@ equipo, liga, métricas, `removed_at = NULL`); para `removeExternalIds`, un
 ## Puerto: `WhoScoredAdapter`
 
 Ver research.md §3 para la interfaz completa (`fetchLeagueTeams`,
-`fetchTeamRoster`, y los tipos `WhoScoredTeamRef`/`WhoScoredRawPlayer`/
-`WhoScoredRawMetrics`). Vive en `adapters/whoscored-adapter.ts`, implementado
-por `adapters/http-whoscored-adapter.ts` (axios + cheerio, research.md §4).
+`fetchTeamRoster`, y los tipos `WhoScoredLeagueTeams`/`WhoScoredTeamRef`/
+`WhoScoredRawPlayer`/`WhoScoredRawMetrics`). Vive en
+`adapters/whoscored-adapter.ts`, implementado por
+`adapters/http-whoscored-adapter.ts` (axios + cheerio, research.md §4).
+
+**Corrección post-implementación**: `fetchLeagueTeams` devuelve
+`{ tournamentId, teams, seedPlayerByTeam }` (no sólo `teams`), y
+`fetchTeamRoster` recibe `tournamentId`/`seedPlayerId` como parámetros
+explícitos. El Adapter no guarda ninguno de los dos entre llamadas — research.md
+§3 y §6 explican por qué (era un estado compartido inseguro entre corridas
+solapadas de un Adapter que es singleton).
 
 ## Nuevo Service: `PlayerSyncService` (no expuesto a clientes)
 
@@ -206,26 +214,38 @@ arriba — `services/player-sync.service.ts`:
 ```
 sync():
   for each league in Object.values(League):            // FR-004
-    try teams = whoScored.fetchLeagueTeams(league)
+    try leagueTeams = whoScored.fetchLeagueTeams(league)   // { tournamentId, teams, seedPlayerByTeam }
     catch -> log(nivel=liga, league) ; continue          // FR-014/015 nivel liga
 
-    for each team in teams:
-      try roster = whoScored.fetchTeamRoster(team)
-      catch -> log(nivel=equipo, league, team) ; continue // FR-014/015 nivel equipo
+    for each team in leagueTeams.teams:
+      syncTeam(league, team, leagueTeams.tournamentId, leagueTeams.seedPlayerByTeam)
 
-      upserts: PlayerSyncInput[] = []
-      for each raw in roster:
-        position = mapWhoScoredPosition(raw.rawPosition)
-        if position is undefined:
-          manualReviewLog({ reason: 'unrecognized-position', ... }); continue  // FR-012/013
-        if raw.metricsFetchFailed:
-          manualReviewLog({ reason: 'stats-fetch-failed', ... })               // FR-018
-        upserts.push({ externalId: raw.externalId, name: raw.name, position, metrics: raw.metrics })
+syncTeam(league, team, tournamentId, seedPlayerByTeam):
+  seedPlayerId = seedPlayerByTeam.get(team.externalTeamId)
+  if seedPlayerId is undefined:
+    log(nivel=equipo, "sin jugador semilla", league, team) ; return  // FR-014/015 nivel equipo
 
-      activeIds = playerRepository.findActiveExternalIdsByTeam(league, team.team)
-      toRemove = computePlayersToRemove(activeIds, upserts.map(u => u.externalId))
-      playerRepository.applyTeamRosterSync(league, team.team, upserts, toRemove)  // FR-016, atómico por equipo
+  try roster = whoScored.fetchTeamRoster(team, tournamentId, seedPlayerId)
+  catch -> log(nivel=equipo, league, team) ; return          // FR-014/015 nivel equipo
+
+  upserts: PlayerSyncInput[] = []
+  for each raw in roster:
+    position = mapWhoScoredPosition(raw.rawPosition)
+    if position is undefined:
+      manualReviewLog({ reason: 'unrecognized-position', ... }); continue  // FR-012/013
+    if raw.metricsFetchFailed:
+      manualReviewLog({ reason: 'stats-fetch-failed', ... })               // FR-018
+    upserts.push({ externalId: raw.externalId, name: raw.name, position, metrics: raw.metrics })
+
+  activeIds = playerRepository.findActiveExternalIdsByTeam(league, team.team)
+  toRemove = computePlayersToRemove(activeIds, upserts.map(u => u.externalId))
+  playerRepository.applyTeamRosterSync(league, team.team, upserts, toRemove)  // FR-016, atómico por equipo
 ```
+
+`tournamentId` y `seedPlayerByTeam` viven como variables locales de esta
+misma invocación de `sync()` (parámetros de `syncTeam`), nunca como estado
+guardado en el Adapter — es lo que garantiza que dos corridas, solapadas o
+no, no se pisen entre sí (research.md §3, §6).
 
 ## Trazabilidad FR → modelo
 
