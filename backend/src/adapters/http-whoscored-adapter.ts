@@ -52,8 +52,17 @@ interface WhoScoredTournamentSeasonStats {
 
 interface WhoScoredAssistDataEntry {
   TeamId: number;
-  GSPlayerId: number;
-  GAPlayerId: number;
+  // No confirmado que WhoScored garantice un valor acá: un gol sin
+  // asistencia real (jugada individual, penal, gol en contra) puede traer
+  // 0/null/undefined en cualquiera de los dos ids. `isValidPlayerId` filtra
+  // ambos casos antes de guardarlos como semilla.
+  GSPlayerId: number | null | undefined;
+  GAPlayerId: number | null | undefined;
+}
+
+/** `0`, `null`, `undefined` y `NaN` no son ids de jugador válidos. */
+function isValidPlayerId(id: number | null | undefined): id is number {
+  return typeof id === 'number' && id > 0;
 }
 
 /**
@@ -155,8 +164,16 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
         'playerAssistData',
       );
       for (const entry of assistData) {
-        seedPlayerByTeam.set(String(entry.TeamId), String(entry.GSPlayerId));
-        seedPlayerByTeam.set(String(entry.TeamId), String(entry.GAPlayerId));
+        // Sólo se guarda un id válido: si esta entrada trae un id inválido
+        // (gol sin asistencia real, o un GSPlayerId ausente por lo que sea),
+        // no se pisa una semilla válida que ya se hubiera guardado antes
+        // para este mismo equipo (de esta entrada o de una anterior).
+        if (isValidPlayerId(entry.GSPlayerId)) {
+          seedPlayerByTeam.set(String(entry.TeamId), String(entry.GSPlayerId));
+        }
+        if (isValidPlayerId(entry.GAPlayerId)) {
+          seedPlayerByTeam.set(String(entry.TeamId), String(entry.GAPlayerId));
+        }
       }
     } catch (error) {
       this.logger.warn(

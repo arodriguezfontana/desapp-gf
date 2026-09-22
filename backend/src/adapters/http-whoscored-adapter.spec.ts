@@ -81,6 +81,72 @@ describe('HttpWhoScoredAdapter', () => {
         adapter.fetchLeagueTeams(League.PREMIER_LEAGUE),
       ).rejects.toThrow('timeout');
     });
+
+    it.each([
+      ['0', '"GAPlayerId":0'],
+      ['null', '"GAPlayerId":null'],
+      ['undefined (clave ausente)', ''],
+    ])(
+      'un GAPlayerId inválido (%s) en una entrada posterior no pisa la semilla válida ya guardada para el mismo equipo',
+      async (_label, secondEntryGAPlayerIdJson) => {
+        // La segunda entrada representa otro gol del mismo equipo, sin
+        // asistencia real: su GSPlayerId también se pone inválido (0) para
+        // que esta entrada no aporte ningún write válido y así aislar
+        // específicamente si el GAPlayerId inválido pisa lo que ya había
+        // quedado de la primera entrada (GSPlayerId=123761, luego
+        // GAPlayerId=300713 — la semilla final esperada). JSON no tiene un
+        // literal `undefined`: ese caso se simula omitiendo la clave por
+        // completo, que es como luce en JS un campo ausente.
+        const secondEntry = secondEntryGAPlayerIdJson
+          ? `{"TeamId":32,"GSPlayerId":0,${secondEntryGAPlayerIdJson}}`
+          : `{"TeamId":32,"GSPlayerId":0}`;
+        const html = `
+          <html><body>
+            <a href="/regions/252/tournaments/2/seasons/11141/stages/25544/playerstatistics/x">stats</a>
+            <script>
+              require.config.params['args'] = {
+                playerAssistData: [
+                  {"TeamId":32,"GSPlayerId":123761,"GAPlayerId":300713},
+                  ${secondEntry}
+                ],
+              };
+            </script>
+          </body></html>
+        `;
+        mockGetByUrl({
+          playerstatistics: html,
+          '/regions/252/tournaments/2/': LEAGUE_TEAMS_HTML,
+        });
+
+        const result = await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
+
+        // La segunda entrada no aporta ningún id válido (ni GS ni GA): la
+        // semilla debe seguir siendo la de la primera entrada, no perderse
+        // ni quedar en "0"/"null"/"undefined".
+        expect(result.seedPlayerByTeam.get('32')).toBe('300713');
+      },
+    );
+
+    it('un GSPlayerId inválido no se guarda como semilla (mismo guard que GAPlayerId, sin asumir que GSPlayerId siempre es válido)', async () => {
+      const html = `
+        <html><body>
+          <a href="/regions/252/tournaments/2/seasons/11141/stages/25544/playerstatistics/x">stats</a>
+          <script>
+            require.config.params['args'] = {
+              playerAssistData: [{"TeamId":99,"GSPlayerId":0,"GAPlayerId":null}],
+            };
+          </script>
+        </body></html>
+      `;
+      mockGetByUrl({
+        playerstatistics: html,
+        '/regions/252/tournaments/2/': LEAGUE_TEAMS_HTML,
+      });
+
+      const result = await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
+
+      expect(result.seedPlayerByTeam.has('99')).toBe(false);
+    });
   });
 
   describe('fetchTeamRoster', () => {
