@@ -147,6 +147,37 @@ describe('HttpWhoScoredAdapter', () => {
 
       expect(result.seedPlayerByTeam.has('99')).toBe(false);
     });
+
+    it('si la página de la liga no tiene ningún link a "playerstatistics", devuelve los equipos igual con un mapa de semillas vacío (no lanza)', async () => {
+      const leaguePageWithoutStatsLink = `
+        <html><body>
+          <a href="/teams/32/show/england-manchester-united">Manchester United</a>
+        </body></html>
+      `;
+      mockGetByUrl({ '/regions/252/tournaments/2/': leaguePageWithoutStatsLink });
+
+      const result = await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
+
+      expect(result.teams).toContainEqual(MANCHESTER_UNITED);
+      expect(result.seedPlayerByTeam.size).toBe(0);
+    });
+
+    it('si falla el fetch de la página de estadísticas de jugadores (el link sí existe), devuelve los equipos igual con un mapa de semillas vacío (no lanza)', async () => {
+      mockedAxios.get.mockImplementation((url: string) => {
+        if (url.includes('playerstatistics')) {
+          return Promise.reject(new Error('500'));
+        }
+        if (url.includes('/regions/252/tournaments/2/')) {
+          return Promise.resolve({ data: LEAGUE_TEAMS_HTML });
+        }
+        return Promise.reject(new Error(`URL no mockeada: ${url}`));
+      });
+
+      const result = await adapter.fetchLeagueTeams(League.PREMIER_LEAGUE);
+
+      expect(result.teams).toContainEqual(MANCHESTER_UNITED);
+      expect(result.seedPlayerByTeam.size).toBe(0);
+    });
   });
 
   describe('fetchTeamRoster', () => {
@@ -273,6 +304,67 @@ describe('HttpWhoScoredAdapter', () => {
         interceptions: 1,
         rating: 8.47,
       });
+    });
+
+    it('un jugador sin ninguna fila jugada para el tournamentId pedido trae metrics null sin que cuente como falla (legítimo, distinto de metricsFetchFailed)', async () => {
+      mockGetByUrl({
+        '/matchstatistics/': PLAYER_MATCHSTATS_HTML,
+        '/show/': PLAYER_MATCHSTATS_HTML,
+      });
+      const UNKNOWN_TOURNAMENT_ID = 999999; // no aparece en el fixture real
+
+      const roster = await adapter.fetchTeamRoster(
+        MANCHESTER_UNITED,
+        UNKNOWN_TOURNAMENT_ID,
+        BRUNO_FERNANDES_ID,
+      );
+
+      const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID)!;
+      expect(brunoFernandes.metrics).toBeNull();
+      expect(brunoFernandes.metricsFetchFailed).toBe(false);
+    });
+
+    it('si la página de estadísticas de un jugador no tiene el bloque "tournaments" embebido, ese jugador queda con metricsFetchFailed (estructura de página inesperada)', async () => {
+      const matchStatsPageWithoutTournamentsBlock = `<html><body>sin datos embebidos</body></html>`;
+      mockGetByUrl({
+        '/matchstatistics/': matchStatsPageWithoutTournamentsBlock,
+        '/show/': PLAYER_MATCHSTATS_HTML,
+      });
+
+      const roster = await adapter.fetchTeamRoster(
+        MANCHESTER_UNITED,
+        PREMIER_LEAGUE_TOURNAMENT_ID,
+        BRUNO_FERNANDES_ID,
+      );
+
+      const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID)!;
+      expect(brunoFernandes.metricsFetchFailed).toBe(true);
+      expect(brunoFernandes.metrics).toBeNull();
+    });
+
+    it('si el bloque "tournaments" embebido viene truncado (array sin cerrar), ese jugador queda con metricsFetchFailed (estructura de página inesperada)', async () => {
+      const matchStatsPageWithTruncatedTournamentsBlock = `
+        <html><body>
+          <script>
+            require.config.params['args'] = {
+              tournaments: [{"TournamentId":2,"GameStarted":5
+          </script>
+        </body></html>
+      `;
+      mockGetByUrl({
+        '/matchstatistics/': matchStatsPageWithTruncatedTournamentsBlock,
+        '/show/': PLAYER_MATCHSTATS_HTML,
+      });
+
+      const roster = await adapter.fetchTeamRoster(
+        MANCHESTER_UNITED,
+        PREMIER_LEAGUE_TOURNAMENT_ID,
+        BRUNO_FERNANDES_ID,
+      );
+
+      const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID)!;
+      expect(brunoFernandes.metricsFetchFailed).toBe(true);
+      expect(brunoFernandes.metrics).toBeNull();
     });
   });
 });
