@@ -114,4 +114,84 @@ describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres 
       ).rejects.toThrow(PlayerNotFoundError);
     });
   });
+
+  describe('Métricas de rendimiento y baja lógica (006-whoscored-catalog-sync)', () => {
+    const metricsFixtures: PlayerEntity[] = [
+      Object.assign(new PlayerEntity(), {
+        id: '44444444-4444-4444-4444-444444444444',
+        externalId: 'ws-44444444',
+        name: 'Fixture Con Métricas',
+        league: 'Serie A',
+        team: 'Equipo Metricas',
+        position: 'FW',
+        passesCompleted: 10.5,
+        shots: 2.1,
+        interceptions: 0.4,
+        rating: 6.9,
+      }),
+      Object.assign(new PlayerEntity(), {
+        id: '55555555-5555-5555-5555-555555555555',
+        externalId: 'ws-55555555',
+        name: 'Fixture Sin Métricas',
+        league: 'Serie A',
+        team: 'Equipo Metricas',
+        position: 'MF',
+      }),
+      Object.assign(new PlayerEntity(), {
+        id: '66666666-6666-6666-6666-666666666666',
+        externalId: 'ws-66666666',
+        name: 'Fixture Dado De Baja',
+        league: 'Serie A',
+        team: 'Equipo Metricas',
+        position: 'GK',
+        removedAt: new Date(),
+      }),
+    ];
+
+    beforeEach(async () => {
+      await dataSource.getRepository(PlayerEntity).clear();
+      await dataSource.getRepository(PlayerEntity).save(metricsFixtures);
+    });
+
+    it('expone las 4 métricas con valor cuando están disponibles', async () => {
+      const player = await service.getPlayerById(
+        '44444444-4444-4444-4444-444444444444',
+      );
+      expect(player.passesCompleted).toBe(10.5);
+      expect(player.shots).toBe(2.1);
+      expect(player.interceptions).toBe(0.4);
+      expect(player.rating).toBe(6.9);
+    });
+
+    it('expone las 4 métricas en null cuando no hay valor disponible', async () => {
+      const player = await service.getPlayerById(
+        '55555555-5555-5555-5555-555555555555',
+      );
+      expect(player.passesCompleted).toBeNull();
+      expect(player.shots).toBeNull();
+      expect(player.interceptions).toBeNull();
+      expect(player.rating).toBeNull();
+    });
+
+    it('findPage excluye a los jugadores dados de baja (removedAt) del listado y del total', async () => {
+      const result = await service.listPlayers(
+        { team: 'Equipo Metricas' },
+        { page: 1, pageSize: 10 },
+      );
+
+      expect(result.total).toBe(2);
+      expect(result.items.map((p) => p.id).sort()).toEqual(
+        [
+          '44444444-4444-4444-4444-444444444444',
+          '55555555-5555-5555-5555-555555555555',
+        ].sort(),
+      );
+    });
+
+    it('getPlayerById lanza PlayerNotFoundError para un jugador dado de baja (FR-016)', async () => {
+      await expect(
+        service.getPlayerById('66666666-6666-6666-6666-666666666666'),
+      ).rejects.toThrow(PlayerNotFoundError);
+    });
+  });
 });

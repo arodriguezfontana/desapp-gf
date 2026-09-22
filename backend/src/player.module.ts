@@ -19,5 +19,6 @@ import { PlayerService } from './services/player.service';
     ApiKeyGuard,
     { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
   ],
+  exports: [PLAYER_REPOSITORY],
 })
 export class PlayerModule {}
