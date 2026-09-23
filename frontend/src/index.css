@@ -1,30 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background:       #0f1d36;
-  --color-surface:          #172a4a;
-  --color-surface-hover:    #1e3863;
-  --color-surface-card:     #13223d;
   --color-background:       #0b3332;
   --color-surface:          #104443;
   --color-surface-hover:    #165756;
   --color-surface-card:     #0e3b3a;
   --color-foreground:       #ffffff;
-  --color-muted:            #94a3b8;
-  --color-primary:          #0f1d36;
-  --color-primary-bright:   #172a4a;
-  --color-secondary:        #10b981;
-  --color-secondary-bright: #34d399;
-  --color-accent:           #f3ba2f;
-  --color-accent-hover:     #d9a320;
-  --color-positive:         #10b981;
   --color-muted:            #9ca3af;
   --color-primary:          #0b3332;
   --color-primary-bright:   #104443;
   --color-secondary:        #2dd4bf;
   --color-secondary-bright: #5eead4;
-  --color-accent:           #d4af37;
-  --color-accent-hover:     #b89528;
+  --color-accent:           #b79753;
+  --color-accent-hover:     #9e8144;
   --color-positive:         #2dd4bf;
   --color-negative:         #f43f5e;
 }
@@ -47,22 +35,18 @@
   animation: heroSlide 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Custom scrollbar styling for Deep Navy Financial Dashboard */
-/* Custom scrollbar styling for Deep Petrol Green & Gold Financial Dashboard */
+/* Custom scrollbar styling for Deep Petrol Green & Soft Gold Dashboard */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f1d36;
   background: #0b3332;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e3a66;
   background: #1a6866;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #f3ba2f;
-  background: #d4af37;
+  background: #b79753;
 }

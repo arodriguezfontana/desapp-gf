@@ -21,19 +21,19 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b3332]/80 backdrop-blur-md p-4 animate-fade-in">
-      <div className="w-full max-w-lg bg-[#104443] border-2 border-[#d4af37] p-6 sm:p-8 shadow-2xl rounded-2xl relative overflow-hidden text-white">
-        <div className="h-1.5 bg-gradient-to-r from-[#d4af37] via-[#1a6866] to-[#d4af37] absolute top-0 inset-x-0" />
+      <div className="w-full max-w-lg bg-[#104443] border-2 border-[#b79753] p-6 sm:p-8 shadow-2xl rounded-2xl relative overflow-hidden text-white">
+        <div className="h-1.5 bg-gradient-to-r from-[#b79753] via-[#1a6866] to-[#b79753] absolute top-0 inset-x-0" />
 
         <div className="flex items-center justify-between mb-4 pt-2">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#d4af37] animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#b79753] animate-pulse" />
             <h2 className="text-xl font-black uppercase tracking-wider text-white">
               Tu ApiKey
             </h2>
           </div>
         </div>
 
-        <div className="mb-6 p-4 bg-[#d4af37]/20 border-l-4 border-[#d4af37] text-[#d4af37] font-black text-xs uppercase tracking-wider shadow-md rounded-lg">
+        <div className="mb-6 p-4 bg-[#b79753]/20 border-l-4 border-[#b79753] text-[#b79753] font-black text-xs uppercase tracking-wider shadow-md rounded-lg">
           Guardá esta clave ahora. No podrás volver a consultarla.
         </div>
 
@@ -51,7 +51,7 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
             <button
               type="button"
               onClick={handleCopy}
-              className="px-5 py-3 text-xs font-black uppercase tracking-widest bg-[#d4af37] hover:bg-[#b89528] text-[#0b3332] shadow-md transition-all whitespace-nowrap rounded-xl active:scale-95 cursor-pointer border border-white/20"
+              className="px-5 py-3 text-xs font-black uppercase tracking-widest bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] shadow-md transition-all whitespace-nowrap rounded-xl active:scale-95 cursor-pointer border border-white/20"
             >
               {copied ? '¡Copiado!' : 'Copiar'}
             </button>
@@ -62,7 +62,7 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 text-xs font-black uppercase tracking-widest bg-[#1a6866] hover:bg-[#d4af37] text-white hover:text-[#0b3332] transition-all rounded-xl shadow-md cursor-pointer border border-[#d4af37]/30"
+            className="px-6 py-2.5 text-xs font-black uppercase tracking-widest bg-[#1a6866] hover:bg-[#b79753] text-white hover:text-[#0b3332] transition-all rounded-xl shadow-md cursor-pointer border border-[#b79753]/30"
           >
             Cerrar
           </button>

@@ -23,7 +23,7 @@ function renderLayout(logout = vi.fn(), initialPath = '/home') {
 describe('AppLayout', () => {
   it('renderiza la marca, la navegación y el contenido de la ruta activa', () => {
     renderLayout();
-    expect(screen.getAllByText(/desapp/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/fútval/i).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /inicio/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /mi cuenta/i }).length).toBeGreaterThan(0);
     expect(screen.getByText('Home Content')).toBeInTheDocument();

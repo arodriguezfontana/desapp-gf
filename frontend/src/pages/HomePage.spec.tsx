@@ -18,7 +18,7 @@ describe('HomePage', () => {
 
   it('muestra el primer slide del hero por defecto', () => {
     renderHome();
-    expect(screen.getByText(/bienvenido a desapp fútbol/i)).toBeInTheDocument();
+    expect(screen.getByText(/bienvenido a fútval/i)).toBeInTheDocument();
   });
 
   it('cambia de slide al hacer clic en un indicador', () => {
@@ -30,7 +30,7 @@ describe('HomePage', () => {
   it('rota automáticamente de slide cada 5 segundos', () => {
     vi.useFakeTimers();
     renderHome();
-    expect(screen.getByText(/bienvenido a desapp fútbol/i)).toBeInTheDocument();
+    expect(screen.getByText(/bienvenido a fútval/i)).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(5000);

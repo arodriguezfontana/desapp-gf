@@ -28,9 +28,9 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-[#104443] px-6 py-4 rounded-2xl border border-[#1a6866] shadow-xl">
       <div className="text-xs sm:text-sm text-gray-300 font-semibold">
-        Mostrando <span className="font-black text-[#d4af37]">{startRange}</span> -{' '}
-        <span className="font-black text-[#d4af37]">{endRange}</span> de{' '}
-        <span className="font-black text-[#d4af37]">{totalItems}</span> jugadores
+        Mostrando <span className="font-black text-[#b79753]">{startRange}</span> -{' '}
+        <span className="font-black text-[#b79753]">{endRange}</span> de{' '}
+        <span className="font-black text-[#b79753]">{totalItems}</span> jugadores
       </div>
 
       <div className="flex items-center space-x-3">
@@ -41,7 +41,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
             isPrevDisabled
               ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
-              : 'bg-[#d4af37] text-[#0b3332] border-[#d4af37] hover:bg-[#b89528] shadow-md shadow-[#d4af37]/30'
+              : 'bg-[#b79753] text-[#0b3332] border-[#b79753] hover:bg-[#9e8144] shadow-md shadow-[#b79753]/30'
           }`}
         >
           &larr; Anterior
@@ -58,7 +58,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
             isNextDisabled
               ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
-              : 'bg-[#d4af37] text-[#0b3332] border-[#d4af37] hover:bg-[#b89528] shadow-md shadow-[#d4af37]/30'
+              : 'bg-[#b79753] text-[#0b3332] border-[#b79753] hover:bg-[#9e8144] shadow-md shadow-[#b79753]/30'
           }`}
         >
           Siguiente &rarr;

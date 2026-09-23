@@ -6,28 +6,41 @@ const HERO_SLIDES = [
     id: 1,
     image: '/assets/stadium_hero.jpg',
     badge: 'MERCADO OFICIAL DE FICHAJES',
-    badgeColor: 'bg-[#d4af37] text-[#0b3332]',
-    title: 'BIENVENIDO A DESAPP FÚTBOL',
+    badgeColor: 'bg-[#b79753] text-[#0b3332]',
+    title: 'BIENVENIDO A FÚTVAL',
     subtitle: 'Plataforma oficial de consulta de catálogo de jugadores y cotización en tiempo real para las 5 ligas europeas principales.',
     ctaText: 'EXPLORAR CATÁLOGO DE JUGADORES',
     ctaLink: '/catalog',
+    position: 'object-cover object-center',
   },
   {
     id: 2,
-    image: '/assets/soccer_player.jpg',
+    image: '/assets/soccer_ball_macro.jpg',
     badge: 'ACCESO PERSONAL & SEGURIDAD',
     badgeColor: 'bg-[#2dd4bf] text-[#0b3332]',
     title: 'GESTIÓN DE SEGURIDAD & APIKEY',
     subtitle: 'Administrá tus claves de acceso personales para consultar el catálogo de futbolistas con total seguridad y privacidad.',
     ctaText: 'IR A MI CUENTA & CLAVE',
     ctaLink: '/account',
+    position: 'object-cover object-center',
+  },
+  {
+    id: 3,
+    image: '/assets/player_celebration.jpg',
+    badge: 'PASIÓN & COMPETICIÓN',
+    badgeColor: 'bg-[#b79753] text-[#0b3332]',
+    title: 'EMOCIÓN DEL FÚTBOL DE ÉLITE',
+    subtitle: 'Seguí el rendimiento de las máximas figuras del fútbol europeo con estadísticas y valoraciones actualizadas.',
+    ctaText: 'VER FICHAJES',
+    ctaLink: '/catalog',
+    position: 'object-cover object-center',
   },
 ];
 
 export function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Rotación automática de slides cada 5 segundos
+  // Rotación automática de los 3 slides cada 5 segundos
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
@@ -39,22 +52,22 @@ export function HomePage() {
 
   return (
     <div className="w-full animate-fade-in">
-      <title>Inicio — Football Market</title>
+      <title>Inicio — FútVal</title>
 
-      {/* FULL WIDTH HERO SLIDER SECTION (EDGE-TO-EDGE) */}
-      <section className="relative w-full bg-[#0b3332] border-b border-[#1a6866] min-h-[460px] sm:min-h-[500px] flex flex-col justify-between overflow-hidden group">
-        {/* Background Slide Image with Full Bleed */}
-        <div key={currentSlide.id} className="absolute inset-0 z-0 animate-hero-fade">
+      {/* FULL WIDTH HERO SLIDER SECTION (3 SLIDES MAX) */}
+      <section className="relative w-full bg-[#0b3332] border-b border-[#1a6866] min-h-[480px] sm:min-h-[520px] flex flex-col justify-between overflow-hidden group">
+        {/* Background Slide Image */}
+        <div key={currentSlide.id} className="absolute inset-0 z-0 animate-hero-fade flex items-center justify-center bg-[#072221]">
           <img
             src={currentSlide.image}
-            alt="Estadio de fútbol profesional"
-            className="w-full h-full object-cover filter brightness-50 contrast-110 group-hover:scale-105 transition-transform duration-700"
+            alt={currentSlide.title}
+            className={`w-full h-full ${currentSlide.position} filter brightness-60 contrast-110 group-hover:scale-105 transition-transform duration-700`}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/80 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0b3332]/95 via-[#0b3332]/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/75 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b3332]/90 via-[#0b3332]/50 to-transparent" />
         </div>
 
-        {/* Content Container (Centered Content within Full Bleed Hero) */}
+        {/* Content Container */}
         <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
           {/* Top Floating Badge */}
           <div className="flex justify-between items-start mb-6">
@@ -62,7 +75,7 @@ export function HomePage() {
               {currentSlide.badge}
             </span>
 
-            <div className="flex items-center gap-2 bg-[#072221]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#d4af37]/30">
+            <div className="flex items-center gap-2 bg-[#072221]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#b79753]/30">
               <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-ping" />
               <span className="text-xs font-black uppercase tracking-widest text-white">
                 TEMPORADA 2026 / 2027
@@ -82,7 +95,7 @@ export function HomePage() {
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 to={currentSlide.ctaLink}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-[#d4af37] hover:bg-[#b89528] text-[#0b3332] font-black uppercase tracking-widest text-xs sm:text-sm shadow-xl hover:shadow-[#d4af37]/40 transition-all rounded-xl active:scale-95 border border-white/20"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest text-xs sm:text-sm shadow-xl hover:shadow-[#b79753]/40 transition-all rounded-xl active:scale-95 border border-white/20"
               >
                 <span>{currentSlide.ctaText}</span>
                 <span className="text-lg">&rarr;</span>
@@ -91,7 +104,7 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* Bottom Slide Indicators */}
+        {/* Bottom 3 Slide Indicators */}
         <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-6">
           <div className="flex items-center gap-3 max-w-xs">
             {HERO_SLIDES.map((slide, index) => (
@@ -104,7 +117,7 @@ export function HomePage() {
                 <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-500 ${
-                      index === activeSlide ? 'bg-[#d4af37] w-full' : 'bg-transparent w-0'
+                      index === activeSlide ? 'bg-[#b79753] w-full' : 'bg-transparent w-0'
                     }`}
                   />
                 </div>
@@ -114,10 +127,10 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* CLEAN MINIMALIST FEATURE MODULES */}
+      {/* FEATURED MODULES WITH DECORATIVE ASSET IMAGES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] bg-[#104443] px-3.5 py-1.5 rounded-full border border-[#d4af37]/30 inline-block mb-3">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3.5 py-1.5 rounded-full border border-[#b79753]/30 inline-block mb-3">
             FUNCIONALIDADES PRINCIPALES
           </span>
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white">
@@ -129,115 +142,136 @@ export function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {/* Module 1: Catálogo de Jugadores */}
-          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#d4af37] p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-[#0b3332] border border-[#d4af37]/40 text-[#d4af37] font-black text-xl flex items-center justify-center mb-6 shadow-inner">
-                📋
-              </div>
-
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] block mb-1">
+          {/* Module 1: Catálogo de Jugadores con Imagen Decorativa Táctica */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+              <img
+                src="/assets/tactics_board.jpg"
+                alt="Táctica y Análisis de Fútbol"
+                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#2dd4bf]/40">
                 FUTBOLISTAS & CLUBES
               </span>
-              <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#d4af37] transition-colors">
-                Catálogo de Jugadores
-              </h3>
-              <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
-                Consultá futbolistas de Premier League, La Liga, Serie A, Bundesliga y Ligue 1. Filtrá por posición, equipo o competencia con paginación integrada.
-              </p>
-
-              <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-8">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#2dd4bf] font-black">✓</span>
-                  <span>Filtros combinados por liga y club.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#2dd4bf] font-black">✓</span>
-                  <span>Búsqueda instantánea por nombre de equipo.</span>
-                </li>
-              </ul>
             </div>
 
-            <Link
-              to="/catalog"
-              className="w-full py-3 bg-[#d4af37] hover:bg-[#b89528] text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center shadow-md hover:shadow-lg active:scale-95"
-            >
-              Ir al Catálogo &rarr;
-            </Link>
-          </div>
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
+                  Catálogo de Jugadores
+                </h3>
+                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                  Consultá futbolistas de Premier League, La Liga, Serie A, Bundesliga y Ligue 1. Filtrá por posición, equipo o competencia con paginación integrada.
+                </p>
 
-          {/* Module 2: Claves de Acceso Personal */}
-          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#d4af37] p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-[#0b3332] border border-[#d4af37]/40 text-[#d4af37] font-black text-xl flex items-center justify-center mb-6 shadow-inner">
-                🔑
+                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Filtros combinados por liga y club.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Búsqueda instantánea por nombre de equipo.</span>
+                  </li>
+                </ul>
               </div>
 
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] block mb-1">
+              <Link
+                to="/catalog"
+                className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center shadow-md hover:shadow-lg active:scale-95 mt-2"
+              >
+                Ir al Catálogo &rarr;
+              </Link>
+            </div>
+          </div>
+
+          {/* Module 2: Claves de Acceso Personal con Imagen Decorativa Jugador en Acción */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+              <img
+                src="/assets/soccer_player.jpg"
+                alt="Futbolista en Acción"
+                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#b79753]/40">
                 ACCESO SEGURO
               </span>
-              <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#d4af37] transition-colors">
-                Gestión de Clave
-              </h3>
-              <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
-                Generá tu clave de acceso personal en tu panel de cuenta para ingresar de forma segura y consultar la información completa del catálogo.
-              </p>
-
-              <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-8">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#d4af37] font-black">✓</span>
-                  <span>Generación instantánea desde tu cuenta.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#d4af37] font-black">✓</span>
-                  <span>Renovación segura de claves en 1 clic.</span>
-                </li>
-              </ul>
             </div>
 
-            <Link
-              to="/account"
-              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#d4af37]/40 shadow-md active:scale-95"
-            >
-              Mi Cuenta & Clave &rarr;
-            </Link>
-          </div>
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
+                  Gestión de Clave
+                </h3>
+                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                  Generá tu clave de acceso personal en tu panel de cuenta para ingresar de forma segura y consultar la información completa del catálogo.
+                </p>
 
-          {/* Module 3: Fichas Técnicas & Valoración */}
-          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#d4af37] p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-[#0b3332] border border-[#d4af37]/40 text-[#d4af37] font-black text-xl flex items-center justify-center mb-6 shadow-inner">
-                ⚽
+                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#b79753] font-black">✓</span>
+                    <span>Generación instantánea desde tu cuenta.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#b79753] font-black">✓</span>
+                    <span>Renovación segura de claves en 1 clic.</span>
+                  </li>
+                </ul>
               </div>
 
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] block mb-1">
+              <Link
+                to="/account"
+                className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2"
+              >
+                Mi Cuenta & Clave &rarr;
+              </Link>
+            </div>
+          </div>
+
+          {/* Module 3: Fichas Técnicas & Valoración con Imagen Decorativa Trofeo */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+              <img
+                src="/assets/golden_trophy.jpg"
+                alt="Trofeo Campeón FútVal"
+                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#2dd4bf]/40">
                 DETALLE TÉCNICO
               </span>
-              <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#d4af37] transition-colors">
-                Fichas de Jugadores
-              </h3>
-              <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
-                Accedé al detalle individual de cada futbolista para consultar su demarcación, club de procedencia y liga de origen en un formato claro.
-              </p>
-
-              <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-8">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#2dd4bf] font-black">✓</span>
-                  <span>Vistas individuales completas por jugador.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#2dd4bf] font-black">✓</span>
-                  <span>Navegación fluida y diseño responsivo.</span>
-                </li>
-              </ul>
             </div>
 
-            <Link
-              to="/catalog"
-              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-[#d4af37] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#d4af37]/40 shadow-md active:scale-95"
-            >
-              Explorar Jugadores &rarr;
-            </Link>
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
+                  Fichas de Jugadores
+                </h3>
+                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                  Accedé al detalle individual de cada futbolista para consultar su demarcación, club de procedencia y liga de origen en un formato claro.
+                </p>
+
+                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Vistas individuales completas por jugador.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Navegación fluida y diseño responsivo.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                to="/catalog"
+                className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-[#b79753] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2"
+              >
+                Explorar Jugadores &rarr;
+              </Link>
+            </div>
           </div>
         </div>
       </section>

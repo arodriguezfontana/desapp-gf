@@ -3,6 +3,7 @@ import type { Player, PlayerListResponseDto } from '../types/catalog.types';
 
 export interface GetPlayersParams {
   page?: number;
+  pageSize?: number;
   league?: string;
   team?: string;
   position?: string;
@@ -24,6 +25,10 @@ export const catalogService = {
       query.append('page', params.page.toString());
     }
 
+    if (params.pageSize !== undefined && params.pageSize > 0) {
+      query.append('pageSize', params.pageSize.toString());
+    }
+
     if (params.league && params.league.trim()) {
       query.append('league', params.league.trim());
     }
@@ -43,13 +48,15 @@ export const catalogService = {
       useApiKey: true,
     });
 
+    const pageSize = response.pageSize || params.pageSize || 12;
+
     return {
       data: response.items,
       meta: {
         total: response.total,
         page: response.page,
-        pageSize: response.pageSize,
-        totalPages: Math.max(1, Math.ceil(response.total / response.pageSize)),
+        pageSize,
+        totalPages: Math.max(1, Math.ceil(response.total / pageSize)),
       },
     };
   },
@@ -58,4 +65,3 @@ export const catalogService = {
     return httpClient.get<Player>(`/players/${id}`, { useApiKey: true });
   },
 };
-
