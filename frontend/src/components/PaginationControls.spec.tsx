@@ -41,5 +41,57 @@ describe('PaginationControls', () => {
     fireEvent.click(nextBtn);
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
+
+  it('deshabilita el boton Siguiente en la ultima pagina y permite Anterior', () => {
+    const onPageChange = vi.fn();
+    render(
+      <PaginationControls
+        currentPage={5}
+        totalPages={5}
+        totalItems={45}
+        pageSize={10}
+        onPageChange={onPageChange}
+      />,
+    );
+
+    const prevBtn = screen.getByRole('button', { name: /Anterior/i });
+    const nextBtn = screen.getByRole('button', { name: /Siguiente/i });
+
+    expect(nextBtn).toBeDisabled();
+    expect(prevBtn).not.toBeDisabled();
+
+    fireEvent.click(prevBtn);
+    expect(onPageChange).toHaveBeenCalledWith(4);
+  });
+
+  it('no renderiza nada si no hay items', () => {
+    const { container } = render(
+      <PaginationControls
+        currentPage={1}
+        totalPages={0}
+        totalItems={0}
+        pageSize={10}
+        onPageChange={vi.fn()}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('deshabilita ambos botones mientras isLoading es true', () => {
+    render(
+      <PaginationControls
+        currentPage={2}
+        totalPages={5}
+        totalItems={45}
+        pageSize={10}
+        isLoading
+        onPageChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Anterior/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Siguiente/i })).toBeDisabled();
+  });
 });
 

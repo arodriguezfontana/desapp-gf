@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CatalogPage } from './CatalogPage';
 import { apiKeyStorage } from '../service/apiKeyStorage';
@@ -115,6 +115,124 @@ describe('CatalogPage', () => {
       expect(
         screen.getByText('Necesitás generar una ApiKey para ver el catálogo.'),
       ).toBeInTheDocument();
+    });
+  });
+
+  it('muestra un mensaje de error al fallar la carga por un motivo distinto a ApiKey inválida', async () => {
+    apiKeyStorage.setApiKey('test-key-123');
+
+    vi.spyOn(catalogService, 'getPlayers').mockRejectedValueOnce(new Error('Network Error'));
+
+    render(
+      <MemoryRouter>
+        <CatalogPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Ocurrió un inconveniente al cargar el catálogo. Verificá tu conexión.'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('al cambiar los filtros de liga, posición y equipo vuelve a pedir la página 1 con esos filtros', async () => {
+    apiKeyStorage.setApiKey('test-key-123');
+
+    const getPlayersSpy = vi.spyOn(catalogService, 'getPlayers').mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, pageSize: 12, totalPages: 1 },
+    });
+
+    render(
+      <MemoryRouter>
+        <CatalogPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(getPlayersSpy).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText(/Liga \/ Competencia/i), {
+      target: { value: 'La Liga' },
+    });
+
+    await waitFor(() => {
+      expect(getPlayersSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, league: 'La Liga' }),
+      );
+    });
+
+    fireEvent.change(screen.getByLabelText(/Posición en cancha/i), {
+      target: { value: 'DF' },
+    });
+
+    await waitFor(() => {
+      expect(getPlayersSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, position: 'DF' }),
+      );
+    });
+  });
+
+  it('al hacer click en "Limpiar filtros" restablece liga, posición y equipo', async () => {
+    apiKeyStorage.setApiKey('test-key-123');
+
+    const getPlayersSpy = vi.spyOn(catalogService, 'getPlayers').mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, pageSize: 12, totalPages: 1 },
+    });
+
+    render(
+      <MemoryRouter>
+        <CatalogPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(getPlayersSpy).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText(/Liga \/ Competencia/i), {
+      target: { value: 'La Liga' },
+    });
+
+    const clearBtn = await screen.findByRole('button', { name: /Limpiar filtros/i });
+    fireEvent.click(clearBtn);
+
+    await waitFor(() => {
+      expect(getPlayersSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, league: '', position: '', team: '' }),
+      );
+    });
+  });
+
+  it('al cambiar de página en la paginación vuelve a pedir los jugadores de esa página', async () => {
+    apiKeyStorage.setApiKey('test-key-123');
+
+    const getPlayersSpy = vi.spyOn(catalogService, 'getPlayers').mockResolvedValue({
+      data: [
+        {
+          id: 'p-1',
+          name: 'Jugador Paginado',
+          league: 'La Liga',
+          team: 'Real Madrid',
+          position: 'MF',
+        },
+      ],
+      meta: { total: 30, page: 1, pageSize: 12, totalPages: 3 },
+    });
+
+    render(
+      <MemoryRouter>
+        <CatalogPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Jugador Paginado')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+
+    await waitFor(() => {
+      expect(getPlayersSpy).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
     });
   });
 });
