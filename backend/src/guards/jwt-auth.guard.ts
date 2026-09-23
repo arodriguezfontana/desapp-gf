@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { TOKEN_ISSUER, USER_REPOSITORY } from '../auth.constants';
 import { TokenIssuer } from '../adapters/token-issuer';
 import { UserRepository } from '../repositories/user.repository';
+import { UNAUTHENTICATED_MESSAGE } from '../shared/errors/messages';
 import { AuthenticatedRequest } from './authenticated-request';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
@@ -37,19 +38,19 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = this.extractBearerToken(request.headers.authorization);
     if (!token) {
-      throw new UnauthorizedException('No autenticado.');
+      throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
     let userId: string;
     try {
       userId = this.tokens.verify(token).userId;
     } catch {
-      throw new UnauthorizedException('No autenticado.');
+      throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
     const user = await this.users.findById(userId);
     if (!user) {
-      throw new UnauthorizedException('No autenticado.');
+      throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
     request.user = { userId: user.id };

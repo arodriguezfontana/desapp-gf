@@ -90,6 +90,18 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
     const html = await this.get(url);
     const $ = cheerio.load(html);
 
+    const teams = this.parseTeamsFromHtml($);
+    const seedPlayerByTeam = await this.harvestSeedPlayers($, league);
+
+    return {
+      tournamentId: config.tournamentId,
+      teams,
+      seedPlayerByTeam,
+    };
+  }
+
+  /** Equipos vigentes de la liga a partir de los links `/teams/{id}/show/...` de la página. */
+  private parseTeamsFromHtml($: cheerio.CheerioAPI): WhoScoredTeamRef[] {
     const teams = new Map<string, string>();
     $('a[href^="/teams/"][href*="/show/"]').each((_, el) => {
       const href = $(el).attr('href') ?? '';
@@ -100,16 +112,10 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
       }
     });
 
-    const seedPlayerByTeam = await this.harvestSeedPlayers($, league);
-
-    return {
-      tournamentId: config.tournamentId,
-      teams: [...teams.entries()].map(([externalTeamId, team]) => ({
-        externalTeamId,
-        team,
-      })),
-      seedPlayerByTeam,
-    };
+    return [...teams.entries()].map(([externalTeamId, team]) => ({
+      externalTeamId,
+      team,
+    }));
   }
 
   async fetchTeamRoster(

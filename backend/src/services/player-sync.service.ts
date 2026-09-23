@@ -4,6 +4,7 @@ import { WHOSCORED_ADAPTER } from '../player-sync.constants';
 import { PLAYER_REPOSITORY } from '../player.constants';
 import {
   WhoScoredAdapter,
+  WhoScoredRawPlayer,
   WhoScoredTeamRef,
 } from '../adapters/whoscored-adapter';
 import { League } from '../domain/player/league';
@@ -63,7 +64,7 @@ export class PlayerSyncService {
       } catch (error) {
         this.logger.error(
           `No se pudo obtener la lista de equipos de ${league}; se saltea esta liga en esta corrida.`,
-          error instanceof Error ? error.stack : String(error),
+          this.stackOf(error),
         );
         continue;
       }
@@ -103,17 +104,46 @@ export class PlayerSyncService {
     } catch (error) {
       this.logger.error(
         `No se pudo obtener el plantel de ${team.team} (${league}); se saltea este equipo en esta corrida.`,
-        error instanceof Error ? error.stack : String(error),
+        this.stackOf(error),
       );
       return;
     }
 
+    const upserts = this.buildSyncInputs(roster, team, league);
+
+    const activeExternalIds = await this.players.findActiveExternalIdsByTeam(
+      league,
+      team.team,
+    );
+    const removeExternalIds = computePlayersToRemove(
+      activeExternalIds,
+      upserts.map((input) => input.externalId),
+    );
+
+    await this.players.applyTeamRosterSync(
+      league,
+      team.team,
+      upserts,
+      removeExternalIds,
+    );
+  }
+
+  /**
+   * Traduce el plantel crudo de WhoScored a `PlayerSyncInput[]`, aplicando las
+   * reglas de exclusión/logging de revisión manual: un código de posición no
+   * reconocido excluye al jugador de esta corrida (FR-012/FR-013); una falla
+   * puntual de métricas no lo excluye, pero igual se loguea (FR-018).
+   */
+  private buildSyncInputs(
+    roster: WhoScoredRawPlayer[],
+    team: WhoScoredTeamRef,
+    league: League,
+  ): PlayerSyncInput[] {
     const upserts: PlayerSyncInput[] = [];
+
     for (const raw of roster) {
       const position = mapWhoScoredPosition(raw.rawPosition);
       if (!position) {
-        // FR-012/FR-013: código de posición no reconocido, el jugador NO se
-        // importa esta corrida; no cuenta como falla del equipo.
         this.manualReviewLogger.warn({
           reason: 'unrecognized-position',
           whoScoredPlayerId: raw.externalId,
@@ -126,8 +156,6 @@ export class PlayerSyncService {
       }
 
       if (raw.metricsFetchFailed) {
-        // FR-018: falla técnica puntual en la página de stats del jugador;
-        // SÍ se importa, con métricas en null; no cuenta como falla del equipo.
         this.manualReviewLogger.warn({
           reason: 'stats-fetch-failed',
           whoScoredPlayerId: raw.externalId,
@@ -145,20 +173,10 @@ export class PlayerSyncService {
       });
     }
 
-    const activeExternalIds = await this.players.findActiveExternalIdsByTeam(
-      league,
-      team.team,
-    );
-    const removeExternalIds = computePlayersToRemove(
-      activeExternalIds,
-      upserts.map((u) => u.externalId),
-    );
+    return upserts;
+  }
 
-    await this.players.applyTeamRosterSync(
-      league,
-      team.team,
-      upserts,
-      removeExternalIds,
-    );
+  private stackOf(error: unknown): string | undefined {
+    return error instanceof Error ? error.stack : String(error);
   }
 }

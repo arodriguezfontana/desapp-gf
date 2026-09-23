@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { DataSource, In, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, In, IsNull, Repository } from 'typeorm';
 import { League } from '../domain/player/league';
 import { Player } from '../domain/player/player';
 import { PlayerFilters } from '../domain/player/player-filters';
 import { PlayerPage, PlayerPagination } from '../domain/player/player-page';
 import { PlayerSyncInput } from '../domain/player/player-sync-input';
+import { isPostgresErrorCode } from '../shared/errors/postgres-error';
 import { PlayerEntity } from './entities/player.entity';
 import { PlayerMapper } from './mappers/player.mapper';
 import { PlayerRepository } from './player.repository';
@@ -18,6 +19,8 @@ import { PlayerRepository } from './player.repository';
  * conserva el id interno ya existente de esa fila — así el id del catálogo
  * se mantiene estable entre sincronizaciones (spec, Assumptions).
  */
+const PG_INVALID_TEXT_REPRESENTATION = '22P02';
+
 const UPSERT_OVERWRITE_COLUMNS = [
   'name',
   'league',
@@ -81,11 +84,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
       // Un id con formato inválido (no-uuid) no debe distinguirse de uno bien
       // formado pero inexistente (spec, Edge Cases): Postgres lo rechaza con
       // 22P02 (invalid_text_representation) antes de poder buscar la fila.
-      if (
-        error instanceof QueryFailedError &&
-        (error as { driverError?: { code?: string } }).driverError?.code ===
-          '22P02'
-      ) {
+      if (isPostgresErrorCode(error, PG_INVALID_TEXT_REPRESENTATION)) {
         return null;
       }
       throw error;
