@@ -134,4 +134,13 @@ describe('Arquitectura en capas (Principio I)', () => {
       .matchingPattern('node_modules/(@types/)?bcrypt/');
     await expect(rule).toPassAsync();
   });
+
+  it('el Service no debe importar la librería de scraping directo (axios/cheerio), eso vive detrás de WhoScoredAdapter (006-whoscored-catalog-sync)', async () => {
+    const rule = project()
+      .inFolder('services')
+      .shouldNot()
+      .dependOnFiles()
+      .matchingPattern('node_modules/(axios|cheerio)/');
+    await expect(rule).toPassAsync();
+  });
 });

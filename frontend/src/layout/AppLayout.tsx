@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export function AppLayout() {
-  const { logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-accent selection:text-white">
@@ -14,7 +14,7 @@ export function AppLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
           {/* Brand Logo & Emblem */}
           <Link
-            to="/home"
+            to="/catalog"
             className="flex items-center gap-3.5 group"
           >
             <div className="w-11 h-11 bg-accent flex items-center justify-center font-black text-white text-2xl rounded-xs shadow-md border-2 border-white/20 group-hover:scale-105 transition-transform">
@@ -33,6 +33,19 @@ export function AppLayout() {
           {/* Navigation Bar */}
           <nav className="flex items-center gap-3 sm:gap-6">
             <NavLink
+              to="/catalog"
+              className={({ isActive }) =>
+                `px-4 py-2 text-xs font-black uppercase tracking-widest transition-all rounded-xs border-b-2 ${
+                  isActive
+                    ? 'text-white bg-white/10 border-accent shadow-sm'
+                    : 'text-white/80 border-transparent hover:text-white hover:bg-white/5'
+                }`
+              }
+            >
+              Catálogo
+            </NavLink>
+
+            <NavLink
               to="/home"
               className={({ isActive }) =>
                 `px-4 py-2 text-xs font-black uppercase tracking-widest transition-all rounded-xs border-b-2 ${
@@ -45,26 +58,37 @@ export function AppLayout() {
               Inicio
             </NavLink>
 
-            <NavLink
-              to="/account"
-              className={({ isActive }) =>
-                `px-4 py-2 text-xs font-black uppercase tracking-widest transition-all rounded-xs border-b-2 ${
-                  isActive
-                    ? 'text-white bg-white/10 border-accent shadow-sm'
-                    : 'text-white/80 border-transparent hover:text-white hover:bg-white/5'
-                }`
-              }
-            >
-              Mi cuenta
-            </NavLink>
+            {isAuthenticated ? (
+              <>
+                <NavLink
+                  to="/account"
+                  className={({ isActive }) =>
+                    `px-4 py-2 text-xs font-black uppercase tracking-widest transition-all rounded-xs border-b-2 ${
+                      isActive
+                        ? 'text-white bg-white/10 border-accent shadow-sm'
+                        : 'text-white/80 border-transparent hover:text-white hover:bg-white/5'
+                    }`
+                  }
+                >
+                  Mi cuenta
+                </NavLink>
 
-            {/* Logout Button */}
-            <button
-              onClick={logout}
-              className="ml-2 px-5 py-2 text-xs font-black uppercase tracking-widest text-white bg-accent hover:bg-accent-hover transition-all rounded-xs shadow-md hover:shadow-lg active:scale-95 border border-white/20"
-            >
-              Cerrar Sesión
-            </button>
+                {/* Logout Button */}
+                <button
+                  onClick={logout}
+                  className="ml-2 px-5 py-2 text-xs font-black uppercase tracking-widest text-white bg-accent hover:bg-accent-hover transition-all rounded-xs shadow-md hover:shadow-lg active:scale-95 border border-white/20 cursor-pointer"
+                >
+                  Cerrar Sesión
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="ml-2 px-5 py-2 text-xs font-black uppercase tracking-widest text-white bg-accent hover:bg-accent-hover transition-all rounded-xs shadow-md border border-white/20"
+              >
+                Iniciar Sesión
+              </Link>
+            )}
           </nav>
         </div>
       </header>

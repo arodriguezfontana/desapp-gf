@@ -7,8 +7,10 @@ describe('App', () => {
     localStorage.clear();
   });
 
-  it('redirige a /login y renderiza la pantalla de inicio de sesión por defecto', () => {
+  it('redirige a /catalog y renderiza el catálogo por defecto', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: /iniciar sesión/i })).toBeInTheDocument();
+    expect(
+      screen.getByText('Necesitás generar una ApiKey para ver el catálogo.'),
+    ).toBeInTheDocument();
   });
 });

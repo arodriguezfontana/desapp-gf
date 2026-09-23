@@ -16,10 +16,19 @@ describe('PlayerService', () => {
     League.PREMIER_LEAGUE,
     'Northbridge FC',
     Position.GK,
+    8.4,
+    3.9,
+    0.2,
+    7.31,
   );
 
   beforeEach(() => {
-    players = { findPage: jest.fn(), findById: jest.fn() };
+    players = {
+      findPage: jest.fn(),
+      findById: jest.fn(),
+      findActiveExternalIdsByTeam: jest.fn(),
+      applyTeamRosterSync: jest.fn(),
+    };
     service = new PlayerService(players);
   });
 

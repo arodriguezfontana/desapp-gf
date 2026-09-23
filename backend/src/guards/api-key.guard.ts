@@ -10,6 +10,7 @@ import { Request } from 'express';
 import { API_KEY_HEADER, API_KEY_REPOSITORY, TOKEN_HASHER } from '../api-key.constants';
 import { TokenHasher } from '../adapters/token-hasher';
 import { ApiKeyRepository } from '../repositories/api-key.repository';
+import { UNAUTHENTICATED_MESSAGE } from '../shared/errors/messages';
 
 /**
  * Guard de ruta (NO global — research.md §1 de 004-player-catalog): exige una
@@ -34,14 +35,14 @@ export class ApiKeyGuard implements CanActivate {
     const rawKey = request.headers[API_KEY_HEADER];
 
     if (!rawKey || typeof rawKey !== 'string') {
-      throw new UnauthorizedException('No autenticado.');
+      throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
     const keyHash = this.hasher.hash(rawKey);
     const apiKey = await this.apiKeys.findByHash(keyHash);
 
     if (!apiKey || !apiKey.isActive()) {
-      throw new UnauthorizedException('No autenticado.');
+      throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
     return true;

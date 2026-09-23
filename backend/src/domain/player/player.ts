@@ -13,6 +13,10 @@ export class Player {
     private readonly _league: League,
     private readonly _team: string,
     private readonly _position: Position,
+    private readonly _passesCompleted: number | null,
+    private readonly _shots: number | null,
+    private readonly _interceptions: number | null,
+    private readonly _rating: number | null,
   ) {}
 
   static restore(
@@ -21,8 +25,22 @@ export class Player {
     league: League,
     team: string,
     position: Position,
+    passesCompleted: number | null,
+    shots: number | null,
+    interceptions: number | null,
+    rating: number | null,
   ): Player {
-    return new Player(id, name, league, team, position);
+    return new Player(
+      id,
+      name,
+      league,
+      team,
+      position,
+      passesCompleted,
+      shots,
+      interceptions,
+      rating,
+    );
   }
 
   get id(): string {
@@ -43,5 +61,22 @@ export class Player {
 
   get position(): Position {
     return this._position;
+  }
+
+  /** Promedio por partido de la temporada en curso; `null` si no hay valor disponible. */
+  get passesCompleted(): number | null {
+    return this._passesCompleted;
+  }
+
+  get shots(): number | null {
+    return this._shots;
+  }
+
+  get interceptions(): number | null {
+    return this._interceptions;
+  }
+
+  get rating(): number | null {
+    return this._rating;
   }
 }

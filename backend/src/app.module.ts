@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth.module';
 import { ApiKeyModule } from './api-key.module';
 import { PlayerModule } from './player.module';
+import { PlayerSyncModule } from './player-sync.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -16,6 +17,7 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     AuthModule,
     ApiKeyModule,
     PlayerModule,
+    PlayerSyncModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],

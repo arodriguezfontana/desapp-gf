@@ -2,10 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AccountPage } from './AccountPage';
 import * as authServiceModule from '../service/authService';
+import { apiKeyStorage } from '../service/apiKeyStorage';
 
 describe('AccountPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    apiKeyStorage.clearApiKey();
   });
 
   it('despliega el modal con la ApiKey directamente si no hay clave previa', async () => {
@@ -27,6 +29,21 @@ describe('AccountPage', () => {
     // Cerrar modal
     fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
     expect(screen.queryByText(/tu apikey/i)).not.toBeInTheDocument();
+  });
+
+  it('persiste la ApiKey generada en apiKeyStorage, para que el catálogo pueda usarla', async () => {
+    vi.spyOn(authServiceModule.authService, 'generateApiKey').mockResolvedValueOnce({
+      id: 'key-1',
+      apiKey: 'pmk_abcdef1234567890abcdef1234567890',
+      createdAt: '2026-09-16T12:00:00Z',
+    });
+
+    render(<AccountPage />);
+    fireEvent.click(screen.getByRole('button', { name: /generar apikey/i }));
+
+    await waitFor(() => {
+      expect(apiKeyStorage.getApiKey()).toBe('pmk_abcdef1234567890abcdef1234567890');
+    });
   });
 
   it('pide confirmación si ya hay una clave activa y respeta cancelar/confirmar', async () => {

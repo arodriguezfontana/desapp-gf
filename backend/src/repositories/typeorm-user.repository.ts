@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Email } from '../domain/auth/email';
 import { EmailAlreadyInUseError } from '../domain/auth/errors/email-already-in-use.error';
 import { User } from '../domain/auth/user';
+import { isPostgresErrorCode } from '../shared/errors/postgres-error';
 import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/user.mapper';
 import { UserRepository } from './user.repository';
@@ -33,10 +34,7 @@ export class TypeOrmUserRepository implements UserRepository {
     try {
       await this.repo.insert(this.mapper.toEntity(user));
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error.driverError as { code?: string }).code === PG_UNIQUE_VIOLATION
-      ) {
+      if (isPostgresErrorCode(error, PG_UNIQUE_VIOLATION)) {
         throw new EmailAlreadyInUseError();
       }
       throw error;

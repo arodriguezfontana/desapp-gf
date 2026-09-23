@@ -1,12 +1,17 @@
 import { authStorage } from './authStorage';
+import { apiKeyStorage } from './apiKeyStorage';
 import type { ApiErrorDto } from '../types/auth.types';
+
+export interface HttpRequestOptions extends RequestInit {
+  useApiKey?: boolean;
+}
 
 /**
  * Emisor de eventos para comunicar el estado HTTP a las capas superiores
- * sin que service/ importe contexts/ (R-003).
+ * sin que service/ importe contexts/.
  *
- * AuthContext se suscribe a 'unauthorized' para limpiar la sesión cuando
- * el backend devuelve un 401.
+ * AuthContext se suscribe a 'unauthorized' (JWT)
+ * CatalogPage/PlayerDetailPage se suscriben a 'apiKeyUnauthorized' (ApiKey)
  */
 export const httpEvents = new EventTarget();
 
@@ -24,28 +29,42 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 async function request<T>(
   url: string,
-  options: RequestInit = {},
+  options: HttpRequestOptions = {},
 ): Promise<T> {
-  const token = authStorage.getToken();
+  const { useApiKey, ...fetchOptions } = options;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+    ...(fetchOptions.headers as Record<string, string>),
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (useApiKey) {
+    const apiKey = apiKeyStorage.getApiKey();
+    if (apiKey) {
+      headers['X-Api-Key'] = apiKey;
+    }
+  } else {
+    const token = authStorage.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   const response = await fetch(`${BASE_URL}${url}`, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
   if (response.status === 401) {
-    authStorage.clearToken();
-    httpEvents.dispatchEvent(new Event('unauthorized'));
-    throw new ApiError(401, 'No autorizado.');
+    if (useApiKey) {
+      apiKeyStorage.clearApiKey();
+      httpEvents.dispatchEvent(new Event('apiKeyUnauthorized'));
+      throw new ApiError(401, 'ApiKey no válida o expirada.');
+    } else {
+      authStorage.clearToken();
+      httpEvents.dispatchEvent(new Event('unauthorized'));
+      throw new ApiError(401, 'No autorizado.');
+    }
   }
 
   if (!response.ok) {
@@ -70,18 +89,17 @@ async function request<T>(
 }
 
 export const httpClient = {
-  get<T>(url: string, options?: RequestInit): Promise<T> {
+  get<T>(url: string, options?: HttpRequestOptions): Promise<T> {
     return request<T>(url, { ...options, method: 'GET' });
   },
 
-  post<T>(url: string, body: unknown, options?: RequestInit): Promise<T> {
+  post<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<T> {
     return request<T>(url, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(body),
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   },
 };
 
 export { ApiError };
-

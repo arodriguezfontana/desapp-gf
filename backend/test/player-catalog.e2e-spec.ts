@@ -1,5 +1,6 @@
 import * as request from 'supertest';
 import { ApiKeyEntity } from '../src/repositories/entities/api-key.entity';
+import { PlayerEntity } from '../src/repositories/entities/player.entity';
 import { UserEntity } from '../src/repositories/entities/user.entity';
 import { createTestApp, TestContext } from './test-app';
 
@@ -11,6 +12,62 @@ const LEAGUES = [
   'Ligue 1',
 ];
 const POSITIONS = ['GK', 'DF', 'MF', 'FW'];
+
+/**
+ * Filas con forma de "lo que una sincronización exitosa dejaría" — no
+ * dependen de ninguna migration de seed (006-whoscored-catalog-sync: la
+ * migration `RemoveTestPlayerCatalogSeed` borra el seed ficticio de `004` en
+ * cada corrida, así que la tabla `players` arranca vacía en un Testcontainers
+ * fresco). Un jugador (Milo Ashworth) lleva las 4 métricas con valor; el
+ * resto las deja en `null` (sin valor disponible); `Jugador Dado De Baja`
+ * queda con `removedAt` seteado para probar la baja lógica (FR-016).
+ */
+const REMOVED_PLAYER_ID = '99999999-9999-9999-9999-999999999999';
+
+const PLAYER_FIXTURES: Partial<PlayerEntity>[] = [
+  {
+    id: '27cba263-43c5-4294-a0d2-69c2b4b03c2b',
+    externalId: 'ws-27cba263',
+    name: 'Milo Ashworth',
+    league: 'Premier League',
+    team: 'Northbridge FC',
+    position: 'GK',
+    passesCompleted: 8.4,
+    shots: 3.9,
+    interceptions: 0.2,
+    rating: 7.31,
+  },
+  { id: 'e87510fd-cce9-4b09-8503-42d685005e3b', externalId: 'ws-e87510fd', name: 'Callum Whitfield', league: 'Premier League', team: 'Northbridge FC', position: 'DF' },
+  { id: 'b95ea36b-10c9-4886-90d4-a6ce2cf5b88d', externalId: 'ws-b95ea36b', name: 'Reece Dalton', league: 'Premier League', team: 'Northbridge FC', position: 'MF' },
+  { id: '6e312925-549c-4bac-95d8-d5e8e01bf9db', externalId: 'ws-6e312925', name: 'Tobias Kane', league: 'Premier League', team: 'Northbridge FC', position: 'FW' },
+  { id: '2a0c802f-cf70-4d33-9ec7-0dd5f8fca661', externalId: 'ws-2a0c802f', name: 'Jonas Reinhardt', league: 'Bundesliga', team: 'SV Falkenstein', position: 'GK' },
+  { id: 'ec51c1d3-b3d8-4066-a16e-18ec0fd1be08', externalId: 'ws-ec51c1d3', name: 'Lukas Brandt', league: 'Bundesliga', team: 'SV Falkenstein', position: 'DF' },
+  { id: '0b9426fe-0f1b-4ae6-89cc-4e411c1331b0', externalId: 'ws-0b9426fe', name: 'Finn Achterberg', league: 'Bundesliga', team: 'SV Falkenstein', position: 'MF' },
+  { id: 'f0d89d61-b336-4bd3-a0fc-bf042ed34141', externalId: 'ws-f0d89d61', name: 'Matteo Vollmer', league: 'Bundesliga', team: 'SV Falkenstein', position: 'FW' },
+  { id: 'd2166dc5-a450-43fb-afd9-88beadf437a8', externalId: 'ws-d2166dc5', name: 'Iker Salazar', league: 'La Liga', team: 'CD Montebravo', position: 'GK' },
+  { id: '0a141784-aa3c-46cb-9270-caae33de514f', externalId: 'ws-0a141784', name: 'Adrián Fuentes', league: 'La Liga', team: 'CD Montebravo', position: 'DF' },
+  { id: 'f7bb8d08-e928-447e-8057-40cfebedadfb', externalId: 'ws-f7bb8d08', name: 'Nico Barreiro', league: 'La Liga', team: 'CD Montebravo', position: 'MF' },
+  { id: 'b0350cb0-1246-4b39-b0f0-7e2faa503f89', externalId: 'ws-b0350cb0', name: 'Diego Marchena', league: 'La Liga', team: 'CD Montebravo', position: 'FW' },
+  { id: '0137761f-229a-45bc-be92-0b73a18529bf', externalId: 'ws-0137761f', name: 'Luca Ferraresi', league: 'Serie A', team: 'AC Ponteverde', position: 'GK' },
+  { id: '32458233-e436-4b79-870d-d0c626f56ba5', externalId: 'ws-32458233', name: 'Marco Sabbatini', league: 'Serie A', team: 'AC Ponteverde', position: 'DF' },
+  { id: '82553e3b-6647-48f1-8a9a-7c20824db88e', externalId: 'ws-82553e3b', name: 'Simone Aldrovandi', league: 'Serie A', team: 'AC Ponteverde', position: 'MF' },
+  { id: '136825a5-b613-42a7-baff-5c87e5f0d258', externalId: 'ws-136825a5', name: 'Enzo Ricciarelli', league: 'Serie A', team: 'AC Ponteverde', position: 'FW' },
+  { id: '32fddd2b-8f5a-4d0f-abe2-327f0701edcb', externalId: 'ws-32fddd2b', name: 'Hugo Lambert', league: 'Ligue 1', team: 'FC Beaumarais', position: 'GK' },
+  { id: 'bb1cf10a-ccf4-437a-b62b-ee5d5053da0d', externalId: 'ws-bb1cf10a', name: 'Théo Marchand', league: 'Ligue 1', team: 'FC Beaumarais', position: 'DF' },
+  { id: '8e71257e-b1ed-4887-9463-9ad0c4aab2da', externalId: 'ws-8e71257e', name: 'Nathan Girard', league: 'Ligue 1', team: 'FC Beaumarais', position: 'MF' },
+  { id: '269edeec-d849-41e4-99bc-f213da6c58fe', externalId: 'ws-269edeec', name: 'Bastien Rocher', league: 'Ligue 1', team: 'FC Beaumarais', position: 'FW' },
+  // Jugador dado de baja (FR-016): no debe aparecer en ningún listado ni total,
+  // y su detalle debe responder 404 igual que un id inexistente.
+  {
+    id: REMOVED_PLAYER_ID,
+    externalId: 'ws-removed-1',
+    name: 'Jugador Dado De Baja',
+    league: 'Premier League',
+    team: 'Ex Equipo FC',
+    position: 'MF',
+    removedAt: new Date(),
+  },
+];
 
 describe('Catálogo de Jugadores (e2e)', () => {
   let ctx: TestContext;
@@ -32,6 +89,13 @@ describe('Catálogo de Jugadores (e2e)', () => {
 
   beforeAll(async () => {
     ctx = await createTestApp();
+    // La migration de seed ficticio de `004` corre y se borra en el mismo
+    // boot (RemoveTestPlayerCatalogSeed, 006-whoscored-catalog-sync): la
+    // tabla `players` arranca vacía. Estos tests siembran sus propias filas
+    // directamente, con la misma forma que dejaría una sincronización
+    // exitosa (research.md §2 de 004-player-catalog ya establecía este
+    // criterio para los tests de integración; acá se extiende al e2e).
+    await ctx.dataSource.getRepository(PlayerEntity).save(PLAYER_FIXTURES);
   });
 
   afterAll(async () => {
@@ -153,6 +217,45 @@ describe('Catálogo de Jugadores (e2e)', () => {
         .set('x-api-key', apiKey);
       expect(res.status).toBe(400);
     });
+
+    it('200: expone las 4 métricas de rendimiento, con valor o null (006-whoscored-catalog-sync)', async () => {
+      const { apiKey } = await registerLoginAndIssueApiKey('metricas@mail.com');
+
+      const conValor = await request(server())
+        .get('/players')
+        .query({ team: 'Northbridge FC', position: 'GK' })
+        .set('x-api-key', apiKey);
+      expect(conValor.body.items[0]).toMatchObject({
+        passesCompleted: 8.4,
+        shots: 3.9,
+        interceptions: 0.2,
+        rating: 7.31,
+      });
+
+      const sinValor = await request(server())
+        .get('/players')
+        .query({ team: 'Northbridge FC', position: 'DF' })
+        .set('x-api-key', apiKey);
+      expect(sinValor.body.items[0]).toMatchObject({
+        passesCompleted: null,
+        shots: null,
+        interceptions: null,
+        rating: null,
+      });
+    });
+
+    it('200: un jugador dado de baja no aparece en el listado ni cuenta en el total', async () => {
+      const { apiKey } = await registerLoginAndIssueApiKey('baja-listado@mail.com');
+
+      const res = await request(server())
+        .get('/players')
+        .query({ team: 'Ex Equipo FC' })
+        .set('x-api-key', apiKey);
+
+      expect(res.status).toBe(200);
+      expect(res.body.items).toEqual([]);
+      expect(res.body.total).toBe(0);
+    });
   });
 
   describe('GET /players/:id', () => {
@@ -187,6 +290,16 @@ describe('Catálogo de Jugadores (e2e)', () => {
 
       const res = await request(server())
         .get('/players/no-es-un-uuid')
+        .set('x-api-key', apiKey);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('404: id de un jugador dado de baja (removedAt seteado) — FR-016', async () => {
+      const { apiKey } = await registerLoginAndIssueApiKey('detalle-baja@mail.com');
+
+      const res = await request(server())
+        .get(`/players/${REMOVED_PLAYER_ID}`)
         .set('x-api-key', apiKey);
 
       expect(res.status).toBe(404);
