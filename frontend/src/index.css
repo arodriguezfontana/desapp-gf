@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background:     #f2f7f4;
-  --color-surface:        #ffffff;
-  --color-surface-hover:  #ffffff;
-  --color-foreground:     #0f172a;
-  --color-muted:          #64748b;
-  --color-primary:        #123d28;
-  --color-primary-bright: #1b5338;
-  --color-secondary:      #059669;
-  --color-secondary-bright:#10b981;
-  --color-accent:         #ff6b00;
-  --color-accent-hover:   #e05e00;
+  --color-background:       #0b3332;
+  --color-surface:          #104443;
+  --color-surface-hover:    #165756;
+  --color-surface-card:     #0e3b3a;
+  --color-foreground:       #ffffff;
+  --color-muted:            #9ca3af;
+  --color-primary:          #0b3332;
+  --color-primary-bright:   #104443;
+  --color-secondary:        #2dd4bf;
+  --color-secondary-bright: #5eead4;
+  --color-accent:           #b79753;
+  --color-accent-hover:     #9e8144;
+  --color-positive:         #2dd4bf;
+  --color-negative:         #f43f5e;
 }
 
 @layer base {
@@ -24,10 +27,26 @@
 }
 
 @keyframes heroSlide {
-  0% { opacity: 0; transform: scale(1.04); }
+  0% { opacity: 0; transform: scale(1.03); }
   100% { opacity: 1; transform: scale(1); }
 }
 
 .animate-hero-fade {
   animation: heroSlide 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom scrollbar styling for Deep Petrol Green & Soft Gold Dashboard */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0b3332;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a6866;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b79753;
 }

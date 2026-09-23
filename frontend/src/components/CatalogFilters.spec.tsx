@@ -51,6 +51,27 @@ describe('CatalogFilters', () => {
     expect(onTeamInputChange).toHaveBeenCalledWith('Barcelona');
   });
 
+  it('emite el cambio al seleccionar una posición', () => {
+    const onPositionChange = vi.fn();
+
+    render(
+      <CatalogFilters
+        selectedLeague=""
+        selectedPosition=""
+        teamInput=""
+        onLeagueChange={vi.fn()}
+        onPositionChange={onPositionChange}
+        onTeamInputChange={vi.fn()}
+        onClearFilters={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/Posición en cancha/i), {
+      target: { value: 'DF' },
+    });
+    expect(onPositionChange).toHaveBeenCalledWith('DF');
+  });
+
   it('muestra el boton de limpiar filtros si hay al menos un filtro activo', () => {
     const onClearFilters = vi.fn();
     render(

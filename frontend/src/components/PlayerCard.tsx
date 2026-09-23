@@ -10,49 +10,62 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
   const getPositionBadgeColor = (pos: string) => {
     switch (pos) {
       case 'GK':
-        return 'bg-amber-100 text-amber-900 border-amber-300';
+        return 'bg-[#b79753]/20 text-[#b79753] border-[#b79753]/40';
       case 'DF':
-        return 'bg-blue-100 text-blue-900 border-blue-300';
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/40';
       case 'MF':
-        return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+        return 'bg-[#2dd4bf]/20 text-[#2dd4bf] border-[#2dd4bf]/40';
       case 'FW':
-        return 'bg-orange-100 text-orange-900 border-orange-300';
+        return 'bg-purple-500/20 text-purple-400 border-purple-500/40';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-slate-800 text-slate-300 border-slate-700';
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-emerald-900/10 transition-all overflow-hidden flex flex-col justify-between group">
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-2 mb-3">
+    <div className="bg-[#104443] rounded-2xl shadow-xl hover:shadow-2xl border border-[#1a6866] hover:border-[#b79753]/60 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden flex flex-col justify-between group relative">
+      {/* Top Accent Gold Bar on Hover */}
+      <div className="h-1 w-full bg-[#b79753] opacity-0 group-hover:opacity-100 transition-opacity absolute top-0 inset-x-0" />
+
+      <div className="p-6">
+        <div className="flex items-center justify-between gap-2 mb-4">
           <span
-            className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getPositionBadgeColor(
+            className={`text-[11px] font-black tracking-widest px-3 py-1 rounded-lg border uppercase ${getPositionBadgeColor(
               player.position,
             )}`}
           >
             {player.position}
           </span>
-          <span className="text-xs font-medium text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+          <span className="text-[10px] font-extrabold text-[#b79753] bg-[#0b3332] px-2.5 py-1 rounded-md border border-[#b79753]/30 uppercase">
             {player.league}
           </span>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-900 transition-colors line-clamp-1">
-          {player.name}
-        </h3>
-
-        <p className="text-sm font-semibold text-amber-600 mt-1 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-          {player.team}
-        </p>
+        {/* Player Avatar & Details Header */}
+        <div className="flex items-center gap-4 my-2">
+          <div className="w-12 h-12 rounded-full bg-[#0b3332] border-2 border-[#b79753]/40 text-[#b79753] flex items-center justify-center font-black text-lg shadow-inner group-hover:border-[#b79753] group-hover:scale-105 transition-all">
+            ⚽
+          </div>
+          <div className="overflow-hidden">
+            <h3 className="text-lg font-black text-white group-hover:text-[#b79753] transition-colors line-clamp-1 tracking-tight">
+              {player.name}
+            </h3>
+            <p className="text-xs font-bold text-gray-300 mt-0.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#b79753]"></span>
+              <span className="truncate">{player.team}</span>
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-emerald-50/60 px-5 py-3 border-t border-emerald-900/5 flex items-center justify-between">
-        <span className="text-xs font-medium text-gray-500">Ficha técnica</span>
+      {/* Card Action Footer */}
+      <div className="bg-[#0b3332] px-6 py-3.5 border-t border-[#1a6866] flex items-center justify-between group-hover:border-[#b79753]/30 transition-colors">
+        <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+          FICHA TÉCNICA
+        </span>
         <Link
           to={`/catalog/${player.id}`}
-          className="text-xs font-bold text-emerald-900 group-hover:text-amber-600 flex items-center gap-1 transition-colors"
+          className="text-xs font-black text-[#b79753] group-hover:text-white flex items-center gap-1 transition-colors uppercase tracking-wider"
         >
           Ver detalle &rarr;
         </Link>
@@ -60,4 +73,3 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
     </div>
   );
 };
-

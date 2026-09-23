@@ -66,6 +66,29 @@ describe('httpClient', () => {
     expect(headers.Authorization).toBeUndefined();
   });
 
+  it('GET con useApiKey: true sin apiKey guardada no agrega el header X-Api-Key', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      fakeResponse({ status: 200, ok: true, json: () => Promise.resolve({ data: [] }) }),
+    );
+
+    await httpClient.get('/players', { useApiKey: true });
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    const headers = init?.headers as Record<string, string>;
+    expect(headers['X-Api-Key']).toBeUndefined();
+  });
+
+  it('POST sin body no agrega body a la petición', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      fakeResponse({ status: 200, ok: true, json: () => Promise.resolve({}) }),
+    );
+
+    await httpClient.post('/auth/logout');
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    expect(init?.body).toBeUndefined();
+  });
+
   it('ante un 401 con useApiKey: true limpia la apiKey y emite apiKeyUnauthorized', async () => {
     apiKeyStorage.setApiKey('api-key-invalida');
     vi.mocked(fetch).mockResolvedValueOnce(fakeResponse({ status: 401, ok: false }));

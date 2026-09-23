@@ -28,6 +28,19 @@ describe('catalogService', () => {
     );
   });
 
+  it('getPlayers incluye pageSize en el query string cuando se especifica', async () => {
+    const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValueOnce({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 12,
+    });
+
+    await catalogService.getPlayers({ pageSize: 12 });
+
+    expect(getSpy).toHaveBeenCalledWith('/players?pageSize=12', { useApiKey: true });
+  });
+
   it('getPlayers llama a /players sin query params si no se pasan filtros ni pagina', async () => {
     const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValueOnce({
       items: [],

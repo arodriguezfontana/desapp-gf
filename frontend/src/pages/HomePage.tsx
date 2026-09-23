@@ -5,25 +5,42 @@ const HERO_SLIDES = [
   {
     id: 1,
     image: '/assets/stadium_hero.jpg',
-    badge: 'PLATAFORMA OFICIAL',
-    badgeColor: 'bg-accent text-white',
-    title: 'BIENVENIDO A DESAPP FÚTBOL',
-    subtitle: 'Ingresaste correctamente a la plataforma oficial. Tu sesión se encuentra activa y resguardada para acceder a todos tus servicios.',
+    badge: 'MERCADO OFICIAL DE FICHAJES',
+    badgeColor: 'bg-[#b79753] text-[#0b3332]',
+    title: 'BIENVENIDO A FÚTVAL',
+    subtitle: 'Plataforma oficial de consulta de catálogo de jugadores y cotización en tiempo real para las 5 ligas europeas principales.',
+    ctaText: 'EXPLORAR CATÁLOGO DE JUGADORES',
+    ctaLink: '/catalog',
+    position: 'object-cover object-center',
   },
   {
     id: 2,
-    image: '/assets/soccer_player.jpg',
-    badge: 'CREDENCIALES DE ACCESO',
-    badgeColor: 'bg-secondary text-white',
+    image: '/assets/soccer_ball_macro.jpg',
+    badge: 'ACCESO PERSONAL & SEGURIDAD',
+    badgeColor: 'bg-[#2dd4bf] text-[#0b3332]',
     title: 'GESTIÓN DE SEGURIDAD & APIKEY',
-    subtitle: 'Administrá tus claves de acceso personales para vincular aplicaciones y servicios autorizados con la máxima protección.',
+    subtitle: 'Administrá tus claves de acceso personales para consultar el catálogo de futbolistas con total seguridad y privacidad.',
+    ctaText: 'IR A MI CUENTA & CLAVE',
+    ctaLink: '/account',
+    position: 'object-cover object-center',
+  },
+  {
+    id: 3,
+    image: '/assets/player_celebration.jpg',
+    badge: 'PASIÓN & COMPETICIÓN',
+    badgeColor: 'bg-[#b79753] text-[#0b3332]',
+    title: 'EMOCIÓN DEL FÚTBOL DE ÉLITE',
+    subtitle: 'Seguí el rendimiento de las máximas figuras del fútbol europeo con estadísticas y valoraciones actualizadas.',
+    ctaText: 'VER FICHAJES',
+    ctaLink: '/catalog',
+    position: 'object-cover object-center',
   },
 ];
 
 export function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Rotación automática de slides cada 5 segundos
+  // Rotación automática de los 3 slides cada 5 segundos
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
@@ -34,148 +51,230 @@ export function HomePage() {
   const currentSlide = HERO_SLIDES[activeSlide];
 
   return (
-    <div className="space-y-10 animate-fade-in">
-      <title>Inicio — DesApp Fútbol</title>
+    <div className="w-full animate-fade-in">
+      <title>Inicio — FútVal</title>
 
-      {/* DYNAMIC ANIMATED HERO SLIDER SECTION */}
-      <div className="relative overflow-hidden rounded-xs bg-primary border-b-4 border-accent shadow-2xl min-h-[420px] flex flex-col justify-between group">
-        {/* Background Slide Image with Fade Animation */}
-        <div key={currentSlide.id} className="absolute inset-0 z-0 animate-hero-fade">
+      {/* FULL WIDTH HERO SLIDER SECTION (3 SLIDES MAX) */}
+      <section className="relative w-full bg-[#0b3332] border-b border-[#1a6866] min-h-[480px] sm:min-h-[520px] flex flex-col justify-between overflow-hidden group">
+        {/* Background Slide Image */}
+        <div key={currentSlide.id} className="absolute inset-0 z-0 animate-hero-fade flex items-center justify-center bg-[#072221]">
           <img
             src={currentSlide.image}
-            alt="Estadio de fútbol profesional"
-            className="w-full h-full object-cover filter brightness-65 contrast-110"
+            alt={currentSlide.title}
+            className={`w-full h-full ${currentSlide.position} filter brightness-60 contrast-110 group-hover:scale-105 transition-transform duration-700`}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/75 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-transparent to-primary/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/75 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b3332]/90 via-[#0b3332]/50 to-transparent" />
         </div>
 
-        {/* Floating Top Badge */}
-        <div className="relative z-10 p-6 sm:p-8 flex justify-between items-start">
-          <span className={`px-4 py-1.5 font-black text-xs uppercase tracking-widest rounded-xs shadow-lg ${currentSlide.badgeColor}`}>
-            {currentSlide.badge}
-          </span>
-
-          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-xs font-black uppercase tracking-widest text-white">
-              SESIÓN ACTIVA
+        {/* Content Container */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
+          {/* Top Floating Badge */}
+          <div className="flex justify-between items-start mb-6">
+            <span className={`px-4 py-1.5 font-black text-[11px] uppercase tracking-widest rounded-xl shadow-lg ${currentSlide.badgeColor}`}>
+              {currentSlide.badge}
             </span>
+
+            <div className="flex items-center gap-2 bg-[#072221]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#b79753]/30">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-ping" />
+              <span className="text-xs font-black uppercase tracking-widest text-white">
+                TEMPORADA 2026 / 2027
+              </span>
+            </div>
+          </div>
+
+          {/* Hero Main Copy */}
+          <div className="max-w-3xl my-4 sm:my-8">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-wider text-white leading-tight mb-4 drop-shadow-md">
+              {currentSlide.title}
+            </h1>
+            <p className="text-sm sm:text-base lg:text-lg font-medium text-gray-200 leading-relaxed mb-8 max-w-2xl drop-shadow">
+              {currentSlide.subtitle}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                to={currentSlide.ctaLink}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest text-xs sm:text-sm shadow-xl hover:shadow-[#b79753]/40 transition-all rounded-xl active:scale-95 border border-white/20"
+              >
+                <span>{currentSlide.ctaText}</span>
+                <span className="text-lg">&rarr;</span>
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Hero Text Overlay */}
-        <div className="relative z-10 p-6 sm:p-10 max-w-4xl">
-          <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-widest text-white leading-tight mb-3 drop-shadow-lg">
-            {currentSlide.title}
-          </h1>
-          <p className="text-sm sm:text-base font-medium text-white/90 leading-relaxed mb-6 max-w-2xl drop-shadow">
-            {currentSlide.subtitle}
+        {/* Bottom 3 Slide Indicators */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="flex items-center gap-3 max-w-xs">
+            {HERO_SLIDES.map((slide, index) => (
+              <button
+                key={slide.id}
+                onClick={() => setActiveSlide(index)}
+                className="flex-1 py-2 group/btn focus:outline-none cursor-pointer"
+                aria-label={`Ver slide ${index + 1}`}
+              >
+                <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      index === activeSlide ? 'bg-[#b79753] w-full' : 'bg-transparent w-0'
+                    }`}
+                  />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURED MODULES WITH DECORATIVE ASSET IMAGES */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3.5 py-1.5 rounded-full border border-[#b79753]/30 inline-block mb-3">
+            FUNCIONALIDADES PRINCIPALES
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white">
+            Explorá el Mercado de Fútbol
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-300 mt-2 font-medium">
+            Accedé a información relevante, cotizaciones y datos de jugadores de las 5 grandes ligas de Europa.
           </p>
-
-          <Link
-            to="/account"
-            className="inline-flex items-center gap-2 px-7 py-3.5 bg-accent hover:bg-accent-hover text-white font-black uppercase tracking-widest text-xs shadow-xl hover:shadow-accent/40 transition-all rounded-xs active:scale-95 border border-white/20"
-          >
-            <span>Ir a Mi Cuenta & Credenciales</span>
-            <span className="text-lg">→</span>
-          </Link>
         </div>
 
-        {/* Animated Progress Indicators (Boca Slider Style) */}
-        <div className="relative z-10 p-6 sm:px-10 pb-6 flex items-center gap-3">
-          {HERO_SLIDES.map((slide, index) => (
-            <button
-              key={slide.id}
-              onClick={() => setActiveSlide(index)}
-              className="flex-1 py-2 group/btn focus:outline-none"
-              aria-label={`Ver slide ${index + 1}`}
-            >
-              <div className="h-1.5 w-full bg-white/30 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-500 ${
-                    index === activeSlide ? 'bg-accent w-full' : 'bg-transparent w-0'
-                  }`}
-                />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+          {/* Module 1: Catálogo de Jugadores con Imagen Decorativa Táctica */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+              <img
+                src="/assets/tactics_board.jpg"
+                alt="Táctica y Análisis de Fútbol"
+                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#2dd4bf]/40">
+                FUTBOLISTAS & CLUBES
+              </span>
+            </div>
+
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
+                  Catálogo de Jugadores
+                </h3>
+                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                  Consultá futbolistas de Premier League, La Liga, Serie A, Bundesliga y Ligue 1. Filtrá por posición, equipo o competencia con paginación integrada.
+                </p>
+
+                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Filtros combinados por liga y club.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Búsqueda instantánea por nombre de equipo.</span>
+                  </li>
+                </ul>
               </div>
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* VIVID CARDS SECTION (Boca Juniors Grid Cards - Clean Light Theme) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-        {/* Card 1: Bienvenido */}
-        <div className="bg-white border-2 border-primary/20 hover:border-primary p-8 rounded-xs shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
-          <div className="h-1.5 w-full bg-primary absolute top-0 left-0" />
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xs">
-                ESTADO DE USUARIO
-              </span>
-              <span className="text-xs font-bold uppercase text-secondary-bright">VERIFICADO</span>
+              <Link
+                to="/catalog"
+                className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center shadow-md hover:shadow-lg active:scale-95 mt-2"
+              >
+                Ir al Catálogo &rarr;
+              </Link>
             </div>
-
-            <h2 className="text-2xl font-black uppercase tracking-wider text-primary mb-3 group-hover:text-accent transition-colors">
-              Tu Cuenta en DesApp Fútbol
-            </h2>
-            <p className="text-sm font-medium text-slate-600 leading-relaxed mb-6">
-              Te encontrás registrado e identificado en el sistema. Desde tu perfil tenés control total para gestionar la seguridad de tus accesos.
-            </p>
-
-            <ul className="space-y-3 text-xs font-bold text-slate-700 mb-6">
-              <li className="flex items-center gap-2.5">
-                <span className="w-5 h-5 bg-secondary/15 text-secondary rounded-full flex items-center justify-center font-black">✓</span>
-                <span>Sesión activa mantenida de forma segura.</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="w-5 h-5 bg-secondary/15 text-secondary rounded-full flex items-center justify-center font-black">✓</span>
-                <span>Navegación resguardada en todas las secciones.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Card 2: Clave de Acceso (ApiKey) */}
-        <div className="bg-white border-2 border-accent/30 hover:border-accent p-8 rounded-xs shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
-          <div className="h-1.5 w-full bg-accent absolute top-0 left-0" />
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="px-3 py-1 bg-accent text-white text-[10px] font-black uppercase tracking-widest rounded-xs">
-                CLAVE PERSONAL
-              </span>
-              <span className="text-xs font-bold uppercase text-accent">DISPONIBLE</span>
-            </div>
-
-            <h2 className="text-2xl font-black uppercase tracking-wider text-primary mb-3 group-hover:text-accent transition-colors">
-              Gestión de Clave Personal
-            </h2>
-            <p className="text-sm font-medium text-slate-600 leading-relaxed mb-6">
-              Generá tu clave de acceso personal para operar de manera segura. Podés renovarla en cualquier momento desde tu panel de configuración.
-            </p>
-
-            <ul className="space-y-3 text-xs font-bold text-slate-700 mb-6">
-              <li className="flex items-center gap-2.5">
-                <span className="w-5 h-5 bg-accent/15 text-accent rounded-full flex items-center justify-center font-black">✓</span>
-                <span>Emisión instantánea con copia en un clic.</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="w-5 h-5 bg-accent/15 text-accent rounded-full flex items-center justify-center font-black">✓</span>
-                <span>Reemplazo seguro con invalidación previa.</span>
-              </li>
-            </ul>
           </div>
 
-          <Link
-            to="/account"
-            className="w-full py-3.5 bg-accent hover:bg-accent-hover text-white font-black uppercase text-xs tracking-widest transition-all rounded-xs text-center shadow-md hover:shadow-lg active:scale-95"
-          >
-            Ir a Gestión de Mi Cuenta →
-          </Link>
+          {/* Module 2: Claves de Acceso Personal con Imagen Decorativa Jugador en Acción */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+              <img
+                src="/assets/soccer_player.jpg"
+                alt="Futbolista en Acción"
+                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#b79753]/40">
+                ACCESO SEGURO
+              </span>
+            </div>
+
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
+                  Gestión de Clave
+                </h3>
+                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                  Generá tu clave de acceso personal en tu panel de cuenta para ingresar de forma segura y consultar la información completa del catálogo.
+                </p>
+
+                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#b79753] font-black">✓</span>
+                    <span>Generación instantánea desde tu cuenta.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#b79753] font-black">✓</span>
+                    <span>Renovación segura de claves en 1 clic.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                to="/account"
+                className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2"
+              >
+                Mi Cuenta & Clave &rarr;
+              </Link>
+            </div>
+          </div>
+
+          {/* Module 3: Fichas Técnicas & Valoración con Imagen Decorativa Trofeo */}
+          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+              <img
+                src="/assets/golden_trophy.jpg"
+                alt="Trofeo Campeón FútVal"
+                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#2dd4bf]/40">
+                DETALLE TÉCNICO
+              </span>
+            </div>
+
+            <div className="p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
+                  Fichas de Jugadores
+                </h3>
+                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
+                  Accedé al detalle individual de cada futbolista para consultar su demarcación, club de procedencia y liga de origen en un formato claro.
+                </p>
+
+                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Vistas individuales completas por jugador.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#2dd4bf] font-black">✓</span>
+                    <span>Navegación fluida y diseño responsivo.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                to="/catalog"
+                className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-[#b79753] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2"
+              >
+                Explorar Jugadores &rarr;
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

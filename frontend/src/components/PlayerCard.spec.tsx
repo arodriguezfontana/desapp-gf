@@ -27,5 +27,29 @@ describe('PlayerCard', () => {
     const link = screen.getByRole('link', { name: /Ver detalle/i });
     expect(link).toHaveAttribute('href', '/catalog/p-1');
   });
+
+  it.each([
+    ['GK', 'text-[#b79753]'],
+    ['DF', 'text-blue-400'],
+    ['MF', 'text-[#2dd4bf]'],
+    ['FW', 'text-purple-400'],
+    ['XX', 'text-slate-300'],
+  ])('asigna el color de badge correspondiente a la posición %s', (position, expectedClass) => {
+    const playerMock = {
+      id: 'p-1',
+      name: 'Jugador de Prueba',
+      league: 'Premier League',
+      team: 'Boca Juniors',
+      position,
+    };
+
+    render(
+      <MemoryRouter>
+        <PlayerCard player={playerMock} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(position)).toHaveClass(expectedClass);
+  });
 });
 
