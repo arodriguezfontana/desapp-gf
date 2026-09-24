@@ -1,11 +1,13 @@
-import axios from 'axios';
+import { gotScraping } from 'got-scraping';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { HttpWhoScoredAdapter, normalizeRawPosition } from './http-whoscored-adapter';
 import { League } from '../domain/player/league';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+// `got-scraping` expone un named export (`gotScraping.get`), no un default
+// export como `axios` — el automock no alcanza, se define la forma a mano.
+jest.mock('got-scraping', () => ({ gotScraping: { get: jest.fn() } }));
+const mockedGet = gotScraping.get as jest.Mock;
 
 const FIXTURES_DIR = join(__dirname, '..', '..', 'test', 'fixtures', 'whoscored');
 const LEAGUE_TEAMS_HTML = readFileSync(
@@ -32,11 +34,12 @@ const PLAYER_STATISTICS_HTML = `
 `;
 
 function mockGetByUrl(handlers: Record<string, string | Error>): void {
-  mockedAxios.get.mockImplementation((url: string) => {
+  mockedGet.mockImplementation((url: string) => {
     for (const [pattern, result] of Object.entries(handlers)) {
       if (url.includes(pattern)) {
         if (result instanceof Error) return Promise.reject(result);
-        return Promise.resolve({ data: result });
+        // `got` expone `response.body`, no `response.data` como `axios`.
+        return Promise.resolve({ body: result });
       }
     }
     return Promise.reject(new Error(`URL no mockeada: ${url}`));
@@ -75,7 +78,7 @@ describe('HttpWhoScoredAdapter', () => {
     });
 
     it('propaga el error si no se puede obtener la página de la liga (FR-014 nivel liga)', async () => {
-      mockedAxios.get.mockRejectedValue(new Error('timeout'));
+      mockedGet.mockRejectedValue(new Error('timeout'));
 
       await expect(
         adapter.fetchLeagueTeams(League.PREMIER_LEAGUE),
@@ -163,12 +166,12 @@ describe('HttpWhoScoredAdapter', () => {
     });
 
     it('si falla el fetch de la página de estadísticas de jugadores (el link sí existe), devuelve los equipos igual con un mapa de semillas vacío (no lanza)', async () => {
-      mockedAxios.get.mockImplementation((url: string) => {
+      mockedGet.mockImplementation((url: string) => {
         if (url.includes('playerstatistics')) {
           return Promise.reject(new Error('500'));
         }
         if (url.includes('/regions/252/tournaments/2/')) {
-          return Promise.resolve({ data: LEAGUE_TEAMS_HTML });
+          return Promise.resolve({ body: LEAGUE_TEAMS_HTML });
         }
         return Promise.reject(new Error(`URL no mockeada: ${url}`));
       });
@@ -177,6 +180,15 @@ describe('HttpWhoScoredAdapter', () => {
 
       expect(result.teams).toContainEqual(MANCHESTER_UNITED);
       expect(result.seedPlayerByTeam.size).toBe(0);
+    });
+
+    it('lanza si la página de la liga no tiene ningún link a equipos (p. ej. bloqueo de Cloudflare: got-scraping no lanza por status, sólo devuelve el HTML de bloqueo — sin este guard se leería como "liga sin equipos")', async () => {
+      const blockedPageHtml = `<html><body>Just a moment...</body></html>`;
+      mockGetByUrl({ '/regions/252/tournaments/2/': blockedPageHtml });
+
+      await expect(
+        adapter.fetchLeagueTeams(League.PREMIER_LEAGUE),
+      ).rejects.toThrow(/equipos.*vino vacía/i);
     });
   });
 
@@ -223,12 +235,12 @@ describe('HttpWhoScoredAdapter', () => {
     });
 
     it('un jugador puntual con la página de estadísticas caída no aborta al resto del plantel (FR-018)', async () => {
-      mockedAxios.get.mockImplementation((url: string) => {
+      mockedGet.mockImplementation((url: string) => {
         if (url.includes(`/players/${BRUNO_FERNANDES_ID}/matchstatistics/`)) {
           return Promise.reject(new Error('500'));
         }
         if (url.includes('/matchstatistics/') || url.includes('/show/')) {
-          return Promise.resolve({ data: PLAYER_MATCHSTATS_HTML });
+          return Promise.resolve({ body: PLAYER_MATCHSTATS_HTML });
         }
         return Promise.reject(new Error(`URL no mockeada: ${url}`));
       });

@@ -197,7 +197,7 @@ Ver research.md §3 para la interfaz completa (`fetchLeagueTeams`,
 `fetchTeamRoster`, y los tipos `WhoScoredLeagueTeams`/`WhoScoredTeamRef`/
 `WhoScoredRawPlayer`/`WhoScoredRawMetrics`). Vive en
 `adapters/whoscored-adapter.ts`, implementado por
-`adapters/http-whoscored-adapter.ts` (axios + cheerio, research.md §4).
+`adapters/http-whoscored-adapter.ts` (got-scraping + cheerio, research.md §4).
 
 **Corrección post-implementación**: `fetchLeagueTeams` devuelve
 `{ tournamentId, teams, seedPlayerByTeam }` (no sólo `teams`), y

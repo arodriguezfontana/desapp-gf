@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
+import { gotScraping } from 'got-scraping';
 import * as cheerio from 'cheerio';
 import { League } from '../domain/player/league';
 import { WHOSCORED_REQUEST_TIMEOUT_MS } from '../player-sync.constants';
@@ -12,8 +12,6 @@ import {
 } from './whoscored-adapter';
 
 const BASE_URL = 'https://www.whoscored.com';
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
 /**
  * Región/torneo de WhoScored por liga soportada — únicos ids que el dominio
@@ -66,9 +64,9 @@ function isValidPlayerId(id: number | null | undefined): id is number {
 }
 
 /**
- * Implementación concreta del puerto `WhoScoredAdapter` (axios + cheerio,
- * research.md §4 de 006-whoscored-catalog-sync). Única puerta de entrada a
- * WhoScored: `PlayerSyncService` no conoce nada de lo que hay acá.
+ * Implementación concreta del puerto `WhoScoredAdapter` (got-scraping +
+ * cheerio, research.md §4 de 006-whoscored-catalog-sync). Única puerta de
+ * entrada a WhoScored: `PlayerSyncService` no conoce nada de lo que hay acá.
  *
  * Deliberadamente sin campos de instancia mutables entre llamadas (más allá
  * del `logger`, que no participa de ningún dato de una corrida). Este
@@ -79,6 +77,14 @@ function isValidPlayerId(id: number | null | undefined): id is number {
  * sobreescribió). Por eso todo lo que un método necesita de una liga viaja
  * como parámetro explícito o como parte del valor de retorno de
  * `fetchLeagueTeams`, nunca como estado guardado acá.
+ *
+ * `gotScraping` (el cliente que importamos) también es un singleton de
+ * módulo por diseño de la librería, pero no guarda nada por request que
+ * pueda pisarse entre llamadas concurrentes (research.md §4 "Verificación de
+ * statelessness"): no hay cookie jar salvo que se pase uno explícito (no lo
+ * hacemos), y el único mecanismo de "sesión" de `got-scraping`
+ * (`context.sessionToken`) es un no-op si no se pasa `context` (no lo
+ * pasamos) — confirmado leyendo `got-scraping/dist/hooks/storage.js`.
  */
 @Injectable()
 export class HttpWhoScoredAdapter implements WhoScoredAdapter {
@@ -91,6 +97,16 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
     const $ = cheerio.load(html);
 
     const teams = this.parseTeamsFromHtml($);
+    if (teams.length === 0) {
+      // `got-scraping` no lanza en un 403/bloqueo (`throwHttpErrors: false`,
+      // a diferencia de `axios`): una página de liga bloqueada resuelve
+      // igual, con HTML de error que no matchea ningún link de equipo. Sin
+      // este chequeo, un bloqueo se leería como "esta liga no tiene equipos"
+      // en vez de como el fallo de nivel liga que realmente es (FR-014).
+      throw new Error(
+        `La lista de equipos de ${league} vino vacía al parsear la página de la liga; probablemente cambió la estructura de la página o la request fue bloqueada. No se puede confiar en este resultado esta corrida.`,
+      );
+    }
     const seedPlayerByTeam = await this.harvestSeedPlayers($, league);
 
     return {
@@ -304,18 +320,30 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
     return JSON.parse(html.slice(arrayStart, end)) as T[];
   }
 
+  /**
+   * `got-scraping` (no `axios`, research.md §4): imita el ClientHello TLS, el
+   * orden de headers y el fingerprint HTTP/2 de un navegador real —
+   * `axios` usa el stack TLS plano de Node y Cloudflare lo bloquea (403) pese
+   * a headers idénticos a los de un browser real (evidencia empírica en
+   * research.md §4). No se fuerza un `User-Agent` fijo a mano: `got-scraping`
+   * genera un set de headers consistente con el fingerprint TLS que negocia
+   * (`header-generator`); pisar sólo el `User-Agent` rompería esa
+   * consistencia y sería, en sí mismo, una señal más fácil de detectar.
+   *
+   * `got` expone `response.statusCode`/`response.body`, no
+   * `response.status`/`response.data` como `axios` — no hay ningún chequeo
+   * explícito de status acá (ni lo había con `axios`): un 403/500/lo que sea
+   * no lanza por default (`throwHttpErrors` es `false` en `got-scraping`,
+   * ver `got-scraping/dist/index.js`), así que un bloqueo se refleja como
+   * HTML de error en `response.body`, no como excepción — lo cual el parseo
+   * de más arriba ya trata como fallo igual (no encuentra el bloque
+   * embebido esperado y tira `Error` en `extractEmbeddedArray`).
+   */
   private async get(url: string): Promise<string> {
-    const response = await axios.get<string>(url, {
-      timeout: WHOSCORED_REQUEST_TIMEOUT_MS,
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept:
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      responseType: 'text',
+    const response = await gotScraping.get(url, {
+      timeout: { request: WHOSCORED_REQUEST_TIMEOUT_MS },
     });
-    return response.data;
+    return response.body;
   }
 }
 

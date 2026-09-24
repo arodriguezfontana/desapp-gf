@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { CronExpression } from '@nestjs/schedule';
 import { PlayerSyncService } from './player-sync.service';
 import {
   WhoScoredAdapter,
@@ -117,6 +118,22 @@ describe('PlayerSyncService', () => {
     // Se llamó fetchTeamRoster para las otras 4 ligas (Premier League falló antes de eso).
     expect(whoScored.fetchTeamRoster).toHaveBeenCalledTimes(4);
     expect(players.applyTeamRosterSync).toHaveBeenCalledTimes(4);
+  });
+
+  it('una liga que falla con un rechazo que no es un Error (p. ej. un string) igual se loguea y se saltea sin romper la corrida', async () => {
+    whoScored.fetchLeagueTeams.mockImplementation((league) => {
+      if (league === League.PREMIER_LEAGUE) {
+        return Promise.reject('string no-Error');
+      }
+      return Promise.resolve(
+        leagueTeamsResult([{ externalTeamId: 't2', team: 'Equipo Dos' }]),
+      );
+    });
+    whoScored.fetchTeamRoster.mockResolvedValue([rawPlayer()]);
+
+    await expect(service.sync()).resolves.toBeUndefined();
+
+    expect(whoScored.fetchTeamRoster).toHaveBeenCalledTimes(4);
   });
 
   it('un equipo que falla no afecta a los demás equipos de su liga (FR-014 nivel equipo)', async () => {
@@ -334,6 +351,27 @@ describe('PlayerSyncService', () => {
       expect(warnSpy).not.toHaveBeenCalled();
       const upserts = players.applyTeamRosterSync.mock.calls[0][2];
       expect(upserts[0].metrics).toBeNull();
+    });
+  });
+});
+
+describe('PlayerSyncService — configuración del @Cron', () => {
+  // No hay forma práctica de testear que el cron semanal dispare solo (habría
+  // que esperar una semana real). Lo que sí se puede fijar con un test es que
+  // el método siga decorado exactamente como research.md §4 documenta:
+  // `waitForCompletion: true` es la defensa en profundidad contra corridas
+  // solapadas (además del rediseño stateless del Adapter, que es la solución
+  // de fondo). Si alguien borra esa opción sin querer en un refactor futuro,
+  // este test lo detecta sin depender de Docker/DB ni de esperar el cron real.
+  it('sync() está decorado con @Cron(EVERY_WEEK, { waitForCompletion: true })', () => {
+    const options = Reflect.getMetadata(
+      'SCHEDULE_CRON_OPTIONS',
+      PlayerSyncService.prototype.sync,
+    );
+
+    expect(options).toEqual({
+      waitForCompletion: true,
+      cronTime: CronExpression.EVERY_WEEK,
     });
   });
 });

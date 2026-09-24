@@ -61,7 +61,12 @@ no ese flag.
 
 ## Implementación concreta (`adapters/http-whoscored-adapter.ts`)
 
-- HTTP: `axios`, timeout `WHOSCORED_REQUEST_TIMEOUT_MS` (15000ms) por request.
+- HTTP: `got-scraping` (versión pinneada `3.2.15`, no `axios` — research.md
+  §4: `axios` es bloqueado por el fingerprint TLS/HTTP2 de Cloudflare en el
+  sitio real, `got-scraping` lo imita), timeout `WHOSCORED_REQUEST_TIMEOUT_MS`
+  (15000ms) por request vía `{ timeout: { request: ... } }`. No se fuerza un
+  `User-Agent` manual: `got-scraping` genera un set de headers consistente
+  con el fingerprint TLS que negocia.
 - Parseo: `cheerio` sobre el HTML de respuesta. WhoScored sirve el detalle de
   partido/estadística como HTML server-rendered con los datos incrustados
   (no requiere ejecutar JS de cliente) — de ahí que un fixture HTML estático
@@ -78,9 +83,11 @@ no ese flag.
   recortada) para el caso "jugador sin partidos en la temporada" si la
   estructura de esa página difiere lo suficiente como para necesitar un
   parseo distinto.
-- Los tests unitarios de `HttpWhoScoredAdapter` mockean `axios`
-  (`jest.mock('axios')`) para que `.get(...)` resuelva con el contenido de
-  esos fixtures; el parseo real (`cheerio`) se ejecuta sin red.
+- Los tests unitarios de `HttpWhoScoredAdapter` mockean `got-scraping`
+  (`jest.mock('got-scraping', () => ({ gotScraping: { get: jest.fn() } }))`)
+  para que `.get(...)` resuelva con el contenido de esos fixtures (como
+  `{ body: html }`, no `{ data: html }` — forma de la respuesta de `got`); el
+  parseo real (`cheerio`) se ejecuta sin red.
 - Ningún test de este proyecto (unitario, integración ni e2e) hace una
   request real a `whoscored.com`. Determinístico y no depende de que
   WhoScored esté arriba ni de que no haya cambiado su estructura (pedido

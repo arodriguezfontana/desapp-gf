@@ -41,7 +41,7 @@ export default tseslint.config(
                 'El Service no debe hashear directamente: usá el Adapter correspondiente (PasswordHasher).',
             },
             {
-              name: 'axios',
+              name: 'got-scraping',
               message:
                 'El Service no debe scrapear directamente: usá el Adapter correspondiente (WhoScoredAdapter).',
             },
