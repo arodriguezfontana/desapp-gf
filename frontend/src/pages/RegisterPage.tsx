@@ -10,9 +10,13 @@ export function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Misma política que backend/src/domain/auth/password.ts (FR-003 de 001-user-auth):
+  // 8 a 16 caracteres, con mayúscula, minúscula, número y símbolo.
   const isPasswordValid =
     password.length >= 8 &&
+    password.length <= 16 &&
     /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
     /[0-9]/.test(password) &&
     /[^A-Za-z0-9]/.test(password);
 
@@ -121,6 +125,7 @@ export function RegisterPage() {
                 id="password"
                 type="password"
                 required
+                maxLength={16}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-[#0b3332] border border-[#1a6866] text-white placeholder-gray-500 text-sm font-medium focus:border-[#b79753] focus:outline-none focus:ring-2 focus:ring-[#b79753]/20 transition-all rounded-xl shadow-inner"
@@ -128,7 +133,7 @@ export function RegisterPage() {
               />
               {password.length > 0 && !isPasswordValid && (
                 <p className="mt-2 text-[11px] text-[#b79753] font-black uppercase tracking-wider">
-                  Requisito: Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.
+                  Requisito: 8 a 16 caracteres, con 1 mayúscula, 1 minúscula, 1 número y 1 símbolo.
                 </p>
               )}
             </div>
