@@ -17,6 +17,31 @@ import { FOOTBALL_DATA_ADAPTER, FootballDataAdapter } from '../adapters/football
 import { MATCH_REPOSITORY } from '../repositories/match.repository';
 import { STANDING_REPOSITORY } from '../repositories/standing.repository';
 
+interface StandingsFixtureRow {
+  position: number;
+  playedGames: number;
+  form?: string | null;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  team: { id: number; name: string; crest?: string | null };
+}
+
+interface MatchesFixtureRow {
+  id: number;
+  utcDate: string;
+  status: string;
+  matchday: number;
+  season?: { id?: number };
+  homeTeam: { id: number; name: string };
+  awayTeam: { id: number; name: string };
+  score?: { fullTime?: { home: number | null; away: number | null } };
+}
+
 describe('FootballDataSyncService (Integration against Postgres with Mocked Adapter)', () => {
   let moduleRef: TestingModule;
   let syncService: FootballDataSyncService;
@@ -76,7 +101,7 @@ describe('FootballDataSyncService (Integration against Postgres with Mocked Adap
     mockAdapter.fetchStandings.mockImplementation(async (code: string) => {
       if (code === 'PL') {
         const table = standingsFixture.standings[0].table;
-        return table.map((r: any) => ({
+        return table.map((r: StandingsFixtureRow) => ({
           position: r.position,
           teamId: r.team.id,
           teamName: r.team.name,
@@ -97,7 +122,7 @@ describe('FootballDataSyncService (Integration against Postgres with Mocked Adap
 
     mockAdapter.fetchMatches.mockImplementation(async (code: string) => {
       if (code === 'PL') {
-        return matchesFixture.matches.map((m: any) => ({
+        return matchesFixture.matches.map((m: MatchesFixtureRow) => ({
           id: m.id,
           utcDate: m.utcDate,
           status: m.status,

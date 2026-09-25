@@ -83,9 +83,9 @@ export class FootballDataSyncService {
 
       await this.standingRepository.upsertStandings(standings);
       this.logger.log(`Successfully synchronized ${standings.length} standings for ${leagueCode}`);
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(
-        `Error synchronizing standings for league ${leagueCode}: ${error?.message || error}`,
+        `Error synchronizing standings for league ${leagueCode}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -133,9 +133,9 @@ export class FootballDataSyncService {
           `Successfully synchronized ${matches.length} matches (filtered from ${rawMatches.length}) for ${leagueCode}`,
         );
       }
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(
-        `Error synchronizing matches for league ${leagueCode}: ${error?.message || error}`,
+        `Error synchronizing matches for league ${leagueCode}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

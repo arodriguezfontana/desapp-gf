@@ -1,10 +1,15 @@
+import { AxiosInstance } from 'axios';
 import { HttpFootballDataAdapter } from './http-football-data-adapter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+interface MockAxiosInstance {
+  get: jest.Mock;
+}
+
 describe('HttpFootballDataAdapter', () => {
   let adapter: HttpFootballDataAdapter;
-  let mockAxiosInstance: any;
+  let mockAxiosInstance: MockAxiosInstance;
 
   const matchesFixture = JSON.parse(
     fs.readFileSync(
@@ -24,7 +29,7 @@ describe('HttpFootballDataAdapter', () => {
     mockAxiosInstance = {
       get: jest.fn(),
     };
-    adapter = new HttpFootballDataAdapter(mockAxiosInstance);
+    adapter = new HttpFootballDataAdapter(mockAxiosInstance as unknown as AxiosInstance);
   });
 
   describe('fetchStandings', () => {

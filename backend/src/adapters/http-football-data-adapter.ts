@@ -8,6 +8,61 @@ import {
 
 const FOOTBALL_DATA_BASE_URL = 'https://api.football-data.org/v4';
 
+interface FootballDataStandingsTeam {
+  id: number;
+  name: string;
+  crest?: string | null;
+}
+
+interface FootballDataStandingsTableRow {
+  position: number;
+  playedGames: number;
+  form?: string | null;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  team: FootballDataStandingsTeam;
+}
+
+interface FootballDataStandingsBlock {
+  type?: string;
+  stage?: string;
+  table: FootballDataStandingsTableRow[];
+}
+
+interface FootballDataStandingsResponse {
+  standings: FootballDataStandingsBlock[];
+}
+
+interface FootballDataTeamRef {
+  id: number;
+  name: string;
+}
+
+interface FootballDataRawMatch {
+  id: number;
+  utcDate: string;
+  status: string;
+  matchday: number;
+  season?: { id?: number };
+  homeTeam: FootballDataTeamRef;
+  awayTeam: FootballDataTeamRef;
+  score?: {
+    fullTime?: {
+      home: number | null;
+      away: number | null;
+    };
+  };
+}
+
+interface FootballDataMatchesResponse {
+  matches: FootballDataRawMatch[];
+}
+
 @Injectable()
 export class HttpFootballDataAdapter implements FootballDataAdapter {
   private readonly logger = new Logger(HttpFootballDataAdapter.name);
@@ -33,7 +88,7 @@ export class HttpFootballDataAdapter implements FootballDataAdapter {
 
   async fetchStandings(competitionCode: string): Promise<FootballDataStandingRowDTO[]> {
     try {
-      const response = await this.httpClient.get(
+      const response = await this.httpClient.get<FootballDataStandingsResponse>(
         `/competitions/${competitionCode}/standings`,
         { headers: this.getHeaders() },
       );
@@ -43,15 +98,16 @@ export class HttpFootballDataAdapter implements FootballDataAdapter {
         return [];
       }
 
-      const totalStanding = standingsData.standings.find(
-        (s: any) => s.type === 'TOTAL' || s.stage === 'REGULAR_SEASON',
-      ) || standingsData.standings[0];
+      const totalStanding =
+        standingsData.standings.find(
+          (s) => s.type === 'TOTAL' || s.stage === 'REGULAR_SEASON',
+        ) || standingsData.standings[0];
 
       if (!totalStanding || !Array.isArray(totalStanding.table)) {
         return [];
       }
 
-      return totalStanding.table.map((row: any): FootballDataStandingRowDTO => ({
+      return totalStanding.table.map((row): FootballDataStandingRowDTO => ({
         position: row.position,
         teamId: row.team.id,
         teamName: row.team.name,
@@ -66,9 +122,9 @@ export class HttpFootballDataAdapter implements FootballDataAdapter {
         goalsAgainst: row.goalsAgainst,
         goalDifference: row.goalDifference,
       }));
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(
-        `Failed to fetch standings for competition ${competitionCode}: ${error?.message || error}`,
+        `Failed to fetch standings for competition ${competitionCode}: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -76,7 +132,7 @@ export class HttpFootballDataAdapter implements FootballDataAdapter {
 
   async fetchMatches(competitionCode: string): Promise<FootballDataMatchDTO[]> {
     try {
-      const response = await this.httpClient.get(
+      const response = await this.httpClient.get<FootballDataMatchesResponse>(
         `/competitions/${competitionCode}/matches`,
         { headers: this.getHeaders() },
       );
@@ -86,7 +142,7 @@ export class HttpFootballDataAdapter implements FootballDataAdapter {
         return [];
       }
 
-      return matchesData.matches.map((m: any): FootballDataMatchDTO => ({
+      return matchesData.matches.map((m): FootballDataMatchDTO => ({
         id: m.id,
         utcDate: m.utcDate,
         status: m.status,
@@ -100,12 +156,11 @@ export class HttpFootballDataAdapter implements FootballDataAdapter {
         homeScore: m.score?.fullTime?.home ?? null,
         awayScore: m.score?.fullTime?.away ?? null,
       }));
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(
-        `Failed to fetch matches for competition ${competitionCode}: ${error?.message || error}`,
+        `Failed to fetch matches for competition ${competitionCode}: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
   }
 }
-
