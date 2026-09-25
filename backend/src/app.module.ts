@@ -8,6 +8,7 @@ import { AuthModule } from './auth.module';
 import { ApiKeyModule } from './api-key.module';
 import { PlayerModule } from './player.module';
 import { PlayerSyncModule } from './player-sync.module';
+import { FootballDataSyncModule } from './football-data-sync.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -18,8 +19,10 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     ApiKeyModule,
     PlayerModule,
     PlayerSyncModule,
+    FootballDataSyncModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
 export class AppModule {}
+
