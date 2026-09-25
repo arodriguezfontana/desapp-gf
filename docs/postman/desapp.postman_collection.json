@@ -559,7 +559,7 @@
           }
         },
         {
-          "name": "Listar — filtro por equipo (200, todo item devuelto es de ese equipo)",
+          "name": "Listar — filtro por equipo (200, todo item devuelto contiene el término filtrado)",
           "event": [
             {
               "listen": "test",
@@ -567,9 +567,9 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('todo item devuelto pertenece al equipo filtrado (match exacto insensible a mayúsculas)', function () {",
+                  "pm.test('todo item devuelto contiene el término de equipo filtrado (match parcial, insensible a mayúsculas)', function () {",
                   "  const body = pm.response.json();",
-                  "  body.items.forEach((p) => pm.expect(p.team.toLowerCase()).to.eql('manchester united'.toLowerCase()));",
+                  "  body.items.forEach((p) => pm.expect(p.team.toLowerCase()).to.include('manchester united'.toLowerCase()));",
                   "});"
                 ]
               }
@@ -584,7 +584,7 @@
               "path": ["players"],
               "query": [{ "key": "team", "value": "Manchester United" }]
             },
-            "description": "'Manchester United' es sólo un ejemplo de equipo real de una de las 5 ligas soportadas; puede devolver items:[] si esa sincronización todavía no corrió — sigue siendo 200, no error."
+            "description": "'Manchester United' es sólo un ejemplo de equipo real de una de las 5 ligas soportadas; puede devolver items:[] si esa sincronización todavía no corrió — sigue siendo 200, no error. El filtro por equipo hace match parcial (contiene, insensible a mayúsculas) desde 2026-09-25 — antes exigía el nombre exacto."
           }
         },
         {

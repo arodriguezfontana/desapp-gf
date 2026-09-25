@@ -154,6 +154,23 @@ describe('Catálogo de Jugadores (e2e)', () => {
       expect(res.body.total).toBe(0);
     });
 
+    it('200: el filtro de equipo hace match parcial, insensible a mayúsculas/minúsculas', async () => {
+      const { apiKey } = await registerLoginAndIssueApiKey('team-parcial@mail.com');
+
+      const res = await request(server())
+        .get('/players')
+        .query({ team: 'northbridge' })
+        .set('x-api-key', apiKey);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(4);
+      expect(
+        (res.body.items as { team: string }[]).every(
+          (item) => item.team === 'Northbridge FC',
+        ),
+      ).toBe(true);
+    });
+
     it('200: acepta league, team y position combinados (AND) sin rechazarlos por whitelist', async () => {
       const { apiKey } = await registerLoginAndIssueApiKey('combinado3@mail.com');
 
