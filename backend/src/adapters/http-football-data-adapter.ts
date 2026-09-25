@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import {
   FootballDataAdapter,
@@ -68,7 +68,17 @@ export class HttpFootballDataAdapter implements FootballDataAdapter {
   private readonly logger = new Logger(HttpFootballDataAdapter.name);
   private readonly httpClient: AxiosInstance;
 
-  constructor(httpClient?: AxiosInstance) {
+  /**
+   * `httpClient` es un seam de test (se pasa un mock en el spec), nunca un
+   * provider de Nest: `AxiosInstance` es una interfaz, así que en runtime
+   * `design:paramtypes` la ve como `Function` y, sin `@Optional()`, Nest
+   * intenta resolverla como token e intenta inyectarla al construir este
+   * adapter vía DI en el módulo real, rompiendo el bootstrap de la app
+   * (reproducido en los e2e: `Nest can't resolve dependencies of the
+   * HttpFootballDataAdapter`). `@Optional()` hace que Nest inyecte
+   * `undefined` en ese caso, y el operador `||` de abajo arma el cliente axios real.
+   */
+  constructor(@Optional() httpClient?: AxiosInstance) {
     this.httpClient =
       httpClient ||
       axios.create({
