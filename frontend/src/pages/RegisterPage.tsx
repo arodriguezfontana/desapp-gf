@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../service/authService';
+import { useAuthActions } from '../hooks/useAuthActions';
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const { register } = useAuthActions();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +22,7 @@ export function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await authService.register(email, password);
+      await register(email, password);
       navigate('/login');
     } catch (err: unknown) {
       if (err instanceof Error) {

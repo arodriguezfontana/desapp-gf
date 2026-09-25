@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { authService } from '../service/authService';
-import { apiKeyStorage } from '../service/apiKeyStorage';
+import { useAuthActions } from '../hooks/useAuthActions';
+import { useApiKey } from '../hooks/useApiKey';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import type { IssueApiKeyResponseDto } from '../types/auth.types';
@@ -14,16 +14,14 @@ type ApiKeyPanelState =
 
 export function AccountPage() {
   const [panelState, setPanelState] = useState<ApiKeyPanelState>({ phase: 'idle' });
-  const [hasActiveKey, setHasActiveKey] = useState<boolean>(() =>
-    Boolean(apiKeyStorage.getApiKey()),
-  );
+  const { generateApiKey } = useAuthActions();
+  const { hasApiKey: hasActiveKey, saveApiKey } = useApiKey();
 
   const executeGeneration = async () => {
     setPanelState({ phase: 'generating' });
     try {
-      const data = await authService.generateApiKey();
-      apiKeyStorage.setApiKey(data.apiKey);
-      setHasActiveKey(true);
+      const data = await generateApiKey();
+      saveApiKey(data.apiKey);
       setPanelState({ phase: 'revealed', data });
     } catch (err: unknown) {
       if (err instanceof Error) {

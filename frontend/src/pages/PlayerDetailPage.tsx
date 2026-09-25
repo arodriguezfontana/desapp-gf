@@ -1,27 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { catalogService } from '../service/catalogService';
-import { apiKeyStorage } from '../service/apiKeyStorage';
-import { httpEvents, ApiError } from '../service/httpClient';
+import { useCatalog, ApiError } from '../hooks/useCatalog';
+import { useApiKey } from '../hooks/useApiKey';
 import type { Player } from '../types/catalog.types';
 
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [hasApiKey, setHasApiKey] = useState<boolean>(() => Boolean(apiKeyStorage.getApiKey()));
+  const { hasApiKey } = useApiKey();
+  const { getPlayerById } = useCatalog();
   const [player, setPlayer] = useState<Player | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleUnauthorizedKey = () => {
-      setHasApiKey(false);
-    };
-
-    httpEvents.addEventListener('apiKeyUnauthorized', handleUnauthorizedKey);
-    return () => {
-      httpEvents.removeEventListener('apiKeyUnauthorized', handleUnauthorizedKey);
-    };
-  }, []);
 
   useEffect(() => {
     if (!hasApiKey || !id) return;
@@ -33,7 +22,7 @@ export const PlayerDetailPage: React.FC = () => {
       setErrorMessage(null);
 
       try {
-        const data = await catalogService.getPlayerById(id);
+        const data = await getPlayerById(id);
         if (isMounted) {
           setPlayer(data);
         }
@@ -62,7 +51,7 @@ export const PlayerDetailPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [hasApiKey, id]);
+  }, [hasApiKey, id, getPlayerById]);
 
   if (!hasApiKey) {
     return (
