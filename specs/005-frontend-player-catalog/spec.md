@@ -24,7 +24,7 @@ Un visitante o usuario autenticado que cuenta con una clave de acceso (ApiKey) v
 2. **Given** el listado del catálogo, **When** el usuario selecciona una liga de las 5 disponibles, una posición de las 4 disponibles e ingresa el nombre de un equipo en texto libre, **Then** el listado muestra únicamente los jugadores que cumplen simultáneamente todos los criterios aplicados.
 3. **Given** filtros aplicados que no coinciden con ningún jugador, **When** el sistema recibe una respuesta vacía exitosa, **Then** la pantalla muestra el mensaje exacto "No se encontraron jugadores con estos filtros." sin indicar error ni fallo de comunicación.
 4. **Given** un listado con múltiples páginas de resultados, **When** el usuario presiona el botón de página Siguiente o Anterior, **Then** el listado muestra los jugadores correspondientes a la nueva página y actualiza la indicación del rango visible (por ejemplo, "Mostrando 11 - 20 de 45").
-5. **Given** un usuario que inicia sesión exitosamente en la aplicación, **When** se completa la autenticación, **Then** es redirigido directamente a la pantalla del catálogo de jugadores en lugar de la vista previa de inicio.
+5. **Given** un usuario que inicia sesión exitosamente en la aplicación, **When** se completa la autenticación, **Then** es redirigido a la pantalla home autenticada (ver **Actualización 2026-09-25** en FR-010 — este destino cambió de vuelta a `/home`; el catálogo sigue accesible desde ahí con un click).
 
 ---
 
@@ -78,7 +78,8 @@ Un usuario intenta acceder al catálogo sin poseer una clave de acceso (ApiKey) 
 - **FR-007**: La interfaz MUST NOT incluir selectores ni opciones para modificar el tamaño de página.
 - **FR-008**: Al seleccionar un jugador del listado, la interfaz MUST mostrar la vista de detalle con la información completa del futbolista (nombre, liga, equipo y posición).
 - **FR-009**: Ante una respuesta de recurso no encontrado (404) al consultar el detalle de un jugador, la interfaz MUST presentar textualmente el mensaje de error retornado, sin reescribir su contenido ni realizar redirecciones automáticas.
-- **FR-010**: El destino posterior a un inicio de sesión exitoso MUST ser la pantalla del catálogo de jugadores.
+- **FR-010**: ~~El destino posterior a un inicio de sesión exitoso MUST ser la pantalla del catálogo de jugadores.~~
+  **Actualización 2026-09-25**: el destino posterior a un inicio de sesión exitoso vuelve a ser la pantalla home autenticada (`/home`, definida en `003-frontend-auth` FR-022), no el catálogo. Decisión explícita del usuario del proyecto, revirtiendo la redirección directa a `/catalog` que introdujo esta feature. El catálogo sigue siendo de acceso público (FR-011 no cambia) y queda a un click desde home; esto sólo afecta a dónde aterriza el usuario justo después de loguearse.
 - **FR-011**: El acceso a la lectura del catálogo (tanto el listado como el detalle) MUST requerir únicamente la presencia de una ApiKey válida guardada, independientemente de si existe o no una sesión de usuario iniciada.
 - **FR-012**: Si no existe una ApiKey guardada localmente, la aplicación MUST NOT realizar peticiones de datos de catálogo y MUST presentar el mensaje exacto "Necesitás generar una ApiKey para ver el catálogo." junto con un enlace directo a la pantalla de gestión de cuenta.
 - **FR-013**: Ante una respuesta de falta de autorización (401) en cualquier consulta de catálogo, la aplicación MUST descartar inmediatamente la ApiKey guardada, no debe reintentar la solicitud automáticamente y MUST mostrar el mensaje "Necesitás generar una ApiKey para ver el catálogo." con el enlace a la pantalla de cuenta.
@@ -93,7 +94,7 @@ Un usuario intenta acceder al catálogo sin poseer una clave de acceso (ApiKey) 
 
 ### Measurable Outcomes
 
-- **SC-001**: El 100% de los usuarios que inician sesión son redirigidos directamente a la vista del catálogo de jugadores.
+- **SC-001**: ~~El 100% de los usuarios que inician sesión son redirigidos directamente a la vista del catálogo de jugadores.~~ **Actualización 2026-09-25**: el 100% de los usuarios que inician sesión son redirigidos a la pantalla home autenticada (`/home`), ver FR-010.
 - **SC-002**: Los usuarios pueden aplicar cualquier combinación de los 3 filtros (liga, posición, equipo) y obtener los resultados filtrados o la confirmación de sin resultados en menos de 2 segundos.
 - **SC-003**: En caso de no contar con una ApiKey o de que esta sea rechazada con 401, el 100% de las veces la pantalla bloquea la consulta y ofrece el enlace directo a la pantalla de cuenta sin bucles de reintento.
 - **SC-004**: El 100% de los errores 404 al consultar un detalle de jugador muestran la redacción exacta del mensaje recibido sin redireccionar al usuario fuera de la página.

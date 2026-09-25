@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { RootLayout } from './RootLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { PublicOnlyRoute } from '../components/PublicOnlyRoute';
 import { AppLayout } from '../layout/AppLayout';
 import { RegisterPage } from '../pages/RegisterPage';
 import { LoginPage } from '../pages/LoginPage';
@@ -15,15 +16,14 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <Navigate to="/catalog" replace />,
+        element: <Navigate to="/home" replace />,
       },
       {
-        path: '/register',
-        element: <RegisterPage />,
-      },
-      {
-        path: '/login',
-        element: <LoginPage />,
+        element: <PublicOnlyRoute />,
+        children: [
+          { path: '/register', element: <RegisterPage /> },
+          { path: '/login', element: <LoginPage /> },
+        ],
       },
       {
         element: <AppLayout />,
