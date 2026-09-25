@@ -4,8 +4,8 @@ import { FOOTBALL_DATA_ADAPTER, FootballDataAdapter } from '../adapters/football
 import { MATCH_REPOSITORY, MatchRepository } from '../repositories/match.repository';
 import { STANDING_REPOSITORY, StandingRepository } from '../repositories/standing.repository';
 import { classifyMatchStatus } from '../domain/match-status-classifier';
-import { MatchEntity } from '../repositories/entities/match.entity';
-import { StandingEntity } from '../repositories/entities/standing.entity';
+import { Match } from '../domain/match';
+import { Standing } from '../domain/standing';
 
 export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
 
@@ -61,26 +61,28 @@ export class FootballDataSyncService {
       }
 
       const currentYear = new Date().getFullYear();
-      const standingEntities: Partial<StandingEntity>[] = rows.map((row) => ({
-        externalTeamId: row.teamId,
-        teamName: row.teamName,
-        leagueCode: leagueCode,
-        season: currentYear,
-        position: row.position,
-        playedGames: row.playedGames,
-        won: row.won,
-        draw: row.draw,
-        lost: row.lost,
-        points: row.points,
-        goalsFor: row.goalsFor,
-        goalsAgainst: row.goalsAgainst,
-        goalDifference: row.goalDifference,
-        form: row.form,
-        crestUrl: row.crestUrl,
-      }));
+      const standings: Standing[] = rows.map((row) =>
+        Standing.create({
+          externalTeamId: row.teamId,
+          teamName: row.teamName,
+          leagueCode: leagueCode,
+          season: currentYear,
+          position: row.position,
+          playedGames: row.playedGames,
+          won: row.won,
+          draw: row.draw,
+          lost: row.lost,
+          points: row.points,
+          goalsFor: row.goalsFor,
+          goalsAgainst: row.goalsAgainst,
+          goalDifference: row.goalDifference,
+          form: row.form,
+          crestUrl: row.crestUrl,
+        }),
+      );
 
-      await this.standingRepository.upsertStandings(standingEntities);
-      this.logger.log(`Successfully synchronized ${standingEntities.length} standings for ${leagueCode}`);
+      await this.standingRepository.upsertStandings(standings);
+      this.logger.log(`Successfully synchronized ${standings.length} standings for ${leagueCode}`);
     } catch (error: any) {
       this.logger.error(
         `Error synchronizing standings for league ${leagueCode}: ${error?.message || error}`,
@@ -98,7 +100,7 @@ export class FootballDataSyncService {
         return;
       }
 
-      const matchEntities: Partial<MatchEntity>[] = [];
+      const matches: Match[] = [];
 
       for (const m of rawMatches) {
         const classification = classifyMatchStatus(m.status);
@@ -106,27 +108,29 @@ export class FootballDataSyncService {
           continue;
         }
 
-        matchEntities.push({
-          externalId: m.id,
-          leagueCode: leagueCode,
-          season: m.seasonYear,
-          matchday: m.matchday,
-          utcDate: new Date(m.utcDate),
-          status: m.status,
-          classification: classification.classification,
-          homeTeamId: m.homeTeamId,
-          homeTeamName: m.homeTeamName,
-          awayTeamId: m.awayTeamId,
-          awayTeamName: m.awayTeamName,
-          homeScore: classification.includeScore ? m.homeScore : null,
-          awayScore: classification.includeScore ? m.awayScore : null,
-        });
+        matches.push(
+          Match.create({
+            externalId: m.id,
+            leagueCode: leagueCode,
+            season: m.seasonYear,
+            matchday: m.matchday,
+            utcDate: new Date(m.utcDate),
+            status: m.status,
+            classification: classification.classification,
+            homeTeamId: m.homeTeamId,
+            homeTeamName: m.homeTeamName,
+            awayTeamId: m.awayTeamId,
+            awayTeamName: m.awayTeamName,
+            homeScore: classification.includeScore ? m.homeScore : null,
+            awayScore: classification.includeScore ? m.awayScore : null,
+          }),
+        );
       }
 
-      if (matchEntities.length > 0) {
-        await this.matchRepository.upsertMatches(matchEntities);
+      if (matches.length > 0) {
+        await this.matchRepository.upsertMatches(matches);
         this.logger.log(
-          `Successfully synchronized ${matchEntities.length} matches (filtered from ${rawMatches.length}) for ${leagueCode}`,
+          `Successfully synchronized ${matches.length} matches (filtered from ${rawMatches.length}) for ${leagueCode}`,
         );
       }
     } catch (error: any) {

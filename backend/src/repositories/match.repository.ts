@@ -1,10 +1,9 @@
-import { MatchEntity } from './entities/match.entity';
+import { Match } from '../domain/match';
 
 export interface MatchRepository {
-  upsertMatches(matches: Partial<MatchEntity>[]): Promise<void>;
-  findByExternalId(externalId: number): Promise<MatchEntity | null>;
-  findByLeagueCode(leagueCode: string): Promise<MatchEntity[]>;
+  upsertMatches(matches: Match[]): Promise<void>;
+  findByExternalId(externalId: number): Promise<Match | null>;
+  findByLeagueCode(leagueCode: string): Promise<Match[]>;
 }
 
 export const MATCH_REPOSITORY = Symbol('MatchRepository');
-

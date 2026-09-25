@@ -3,7 +3,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { DatabaseModule } from '../database/database.module';
+import { Match } from '../domain/match';
 import { MatchEntity } from './entities/match.entity';
+import { MatchMapper } from './mappers/match.mapper';
 import { TypeOrmMatchRepository } from './typeorm-match.repository';
 
 describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
@@ -18,7 +20,7 @@ describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
         DatabaseModule,
         TypeOrmModule.forFeature([MatchEntity]),
       ],
-      providers: [TypeOrmMatchRepository],
+      providers: [TypeOrmMatchRepository, MatchMapper],
     }).compile();
 
     repository = moduleRef.get(TypeOrmMatchRepository);
@@ -35,7 +37,7 @@ describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
 
   it('should upsert match rows correctly by externalId', async () => {
     await repository.upsertMatches([
-      {
+      Match.create({
         externalId: 497521,
         leagueCode: 'PL',
         season: 2025,
@@ -49,7 +51,7 @@ describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
         awayTeamName: 'Everton FC',
         homeScore: null,
         awayScore: null,
-      },
+      }),
     ]);
 
     let match = await repository.findByExternalId(497521);
@@ -59,7 +61,7 @@ describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
 
     // Update match when finished with score
     await repository.upsertMatches([
-      {
+      Match.create({
         externalId: 497521,
         leagueCode: 'PL',
         season: 2025,
@@ -73,7 +75,7 @@ describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
         awayTeamName: 'Everton FC',
         homeScore: 3,
         awayScore: 0,
-      },
+      }),
     ]);
 
     match = await repository.findByExternalId(497521);

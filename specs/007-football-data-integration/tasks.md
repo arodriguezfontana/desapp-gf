@@ -123,3 +123,13 @@
 1. Complete Phase 4 (User Story 2 - Match Results & Fixtures).
 2. Complete Phase 5 (Scheduler & Cron Integration).
 3. Complete Phase 6 (Validation & Token Audit).
+
+---
+
+## Phase 7: Convergence
+
+**Purpose**: Close a confirmed architecture gap between the codebase and `data-model.md` / Constitution Principio I. Running `test/architecture.spec.ts` currently FAILS with `el Service no depende de la entidad de persistencia`: `FootballDataSyncService` imports `MatchEntity`/`StandingEntity` from `repositories/entities/` directly and builds `Partial<MatchEntity>`/`Partial<StandingEntity>` objects itself, and `MatchRepository`/`StandingRepository` expose those same TypeORM entities in their public signatures instead of domain objects. `data-model.md` §1 explicitly specifies separate domain models distinct from the persistence entities, following the same pattern already used by `domain/player/player.ts` + `repositories/mappers/player.mapper.ts`.
+
+- [X] T027 [CRITICAL] Create domain models `Match` and `Standing` in `backend/src/domain/` (e.g. `domain/match.ts`, `domain/standing.ts`) per `data-model.md` §1, plus mappers `repositories/mappers/match.mapper.ts` and `repositories/mappers/standing.mapper.ts` converting to/from `MatchEntity`/`StandingEntity`, following the existing pattern in `repositories/mappers/player.mapper.ts` (Constitution I, contradicts)
+- [X] T028 Update `MatchRepository`/`StandingRepository` interfaces (`backend/src/repositories/match.repository.ts`, `standing.repository.ts`) and their TypeORM implementations (`typeorm-match.repository.ts`, `typeorm-standing.repository.ts`) to receive/return the new `Match`/`Standing` domain objects instead of `Partial<MatchEntity>`/`Partial<StandingEntity>`, using the mappers from T027 internally (Constitution I, contradicts)
+- [X] T029 Refactor `FootballDataSyncService` (`backend/src/services/football-data-sync.service.ts`) to build and pass `Match`/`Standing` domain objects instead of importing `MatchEntity`/`StandingEntity`, update `football-data-sync.service.spec.ts` and `football-data-sync.service.integration.spec.ts` accordingly, and confirm `test/architecture.spec.ts` passes (Constitution I, contradicts)

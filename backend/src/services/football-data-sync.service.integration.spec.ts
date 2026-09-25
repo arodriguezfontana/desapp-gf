@@ -9,7 +9,9 @@ import { DatabaseModule } from '../database/database.module';
 import { MatchEntity } from '../repositories/entities/match.entity';
 import { StandingEntity } from '../repositories/entities/standing.entity';
 import { TypeOrmMatchRepository } from '../repositories/typeorm-match.repository';
+import { MatchMapper } from '../repositories/mappers/match.mapper';
 import { TypeOrmStandingRepository } from '../repositories/typeorm-standing.repository';
+import { StandingMapper } from '../repositories/mappers/standing.mapper';
 import { FootballDataSyncService } from './football-data-sync.service';
 import { FOOTBALL_DATA_ADAPTER, FootballDataAdapter } from '../adapters/football-data-adapter';
 import { MATCH_REPOSITORY } from '../repositories/match.repository';
@@ -49,6 +51,8 @@ describe('FootballDataSyncService (Integration against Postgres with Mocked Adap
       ],
       providers: [
         FootballDataSyncService,
+        MatchMapper,
+        StandingMapper,
         { provide: FOOTBALL_DATA_ADAPTER, useValue: mockAdapter },
         { provide: MATCH_REPOSITORY, useClass: TypeOrmMatchRepository },
         { provide: STANDING_REPOSITORY, useClass: TypeOrmStandingRepository },

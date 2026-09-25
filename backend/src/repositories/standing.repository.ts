@@ -1,10 +1,9 @@
-import { StandingEntity } from './entities/standing.entity';
+import { Standing } from '../domain/standing';
 
 export interface StandingRepository {
-  upsertStandings(standings: Partial<StandingEntity>[]): Promise<void>;
-  findByTeamAndLeague(externalTeamId: number, leagueCode: string): Promise<StandingEntity | null>;
-  findByLeagueCode(leagueCode: string): Promise<StandingEntity[]>;
+  upsertStandings(standings: Standing[]): Promise<void>;
+  findByTeamAndLeague(externalTeamId: number, leagueCode: string): Promise<Standing | null>;
+  findByLeagueCode(leagueCode: string): Promise<Standing[]>;
 }
 
 export const STANDING_REPOSITORY = Symbol('StandingRepository');
-

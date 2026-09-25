@@ -3,7 +3,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { DatabaseModule } from '../database/database.module';
+import { Standing } from '../domain/standing';
 import { StandingEntity } from './entities/standing.entity';
+import { StandingMapper } from './mappers/standing.mapper';
 import { TypeOrmStandingRepository } from './typeorm-standing.repository';
 
 describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
@@ -18,7 +20,7 @@ describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
         DatabaseModule,
         TypeOrmModule.forFeature([StandingEntity]),
       ],
-      providers: [TypeOrmStandingRepository],
+      providers: [TypeOrmStandingRepository, StandingMapper],
     }).compile();
 
     repository = moduleRef.get(TypeOrmStandingRepository);
@@ -35,7 +37,7 @@ describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
 
   it('should upsert standing rows correctly by (externalTeamId, leagueCode)', async () => {
     await repository.upsertStandings([
-      {
+      Standing.create({
         externalTeamId: 65,
         teamName: 'Manchester City FC',
         leagueCode: 'PL',
@@ -49,8 +51,9 @@ describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
         goalsFor: 12,
         goalsAgainst: 3,
         goalDifference: 9,
+        form: 'W,W,W,D,W',
         crestUrl: 'https://crests.football-data.org/65.png',
-      },
+      }),
     ]);
 
     let standing = await repository.findByTeamAndLeague(65, 'PL');
@@ -60,7 +63,7 @@ describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
 
     // Upsert with updated points
     await repository.upsertStandings([
-      {
+      Standing.create({
         externalTeamId: 65,
         teamName: 'Manchester City FC',
         leagueCode: 'PL',
@@ -74,8 +77,9 @@ describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
         goalsFor: 15,
         goalsAgainst: 3,
         goalDifference: 12,
+        form: 'W,W,W,W,D,W',
         crestUrl: 'https://crests.football-data.org/65.png',
-      },
+      }),
     ]);
 
     standing = await repository.findByTeamAndLeague(65, 'PL');
