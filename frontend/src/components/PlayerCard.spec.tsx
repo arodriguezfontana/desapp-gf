@@ -22,19 +22,19 @@ describe('PlayerCard', () => {
     expect(screen.getByText('Edinson Cavani')).toBeInTheDocument();
     expect(screen.getByText('Premier League')).toBeInTheDocument();
     expect(screen.getByText('Boca Juniors')).toBeInTheDocument();
-    expect(screen.getByText('FW')).toBeInTheDocument();
+    expect(screen.getByText('Delantero')).toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: /Ver detalle/i });
     expect(link).toHaveAttribute('href', '/catalog/p-1');
   });
 
   it.each([
-    ['GK', 'text-[#b79753]'],
-    ['DF', 'text-blue-400'],
-    ['MF', 'text-[#2dd4bf]'],
-    ['FW', 'text-purple-400'],
-    ['XX', 'text-slate-300'],
-  ])('asigna el color de badge correspondiente a la posición %s', (position, expectedClass) => {
+    ['GK', 'Arquero', 'text-[#b79753]'],
+    ['DF', 'Defensor', 'text-blue-400'],
+    ['MF', 'Mediocampista', 'text-[#2dd4bf]'],
+    ['FW', 'Delantero', 'text-purple-400'],
+    ['XX', 'XX', 'text-slate-300'],
+  ])('asigna el color de badge correspondiente a la posición %s', (position, expectedLabel, expectedClass) => {
     const playerMock = {
       id: 'p-1',
       name: 'Jugador de Prueba',
@@ -49,7 +49,7 @@ describe('PlayerCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(position)).toHaveClass(expectedClass);
+    expect(screen.getByText(expectedLabel)).toHaveClass(expectedClass);
   });
 });
 

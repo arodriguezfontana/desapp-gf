@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
-import type { Player } from '../types/catalog.types';
+import { getPositionLabel, type Player } from '../types/catalog.types';
 
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,7 +108,7 @@ export const PlayerDetailPage: React.FC = () => {
           <div className="bg-gradient-to-r from-[#0b3332] via-[#104443] to-[#0b3332] p-8 text-white border-b border-[#1a6866]">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="bg-[#b79753] text-[#0b3332] font-black text-xs px-3.5 py-1 rounded-md uppercase tracking-widest">
-                {player.position}
+                {getPositionLabel(player.position)}
               </span>
               <span className="bg-[#0b3332] text-[#b79753] font-bold text-xs px-3.5 py-1 rounded-md border border-[#b79753]/30">
                 {player.league}
@@ -144,7 +144,7 @@ export const PlayerDetailPage: React.FC = () => {
               <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-1">
                 Posición
               </span>
-              <span className="text-base font-black text-white">{player.position}</span>
+              <span className="text-base font-black text-white">{getPositionLabel(player.position)}</span>
             </div>
           </div>
         </div>

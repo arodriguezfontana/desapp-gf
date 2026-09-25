@@ -1,5 +1,5 @@
 import React from 'react';
-import { LEAGUES, POSITIONS } from '../types/catalog.types';
+import { LEAGUES, POSITIONS, getPositionLabel } from '../types/catalog.types';
 import type { League, Position } from '../types/catalog.types';
 
 interface CatalogFiltersProps {
@@ -78,7 +78,7 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
             <option value="" className="bg-[#0b3332] text-white">Todas las posiciones</option>
             {POSITIONS.map((pos: Position) => (
               <option key={pos} value={pos} className="bg-[#0b3332] text-white">
-                {pos === 'GK' ? 'Arquero (GK)' : pos === 'DF' ? 'Defensor (DF)' : pos === 'MF' ? 'Mediocampista (MF)' : 'Delantero (FW)'}
+                {getPositionLabel(pos)}
               </option>
             ))}
           </select>
