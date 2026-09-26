@@ -175,27 +175,142 @@ resto del sistema no conocen esos ids (mismo criterio que ya aplica
 
 ## §4. Librerías de scraping
 
-**Decisión**: `axios` (cliente HTTP, con `timeout` configurado — ver §6) +
-`cheerio` (parseo de HTML server-side, jQuery-like). Ninguna de las dos es
-nueva en el ecosistema Node/NestJS del proyecto.
+**Decisión (revisada post-implementación)**: `got-scraping` (versión
+**pinneada exacta** `3.2.15`, no `^3.2.15`) + `cheerio` (parseo de HTML
+server-side, jQuery-like, sin cambios).
 
-**Alternativas consideradas**:
+### Por qué se cambió de `axios` a `got-scraping`
+
+La decisión original de este documento era `axios`. Al implementar y probar
+contra el sitio real (no sólo contra los fixtures mockeados) se comprobó que
+WhoScored está detrás de Cloudflare con protección anti-bot a nivel de
+fingerprint TLS/HTTP2 — `axios` recibía 403 con headers (`User-Agent`,
+`Accept`, etc.) idénticos a los de un browser real, mientras que un `curl`
+con los mismos headers, en el mismo momento, recibía 200. La causa es el
+stack TLS de Node (OpenSSL, orden de cifrados/extensiones del ClientHello),
+no algo a nivel HTTP que un header pueda arreglar.
+
+`got-scraping` (Apify) resuelve exactamente ese problema: imita el
+ClientHello TLS, el orden de headers y el fingerprint HTTP/2 de un navegador
+real. Verificado empíricamente, en un scratch dir aislado del proyecto, antes
+de tocar ningún código real, contra los tres tipos de URL reales que este
+Adapter consume:
+
+| Tipo de página | Éxitos con `got-scraping` | Éxitos con `axios` |
+|---|---|---|
+| Liga (`/regions/.../tournaments/...`) | 6/7 en la primera tanda de pruebas | 0/N (403 consistente) |
+| Assist-data liga completa (semillas, `.../playerstatistics/...`) | 6/6 | no reprobado, mismo bloqueo esperado |
+| Jugador — dropdown de roster (`/players/{id}/show/...`) | 6/6 | no reprobado, mismo bloqueo esperado |
+| Jugador — match stats (`/players/{id}/matchstatistics/...`) | 6/6 | no reprobado, mismo bloqueo esperado |
+
+El bypass no es específico de un tipo de página: funciona en los tres flujos
+que usa el Adapter (liga, semillas, jugador).
+
+### Por qué la versión está pinneada a `3.2.15` exacta, y qué implica
+
+La rama activa de `got-scraping` (`4.x`, última publicación verificada
+2026-02-24) es **ESM-only** (`ERR_PACKAGE_PATH_NOT_EXPORTED` al hacer
+`require()`) — este proyecto usa `"module": "commonjs"`, mismo problema ya
+resuelto antes con `@nestjs/schedule@12` (§0). `3.2.15` es la **última
+versión de la rama `3.x`, publicada el 2023-07-25 y sin releases nuevos desde
+entonces** — congelada.
+
+Esa versión carga bien bajo `require()` porque depende de `got-cjs@12.5.4`
+(fork de terceros de `got`, publicado por última vez el 2022-11-07, también
+sin mantenimiento activo desde entonces) en vez del `got@^14` ESM-only que
+usa la rama `4.x` de `got-scraping`. Esto es **una capa extra de dependencia
+sin mantenimiento, no sólo una**: tanto `got-scraping@3.2.15` como
+`got-cjs@12.5.4`, el paquete del que depende para funcionar en CommonJS,
+están congelados.
+
+**Esto no es una solución permanente.** Si Cloudflare/WhoScored actualiza su
+detección de fingerprint en el futuro, no hay parches nuevos esperando en
+esta rama — toda la evolución posterior de `got-scraping` contra
+fingerprinting más nuevo quedó en la rama `4.x` ESM que este proyecto no
+puede cargar sin resolver antes la incompatibilidad ESM/CJS.
+
+**El modelo de degradación por niveles (liga/equipo/jugador, FR-014 a
+FR-016/FR-018) se mantiene sin cambios y sigue siendo necesario.** La prueba
+empírica dio 6/7, no 7/7: un fallo aislado (bloqueo puntual, timeout, cambio
+de estructura de página) va a seguir pasando con `got-scraping` igual que
+pasaba antes por cualquier otro motivo de red — este cambio de librería baja
+la tasa de bloqueo, no la elimina, y el diseño ya asume eso.
+
+### Verificación de statelessness (antes de integrar)
+
+`HttpWhoScoredAdapter` es un singleton de Nest (§3, "Corrección
+post-implementación"): ya hubo un bug real de estado mutable compartido entre
+corridas concurrentes (`seedPlayerByTeam`/`tournamentId` como campos de
+instancia). Antes de adoptar `got-scraping` se revisó su código fuente
+instalado (`got-scraping/dist/`) para descartar el mismo problema a nivel del
+cliente HTTP:
+
+- **Sin cookie jar**: ningún archivo de `got-scraping` referencia
+  `cookieJar`/`CookieJar`/`tough-cookie`. `got`/`got-cjs` soporta uno, pero
+  hay que pasarlo explícito — el `get()` de este Adapter no lo hace.
+- **El único mecanismo de "sesión" es opt-in y no se usa**:
+  `got-scraping/dist/hooks/storage.js` guarda datos por-sesión en un
+  `WeakMap` keyeado por `context.sessionToken`, pero si no se pasa
+  `sessionToken` (nuestro caso: el `get()` no pasa `context`), la función
+  devuelve `undefined` de inmediato sin tocar el `WeakMap`. No hay nada que
+  compartir entre llamadas.
+- **`gotScraping` es un singleton de módulo con `mutableDefaults: true`**
+  (`got-scraping/dist/index.js`), pero eso sólo habilita que alguien *podría*
+  mutar `gotScraping.defaults` más adelante (llamando a una API explícita de
+  Got para eso) — no significa que cada `.get()` escriba en ese estado
+  compartido. El código de este Adapter nunca llama nada de eso, sólo
+  `gotScraping.get(url, { timeout })`, que es un merge de opciones por
+  request.
+- El `HeaderGenerator` compartido y los `agent` de conexión (pooling TCP
+  estándar) son infraestructura de sólo lectura por request — no transportan
+  datos de negocio de una liga/equipo/jugador a otro.
+
+Conclusión: no hace falta instanciar un cliente nuevo por request ni pasar
+ninguna opción extra para neutralizar estado — el uso actual (`get()` sin
+`context` ni `cookieJar`) ya es stateless entre llamadas.
+
+### Corrección post-implementación: `throwHttpErrors: false` rompía el guard de nivel liga
+
+`got-scraping` configura `throwHttpErrors: false` (`got-scraping/dist/index.js`)
+— a diferencia de `axios`, que rechaza la promesa en cualquier status fuera
+de 2xx por default. Un 403 con `got-scraping` resuelve normalmente, con el
+HTML de bloqueo de Cloudflare como `body`, en vez de lanzar. Para
+`harvestSeedPlayers`/`fetchPlayerMetrics` esto no cambia nada observable: ya
+dependían de que `extractEmbeddedArray` tirara si el bloque esperado no
+aparece en el HTML, y un HTML de bloqueo tampoco lo tiene. Pero
+`fetchLeagueTeams` no tenía ningún guard equivalente: si la página de liga
+viene bloqueada, `parseTeamsFromHtml` simplemente no encuentra ningún
+`<a href="/teams/...">` y devolvía `[]` **sin lanzar**, lo que
+`PlayerSyncService.sync()` leería como "esta liga no tiene equipos" en vez
+de como el fallo de nivel liga que FR-014 exige loguear — el mismo tipo de
+bug que ya se había corregido para el plantel vacío de un equipo (§ arriba),
+ahora a nivel liga. Se agregó el mismo guard: `fetchLeagueTeams` lanza si
+`teams.length === 0`, con test dedicado en
+`http-whoscored-adapter.spec.ts`.
+
+### Alternativas consideradas
+
 - **Playwright/Puppeteer** (navegador headless): rechazado. WhoScored
   incrusta los datos de partido como JSON dentro de un `<script>` de la propia
   página servida (no requiere ejecutar JavaScript del cliente para verse) —
   consistente con que el pedido pueda usar un fixture HTML *estático*
   capturado una vez y sirva para tests determinísticos sin un browser real.
   Un headless browser sería una dependencia mucho más pesada (proceso Chromium
-  en CI) para un problema que `axios + cheerio` resuelve.
-- **`node-fetch`/`fetch` nativo en vez de `axios`**: viable, pero `axios` ya
-  da `timeout` y manejo de errores de red en una sola opción de config, sin
-  wrapping manual.
+  en CI) para un problema que `got-scraping + cheerio` ya resuelve, y no
+  ataca directamente el problema real (fingerprint TLS/HTTP2 a nivel de
+  conexión, no de JS de cliente).
+- **`node-fetch`/`fetch` nativo**: no resuelve el problema real (fingerprint
+  TLS/HTTP2), que es la razón por la que se descartó `axios` también.
+- **Cambiar de fuente de datos** (una API oficial tipo API-Football en vez de
+  WhoScored): evaluada y descartada — el requerimiento pide explícitamente
+  scraping de WhoScored, no es una decisión técnica abierta.
 
-Ambas se importan **únicamente** dentro de `adapters/http-whoscored-adapter.ts`.
-Se extiende la regla de arquitectura ya existente en
-`backend/test/architecture.spec.ts` ("el Service no debe importar librerías de
-infraestructura directo") para que además de `bcrypt` cubra
-`axios`/`cheerio` — mismo mecanismo, nuevo patrón en la misma regla.
+`got-scraping`/`cheerio` se importan **únicamente** dentro de
+`adapters/http-whoscored-adapter.ts`. Se extiende la regla de arquitectura ya
+existente en `backend/test/architecture.spec.ts` ("el Service no debe
+importar librerías de infraestructura directo") para que además de `bcrypt`
+cubra `got-scraping`/`cheerio` — mismo mecanismo, nuevo patrón en la misma
+regla.
 
 ## §5. Mapeo de posición: función pura en el dominio
 
@@ -279,8 +394,9 @@ detalle de implementación a resolver acá — queda resuelta con esta decisión
 
 **Decisión**: se captura y versiona un HTML real de una página de
 `matchstatistics` de WhoScored (`backend/test/fixtures/whoscored/`) para los
-tests del Adapter. `HttpWhoScoredAdapter` recibe el HTML vía `axios.get(...)`;
-en los tests unitarios del Adapter, `axios` se mockea (`jest.mock('axios')`)
+tests del Adapter. `HttpWhoScoredAdapter` recibe el HTML vía
+`gotScraping.get(...)`; en los tests unitarios del Adapter, `got-scraping` se
+mockea (`jest.mock('got-scraping', () => ({ gotScraping: { get: jest.fn() } }))`)
 para resolver con el contenido del fixture leído del disco, ejercitando el
 parseo real (`cheerio`) sin red. Esto es exactamente el mismo criterio que la
 constitución exige para el `httpClient` del frontend (Principio IX: mockear la

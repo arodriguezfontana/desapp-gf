@@ -18,12 +18,14 @@ a ellos y da los pasos para probarlo en un entorno local.
 
 ```bash
 cd backend
-pnpm add @nestjs/schedule axios cheerio
+pnpm add @nestjs/schedule got-scraping@3.2.15 cheerio
 ```
 
 (research.md §0: `@nestjs/schedule` no estaba instalado pese a la
-precondición del pedido; `axios`/`cheerio` son nuevas, exclusivas del
-Adapter — research.md §4.)
+precondición del pedido; `got-scraping`/`cheerio` son nuevas, exclusivas del
+Adapter — research.md §4. `got-scraping` va pinneado a `3.2.15` exacto, no
+`^3.2.15`: la rama `4.x` es ESM-only e incompatible con el `commonjs` de este
+proyecto.)
 
 ## 2. Levantar el backend (corre las migrations nuevas al boot)
 
@@ -84,7 +86,7 @@ cada tipo de falla (data-model.md § "Nuevo Service: PlayerSyncService").
 ```bash
 pnpm test:unit         # incluye whoscored-position-mapping, team-roster-sync,
                         # PlayerSyncService (adapter fake), HttpWhoScoredAdapter
-                        # (axios mockeado + fixture HTML real, sin red)
+                        # (got-scraping mockeado + fixture HTML real, sin red)
 pnpm test:integration  # incluye TypeOrmPlayerRepository.applyTeamRosterSync
                         # y findActiveExternalIdsByTeam contra Postgres real (Testcontainers)
 pnpm test:e2e          # GET /players y GET /players/:id con datos sembrados
