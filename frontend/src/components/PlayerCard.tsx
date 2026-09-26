@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import type { Player } from '../types/catalog.types';
+import { getPositionLabel, type Player } from '../types/catalog.types';
 
 interface PlayerCardProps {
   player: Player;
@@ -34,7 +34,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
               player.position,
             )}`}
           >
-            {player.position}
+            {getPositionLabel(player.position)}
           </span>
           <span className="text-[10px] font-extrabold text-[#b79753] bg-[#0b3332] px-2.5 py-1 rounded-md border border-[#b79753]/30 uppercase">
             {player.league}

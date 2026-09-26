@@ -43,7 +43,7 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
   });
 
-  it('login exitoso llama a login(), guarda token y navega a /catalog', async () => {
+  it('login exitoso llama a login(), guarda token y navega a /home', async () => {
     const mockLoginCtx = vi.fn();
     vi.spyOn(authServiceModule.authService, 'login').mockResolvedValueOnce({
       accessToken: 'jwt-xyz',
@@ -58,7 +58,7 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(mockLoginCtx).toHaveBeenCalledWith('jwt-xyz');
-      expect(mockNavigate).toHaveBeenCalledWith('/catalog');
+      expect(mockNavigate).toHaveBeenCalledWith('/home');
     });
   });
 

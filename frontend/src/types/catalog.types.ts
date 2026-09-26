@@ -35,3 +35,15 @@ export const LEAGUES: League[] = [
 
 export const POSITIONS: Position[] = ['GK', 'DF', 'MF', 'FW'];
 
+const POSITION_LABELS: Record<Position, string> = {
+  GK: 'Arquero',
+  DF: 'Defensor',
+  MF: 'Mediocampista',
+  FW: 'Delantero',
+};
+
+/** Nombre completo en español de una posición; si no es una de las 4 conocidas, la devuelve tal cual. */
+export function getPositionLabel(position: string): string {
+  return POSITION_LABELS[position as Position] ?? position;
+}
+

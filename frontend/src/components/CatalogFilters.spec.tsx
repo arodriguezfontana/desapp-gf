@@ -21,7 +21,7 @@ describe('CatalogFilters', () => {
     expect(screen.getByPlaceholderText(/Ej. Boca Juniors, Real Madrid.../i)).toBeInTheDocument();
 
     expect(screen.getByText('Premier League')).toBeInTheDocument();
-    expect(screen.getByText('Arquero (GK)')).toBeInTheDocument();
+    expect(screen.getByText('Arquero')).toBeInTheDocument();
   });
 
   it('emite el cambio al seleccionar una liga o ingresar un equipo', () => {

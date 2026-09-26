@@ -83,13 +83,32 @@ describe('RegisterPage', () => {
   it('muestra el requisito de contraseña si no cumple el formato', () => {
     renderRegister();
     fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'abc' } });
-    expect(screen.getByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
+    expect(screen.getByText(/8 a 16 caracteres/i)).toBeInTheDocument();
   });
 
   it('no muestra el requisito de contraseña una vez que cumple el formato', () => {
     renderRegister();
     fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'Abcd1234!' } });
-    expect(screen.queryByText(/mínimo 8 caracteres/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/8 a 16 caracteres/i)).not.toBeInTheDocument();
+  });
+
+  it('sigue mostrando el requisito si falta la minúscula, aunque cumpla el resto (misma política que el backend)', () => {
+    renderRegister();
+    fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'PASSWORD1!' } });
+    expect(screen.getByText(/8 a 16 caracteres/i)).toBeInTheDocument();
+  });
+
+  it('sigue mostrando el requisito si supera los 16 caracteres, aunque cumpla el resto', () => {
+    renderRegister();
+    fireEvent.change(screen.getByLabelText(/contraseña/i), {
+      target: { value: 'Abcdefgh12345678!' }, // 17 caracteres
+    });
+    expect(screen.getByText(/8 a 16 caracteres/i)).toBeInTheDocument();
+  });
+
+  it('el input de contraseña no permite escribir más de 16 caracteres', () => {
+    renderRegister();
+    expect(screen.getByLabelText(/contraseña/i)).toHaveAttribute('maxLength', '16');
   });
 
   it('muestra un mensaje genérico si el error no es una instancia de Error', async () => {

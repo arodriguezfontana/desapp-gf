@@ -141,7 +141,7 @@ export function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           {/* Module 1: Catálogo de Jugadores con Imagen Decorativa Táctica */}
           <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
             <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
@@ -226,50 +226,6 @@ export function HomePage() {
                 className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2"
               >
                 Mi Cuenta & Clave &rarr;
-              </Link>
-            </div>
-          </div>
-
-          {/* Module 3: Fichas Técnicas & Valoración con Imagen Decorativa Trofeo */}
-          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
-            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
-              <img
-                src="/assets/golden_trophy.jpg"
-                alt="Trofeo Campeón FútVal"
-                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
-              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#2dd4bf]/40">
-                DETALLE TÉCNICO
-              </span>
-            </div>
-
-            <div className="p-6 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
-                  Fichas de Jugadores
-                </h3>
-                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
-                  Accedé al detalle individual de cada futbolista para consultar su demarcación, club de procedencia y liga de origen en un formato claro.
-                </p>
-
-                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#2dd4bf] font-black">✓</span>
-                    <span>Vistas individuales completas por jugador.</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#2dd4bf] font-black">✓</span>
-                    <span>Navegación fluida y diseño responsivo.</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                to="/catalog"
-                className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-[#b79753] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2"
-              >
-                Explorar Jugadores &rarr;
               </Link>
             </div>
           </div>

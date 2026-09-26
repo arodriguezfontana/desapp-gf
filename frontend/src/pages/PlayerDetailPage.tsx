@@ -1,27 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { catalogService } from '../service/catalogService';
-import { apiKeyStorage } from '../service/apiKeyStorage';
-import { httpEvents, ApiError } from '../service/httpClient';
-import type { Player } from '../types/catalog.types';
+import { useCatalog, ApiError } from '../hooks/useCatalog';
+import { useApiKey } from '../hooks/useApiKey';
+import { getPositionLabel, type Player } from '../types/catalog.types';
 
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [hasApiKey, setHasApiKey] = useState<boolean>(() => Boolean(apiKeyStorage.getApiKey()));
+  const { hasApiKey } = useApiKey();
+  const { getPlayerById } = useCatalog();
   const [player, setPlayer] = useState<Player | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleUnauthorizedKey = () => {
-      setHasApiKey(false);
-    };
-
-    httpEvents.addEventListener('apiKeyUnauthorized', handleUnauthorizedKey);
-    return () => {
-      httpEvents.removeEventListener('apiKeyUnauthorized', handleUnauthorizedKey);
-    };
-  }, []);
 
   useEffect(() => {
     if (!hasApiKey || !id) return;
@@ -33,7 +22,7 @@ export const PlayerDetailPage: React.FC = () => {
       setErrorMessage(null);
 
       try {
-        const data = await catalogService.getPlayerById(id);
+        const data = await getPlayerById(id);
         if (isMounted) {
           setPlayer(data);
         }
@@ -62,7 +51,7 @@ export const PlayerDetailPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [hasApiKey, id]);
+  }, [hasApiKey, id, getPlayerById]);
 
   if (!hasApiKey) {
     return (
@@ -119,7 +108,7 @@ export const PlayerDetailPage: React.FC = () => {
           <div className="bg-gradient-to-r from-[#0b3332] via-[#104443] to-[#0b3332] p-8 text-white border-b border-[#1a6866]">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="bg-[#b79753] text-[#0b3332] font-black text-xs px-3.5 py-1 rounded-md uppercase tracking-widest">
-                {player.position}
+                {getPositionLabel(player.position)}
               </span>
               <span className="bg-[#0b3332] text-[#b79753] font-bold text-xs px-3.5 py-1 rounded-md border border-[#b79753]/30">
                 {player.league}
@@ -155,7 +144,7 @@ export const PlayerDetailPage: React.FC = () => {
               <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-1">
                 Posición
               </span>
-              <span className="text-base font-black text-white">{player.position}</span>
+              <span className="text-base font-black text-white">{getPositionLabel(player.position)}</span>
             </div>
           </div>
         </div>

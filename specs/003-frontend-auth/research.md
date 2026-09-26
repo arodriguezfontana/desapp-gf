@@ -163,7 +163,17 @@ Constitución v1.7.0. Mapa de renombrado:
 | `src/config/` | no es una capa propia | Contenido migrar a `service/` o `types/` según el caso |
 
 **Rationale**: Mantener la estructura de la Constitución desde el inicio evita deuda
-técnica acumulada y hace que el test de arquitectura (futuro) no tenga excepciones.
+técnica acumulada y hace que el test de arquitectura no tenga excepciones que perdonar
+retroactivamente.
+
+**Actualización (2026-09-25)**: el test de arquitectura mencionado como "futuro" ya no lo
+es — ver `frontend/src/architecture.spec.ts` (mismo espíritu que `tsarch` en el backend),
+agregado al refactorizar las 5 páginas que todavía llamaban `service/*` directo
+(`AccountPage`, `CatalogPage`, `LoginPage`, `PlayerDetailPage`, `RegisterPage`) para que
+pasen a hacerlo a través de un hook (`useAuthActions`, `useCatalog`, `useApiKey`). El
+enforcement de "hooks/ y contexts/ — únicas capas que MUST invocar service/" ya no depende
+sólo de la revisión manual de código: ese test corre en `pnpm test:unit` / CI y falla si
+`components/`, `pages/` o `layout/` vuelven a importar `service/` directamente.
 
 ---
 
@@ -186,8 +196,20 @@ en `components/**`, `pages/**` y `layout/**`. Las capas `service/`, `hooks/` y
 ```
 
 **Rationale**: ESLint como guardia estático de la regla arquitectural de la Constitución.
-Falla en CI si un componente intenta llamar directamente a la red, sin esperar a una
-revisión de código.
+Falla en CI si un componente intenta llamar directamente a la red (`axios`/`fetch`), sin
+esperar a una revisión de código.
+
+**Actualización (2026-09-25)**: este override de ESLint sólo cubre `axios`/`fetch` crudos;
+no detectaba que una página importara un módulo de `service/` (p. ej. `authService`,
+`catalogService`) y lo llamara directo, sin pasar por un hook — que es exactamente lo que
+pedía la letra de "hooks/ y contexts/ — únicas capas que MUST invocar service/". Ese hueco
+quedaba explícitamente delegado a "el test de arquitectura (futuro)" (ver R-006). Ya no es
+futuro: `frontend/src/architecture.spec.ts` audita `components/`, `pages/` y `layout/` y
+falla si alguno importa `service/` (relativo o vía alias `@/service/`) directamente. Las 5
+páginas que lo hacían (`AccountPage`, `CatalogPage`, `LoginPage`, `PlayerDetailPage`,
+`RegisterPage`) se refactorizaron para usar `useAuthActions`, `useCatalog` y `useApiKey` en
+su lugar. El override de ESLint de arriba se mantiene igual, como defensa adicional contra
+`axios`/`fetch` crudos.
 
 ---
 

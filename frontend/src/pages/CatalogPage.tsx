@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { catalogService } from '../service/catalogService';
-import { apiKeyStorage } from '../service/apiKeyStorage';
-import { httpEvents } from '../service/httpClient';
+import { useCatalog } from '../hooks/useCatalog';
+import { useApiKey } from '../hooks/useApiKey';
 import { useDebounce } from '../hooks/useDebounce';
 import { CatalogFilters } from '../components/CatalogFilters';
 import { PaginationControls } from '../components/PaginationControls';
@@ -10,7 +9,8 @@ import { PlayerCard } from '../components/PlayerCard';
 import type { Player, PlayerListResponseDto } from '../types/catalog.types';
 
 export const CatalogPage: React.FC = () => {
-  const [hasApiKey, setHasApiKey] = useState<boolean>(() => Boolean(apiKeyStorage.getApiKey()));
+  const { hasApiKey } = useApiKey();
+  const { getPlayers } = useCatalog();
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [selectedPosition, setSelectedPosition] = useState<string>('');
   const [teamInput, setTeamInput] = useState<string>('');
@@ -28,18 +28,6 @@ export const CatalogPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Escuchar evento de ApiKey no válida (401)
-  useEffect(() => {
-    const handleUnauthorizedKey = () => {
-      setHasApiKey(false);
-    };
-
-    httpEvents.addEventListener('apiKeyUnauthorized', handleUnauthorizedKey);
-    return () => {
-      httpEvents.removeEventListener('apiKeyUnauthorized', handleUnauthorizedKey);
-    };
-  }, []);
-
   // Recargar al cambiar filtros o página (con 12 por página)
   useEffect(() => {
     if (!hasApiKey) return;
@@ -50,7 +38,7 @@ export const CatalogPage: React.FC = () => {
       setErrorMsg(null);
 
       try {
-        const response = await catalogService.getPlayers({
+        const response = await getPlayers({
           page: currentPage,
           pageSize: 12,
           league: selectedLeague,
@@ -86,7 +74,7 @@ export const CatalogPage: React.FC = () => {
     return () => {
       isCancelled = true;
     };
-  }, [hasApiKey, currentPage, selectedLeague, selectedPosition, debouncedTeam]);
+  }, [hasApiKey, currentPage, selectedLeague, selectedPosition, debouncedTeam, getPlayers]);
 
   const handleLeagueChange = (league: string) => {
     setSelectedLeague(league);

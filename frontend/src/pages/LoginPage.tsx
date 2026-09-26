@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../service/authService';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthActions } from '../hooks/useAuthActions';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { login: loginRequest } = useAuthActions();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +18,9 @@ export function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await authService.login(email, password);
+      const res = await loginRequest(email, password);
       login(res.accessToken);
-      navigate('/catalog');
+      navigate('/home');
     } catch {
       setError('Credenciales inválidas.');
     } finally {

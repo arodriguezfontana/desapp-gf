@@ -55,9 +55,9 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
       query.andWhere('player.league = :league', { league: filters.league });
     }
     if (filters.team) {
-      query.andWhere('LOWER(player.team) = LOWER(:team)', {
-        team: filters.team,
-      });
+      // Búsqueda parcial, insensible a mayúsculas/minúsculas (004-player-catalog,
+      // Assumptions — actualizado: antes exigía el nombre completo exacto).
+      query.andWhere('player.team ILIKE :team', { team: `%${filters.team}%` });
     }
     if (filters.position) {
       query.andWhere('player.position = :position', {

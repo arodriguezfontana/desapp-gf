@@ -98,6 +98,21 @@ describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres 
 
       expect(result).toEqual({ items: [], total: 0 });
     });
+
+    it('el filtro de equipo hace match parcial, insensible a mayúsculas/minúsculas', async () => {
+      const result = await service.listPlayers(
+        { team: 'fixture' },
+        { page: 1, pageSize: 10 },
+      );
+
+      expect(result.total).toBe(2);
+      expect(result.items.map((p) => p.id).sort()).toEqual(
+        [
+          '11111111-1111-1111-1111-111111111111',
+          '22222222-2222-2222-2222-222222222222',
+        ].sort(),
+      );
+    });
   });
 
   describe('getPlayerById', () => {

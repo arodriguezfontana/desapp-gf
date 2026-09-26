@@ -62,7 +62,7 @@ Estilo:
 | Campo | Tipo | Validación cliente | Mensaje de error |
 |-------|------|-------------------|-----------------|
 | `email` | `<input type="email">` | formato de email básico (nativa HTML5) | — |
-| `password` | `<input type="password">` | mínimo 8 caracteres, 1 mayúscula, 1 número, 1 especial | Mensaje inmediato de feedback (antes de enviar) |
+| `password` | `<input type="password" maxLength={16}>` | 8 a 16 caracteres, 1 mayúscula, 1 minúscula, 1 número, 1 especial (misma política que `001-user-auth` FR-003 / `backend/src/domain/auth/password.ts`) | Mensaje inmediato de feedback (antes de enviar) |
 
 ### Estados
 

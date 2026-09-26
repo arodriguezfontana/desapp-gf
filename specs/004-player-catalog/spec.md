@@ -156,8 +156,14 @@ mantener una sesión de usuario.
 - El id de jugador es un identificador técnico interno (por ejemplo, numérico o UUID)
   sin significado de negocio; el formato concreto es un detalle de implementación no
   relevante para esta spec.
-- El filtro por `equipo` hace match exacto (no búsqueda parcial) contra el nombre de
-  equipo cargado en el catálogo de prueba, de forma insensible a mayúsculas/minúsculas.
+- ~~El filtro por `equipo` hace match exacto (no búsqueda parcial) contra el nombre de
+  equipo cargado en el catálogo de prueba, de forma insensible a mayúsculas/minúsculas.~~
+  **Actualización 2026-09-25**: el filtro por `equipo` pasa a hacer match **parcial**
+  (contiene, insensible a mayúsculas/minúsculas — `ILIKE '%término%'`), no exacto. Motivo:
+  el campo de equipo en el frontend (`005-frontend-player-catalog`) es una caja de texto
+  libre con búsqueda en vivo mientras el usuario escribe (debounce de 400ms) — el match
+  exacto original hacía que escribir un nombre parcial (p. ej. "Real" en vez de "Real
+  Madrid") devolviera "sin resultados" de forma confusa, pese a existir el equipo.
 - El orden de los resultados del listado es estable entre solicitudes (por ejemplo, por
   id ascendente) aunque no se haya pedido explícitamente un criterio de orden.
 - Los 20 jugadores y sus equipos ficticios se cargan como datos de semilla fijos del

@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import * as pg from 'pg';
 
 /**
  * `DataSource` standalone, exclusivamente para correr la migration de seed del
@@ -15,6 +16,9 @@ import { DataSource } from 'typeorm';
 export const playerCatalogDataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
+  // Ver database.module.ts: evita la resolución perezosa de `pg` que falla
+  // bajo reconstrucciones repetidas de un DataSource postgres en el mismo proceso.
+  driver: pg,
   entities: [],
   migrations: [`${__dirname}/migrations/*.{ts,js}`],
 });
