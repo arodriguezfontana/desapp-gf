@@ -33,7 +33,15 @@ export class FootballDataSyncService {
     }
   }
 
-  @Cron(CronExpression.EVERY_WEEK)
+  /**
+   * `waitForCompletion: true`: mismo criterio que `PlayerSyncService.sync`
+   * (006-whoscored-catalog-sync) — evita que el scheduler dispare una corrida
+   * nueva mientras la anterior sigue corriendo. Verificado en la práctica: sin
+   * este guard, corridas superpuestas contra Football-Data pisan el delay de
+   * ~7s entre requests y disparan 429 (Too Many Requests) por exceder el
+   * límite de 10 req/min del plan free.
+   */
+  @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async handleCron(): Promise<void> {
     this.logger.log('Starting scheduled Football-Data synchronization...');
     await this.syncAllLeagues();
