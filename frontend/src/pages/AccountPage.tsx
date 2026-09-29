@@ -36,7 +36,7 @@ export function AccountPage() {
     if (hasActiveKey) {
       setPanelState({ phase: 'confirming' });
     } else {
-      executeGeneration();
+      void executeGeneration();
     }
   };
 
@@ -163,7 +163,7 @@ export function AccountPage() {
 
       {panelState.phase === 'confirming' && (
         <ConfirmDialog
-          onConfirm={executeGeneration}
+          onConfirm={() => void executeGeneration()}
           onCancel={() => setPanelState({ phase: 'idle' })}
         />
       )}

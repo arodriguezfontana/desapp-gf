@@ -98,6 +98,64 @@ export const CatalogPage: React.FC = () => {
     setCurrentPage(1);
   };
 
+  let catalogContent: React.ReactNode;
+  if (isLoading) {
+    catalogContent = (
+      <div className="text-center py-20 bg-[#104443] rounded-2xl border border-[#1a6866] shadow-xl">
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4"></div>
+        <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando futbolistas del catálogo...</p>
+      </div>
+    );
+  } else if (errorMsg) {
+    catalogContent = (
+      <div className="bg-[#f43f5e]/10 border border-[#f43f5e] text-white p-6 rounded-2xl text-center shadow-xl">
+        <p className="text-xs font-bold uppercase tracking-wider">{errorMsg}</p>
+      </div>
+    );
+  } else if (players.length === 0) {
+    catalogContent = (
+      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-12 text-center shadow-xl">
+        <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+          🔍
+        </div>
+        <h3 className="text-lg font-black uppercase tracking-wider text-white mb-1">
+          Sin resultados
+        </h3>
+        <p className="text-base font-semibold text-gray-300">
+          No se encontraron jugadores con estos filtros.
+        </p>
+        {(selectedLeague || selectedPosition || teamInput) && (
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="mt-5 text-xs font-black uppercase tracking-wider text-[#b79753] hover:text-white bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#b79753]/40 transition-colors cursor-pointer"
+          >
+            Restablecer filtros de búsqueda
+          </button>
+        )}
+      </div>
+    );
+  } else {
+    catalogContent = (
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {players.map((player) => (
+            <PlayerCard key={player.id} player={player} />
+          ))}
+        </div>
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={meta.totalPages}
+          totalItems={meta.total}
+          pageSize={meta.pageSize}
+          isLoading={isLoading}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      </>
+    );
+  }
+
   if (!hasApiKey) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4">
@@ -179,54 +237,7 @@ export const CatalogPage: React.FC = () => {
 
       {/* MAIN CATALOG GRID SECTION (12 ITEMS PER PAGE) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {isLoading ? (
-          <div className="text-center py-20 bg-[#104443] rounded-2xl border border-[#1a6866] shadow-xl">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4"></div>
-            <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando futbolistas del catálogo...</p>
-          </div>
-        ) : errorMsg ? (
-          <div className="bg-[#f43f5e]/10 border border-[#f43f5e] text-white p-6 rounded-2xl text-center shadow-xl">
-            <p className="text-xs font-bold uppercase tracking-wider">{errorMsg}</p>
-          </div>
-        ) : players.length === 0 ? (
-          <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-12 text-center shadow-xl">
-            <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-              🔍
-            </div>
-            <h3 className="text-lg font-black uppercase tracking-wider text-white mb-1">
-              Sin resultados
-            </h3>
-            <p className="text-base font-semibold text-gray-300">
-              No se encontraron jugadores con estos filtros.
-            </p>
-            {(selectedLeague || selectedPosition || teamInput) && (
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                className="mt-5 text-xs font-black uppercase tracking-wider text-[#b79753] hover:text-white bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#b79753]/40 transition-colors cursor-pointer"
-              >
-                Restablecer filtros de búsqueda
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {players.map((player) => (
-                <PlayerCard key={player.id} player={player} />
-              ))}
-            </div>
-
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={meta.totalPages}
-              totalItems={meta.total}
-              pageSize={meta.pageSize}
-              isLoading={isLoading}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
-          </>
-        )}
+        {catalogContent}
       </section>
     </div>
   );

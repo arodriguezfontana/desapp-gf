@@ -34,39 +34,39 @@ export class PlayerResponseDto {
   @ApiProperty({ example: 7.31, nullable: true })
   rating: number | null;
 
-  private constructor(
-    id: string,
-    name: string,
-    league: string,
-    team: string,
-    position: string,
-    passesCompleted: number | null,
-    shots: number | null,
-    interceptions: number | null,
-    rating: number | null,
-  ) {
-    this.id = id;
-    this.name = name;
-    this.league = league;
-    this.team = team;
-    this.position = position;
-    this.passesCompleted = passesCompleted;
-    this.shots = shots;
-    this.interceptions = interceptions;
-    this.rating = rating;
+  private constructor(props: {
+    id: string;
+    name: string;
+    league: string;
+    team: string;
+    position: string;
+    passesCompleted: number | null;
+    shots: number | null;
+    interceptions: number | null;
+    rating: number | null;
+  }) {
+    this.id = props.id;
+    this.name = props.name;
+    this.league = props.league;
+    this.team = props.team;
+    this.position = props.position;
+    this.passesCompleted = props.passesCompleted;
+    this.shots = props.shots;
+    this.interceptions = props.interceptions;
+    this.rating = props.rating;
   }
 
   static fromDomain(player: Player): PlayerResponseDto {
-    return new PlayerResponseDto(
-      player.id,
-      player.name,
-      player.league,
-      player.team,
-      player.position,
-      player.passesCompleted,
-      player.shots,
-      player.interceptions,
-      player.rating,
-    );
+    return new PlayerResponseDto({
+      id: player.id,
+      name: player.name,
+      league: player.league,
+      team: player.team,
+      position: player.position,
+      passesCompleted: player.passesCompleted,
+      shots: player.shots,
+      interceptions: player.interceptions,
+      rating: player.rating,
+    });
   }
 }

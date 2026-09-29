@@ -19,27 +19,27 @@ export class Player {
     private readonly _rating: number | null,
   ) {}
 
-  static restore(
-    id: string,
-    name: string,
-    league: League,
-    team: string,
-    position: Position,
-    passesCompleted: number | null,
-    shots: number | null,
-    interceptions: number | null,
-    rating: number | null,
-  ): Player {
+  static restore(props: {
+    id: string;
+    name: string;
+    league: League;
+    team: string;
+    position: Position;
+    passesCompleted: number | null;
+    shots: number | null;
+    interceptions: number | null;
+    rating: number | null;
+  }): Player {
     return new Player(
-      id,
-      name,
-      league,
-      team,
-      position,
-      passesCompleted,
-      shots,
-      interceptions,
-      rating,
+      props.id,
+      props.name,
+      props.league,
+      props.team,
+      props.position,
+      props.passesCompleted,
+      props.shots,
+      props.interceptions,
+      props.rating,
     );
   }
 

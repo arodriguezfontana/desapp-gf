@@ -8,17 +8,17 @@ import { PlayerEntity } from '../entities/player.entity';
 @Injectable()
 export class PlayerMapper {
   toDomain(entity: PlayerEntity): Player {
-    return Player.restore(
-      entity.id,
-      entity.name,
-      parseLeague(entity.league),
-      entity.team,
-      parsePosition(entity.position),
-      entity.passesCompleted,
-      entity.shots,
-      entity.interceptions,
-      entity.rating,
-    );
+    return Player.restore({
+      id: entity.id,
+      name: entity.name,
+      league: parseLeague(entity.league),
+      team: entity.team,
+      position: parsePosition(entity.position),
+      passesCompleted: entity.passesCompleted,
+      shots: entity.shots,
+      interceptions: entity.interceptions,
+      rating: entity.rating,
+    });
   }
 
   toEntity(player: Player): PlayerEntity {

@@ -38,11 +38,15 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
         </div>
 
         <div className="mb-6">
-          <label className="block text-[11px] font-black uppercase tracking-widest text-gray-300 mb-1.5">
+          <label
+            htmlFor="api-key-value"
+            className="block text-[11px] font-black uppercase tracking-widest text-gray-300 mb-1.5"
+          >
             Clave de Acceso
           </label>
           <div className="flex gap-2">
             <input
+              id="api-key-value"
               type="text"
               readOnly
               value={apiKey}

@@ -10,17 +10,17 @@ describe('PlayerService', () => {
   let players: jest.Mocked<PlayerRepository>;
   let service: PlayerService;
 
-  const somePlayer = Player.restore(
-    'id-1',
-    'Milo Ashworth',
-    League.PREMIER_LEAGUE,
-    'Northbridge FC',
-    Position.GK,
-    8.4,
-    3.9,
-    0.2,
-    7.31,
-  );
+  const somePlayer = Player.restore({
+    id: 'id-1',
+    name: 'Milo Ashworth',
+    league: League.PREMIER_LEAGUE,
+    team: 'Northbridge FC',
+    position: Position.GK,
+    passesCompleted: 8.4,
+    shots: 3.9,
+    interceptions: 0.2,
+    rating: 7.31,
+  });
 
   beforeEach(() => {
     players = {

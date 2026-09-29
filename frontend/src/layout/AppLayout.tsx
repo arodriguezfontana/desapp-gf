@@ -170,7 +170,7 @@ export function AppLayout() {
         <div className="bg-[#072221] border-t border-b border-[#1a6866] py-2 px-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-xs sm:text-sm">
             <h2 className="font-black uppercase tracking-widest text-[#b79753] flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-pulse"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-pulse"></span>{' '}
               VALORACIÓN DE MERCADO
             </h2>
             <div className="hidden lg:flex items-center gap-6 text-[11px] font-bold text-gray-300">
@@ -203,7 +203,7 @@ export function AppLayout() {
             }`
           }
         >
-          <span className="text-base">⚽</span>
+          <span className="text-base">⚽</span>{' '}
           <span>Inicio</span>
         </NavLink>
 
@@ -215,7 +215,7 @@ export function AppLayout() {
             }`
           }
         >
-          <span className="text-base">📋</span>
+          <span className="text-base">📋</span>{' '}
           <span>Catálogo</span>
         </NavLink>
 
@@ -228,7 +228,7 @@ export function AppLayout() {
               }`
             }
           >
-            <span className="text-base">🔑</span>
+            <span className="text-base">🔑</span>{' '}
             <span>Mi Cuenta</span>
           </NavLink>
         ) : (
@@ -236,7 +236,7 @@ export function AppLayout() {
             to="/login"
             className="flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#b79753]"
           >
-            <span className="text-base">🔒</span>
+            <span className="text-base">🔒</span>{' '}
             <span>Ingresar</span>
           </Link>
         )}

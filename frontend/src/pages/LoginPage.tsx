@@ -132,7 +132,7 @@ export function LoginPage() {
           </form>
 
           <div className="mt-8 pt-6 border-t border-[#1a6866] text-center text-xs">
-            <span className="text-gray-400 font-medium">¿Aún no tenés una cuenta? </span>
+            <span className="text-gray-400 font-medium">¿Aún no tenés una cuenta?</span>{' '}
             <Link
               to="/register"
               className="font-black text-[#b79753] hover:text-white uppercase tracking-wider transition-colors ml-1"
