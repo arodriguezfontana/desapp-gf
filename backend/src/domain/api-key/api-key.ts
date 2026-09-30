@@ -3,7 +3,7 @@ import { ApiKeyAlreadyRevokedError } from './errors/api-key-already-revoked.erro
 /**
  * Entidad de dominio ApiKey. Sin decoradores de TypeORM ni conocimiento de HTTP
  * o base de datos (constitucion, Principio I). Solo conoce el hash, nunca el
- * valor en texto plano (ese vive transitoriamente en RawApiKey).
+ * valor en texto plano (ese lo genera `generateRawApiKey` transitoriamente al emitirse).
  */
 export class ApiKey {
   private constructor(

@@ -8,7 +8,7 @@ describe('User', () => {
 
   it('expone los datos con los que se registró', () => {
     expect(user.id).toBe('id-1');
-    expect(user.email.equals(email)).toBe(true);
+    expect(user.email).toBe(email);
     expect(user.passwordHash).toBe('hash-abc');
     expect(user.createdAt).toBe(createdAt);
   });

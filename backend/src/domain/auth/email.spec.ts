@@ -6,18 +6,6 @@ describe('Email', () => {
     expect(Email.create('  Ana@Mail.com ').toString()).toBe('ana@mail.com');
   });
 
-  it('considera iguales dos emails que normalizan al mismo valor', () => {
-    expect(Email.create('Ana@Mail.com').equals(Email.create('ana@mail.com  '))).toBe(
-      true,
-    );
-  });
-
-  it('distingue emails con distinto valor normalizado', () => {
-    expect(Email.create('ana@mail.com').equals(Email.create('bob@mail.com'))).toBe(
-      false,
-    );
-  });
-
   it.each(['anamail.com', 'ana@', 'ana @mail.com', 'ana@mail', '', '   '])(
     'rechaza el formato inválido %p',
     (raw) => {

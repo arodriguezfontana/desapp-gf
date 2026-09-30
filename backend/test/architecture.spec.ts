@@ -28,8 +28,10 @@ zerollup.ImportPathsResolver.prototype.getImportSuggestions = () => undefined;
  * Sentido único: Controller → Service → {Dominio, Repository, Adapter}.
  *
  * `backend/src/` se organiza por capa (controllers/, services/, domain/,
- * repositories/, adapters/, guards/), no por feature: cada regla usa un glob por
- * capa que cubre a todas las features de una sola vez.
+ * repositories/, adapters/, guards/); dentro de cada capa hay una subcarpeta por
+ * feature (auth/, api-key/, player/, player-sync/, competition/), pero eso es solo
+ * para navegar más fácil — cada regla de acá sigue usando un glob por capa que
+ * cubre a todas las features de una sola vez, sin importar esa subdivisión interna.
  */
 const ARCH_TSCONFIG = 'tsconfig.arch.json';
 
@@ -93,7 +95,7 @@ describe('Arquitectura en capas (Principio I)', () => {
       .inFolder('services')
       .shouldNot()
       .dependOnFiles()
-      .inFolder('repositories/entities');
+      .matchingPattern('repositories/.*/entities/');
     await expect(rule).toPassAsync();
   });
 
@@ -102,7 +104,7 @@ describe('Arquitectura en capas (Principio I)', () => {
       .inFolder('services')
       .shouldNot()
       .dependOnFiles()
-      .inFolder('repositories/mappers');
+      .matchingPattern('repositories/.*/mappers/');
     await expect(rule).toPassAsync();
   });
 

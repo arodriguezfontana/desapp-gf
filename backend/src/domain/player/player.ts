@@ -1,5 +1,5 @@
-import { League } from './league';
-import { Position } from './position';
+import { League } from './enums/league';
+import { Position } from './enums/position';
 
 /**
  * Entidad de dominio. Sin decoradores de TypeORM ni conocimiento de NestJS, HTTP o

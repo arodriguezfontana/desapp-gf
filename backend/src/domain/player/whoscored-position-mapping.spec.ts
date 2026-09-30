@@ -1,5 +1,5 @@
 import { mapWhoScoredPosition } from './whoscored-position-mapping';
-import { Position } from './position';
+import { Position } from './enums/position';
 
 describe('mapWhoScoredPosition', () => {
   it('mapea un código de arquero (GK) a Position.GK', () => {

@@ -1,4 +1,4 @@
-import { Position } from './position';
+import { Position } from './enums/position';
 
 /**
  * Tabla de mapeo de posición fina de WhoScored al enum propio (GK/DF/MF/FW),

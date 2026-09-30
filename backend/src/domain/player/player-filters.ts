@@ -1,5 +1,5 @@
-import { League } from './league';
-import { Position } from './position';
+import { League } from './enums/league';
+import { Position } from './enums/position';
 
 /** Filtros combinables con AND para el listado del catálogo (FR-006). */
 export interface PlayerFilters {

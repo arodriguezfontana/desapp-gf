@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
-import { UserEntity } from '../src/repositories/entities/user.entity';
+import { UserEntity } from '../src/repositories/auth/entities/user.entity';
 import { runPlayerCatalogMigrations } from '../src/database/run-player-catalog-migrations';
 import { createGlobalValidationPipe } from '../src/shared/validation/global-validation-pipe';
 

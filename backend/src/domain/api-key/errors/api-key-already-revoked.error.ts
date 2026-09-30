@@ -5,4 +5,3 @@ export class ApiKeyAlreadyRevokedError extends DomainError {
     super('La ApiKey ya se encuentra revocada.');
   }
 }
-

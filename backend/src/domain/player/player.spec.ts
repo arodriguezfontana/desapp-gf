@@ -1,6 +1,6 @@
 import { Player } from './player';
-import { League } from './league';
-import { Position } from './position';
+import { League } from './enums/league';
+import { Position } from './enums/position';
 
 describe('Player.restore', () => {
   it('expone exactamente los valores con los que se reconstruyó, incluidas las métricas', () => {

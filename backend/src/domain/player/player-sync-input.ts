@@ -1,4 +1,4 @@
-import { Position } from './position';
+import { Position } from './enums/position';
 
 /** Las 4 métricas de rendimiento, promedio por partido de la temporada en curso. */
 export interface PlayerMetrics {

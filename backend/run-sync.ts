@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './src/app.module';
-import { PlayerSyncService } from './src/services/player-sync.service';
+import { PlayerSyncService } from './src/services/player-sync/player-sync.service';
 
 (async () => {
   const app = await NestFactory.createApplicationContext(AppModule, { logger: ['log', 'warn', 'error'] });

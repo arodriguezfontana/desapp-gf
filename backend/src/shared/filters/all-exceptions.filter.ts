@@ -12,7 +12,6 @@ import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-i
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
-import { InvalidApiKeyFormatError } from '../../domain/api-key/errors/invalid-api-key-format.error';
 import { ApiKeyAlreadyRevokedError } from '../../domain/api-key/errors/api-key-already-revoked.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 
@@ -74,8 +73,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   } {
     if (
       exception instanceof InvalidEmailError ||
-      exception instanceof InvalidPasswordError ||
-      exception instanceof InvalidApiKeyFormatError
+      exception instanceof InvalidPasswordError
     ) {
       return { status: HttpStatus.BAD_REQUEST, message: exception.message };
     }

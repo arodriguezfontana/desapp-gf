@@ -1,7 +1,7 @@
 import * as request from 'supertest';
-import { ApiKeyEntity } from '../src/repositories/entities/api-key.entity';
-import { PlayerEntity } from '../src/repositories/entities/player.entity';
-import { UserEntity } from '../src/repositories/entities/user.entity';
+import { ApiKeyEntity } from '../src/repositories/api-key/entities/api-key.entity';
+import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
+import { UserEntity } from '../src/repositories/auth/entities/user.entity';
 import { createTestApp, TestContext } from './test-app';
 
 const LEAGUES = [
