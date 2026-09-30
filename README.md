@@ -1,4 +1,4 @@
-# DESAPP
+# FULVAL
 
 Plataforma de valuación de mercado de jugadores de fútbol. Monorepo con `backend/` (NestJS)
 y `frontend/` (React + Vite).
