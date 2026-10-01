@@ -1,0 +1,99 @@
+{
+  "filters": {
+    "season": "2025"
+  },
+  "resultSet": {
+    "count": 4,
+    "first": "2025-08-15",
+    "last": "2026-05-24",
+    "played": 2
+  },
+  "competition": {
+    "id": 2021,
+    "name": "Premier League",
+    "code": "PL"
+  },
+  "matches": [
+    {
+      "id": 497521,
+      "utcDate": "2025-08-15T19:00:00Z",
+      "status": "FINISHED",
+      "matchday": 1,
+      "competition": { "code": "PL", "name": "Premier League" },
+      "season": { "id": 2025, "startDate": "2025-08-15", "endDate": "2026-05-24", "currentMatchday": 1 },
+      "homeTeam": { "id": 65, "name": "Manchester City FC", "shortName": "Man City", "tla": "MCI", "crest": "https://crests.football-data.org/65.png" },
+      "awayTeam": { "id": 62, "name": "Everton FC", "shortName": "Everton", "tla": "EVE", "crest": "https://crests.football-data.org/62.png" },
+      "score": {
+        "winner": "HOME_TEAM",
+        "duration": "REGULAR",
+        "fullTime": { "home": 3, "away": 0 },
+        "halfTime": { "home": 1, "away": 0 }
+      }
+    },
+    {
+      "id": 497522,
+      "utcDate": "2025-09-20T14:00:00Z",
+      "status": "SCHEDULED",
+      "matchday": 5,
+      "competition": { "code": "PL", "name": "Premier League" },
+      "season": { "id": 2025, "startDate": "2025-08-15", "endDate": "2026-05-24", "currentMatchday": 5 },
+      "homeTeam": { "id": 57, "name": "Arsenal FC", "shortName": "Arsenal", "tla": "ARS", "crest": "https://crests.football-data.org/57.png" },
+      "awayTeam": { "id": 61, "name": "Chelsea FC", "shortName": "Chelsea", "tla": "CHE", "crest": "https://crests.football-data.org/61.png" },
+      "score": {
+        "winner": null,
+        "duration": "REGULAR",
+        "fullTime": { "home": null, "away": null },
+        "halfTime": { "home": null, "away": null }
+      }
+    },
+    {
+      "id": 497523,
+      "utcDate": "2025-10-10T14:00:00Z",
+      "status": "TIMED",
+      "matchday": 8,
+      "competition": { "code": "PL", "name": "Premier League" },
+      "season": { "id": 2025, "startDate": "2025-08-15", "endDate": "2026-05-24", "currentMatchday": 8 },
+      "homeTeam": { "id": 64, "name": "Liverpool FC", "shortName": "Liverpool", "tla": "LIV", "crest": "https://crests.football-data.org/64.png" },
+      "awayTeam": { "id": 66, "name": "Manchester United FC", "shortName": "Man United", "tla": "MUN", "crest": null },
+      "score": {
+        "winner": null,
+        "duration": "REGULAR",
+        "fullTime": { "home": null, "away": null },
+        "halfTime": { "home": null, "away": null }
+      }
+    },
+    {
+      "id": 497524,
+      "utcDate": "2025-11-01T15:00:00Z",
+      "status": "POSTPONED",
+      "matchday": 10,
+      "competition": { "code": "PL", "name": "Premier League" },
+      "season": { "id": 2025, "startDate": "2025-08-15", "endDate": "2026-05-24", "currentMatchday": 10 },
+      "homeTeam": { "id": 73, "name": "Tottenham Hotspur FC", "shortName": "Tottenham", "tla": "TOT", "crest": "https://crests.football-data.org/73.png" },
+      "awayTeam": { "id": 397, "name": "Brighton & Hove Albion FC", "shortName": "Brighton", "tla": "BHA", "crest": "https://crests.football-data.org/397.png" },
+      "score": {
+        "winner": null,
+        "duration": "REGULAR",
+        "fullTime": { "home": null, "away": null },
+        "halfTime": { "home": null, "away": null }
+      }
+    },
+    {
+      "id": 497525,
+      "utcDate": "2025-12-01T15:00:00Z",
+      "status": "CANCELLED",
+      "matchday": 14,
+      "competition": { "code": "PL", "name": "Premier League" },
+      "season": { "id": 2025, "startDate": "2025-08-15", "endDate": "2026-05-24", "currentMatchday": 14 },
+      "homeTeam": { "id": 354, "name": "Crystal Palace FC", "shortName": "Crystal Palace", "tla": "CRY", "crest": "https://crests.football-data.org/354.png" },
+      "awayTeam": { "id": 340, "name": "Southampton FC", "shortName": "Southampton", "tla": "SOU", "crest": "https://crests.football-data.org/340.png" },
+      "score": {
+        "winner": null,
+        "duration": "REGULAR",
+        "fullTime": { "home": null, "away": null },
+        "halfTime": { "home": null, "away": null }
+      }
+    }
+  ]
+}
+

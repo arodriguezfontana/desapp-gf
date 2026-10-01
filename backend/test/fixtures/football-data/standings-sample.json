@@ -1,0 +1,85 @@
+{
+  "filters": {
+    "season": "2025"
+  },
+  "competition": {
+    "id": 2021,
+    "name": "Premier League",
+    "code": "PL",
+    "type": "LEAGUE",
+    "emblem": "https://crests.football-data.org/PL.png"
+  },
+  "season": {
+    "id": 2025,
+    "startDate": "2025-08-15",
+    "endDate": "2026-05-24",
+    "currentMatchday": 5
+  },
+  "standings": [
+    {
+      "stage": "REGULAR_SEASON",
+      "type": "TOTAL",
+      "group": null,
+      "table": [
+        {
+          "position": 1,
+          "team": {
+            "id": 65,
+            "name": "Manchester City FC",
+            "shortName": "Man City",
+            "tla": "MCI",
+            "crest": "https://crests.football-data.org/65.png"
+          },
+          "playedGames": 5,
+          "form": "W,W,W,D,W",
+          "won": 4,
+          "draw": 1,
+          "lost": 0,
+          "points": 13,
+          "goalsFor": 12,
+          "goalsAgainst": 3,
+          "goalDifference": 9
+        },
+        {
+          "position": 2,
+          "team": {
+            "id": 57,
+            "name": "Arsenal FC",
+            "shortName": "Arsenal",
+            "tla": "ARS",
+            "crest": "https://crests.football-data.org/57.png"
+          },
+          "playedGames": 5,
+          "form": "W,W,D,W,D",
+          "won": 3,
+          "draw": 2,
+          "lost": 0,
+          "points": 11,
+          "goalsFor": 9,
+          "goalsAgainst": 4,
+          "goalDifference": 5
+        },
+        {
+          "position": 3,
+          "team": {
+            "id": 66,
+            "name": "Manchester United FC",
+            "shortName": "Man United",
+            "tla": "MUN",
+            "crest": null
+          },
+          "playedGames": 5,
+          "form": "L,W,D,W,L",
+          "won": 2,
+          "draw": 1,
+          "lost": 2,
+          "points": 7,
+          "goalsFor": 6,
+          "goalsAgainst": 7,
+          "goalDifference": -1
+        }
+      ]
+    }
+  ]
+}
+
