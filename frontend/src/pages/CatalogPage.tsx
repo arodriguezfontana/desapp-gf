@@ -65,11 +65,7 @@ export const CatalogPage: React.FC = () => {
       }
     };
 
-    Promise.resolve().then(() => {
-      if (!isCancelled) {
-        void executeFetch();
-      }
-    });
+    void executeFetch();
 
     return () => {
       isCancelled = true;

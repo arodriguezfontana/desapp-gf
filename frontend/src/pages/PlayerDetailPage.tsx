@@ -42,11 +42,7 @@ export const PlayerDetailPage: React.FC = () => {
       }
     };
 
-    Promise.resolve().then(() => {
-      if (isMounted) {
-        void fetchDetail();
-      }
-    });
+    void fetchDetail();
 
     return () => {
       isMounted = false;
