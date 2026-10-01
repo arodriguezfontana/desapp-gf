@@ -108,41 +108,37 @@ describe('Arquitectura en capas (Principio I)', () => {
     await expect(rule).toPassAsync();
   });
 
-  it('el dominio no depende de NestJS', async () => {
+  it.each([
+    {
+      title: 'el dominio no depende de NestJS',
+      folder: 'domain',
+      pattern: 'node_modules/@nestjs/',
+    },
+    {
+      title: 'el dominio no depende de TypeORM',
+      folder: 'domain',
+      pattern: 'node_modules/(@nestjs/)?typeorm/',
+    },
+    {
+      // `import ... from 'bcrypt'` resuelve a @types/bcrypt (el paquete no trae
+      // sus propios .d.ts), asi que el patron cubre ambas formas.
+      title:
+        'el Service no debe importar librerías de infraestructura directo (hasheo, etc.), eso vive detrás del Adapter correspondiente',
+      folder: 'services',
+      pattern: 'node_modules/(@types/)?bcrypt/',
+    },
+    {
+      title:
+        'el Service no debe importar la librería de scraping directo (got-scraping/cheerio), eso vive detrás de WhoScoredAdapter (006-whoscored-catalog-sync)',
+      folder: 'services',
+      pattern: 'node_modules/(got-scraping|cheerio)/',
+    },
+  ])('$title', async ({ folder, pattern }) => {
     const rule = project()
-      .inFolder('domain')
+      .inFolder(folder)
       .shouldNot()
       .dependOnFiles()
-      .matchingPattern('node_modules/@nestjs/');
-    await expect(rule).toPassAsync();
-  });
-
-  it('el dominio no depende de TypeORM', async () => {
-    const rule = project()
-      .inFolder('domain')
-      .shouldNot()
-      .dependOnFiles()
-      .matchingPattern('node_modules/(@nestjs/)?typeorm/');
-    await expect(rule).toPassAsync();
-  });
-
-  it('el Service no debe importar librerías de infraestructura directo (hasheo, etc.), eso vive detrás del Adapter correspondiente', async () => {
-    // `import ... from 'bcrypt'` resuelve a @types/bcrypt (el paquete no trae
-    // sus propios .d.ts), asi que el patron cubre ambas formas.
-    const rule = project()
-      .inFolder('services')
-      .shouldNot()
-      .dependOnFiles()
-      .matchingPattern('node_modules/(@types/)?bcrypt/');
-    await expect(rule).toPassAsync();
-  });
-
-  it('el Service no debe importar la librería de scraping directo (got-scraping/cheerio), eso vive detrás de WhoScoredAdapter (006-whoscored-catalog-sync)', async () => {
-    const rule = project()
-      .inFolder('services')
-      .shouldNot()
-      .dependOnFiles()
-      .matchingPattern('node_modules/(got-scraping|cheerio)/');
+      .matchingPattern(pattern);
     await expect(rule).toPassAsync();
   });
 });
