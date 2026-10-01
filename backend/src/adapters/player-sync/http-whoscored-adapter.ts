@@ -148,7 +148,13 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
 
     const players: WhoScoredRawPlayer[] = [];
     for (const member of squad) {
-      const { metrics, metricsFetchFailed } = await this.fetchPlayerMetrics(
+      // Secuencial a propósito, no un descuido: pedir las métricas de los ~20
+      // jugadores del plantel en paralelo dispararía una ráfaga de requests
+      // simultáneos contra un sitio protegido por Cloudflare — justo lo
+      // opuesto a lo que `got-scraping` busca imitando el fingerprint de un
+      // browser real. Mismo criterio que el rate-limiting explícito de
+      // `FootballDataSyncService` (`requestDelayMs`).
+      const { metrics, metricsFetchFailed } = await this.fetchPlayerMetrics( // NOSONAR
         member.externalId,
         member.slug,
         tournamentId,

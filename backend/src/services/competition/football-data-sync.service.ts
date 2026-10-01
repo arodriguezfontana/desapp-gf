@@ -54,12 +54,16 @@ export class FootballDataSyncService {
   }
 
   async syncAllLeagues(): Promise<void> {
+    // Secuencial a propósito, no un descuido: el plan free de Football-Data.org
+    // limita a 10 req/min. Disparar las 5 ligas en paralelo (sin el delay entre
+    // cada request) agotaría ese límite y dispararía 429 — mismo criterio que
+    // el `requestDelayMs` ya documentado en `handleCron`.
     for (const leagueCode of TARGET_LEAGUES) {
-      await this.syncStandingsForLeague(leagueCode);
-      await this.delay();
+      await this.syncStandingsForLeague(leagueCode); // NOSONAR
+      await this.delay(); // NOSONAR
 
-      await this.syncMatchesForLeague(leagueCode);
-      await this.delay();
+      await this.syncMatchesForLeague(leagueCode); // NOSONAR
+      await this.delay(); // NOSONAR
     }
   }
 

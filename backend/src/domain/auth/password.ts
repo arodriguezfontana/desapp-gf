@@ -26,7 +26,7 @@ export class Password {
     }
     const hasUpper = /[A-Z]/.test(plain);
     const hasLower = /[a-z]/.test(plain);
-    const hasDigit = /[0-9]/.test(plain);
+    const hasDigit = /\d/.test(plain);
     const hasSpecial = /[^A-Za-z0-9]/.test(plain);
     return hasUpper && hasLower && hasDigit && hasSpecial;
   }

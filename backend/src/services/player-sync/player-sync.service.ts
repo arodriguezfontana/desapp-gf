@@ -57,10 +57,15 @@ export class PlayerSyncService {
    */
   @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async sync(): Promise<void> {
+    // Las dos awaits de este método son secuenciales a propósito, no un
+    // descuido: paralelizar ligas o equipos dispararía ráfagas de requests
+    // concurrentes contra WhoScored, justo lo que `HttpWhoScoredAdapter` evita
+    // imitando el comportamiento de un único browser real navegando de a una
+    // página por vez (ver el comentario de ese Adapter sobre `got-scraping`).
     for (const league of Object.values(League)) {
       let leagueTeams: Awaited<ReturnType<WhoScoredAdapter['fetchLeagueTeams']>>;
       try {
-        leagueTeams = await this.whoScored.fetchLeagueTeams(league);
+        leagueTeams = await this.whoScored.fetchLeagueTeams(league); // NOSONAR
       } catch (error) {
         this.logger.error(
           `No se pudo obtener la lista de equipos de ${league}; se saltea esta liga en esta corrida.`,
@@ -70,7 +75,7 @@ export class PlayerSyncService {
       }
 
       for (const team of leagueTeams.teams) {
-        await this.syncTeam(
+        await this.syncTeam( // NOSONAR
           league,
           team,
           leagueTeams.tournamentId,

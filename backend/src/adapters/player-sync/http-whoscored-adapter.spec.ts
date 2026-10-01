@@ -205,7 +205,7 @@ describe('HttpWhoScoredAdapter', () => {
         BRUNO_FERNANDES_ID,
       );
 
-      expect(roster.length).toBe(20); // las 20 <option> del fixture real
+      expect(roster).toHaveLength(20); // las 20 <option> del fixture real
       const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID);
       expect(brunoFernandes).toBeDefined();
       expect(brunoFernandes!.name).toBe('Bruno Fernandes');

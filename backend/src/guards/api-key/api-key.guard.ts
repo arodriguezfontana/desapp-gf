@@ -40,7 +40,7 @@ export class ApiKeyGuard implements CanActivate {
     const keyHash = this.hasher.hash(rawKey);
     const apiKey = await this.apiKeys.findByHash(keyHash);
 
-    if (!apiKey || !apiKey.isActive()) {
+    if (!apiKey?.isActive()) {
       throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
