@@ -28,7 +28,6 @@ export const CatalogPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Recargar al cambiar filtros o página (con 12 por página)
   useEffect(() => {
     if (!hasApiKey) return;
     let isCancelled = false;
@@ -146,7 +145,9 @@ export const CatalogPage: React.FC = () => {
           totalItems={meta.total}
           pageSize={meta.pageSize}
           isLoading={isLoading}
-          onPageChange={(page) => setCurrentPage(page)}
+          onPageChange={(page) => {
+            void setCurrentPage(page);
+          }}
         />
       </>
     );
@@ -180,9 +181,7 @@ export const CatalogPage: React.FC = () => {
     <div className="w-full animate-fade-in space-y-8 pb-12">
       <title>Catálogo — FútVal</title>
 
-      {/* CATALOG HERO SECTION COMBINED WITH FILTERS (EDGE-TO-EDGE HERO STYLE) */}
       <section className="relative w-full bg-[#0b3332] border-b border-[#1a6866] pt-8 pb-10 overflow-hidden group">
-        {/* Full Bleed Background Image */}
         <div className="absolute inset-0 z-0">
           <img
             src="/assets/stadium_hero.jpg"
@@ -193,7 +192,6 @@ export const CatalogPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-[#0b3332]/95 via-[#0b3332]/70 to-transparent" />
         </div>
 
-        {/* Hero Content Container */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
@@ -216,7 +214,6 @@ export const CatalogPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Integrated Catalog Filters Component inside Hero */}
           <div className="pt-2">
             <CatalogFilters
               selectedLeague={selectedLeague}
@@ -231,7 +228,6 @@ export const CatalogPage: React.FC = () => {
         </div>
       </section>
 
-      {/* MAIN CATALOG GRID SECTION (12 ITEMS PER PAGE) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {catalogContent}
       </section>
