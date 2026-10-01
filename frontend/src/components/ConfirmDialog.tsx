@@ -1,6 +1,6 @@
 interface ConfirmDialogProps {
-  onConfirm: () => void;
-  onCancel: () => void;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
 }
 
 export function ConfirmDialog({ onConfirm, onCancel }: ConfirmDialogProps) {

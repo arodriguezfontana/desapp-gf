@@ -1,9 +1,8 @@
 import { useState } from 'react';
 
 interface ApiKeyModalProps {
-  apiKey: string;
-  createdAt: string;
-  onClose: () => void;
+  readonly apiKey: string;
+  readonly onClose: () => void;
 }
 
 export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {

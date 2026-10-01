@@ -10,17 +10,15 @@ export function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Misma política que backend/src/domain/auth/password.ts (FR-003 de 001-user-auth):
-  // 8 a 16 caracteres, con mayúscula, minúscula, número y símbolo.
   const isPasswordValid =
     password.length >= 8 &&
     password.length <= 16 &&
     /[A-Z]/.test(password) &&
     /[a-z]/.test(password) &&
-    /[0-9]/.test(password) &&
+    /\d/.test(password) &&
     /[^A-Za-z0-9]/.test(password);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
@@ -43,10 +41,8 @@ export function RegisterPage() {
     <div className="relative min-h-screen w-full bg-[#0b3332] flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-[#b79753] selection:text-[#0b3332]">
       <title>Registrarse — FútVal</title>
 
-      {/* Top Accent Strip */}
       <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#b79753] via-[#1a6866] to-[#b79753] shadow-md z-20" />
 
-      {/* Background Hero Image with Dark Overlay */}
       <div className="absolute inset-0 z-0">
         <img
           src="/assets/soccer_player.jpg"
@@ -56,9 +52,7 @@ export function RegisterPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/90 to-[#0b3332]/50" />
       </div>
 
-      {/* Main Container */}
       <div className="relative z-10 w-full max-w-md">
-        {/* Floating Category Badge */}
         <div className="flex justify-center mb-4 gap-2">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#b79753] text-[#0b3332] rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
             <span className="w-2 h-2 rounded-full bg-[#0b3332] animate-pulse" />
@@ -69,9 +63,7 @@ export function RegisterPage() {
           </span>
         </div>
 
-        {/* Card Surface */}
         <div className="bg-[#104443] border-2 border-[#1a6866] p-8 sm:p-9 shadow-2xl rounded-2xl relative overflow-hidden text-white">
-          {/* Card Top Accent Strip */}
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#b79753] via-[#1a6866] to-[#b79753]" />
 
           <div className="text-center mb-6 pt-2">
@@ -149,7 +141,7 @@ export function RegisterPage() {
           </form>
 
           <div className="mt-8 pt-6 border-t border-[#1a6866] text-center text-xs">
-            <span className="text-gray-400 font-medium">¿Ya tenés una cuenta?</span>{' '}
+            <span className="text-gray-400 font-medium">¿Ya tenés una cuenta?</span>
             <Link
               to="/login"
               className="font-black text-[#b79753] hover:text-white uppercase tracking-wider transition-colors ml-1"
