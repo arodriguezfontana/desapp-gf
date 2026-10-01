@@ -141,7 +141,7 @@ export function RegisterPage() {
           </form>
 
           <div className="mt-8 pt-6 border-t border-[#1a6866] text-center text-xs">
-            <span className="text-gray-400 font-medium">¿Ya tenés una cuenta?</span>
+            <span className="text-gray-400 font-medium">¿Ya tenés una cuenta? </span>
             <Link
               to="/login"
               className="font-black text-[#b79753] hover:text-white uppercase tracking-wider transition-colors ml-1"

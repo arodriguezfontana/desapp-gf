@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 interface ApiKeyModalProps {
   readonly apiKey: string;
+  readonly createdAt: string;
   readonly onClose: () => void;
 }
 
