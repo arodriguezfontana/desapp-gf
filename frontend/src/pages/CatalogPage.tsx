@@ -64,7 +64,9 @@ export const CatalogPage: React.FC = () => {
       }
     };
 
-    executeFetch();
+    executeFetch().catch(() => {
+      // Manejo global opcional de rechazo no capturado
+    });
 
     return () => {
       isCancelled = true;
