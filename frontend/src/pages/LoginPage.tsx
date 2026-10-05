@@ -51,7 +51,7 @@ export function LoginPage() {
         <div className="flex justify-center mb-4 gap-2">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#104443] text-white border border-[#b79753]/40 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
             <span className="w-2 h-2 rounded-full bg-[#b79753] animate-pulse" />
-            FÚTVAL
+            <span>FÚTVAL</span>
           </span>
           <span className="px-3.5 py-1.5 bg-[#b79753] text-[#0b3332] text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
             ACCESO OFICIAL
