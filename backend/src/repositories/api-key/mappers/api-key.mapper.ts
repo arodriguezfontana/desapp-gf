@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ApiKey } from '../../../domain/api-key/api-key';
+import { parseUserRole } from '../../../domain/auth/user-role';
 import { ApiKeyEntity } from '../entities/api-key.entity';
 
 /** Conversion dominio <-> persistencia. Sin logica de negocio. */
@@ -12,6 +13,7 @@ export class ApiKeyMapper {
       entity.keyHash,
       entity.createdAt,
       entity.revokedAt,
+      parseUserRole(entity.role),
     );
   }
 
@@ -22,6 +24,7 @@ export class ApiKeyMapper {
     entity.keyHash = apiKey.keyHash;
     entity.createdAt = apiKey.createdAt;
     entity.revokedAt = apiKey.revokedAt;
+    entity.role = apiKey.role;
     return entity;
   }
 }

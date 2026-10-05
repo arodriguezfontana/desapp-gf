@@ -1,5 +1,7 @@
 import { Email } from './email';
+import { InvalidRoleError } from './errors/invalid-role.error';
 import { User } from './user';
+import { UserRole } from './user-role';
 
 describe('User', () => {
   const email = Email.create('ana@mail.com');
@@ -18,5 +20,22 @@ describe('User', () => {
     expect(Object.values(user as unknown as Record<string, unknown>)).not.toContain(
       'plain-password',
     );
+  });
+
+  describe('role', () => {
+    it('es user por default cuando no se indica rol', () => {
+      expect(user.role).toBe(UserRole.USER);
+    });
+
+    it('acepta admin explícito', () => {
+      const admin = User.register('id-2', email, 'hash', createdAt, UserRole.ADMIN);
+      expect(admin.role).toBe(UserRole.ADMIN);
+    });
+
+    it('rechaza un rol inválido con InvalidRoleError', () => {
+      expect(() =>
+        User.register('id-3', email, 'hash', createdAt, 'superadmin' as UserRole),
+      ).toThrow(InvalidRoleError);
+    });
   });
 });

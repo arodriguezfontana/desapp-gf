@@ -8,6 +8,7 @@ import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-i
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
+import { UserRole } from '../../domain/auth/user-role';
 
 describe('AuthService', () => {
   let users: jest.Mocked<UserRepository>;
@@ -45,6 +46,15 @@ describe('AuthService', () => {
       expect(user.passwordHash).toBe('new-hash');
       expect(users.save).toHaveBeenCalledWith(user);
       expect(tokens.issue).not.toHaveBeenCalled();
+    });
+
+    it('la cuenta nueva siempre nace con rol user (el alta no recibe rol)', async () => {
+      users.existsByEmail.mockResolvedValue(false);
+      hasher.hash.mockResolvedValue('new-hash');
+
+      const user = await service.register('nuevo@mail.com', 'Abcd1234!');
+
+      expect(user.role).toBe(UserRole.USER);
     });
 
     it('rechaza el email ya registrado', async () => {

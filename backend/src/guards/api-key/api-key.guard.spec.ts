@@ -3,6 +3,7 @@ import { ApiKeyGuard } from './api-key.guard';
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
 import { ApiKeyRepository } from '../../repositories/api-key/api-key.repository';
 import { ApiKey } from '../../domain/api-key/api-key';
+import { UserRole } from '../../domain/auth/user-role';
 
 describe('ApiKeyGuard', () => {
   let hasher: jest.Mocked<TokenHasher>;
@@ -47,7 +48,7 @@ describe('ApiKeyGuard', () => {
 
   it('401 si la ApiKey existe pero fue revocada (reemplazada por una emisión posterior)', async () => {
     hasher.hash.mockReturnValue('hash-revocada');
-    const revoked = ApiKey.issue('id-1', 'user-1', 'hash-revocada', new Date());
+    const revoked = ApiKey.issue('id-1', 'user-1', 'hash-revocada', new Date(), UserRole.USER);
     revoked.revoke(new Date());
     apiKeys.findByHash.mockResolvedValue(revoked);
 
@@ -58,7 +59,7 @@ describe('ApiKeyGuard', () => {
 
   it('deja pasar cuando la ApiKey existe y está activa', async () => {
     hasher.hash.mockReturnValue('hash-activa');
-    const active = ApiKey.issue('id-1', 'user-1', 'hash-activa', new Date());
+    const active = ApiKey.issue('id-1', 'user-1', 'hash-activa', new Date(), UserRole.USER);
     apiKeys.findByHash.mockResolvedValue(active);
 
     await expect(

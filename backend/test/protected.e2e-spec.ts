@@ -37,7 +37,8 @@ describe('Endpoints protegidos con JWT (e2e)', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ id: expect.any(String), email: 'ana@mail.com' });
+    // `role` se agregó en spec 008: el dueño de una cuenta nueva es `user`.
+    expect(res.body).toEqual({ id: expect.any(String), email: 'ana@mail.com', role: 'user' });
   });
 
   it('401 sin header Authorization', async () => {

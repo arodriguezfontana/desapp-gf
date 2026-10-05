@@ -1,4 +1,5 @@
 import { Email } from './email';
+import { parseUserRole, UserRole } from './user-role';
 
 /**
  * Entidad de dominio Usuario. Sin decoradores de TypeORM ni conocimiento de HTTP
@@ -11,15 +12,18 @@ export class User {
     private readonly _email: Email,
     private readonly _passwordHash: string,
     private readonly _createdAt: Date,
+    private readonly _role: UserRole,
   ) {}
 
+  /** `role` por default es `user`; sólo el seed del primer admin pasa `admin`. */
   static register(
     id: string,
     email: Email,
     passwordHash: string,
     createdAt: Date,
+    role: UserRole = UserRole.USER,
   ): User {
-    return new User(id, email, passwordHash, createdAt);
+    return new User(id, email, passwordHash, createdAt, parseUserRole(role));
   }
 
   get id(): string {
@@ -36,5 +40,9 @@ export class User {
 
   get createdAt(): Date {
     return this._createdAt;
+  }
+
+  get role(): UserRole {
+    return this._role;
   }
 }

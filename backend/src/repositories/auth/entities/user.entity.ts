@@ -24,4 +24,8 @@ export class UserEntity {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
+
+  /** Mismo tipo y default que la migration `AddRoleToUsersAndApiKeys` (spec 008). */
+  @Column({ type: 'varchar', length: 16, default: 'user' })
+  role!: string;
 }
