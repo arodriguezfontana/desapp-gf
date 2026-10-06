@@ -12,7 +12,7 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
@@ -32,10 +32,8 @@ export function LoginPage() {
     <div className="relative min-h-screen w-full bg-[#0b3332] flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-[#b79753] selection:text-[#0b3332]">
       <title>Iniciar sesión — FútVal</title>
 
-      {/* Top Accent Strip */}
       <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#b79753] via-[#1a6866] to-[#b79753] shadow-md z-20" />
 
-      {/* Background Hero Image with Dark Overlay */}
       <div className="absolute inset-0 z-0">
         <img
           src="/assets/stadium_hero.jpg"
@@ -45,9 +43,7 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/90 to-[#0b3332]/50" />
       </div>
 
-      {/* Main Container */}
       <div className="relative z-10 w-full max-w-md">
-        {/* Floating Category Badge */}
         <div className="flex justify-center mb-4 gap-2">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#104443] text-white border border-[#b79753]/40 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
             <span className="w-2 h-2 rounded-full bg-[#b79753] animate-pulse" />
@@ -58,9 +54,7 @@ export function LoginPage() {
           </span>
         </div>
 
-        {/* Card Surface */}
         <div className="bg-[#104443] border-2 border-[#1a6866] p-8 sm:p-9 shadow-2xl rounded-2xl relative overflow-hidden text-white">
-          {/* Card Top Accent Strip */}
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#b79753] via-[#1a6866] to-[#b79753]" />
 
           <div className="text-center mb-6 pt-2">
@@ -132,7 +126,7 @@ export function LoginPage() {
           </form>
 
           <div className="mt-8 pt-6 border-t border-[#1a6866] text-center text-xs">
-            <span className="text-gray-400 font-medium">¿Aún no tenés una cuenta?</span>{' '}
+            <span className="text-gray-400 font-medium">¿Aún no tenés una cuenta? </span>
             <Link
               to="/register"
               className="font-black text-[#b79753] hover:text-white uppercase tracking-wider transition-colors ml-1"

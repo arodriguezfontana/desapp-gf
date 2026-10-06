@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react';
@@ -9,7 +10,11 @@ import { authStorage } from '../service/authStorage';
 import { httpEvents } from '../service/httpClient';
 import { AuthContext } from './auth-context';
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+interface AuthProviderProps {
+  readonly children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     () => authStorage.getToken() !== null,
@@ -26,7 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(true);
   }, []);
 
-  // Reaccionar a un 401 del backend sin importar en qué pantalla está el usuario
   useEffect(() => {
     const handler = () => {
       setIsAuthenticated(false);
@@ -36,8 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => httpEvents.removeEventListener('unauthorized', handler);
   }, [navigate]);
 
+  const value = useMemo(
+    () => ({ isAuthenticated, login, logout }),
+    [isAuthenticated, login, logout],
+  );
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

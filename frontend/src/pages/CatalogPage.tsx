@@ -64,7 +64,9 @@ export const CatalogPage: React.FC = () => {
       }
     };
 
-    void executeFetch();
+    executeFetch().catch(() => {
+      // Manejo global opcional de rechazo no capturado
+    });
 
     return () => {
       isCancelled = true;
@@ -146,7 +148,7 @@ export const CatalogPage: React.FC = () => {
           pageSize={meta.pageSize}
           isLoading={isLoading}
           onPageChange={(page) => {
-            void setCurrentPage(page);
+            setCurrentPage(page);
           }}
         />
       </>
