@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthActions } from '../hooks/useAuthActions';
 
@@ -20,7 +20,7 @@ export function RegisterPage() {
     /[0-9]/.test(password) &&
     /[^A-Za-z0-9]/.test(password);
 
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
