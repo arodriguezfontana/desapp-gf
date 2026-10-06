@@ -5,12 +5,34 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "userEmail", "value": "" },
-    { "key": "accessToken", "value": "" },
-    { "key": "apiKey", "value": "" },
-    { "key": "previousApiKey", "value": "" },
-    { "key": "playerId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "userEmail",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "previousApiKey",
+      "value": ""
+    },
+    {
+      "key": "playerId",
+      "value": ""
+    },
+    {
+      "key": "syncRunId",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -41,8 +63,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
@@ -68,8 +104,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
@@ -92,8 +142,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"password\"\n}"
@@ -121,8 +185,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"role\": \"admin\"\n}"
@@ -150,8 +228,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"no-es-un-email\",\n  \"password\": \"Abcd1234!\"\n}"
@@ -179,8 +271,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"password\": \"Abcd1234!\"\n}"
@@ -212,8 +318,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
@@ -239,8 +359,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
@@ -266,8 +400,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Incorrecta9$\"\n}"
@@ -290,8 +438,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
@@ -322,8 +484,22 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
             "description": "Endpoint protegido de referencia con JwtAuthGuard global. Requiere accessToken (correr 'Login — credenciales válidas' antes)."
           }
         },
@@ -346,7 +522,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
             "description": "Sin Authorization -> 401."
           }
         },
@@ -365,8 +550,22 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer no-es-un-jwt" }],
-            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer no-es-un-jwt"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
             "description": "Token con firma/forma inválida -> 401."
           }
         },
@@ -386,7 +585,15 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] },
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
             "description": "GET / y GET /health son @Public(): responden 200 sin ningún token. Esta request cubre /health; probar /{{baseUrl}} manualmente cubre la raíz."
           }
         }
@@ -419,8 +626,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/api-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "api-key"
+              ]
+            },
             "description": "201 Created con { id, apiKey, createdAt }. La ApiKey en texto plano solo se muestra en esta respuesta. Requiere accessToken."
           }
         },
@@ -447,8 +668,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/api-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "api-key"
+              ]
+            },
             "description": "Correr después de la request anterior. Guarda la ApiKey vieja en previousApiKey (queda revocada) — la usa 'Listar — ApiKey revocada' en Feature 3."
           }
         },
@@ -468,7 +703,16 @@
           "request": {
             "method": "POST",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/api-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "api-key"
+              ]
+            },
             "description": "Sin Authorization -> 401."
           }
         },
@@ -487,8 +731,22 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer no-es-un-jwt" }],
-            "url": { "raw": "{{baseUrl}}/auth/api-key", "host": ["{{baseUrl}}"], "path": ["auth", "api-key"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer no-es-un-jwt"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/api-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "api-key"
+              ]
+            },
             "description": "Token con forma/firma inválida -> 401."
           }
         }
@@ -528,8 +786,21 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
-            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            },
             "description": "Defaults page=1/pageSize=10. Si el catálogo está vacío (sin sincronización exitosa todavía), items=[] y total=0 es una respuesta válida (200, no error). Guarda el primer id en playerId para el folder de Detalle, si hay alguno."
           }
         },
@@ -552,12 +823,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?league=Premier League",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "league", "value": "Premier League" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "league",
+                  "value": "Premier League"
+                }
+              ]
             }
           }
         },
@@ -580,12 +865,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?team=Manchester United",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "team", "value": "Manchester United" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "team",
+                  "value": "Manchester United"
+                }
+              ]
             },
             "description": "'Manchester United' es sólo un ejemplo de equipo real de una de las 5 ligas soportadas; puede devolver items:[] si esa sincronización todavía no corrió — sigue siendo 200, no error. El filtro por equipo hace match parcial (contiene, insensible a mayúsculas) desde 2026-09-25 — antes exigía el nombre exacto."
           }
@@ -609,12 +908,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?position=GK",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "position", "value": "GK" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "GK"
+                }
+              ]
             }
           }
         },
@@ -639,15 +952,33 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?league=Premier League&team=Manchester United&position=GK",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
               "query": [
-                { "key": "league", "value": "Premier League" },
-                { "key": "team", "value": "Manchester United" },
-                { "key": "position", "value": "GK" }
+                {
+                  "key": "league",
+                  "value": "Premier League"
+                },
+                {
+                  "key": "team",
+                  "value": "Manchester United"
+                },
+                {
+                  "key": "position",
+                  "value": "GK"
+                }
               ]
             },
             "description": "Reproduce el bug ya corregido de 'property liga/equipo/posicion should not exist': los 3 filtros combinados no deben ser rechazados por whitelist. Puede devolver items:[] si esa sincronización no corrió todavía."
@@ -673,12 +1004,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?team=Equipo Que No Existe",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "team", "value": "Equipo Que No Existe" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "team",
+                  "value": "Equipo Que No Existe"
+                }
+              ]
             }
           }
         },
@@ -704,14 +1049,29 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?page=2&pageSize=5",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
               "query": [
-                { "key": "page", "value": "2" },
-                { "key": "pageSize", "value": "5" }
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "5"
+                }
               ]
             }
           }
@@ -736,12 +1096,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?pageSize=51",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "pageSize", "value": "51" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "51"
+                }
+              ]
             },
             "description": "No debe capear en 50 silenciosamente: rechaza con 400."
           }
@@ -761,12 +1135,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?page=0",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "page", "value": "0" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
             }
           }
         },
@@ -785,12 +1173,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?position=XX",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "position", "value": "XX" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "XX"
+                }
+              ]
             },
             "description": "'XX' no es GK/DF/MF/FW -> InvalidPositionError (dominio) -> 400."
           }
@@ -810,12 +1212,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?league=Eredivisie",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "league", "value": "Eredivisie" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "league",
+                  "value": "Eredivisie"
+                }
+              ]
             },
             "description": "No es una de las 5 ligas soportadas -> InvalidLeagueError (dominio) -> 400."
           }
@@ -840,12 +1256,26 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players?campoInventado=x",
-              "host": ["{{baseUrl}}"],
-              "path": ["players"],
-              "query": [{ "key": "campoInventado", "value": "x" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "campoInventado",
+                  "value": "x"
+                }
+              ]
             }
           }
         },
@@ -868,7 +1298,15 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] }
+            "url": {
+              "raw": "{{baseUrl}}/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            }
           }
         },
         {
@@ -886,8 +1324,21 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "pmk_no-existe-esta-clave" }],
-            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pmk_no-existe-esta-clave"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            },
             "description": "Adulterada: ni siquiera tiene el formato pmk_ + 64 hex. No confundir con el caso de abajo (formato válido, pero nunca emitida)."
           }
         },
@@ -906,8 +1357,21 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "pmk_d2fb4261d866dbcfc7448ad8b018721db8b87306e6a0eed7f8c3f7d8059f290a" }],
-            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "pmk_d2fb4261d866dbcfc7448ad8b018721db8b87306e6a0eed7f8c3f7d8059f290a"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            },
             "description": "A diferencia de la request anterior, esta clave SÍ cumple el formato pmk_ + 64 hex (pasaría un `RawApiKey.of()`), pero jamás fue emitida por POST /auth/api-key: no matchea ningún hash guardado. Distingue 'formato inválido' de 'formato correcto pero inexistente en la base' — ApiKeyGuard no hace esa distinción y da 401 en ambos casos por diseño (research.md §3 de 004-player-catalog)."
           }
         },
@@ -926,8 +1390,21 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{previousApiKey}}" }],
-            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{previousApiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            },
             "description": "Requiere haber corrido las 2 requests de 'Emitir ApiKey' en Feature 2 (previousApiKey queda seteada con la clave ya reemplazada)."
           }
         },
@@ -946,8 +1423,21 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/players", "host": ["{{baseUrl}}"], "path": ["players"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            },
             "description": "El catálogo NO acepta JWT como alternativa a la ApiKey (constitución, Principio IV / spec Design Decisions)."
           }
         },
@@ -976,8 +1466,22 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
-            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] },
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}"
+              ]
+            },
             "description": "Requiere haber corrido 'Listar — sin filtros' antes (guarda playerId) y que el catálogo no esté vacío (al menos una sincronización con WhoScored ya corrida con éxito). Si el catálogo está vacío, el test se omite (pm.test.skip) en vez de fallar confuso contra GET /players/ (matchea la ruta de listado)."
           }
         },
@@ -996,11 +1500,21 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/players/00000000-0000-0000-0000-000000000000",
-              "host": ["{{baseUrl}}"],
-              "path": ["players", "00000000-0000-0000-0000-000000000000"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "00000000-0000-0000-0000-000000000000"
+              ]
             }
           }
         },
@@ -1019,8 +1533,22 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }],
-            "url": { "raw": "{{baseUrl}}/players/no-es-un-uuid", "host": ["{{baseUrl}}"], "path": ["players", "no-es-un-uuid"] },
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/no-es-un-uuid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "no-es-un-uuid"
+              ]
+            },
             "description": "Postgres rechaza el uuid inválido (22P02) antes de buscar; el repo lo traduce a 'no encontrado', no a un 500."
           }
         },
@@ -1040,7 +1568,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}"
+              ]
+            }
           }
         },
         {
@@ -1058,9 +1595,149 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/players/{{playerId}}", "host": ["{{baseUrl}}"], "path": ["players", "{{playerId}}"] },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}"
+              ]
+            },
             "description": "Mismo criterio que el listado: GET /players/:id también exige ApiKeyGuard y está marcado @Public() respecto de JwtAuthGuard, así que un JWT válido solo no alcanza."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature 9 — Sincronización manual",
+      "description": "Disparo manual de sincronización de WhoScored (asincrónico: 202 + GET de estado) y Football-Data (sincrónico: ~70 s). Todos los endpoints exigen x-api-key; los JWT no alcanzan. Correr después de Feature 2 para tener apiKey seteada.",
+      "item": [
+        {
+          "name": "POST /sync/whoscored — disparo manual (202)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });",
+                  "pm.test('body tiene runId y status running', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.runId).to.be.a('string');",
+                  "  pm.expect(body.status).to.equal('running');",
+                  "  pm.collectionVariables.set('syncRunId', body.runId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/whoscored",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "whoscored"
+              ]
+            },
+            "description": "202 Accepted. Guarda el runId en la variable syncRunId para consultar el estado después."
+          }
+        },
+        {
+          "name": "GET /sync/whoscored/:runId — estado de la corrida (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('body tiene runId, status y trigger', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.runId).to.be.a('string');",
+                  "  pm.expect(['running', 'completed', 'failed']).to.include(body.status);",
+                  "  pm.expect(['manual', 'cron']).to.include(body.trigger);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/whoscored/{{syncRunId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "whoscored",
+                "{{syncRunId}}"
+              ]
+            },
+            "description": "Consultar hasta que status sea completed o failed. Requiere syncRunId seteado por el POST anterior."
+          }
+        },
+        {
+          "name": "POST /sync/football-data — disparo sincrónico (200, ~70 s)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('body tiene leagues y failedLeagues', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.leagues).to.be.an('array');",
+                  "  pm.expect(body.failedLeagues).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/football-data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "football-data"
+              ]
+            },
+            "description": "Responde ~70 s (plan free: 10 req/min, 7 s de espera entre cada una). Resultado: resumen por liga con standings y partidos actualizados."
           }
         }
       ]

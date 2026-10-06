@@ -15,6 +15,9 @@ export default tseslint.config(
         ...globals.jest,
       },
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
   },
   {
     files: ['src/services/**/*.ts'],
