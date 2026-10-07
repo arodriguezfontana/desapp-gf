@@ -18,6 +18,13 @@ export class PlayerMapper {
       shots: entity.shots,
       interceptions: entity.interceptions,
       rating: entity.rating,
+      goals: entity.goals,
+      assists: entity.assists,
+      keyPasses: entity.keyPasses,
+      dribbles: entity.dribbles,
+      totalTackles: entity.totalTackles,
+      yellowCards: entity.yellowCards,
+      redCards: entity.redCards,
     });
   }
 
@@ -32,6 +39,13 @@ export class PlayerMapper {
     entity.shots = player.shots;
     entity.interceptions = player.interceptions;
     entity.rating = player.rating;
+    entity.goals = player.goals;
+    entity.assists = player.assists;
+    entity.keyPasses = player.keyPasses;
+    entity.dribbles = player.dribbles;
+    entity.totalTackles = player.totalTackles;
+    entity.yellowCards = player.yellowCards;
+    entity.redCards = player.redCards;
     return entity;
   }
 }

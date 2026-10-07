@@ -60,7 +60,19 @@ const rawPlayer = (
   externalId,
   name,
   rawPosition,
-  metrics: { passesCompleted: 5, shots: 1, interceptions: 0.2, rating: 6.8 },
+  metrics: {
+    passesCompleted: 5,
+    shots: 1,
+    interceptions: 0.2,
+    rating: 6.8,
+    goals: 2,
+    assists: 1,
+    keyPasses: 4,
+    dribbles: 1,
+    totalTackles: 3,
+    yellowCards: 0,
+    redCards: 0,
+  },
   metricsFetchFailed: false,
 });
 

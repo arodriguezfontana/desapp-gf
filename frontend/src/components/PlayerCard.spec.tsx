@@ -28,6 +28,54 @@ describe('PlayerCard', () => {
     expect(link).toHaveAttribute('href', '/catalog/p-1');
   });
 
+  it('renderiza goles, asistencias y tarjetas amarillas cuando tienen valor', () => {
+    const playerWithStats = {
+      id: 'p-2',
+      name: 'Lionel Messi',
+      league: 'La Liga',
+      team: 'Barcelona',
+      position: 'FW',
+      goals: 25,
+      assists: 14,
+      yellowCards: 3,
+    };
+
+    render(
+      <MemoryRouter>
+        <PlayerCard player={playerWithStats} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('25')).toBeInTheDocument();
+    expect(screen.getByText('14')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Goles')).toBeInTheDocument();
+    expect(screen.getByText('Asist.')).toBeInTheDocument();
+    expect(screen.getByText('Amarillas')).toBeInTheDocument();
+  });
+
+  it('renderiza guiones "—" cuando las estadísticas son null', () => {
+    const playerWithoutStats = {
+      id: 'p-3',
+      name: 'Jugador Sin Datos',
+      league: 'Serie A',
+      team: 'Milan',
+      position: 'MF',
+      goals: null,
+      assists: null,
+      yellowCards: null,
+    };
+
+    render(
+      <MemoryRouter>
+        <PlayerCard player={playerWithoutStats} />
+      </MemoryRouter>,
+    );
+
+    const dashes = screen.getAllByText('—');
+    expect(dashes.length).toBeGreaterThanOrEqual(3);
+  });
+
   it.each([
     ['GK', 'Arquero', 'text-[#b79753]'],
     ['DF', 'Defensor', 'text-blue-400'],

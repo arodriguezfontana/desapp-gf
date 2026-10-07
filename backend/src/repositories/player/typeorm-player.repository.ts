@@ -30,6 +30,13 @@ const UPSERT_OVERWRITE_COLUMNS = [
   'shots',
   'interceptions',
   'rating',
+  'goals',
+  'assists',
+  'keyPasses',
+  'dribbles',
+  'totalTackles',
+  'yellowCards',
+  'redCards',
   'removedAt',
 ];
 
@@ -131,6 +138,13 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
               shots: input.metrics?.shots ?? null,
               interceptions: input.metrics?.interceptions ?? null,
               rating: input.metrics?.rating ?? null,
+              goals: input.metrics?.goals ?? null,
+              assists: input.metrics?.assists ?? null,
+              keyPasses: input.metrics?.keyPasses ?? null,
+              dribbles: input.metrics?.dribbles ?? null,
+              totalTackles: input.metrics?.totalTackles ?? null,
+              yellowCards: input.metrics?.yellowCards ?? null,
+              redCards: input.metrics?.redCards ?? null,
               removedAt: null,
             })),
           )

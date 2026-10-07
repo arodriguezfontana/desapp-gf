@@ -17,6 +17,13 @@ export class Player {
     private readonly _shots: number | null,
     private readonly _interceptions: number | null,
     private readonly _rating: number | null,
+    private readonly _goals: number | null,
+    private readonly _assists: number | null,
+    private readonly _keyPasses: number | null,
+    private readonly _dribbles: number | null,
+    private readonly _totalTackles: number | null,
+    private readonly _yellowCards: number | null,
+    private readonly _redCards: number | null,
   ) {}
 
   static restore(props: {
@@ -29,6 +36,13 @@ export class Player {
     shots: number | null;
     interceptions: number | null;
     rating: number | null;
+    goals?: number | null;
+    assists?: number | null;
+    keyPasses?: number | null;
+    dribbles?: number | null;
+    totalTackles?: number | null;
+    yellowCards?: number | null;
+    redCards?: number | null;
   }): Player {
     return new Player(
       props.id,
@@ -40,6 +54,13 @@ export class Player {
       props.shots,
       props.interceptions,
       props.rating,
+      props.goals ?? null,
+      props.assists ?? null,
+      props.keyPasses ?? null,
+      props.dribbles ?? null,
+      props.totalTackles ?? null,
+      props.yellowCards ?? null,
+      props.redCards ?? null,
     );
   }
 
@@ -78,5 +99,33 @@ export class Player {
 
   get rating(): number | null {
     return this._rating;
+  }
+
+  get goals(): number | null {
+    return this._goals;
+  }
+
+  get assists(): number | null {
+    return this._assists;
+  }
+
+  get keyPasses(): number | null {
+    return this._keyPasses;
+  }
+
+  get dribbles(): number | null {
+    return this._dribbles;
+  }
+
+  get totalTackles(): number | null {
+    return this._totalTackles;
+  }
+
+  get yellowCards(): number | null {
+    return this._yellowCards;
+  }
+
+  get redCards(): number | null {
+    return this._redCards;
   }
 }

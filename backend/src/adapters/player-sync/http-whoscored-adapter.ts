@@ -46,6 +46,13 @@ interface WhoScoredTournamentSeasonStats {
   AccuratePasses: number;
   Interceptions: number;
   Rating: number;
+  Goals?: number | null;
+  Assists?: number | null;
+  KeyPasses?: number | null;
+  Dribbles?: number | null;
+  TotalTackles?: number | null;
+  Yellow?: number | null;
+  Red?: number | null;
 }
 
 interface WhoScoredAssistDataEntry {
@@ -287,6 +294,13 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
           shots: stats.TotalShots / appearances,
           interceptions: stats.Interceptions / appearances,
           rating: stats.Rating,
+          goals: stats.Goals ?? null,
+          assists: stats.Assists ?? null,
+          keyPasses: stats.KeyPasses ?? null,
+          dribbles: stats.Dribbles ?? null,
+          totalTackles: stats.TotalTackles ?? null,
+          yellowCards: stats.Yellow ?? null,
+          redCards: stats.Red ?? null,
         },
         metricsFetchFailed: false,
       };

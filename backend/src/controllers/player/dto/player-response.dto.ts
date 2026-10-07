@@ -41,6 +41,27 @@ export class PlayerResponseDto {
   })
   crestUrl: string | null;
 
+  @ApiProperty({ example: 12, nullable: true, description: 'Goles totales en la temporada en curso; null si no hay valor disponible.' })
+  goals: number | null;
+
+  @ApiProperty({ example: 5, nullable: true, description: 'Asistencias totales en la temporada en curso; null si no hay valor disponible.' })
+  assists: number | null;
+
+  @ApiProperty({ example: 25, nullable: true, description: 'Pases clave totales en la temporada en curso; null si no hay valor disponible.' })
+  keyPasses: number | null;
+
+  @ApiProperty({ example: 14, nullable: true, description: 'Regates exitosos totales en la temporada en curso; null si no hay valor disponible.' })
+  dribbles: number | null;
+
+  @ApiProperty({ example: 8, nullable: true, description: 'Entradas totales en la temporada en curso; null si no hay valor disponible.' })
+  totalTackles: number | null;
+
+  @ApiProperty({ example: 2, nullable: true, description: 'Tarjetas amarillas totales en la temporada en curso; null si no hay valor disponible.' })
+  yellowCards: number | null;
+
+  @ApiProperty({ example: 0, nullable: true, description: 'Tarjetas rojas totales en la temporada en curso; null si no hay valor disponible.' })
+  redCards: number | null;
+
   private constructor(props: {
     id: string;
     name: string;
@@ -52,6 +73,13 @@ export class PlayerResponseDto {
     interceptions: number | null;
     rating: number | null;
     crestUrl: string | null;
+    goals: number | null;
+    assists: number | null;
+    keyPasses: number | null;
+    dribbles: number | null;
+    totalTackles: number | null;
+    yellowCards: number | null;
+    redCards: number | null;
   }) {
     this.id = props.id;
     this.name = props.name;
@@ -63,6 +91,13 @@ export class PlayerResponseDto {
     this.interceptions = props.interceptions;
     this.rating = props.rating;
     this.crestUrl = props.crestUrl;
+    this.goals = props.goals;
+    this.assists = props.assists;
+    this.keyPasses = props.keyPasses;
+    this.dribbles = props.dribbles;
+    this.totalTackles = props.totalTackles;
+    this.yellowCards = props.yellowCards;
+    this.redCards = props.redCards;
   }
 
   static fromDomain(player: Player, crestUrl: string | null = null): PlayerResponseDto {
@@ -77,6 +112,13 @@ export class PlayerResponseDto {
       interceptions: player.interceptions,
       rating: player.rating,
       crestUrl,
+      goals: player.goals,
+      assists: player.assists,
+      keyPasses: player.keyPasses,
+      dribbles: player.dribbles,
+      totalTackles: player.totalTackles,
+      yellowCards: player.yellowCards,
+      redCards: player.redCards,
     });
   }
 }

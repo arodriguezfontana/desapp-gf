@@ -128,6 +128,33 @@ export const PlayerDetailPage: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Estadísticas de temporada */}
+          <div>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
+              Estadísticas de temporada <span className="text-gray-600 normal-case">(totales acumulados)</span>
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+              {[
+                { label: 'Goles', value: player.goals, color: 'text-white' },
+                { label: 'Asistencias', value: player.assists, color: 'text-white' },
+                { label: 'Pases clave', value: player.keyPasses, color: 'text-white' },
+                { label: 'Regates', value: player.dribbles, color: 'text-white' },
+                { label: 'Entradas', value: player.totalTackles, color: 'text-white' },
+                { label: 'Amarillas', value: player.yellowCards, color: 'text-yellow-400' },
+                { label: 'Rojas', value: player.redCards, color: 'text-red-400' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] shadow-md text-center">
+                  <span className="block text-[9px] font-black uppercase tracking-widest text-[#b79753] mb-1.5 truncate">
+                    {label}
+                  </span>
+                  <span className={`text-xl font-black ${color}`}>
+                    {value != null ? value : <span className="text-gray-500 text-base">—</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

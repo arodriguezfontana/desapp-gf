@@ -76,4 +76,26 @@ export class PlayerEntity {
 
   @Column({ type: 'double precision', nullable: true })
   rating!: number | null;
+
+  /** Estadísticas acumuladas de la temporada en curso (011-whoscored-player-metrics). */
+  @Column({ type: 'integer', nullable: true })
+  goals!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  assists!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  keyPasses!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  dribbles!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  totalTackles!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  yellowCards!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  redCards!: number | null;
 }

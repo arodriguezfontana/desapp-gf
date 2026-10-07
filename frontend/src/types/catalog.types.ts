@@ -12,6 +12,13 @@ export interface Player {
   interceptions: number | null;
   rating: number | null;
   crestUrl?: string | null;
+  goals?: number | null;
+  assists?: number | null;
+  keyPasses?: number | null;
+  dribbles?: number | null;
+  totalTackles?: number | null;
+  yellowCards?: number | null;
+  redCards?: number | null;
 }
 
 export interface PlayerListResponseDto {

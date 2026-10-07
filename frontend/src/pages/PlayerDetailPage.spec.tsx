@@ -51,6 +51,50 @@ describe('PlayerDetailPage', () => {
     expect(screen.getAllByText('PSG').length).toBeGreaterThan(0);
   });
 
+  it('renderiza todas las métricas de temporada cuando están disponibles', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+      rating: 8.12,
+      passesCompleted: 30.5,
+      shots: 4.2,
+      interceptions: 0.1,
+      goals: 27,
+      assists: 7,
+      keyPasses: 45,
+      dribbles: 52,
+      totalTackles: 10,
+      yellowCards: 4,
+      redCards: 1,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Kylian Mbappé')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('27')).toBeInTheDocument();
+    expect(screen.getByText('7')).toBeInTheDocument();
+    expect(screen.getByText('45')).toBeInTheDocument();
+    expect(screen.getByText('52')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('Goles')).toBeInTheDocument();
+    expect(screen.getByText('Asistencias')).toBeInTheDocument();
+  });
+
   it('muestra textualmente el mensaje 404 devuelto por el backend sin alterarlo', async () => {
     apiKeyStorage.setApiKey('valid-key');
     vi.spyOn(catalogService, 'getPlayerById').mockRejectedValueOnce(
