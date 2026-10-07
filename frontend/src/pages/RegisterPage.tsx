@@ -56,7 +56,7 @@ export function RegisterPage() {
         <div className="flex justify-center mb-4 gap-2">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#b79753] text-[#0b3332] rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
             <span className="w-2 h-2 rounded-full bg-[#0b3332] animate-pulse" />
-            NUEVO USUARIO
+            <span>NUEVO USUARIO</span>
           </span>
           <span className="px-3.5 py-1.5 bg-[#104443] border border-[#b79753]/40 text-[#b79753] text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
             ALTA GRATUITA

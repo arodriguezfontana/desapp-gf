@@ -35,4 +35,8 @@ export class ApiKeyEntity {
 
   @Column({ name: 'revoked_at', type: 'timestamptz', nullable: true })
   revokedAt!: Date | null;
+
+  /** Rol del emisor copiado al emitir (spec 008). Mismo default que la migration. */
+  @Column({ type: 'varchar', length: 16, default: 'user' })
+  role!: string;
 }

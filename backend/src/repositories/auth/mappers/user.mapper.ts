@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Email } from '../../../domain/auth/email';
 import { User } from '../../../domain/auth/user';
+import { parseUserRole } from '../../../domain/auth/user-role';
 import { UserEntity } from '../entities/user.entity';
 
 /** Conversion dominio <-> persistencia. Sin logica de negocio. */
@@ -12,6 +13,7 @@ export class UserMapper {
       Email.create(entity.email),
       entity.passwordHash,
       entity.createdAt,
+      parseUserRole(entity.role),
     );
   }
 
@@ -21,6 +23,7 @@ export class UserMapper {
     entity.email = user.email.toString();
     entity.passwordHash = user.passwordHash;
     entity.createdAt = user.createdAt;
+    entity.role = user.role;
     return entity;
   }
 }

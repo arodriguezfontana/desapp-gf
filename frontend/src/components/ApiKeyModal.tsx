@@ -6,7 +6,7 @@ interface ApiKeyModalProps {
   readonly onClose: () => void;
 }
 
-export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
+export function ApiKeyModal({ apiKey, createdAt, onClose }: ApiKeyModalProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -36,6 +36,10 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
         <div className="mb-6 p-4 bg-[#b79753]/20 border-l-4 border-[#b79753] text-[#b79753] font-black text-xs uppercase tracking-wider shadow-md rounded-lg">
           Guardá esta clave ahora. No podrás volver a consultarla.
         </div>
+
+        <p className="mb-6 text-[11px] font-black uppercase tracking-widest text-gray-300">
+          Emitida el {new Date(createdAt).toLocaleString('es-AR')}
+        </p>
 
         <div className="mb-6">
           <label

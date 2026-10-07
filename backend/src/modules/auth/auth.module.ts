@@ -12,6 +12,7 @@ import {
 } from './auth.constants';
 import { AuthController } from '../../controllers/auth/auth.controller';
 import { AuthService } from '../../services/auth/auth.service';
+import { AdminSeedService } from '../../services/auth/admin-seed.service';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
 import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
@@ -34,11 +35,14 @@ import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AdminSeedService,
     UserMapper,
     { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: TOKEN_ISSUER, useClass: JwtTokenIssuer },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
+  // AuthService se exporta para que ApiKeyModule resuelva el User emisor (spec 008, R2).
+  exports: [AuthService],
 })
 export class AuthModule {}

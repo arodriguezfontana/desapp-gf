@@ -9,6 +9,7 @@ import { Request } from 'express';
 
 import { API_KEY_HEADER, API_KEY_REPOSITORY, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
+import { ApiKey } from '../../domain/api-key/api-key';
 import { ApiKeyRepository } from '../../repositories/api-key/api-key.repository';
 import { UNAUTHENTICATED_MESSAGE } from '../../shared/errors/messages';
 
@@ -30,6 +31,16 @@ export class ApiKeyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    await this.resolveActiveApiKey(context);
+    return true;
+  }
+
+  /**
+   * Resuelve la ApiKey activa de la request o lanza 401. Extraído de `canActivate`
+   * (spec 008, R3) para que `AdminApiKeyGuard` reutilice la misma resolución sin
+   * duplicarla. Comportamiento idéntico al de antes de la extracción.
+   */
+  protected async resolveActiveApiKey(context: ExecutionContext): Promise<ApiKey> {
     const request = context.switchToHttp().getRequest<Request>();
     const rawKey = request.headers[API_KEY_HEADER];
 
@@ -44,6 +55,6 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
-    return true;
+    return apiKey;
   }
 }

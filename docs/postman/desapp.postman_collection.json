@@ -312,6 +312,9 @@
                   "  const body = pm.response.json();",
                   "  pm.expect(body).to.have.property('id');",
                   "  pm.expect(body.email).to.eql(pm.collectionVariables.get('userEmail'));",
+                  "});",
+                  "pm.test('devuelve role (spec 008): una cuenta nueva es user', function () {",
+                  "  pm.expect(pm.response.json().role).to.eql('user');",
                   "});"
                 ]
               }
