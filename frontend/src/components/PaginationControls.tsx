@@ -9,59 +9,99 @@ interface PaginationControlsProps {
   onPageChange: (page: number) => void;
 }
 
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | '...')[] = [1];
+
+  if (current > 3) pages.push('...');
+
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+
+  if (current < total - 2) pages.push('...');
+
+  pages.push(total);
+  return pages;
+}
+
 export const PaginationControls: React.FC<PaginationControlsProps> = ({
   currentPage,
   totalPages,
   totalItems,
-  pageSize,
   isLoading = false,
   onPageChange,
 }) => {
   if (totalItems === 0) return null;
 
-  const startRange = Math.min((currentPage - 1) * pageSize + 1, totalItems);
-  const endRange = Math.min(currentPage * pageSize, totalItems);
-
   const isPrevDisabled = currentPage <= 1 || isLoading;
   const isNextDisabled = currentPage >= totalPages || isLoading;
+  const pages = getPageNumbers(currentPage, totalPages || 1);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-[#104443] px-6 py-4 rounded-2xl border border-[#1a6866] shadow-xl">
-      <div className="text-xs sm:text-sm text-gray-300 font-semibold">
-        Mostrando <span className="font-black text-[#b79753]">{startRange}</span> -{' '}
-        <span className="font-black text-[#b79753]">{endRange}</span> de{' '}
-        <span className="font-black text-[#b79753]">{totalItems}</span> jugadores
-      </div>
-
-      <div className="flex items-center space-x-3">
+    <div className="flex justify-center mt-8">
+      <div className="flex items-center gap-1.5 bg-[#104443] px-4 py-3 rounded-2xl border border-[#1a6866] shadow-xl">
+        {/* Anterior */}
         <button
           type="button"
           disabled={isPrevDisabled}
           onClick={() => onPageChange(currentPage - 1)}
-          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
+          aria-label="Anterior"
+          className={`px-3 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all cursor-pointer ${
             isPrevDisabled
               ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
-              : 'bg-[#b79753] text-[#0b3332] border-[#b79753] hover:bg-[#9e8144] shadow-md shadow-[#b79753]/30'
+              : 'bg-[#0b3332] text-[#b79753] border-[#b79753]/40 hover:bg-[#b79753] hover:text-[#0b3332] hover:border-[#b79753]'
           }`}
         >
-          &larr; Anterior
+          &larr;
         </button>
 
-        <span className="text-xs font-bold text-gray-400 px-2">
-          Página {currentPage} de {totalPages || 1}
-        </span>
+        {/* Números de página */}
+        {pages.map((p, i) =>
+          p === '...' ? (
+            <span
+              key={`ellipsis-${i}`}
+              className="px-2 py-2 text-xs font-bold text-slate-500 select-none"
+            >
+              &hellip;
+            </span>
+          ) : (
+            <button
+              key={p}
+              type="button"
+              disabled={isLoading}
+              onClick={() => onPageChange(p)}
+              aria-label={`Página ${p}`}
+              aria-current={p === currentPage ? 'page' : undefined}
+              className={`min-w-[2rem] px-2 py-2 text-xs font-black rounded-xl border transition-all cursor-pointer ${
+                p === currentPage
+                  ? 'bg-[#b79753] text-[#0b3332] border-[#b79753] shadow-md shadow-[#b79753]/30'
+                  : isLoading
+                    ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
+                    : 'bg-[#0b3332] text-gray-300 border-[#1a6866] hover:border-[#b79753]/50 hover:text-[#b79753]'
+              }`}
+            >
+              {p}
+            </button>
+          ),
+        )}
 
+        {/* Siguiente */}
         <button
           type="button"
           disabled={isNextDisabled}
           onClick={() => onPageChange(currentPage + 1)}
-          className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
+          aria-label="Siguiente"
+          className={`px-3 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all cursor-pointer ${
             isNextDisabled
               ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
-              : 'bg-[#b79753] text-[#0b3332] border-[#b79753] hover:bg-[#9e8144] shadow-md shadow-[#b79753]/30'
+              : 'bg-[#0b3332] text-[#b79753] border-[#b79753]/40 hover:bg-[#b79753] hover:text-[#0b3332] hover:border-[#b79753]'
           }`}
         >
-          Siguiente &rarr;
+          &rarr;
         </button>
       </div>
     </div>

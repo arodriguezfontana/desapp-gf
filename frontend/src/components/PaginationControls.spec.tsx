@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { PaginationControls } from './PaginationControls';
 
 describe('PaginationControls', () => {
-  it('renderiza la informacion del rango visible y el total', () => {
+  it('renderiza los botones de página numerados y los botones de navegación', () => {
     render(
       <PaginationControls
         currentPage={1}
@@ -14,10 +14,10 @@ describe('PaginationControls', () => {
       />,
     );
 
-    expect(screen.getByText(/Mostrando/i)).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('45')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Anterior/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Siguiente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Página 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Página 5' })).toBeInTheDocument();
   });
 
   it('deshabilita el boton Anterior en la primera pagina y permite Siguiente', () => {
@@ -93,5 +93,35 @@ describe('PaginationControls', () => {
     expect(screen.getByRole('button', { name: /Anterior/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Siguiente/i })).toBeDisabled();
   });
-});
 
+  it('marca la pagina actual con aria-current="page"', () => {
+    render(
+      <PaginationControls
+        currentPage={3}
+        totalPages={5}
+        totalItems={45}
+        pageSize={10}
+        onPageChange={vi.fn()}
+      />,
+    );
+
+    const currentBtn = screen.getByRole('button', { name: 'Página 3' });
+    expect(currentBtn).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('navega a la pagina correcta al hacer click en un numero', () => {
+    const onPageChange = vi.fn();
+    render(
+      <PaginationControls
+        currentPage={3}
+        totalPages={5}
+        totalItems={45}
+        pageSize={10}
+        onPageChange={onPageChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Página 5' }));
+    expect(onPageChange).toHaveBeenCalledWith(5);
+  });
+});

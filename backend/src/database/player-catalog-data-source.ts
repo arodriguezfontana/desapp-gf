@@ -22,5 +22,3 @@ export const playerCatalogDataSource = new DataSource({
   entities: [],
   migrations: [`${__dirname}/migrations/*.{ts,js}`],
 });
-
-export default playerCatalogDataSource;

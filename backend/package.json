@@ -19,7 +19,8 @@
     "test:e2e": "jest --runInBand --config ./test/jest-e2e.json",
     "test:e2e:cov": "jest --runInBand --coverage --config ./test/jest-e2e.json",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/player-catalog-data-source.ts",
-    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/player-catalog-data-source.ts"
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/player-catalog-data-source.ts",
+    "seed:crosswalk": "ts-node scripts/seed-crosswalk.ts"
   },
   "jest": {
     "coverageDirectory": "coverage",

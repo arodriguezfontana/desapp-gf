@@ -42,9 +42,21 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
         </div>
 
         {/* Player Avatar & Details Header */}
-        <div className="flex items-center gap-4 my-2">
-          <div className="w-12 h-12 rounded-full bg-[#0b3332] border-2 border-[#b79753]/40 text-[#b79753] flex items-center justify-center font-black text-lg shadow-inner group-hover:border-[#b79753] group-hover:scale-105 transition-all">
-            ⚽
+        <div className="flex items-start gap-4 my-2">
+          <div className="w-12 h-12 rounded-full bg-[#0b3332] border-2 border-[#b79753]/40 flex items-center justify-center shadow-inner group-hover:border-[#b79753] group-hover:scale-105 transition-all overflow-hidden shrink-0">
+            {player.crestUrl ? (
+              <img
+                src={player.crestUrl}
+                alt={player.team}
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  (e.currentTarget.parentElement as HTMLElement).textContent = '⚽';
+                }}
+              />
+            ) : (
+              <span className="text-[#b79753] font-black text-lg">⚽</span>
+            )}
           </div>
           <div className="overflow-hidden">
             <h3 className="text-lg font-black text-white group-hover:text-[#b79753] transition-colors line-clamp-1 tracking-tight">

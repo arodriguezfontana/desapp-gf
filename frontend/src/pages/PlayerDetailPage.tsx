@@ -82,36 +82,51 @@ export const PlayerDetailPage: React.FC = () => {
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black tracking-wider uppercase mb-2">
-            {player.name}
-          </h1>
-
-          <p className="text-[#b79753] font-bold text-lg flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#b79753] inline-block"></span>
-            {player.team}
-          </p>
+          <div className="flex items-start gap-4 mb-2">
+            {player.crestUrl && (
+              <img
+                src={player.crestUrl}
+                alt={player.team}
+                className="w-14 h-14 object-contain drop-shadow-md shrink-0 mt-1"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            )}
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-wider uppercase">
+                {player.name}
+              </h1>
+              <p className="text-[#b79753] font-bold text-lg flex items-center gap-2 mt-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#b79753] inline-block shrink-0"></span>
+                {player.team}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 bg-[#0b3332]/60">
-          <div className="bg-[#0b3332] p-5 rounded-xl border border-[#1a6866] shadow-md">
-            <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-1">
-              Competencia
-            </span>
-            <span className="text-base font-black text-white">{player.league}</span>
-          </div>
+        <div className="p-8 space-y-6 bg-[#0b3332]/60">
 
-          <div className="bg-[#0b3332] p-5 rounded-xl border border-[#1a6866] shadow-md">
-            <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-1">
-              Club Actual
-            </span>
-            <span className="text-base font-black text-[#b79753]">{player.team}</span>
-          </div>
-
-          <div className="bg-[#0b3332] p-5 rounded-xl border border-[#1a6866] shadow-md">
-            <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-1">
-              Posición
-            </span>
-            <span className="text-base font-black text-white">{getPositionLabel(player.position)}</span>
+          {/* Métricas de rendimiento */}
+          <div>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
+              Métricas de rendimiento <span className="text-gray-600 normal-case">(promedio por partido)</span>
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: 'Rating', value: player.rating },
+                { label: 'Pases completados', value: player.passesCompleted },
+                { label: 'Remates', value: player.shots },
+                { label: 'Intercepciones', value: player.interceptions },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-[#0b3332] p-5 rounded-xl border border-[#1a6866] shadow-md text-center">
+                  <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-2">
+                    {label}
+                  </span>
+                  <span className="text-2xl font-black text-white">
+                    {value != null ? value.toFixed(2) : <span className="text-gray-500 text-base">—</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

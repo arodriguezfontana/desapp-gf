@@ -9,6 +9,7 @@ import { ApiKeyModule } from './modules/api-key/api-key.module';
 import { PlayerModule } from './modules/player/player.module';
 import { PlayerSyncModule } from './modules/player-sync/player-sync.module';
 import { FootballDataSyncModule } from './modules/competition/football-data-sync.module';
+import { TeamCrosswalkModule } from './modules/competition/team-crosswalk.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -20,6 +21,7 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     PlayerModule,
     PlayerSyncModule,
     FootballDataSyncModule,
+    TeamCrosswalkModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],
