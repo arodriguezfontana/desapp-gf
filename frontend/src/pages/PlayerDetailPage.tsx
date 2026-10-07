@@ -4,47 +4,6 @@ import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
 import { getPositionLabel, type Player } from '../types/catalog.types';
 
-const CircularMetric: React.FC<{
-  value: number | null | undefined;
-  label: string;
-  max: number;
-  subtitle: string;
-}> = ({ value, label, max, subtitle }) => {
-  const r = 38;
-  const circumference = 2 * Math.PI * r;
-  const pct = value != null && value > 0 ? Math.min(value / max, 1) : 0;
-  const offset = circumference * (1 - pct);
-
-  return (
-    <div className="bg-[#0b3332] rounded-xl border border-[#1a6866] shadow-md flex flex-col items-center p-2 sm:p-4 gap-1">
-      <div className="relative w-16 h-16 sm:w-24 sm:h-24">
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-          <circle cx="50" cy="50" r={r} fill="none" stroke="#1a6866" strokeWidth="8" />
-          {pct > 0 && (
-            <circle
-              cx="50" cy="50" r={r}
-              fill="none"
-              stroke="#b79753"
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={offset}
-              transform="rotate(-90 50 50)"
-            />
-          )}
-          {pct === 0 && <circle cx="50" cy="50" r="4" fill="#1a6866" />}
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm sm:text-lg font-black text-white">
-            {value != null ? value.toFixed(2) : '—'}
-          </span>
-        </div>
-      </div>
-      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wide text-[#b79753] text-center leading-tight">{label}</span>
-      <span className="text-[8px] sm:text-[9px] text-gray-500">{subtitle}</span>
-    </div>
-  );
-};
 
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -145,60 +104,83 @@ export const PlayerDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-4 sm:p-8 space-y-5 sm:space-y-6 bg-[#0b3332]/60">
+        <div className="p-4 sm:p-6 space-y-4 bg-[#0b3332]/60">
 
           {/* Métricas de rendimiento */}
-          <div>
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
-              Métricas de rendimiento <span className="text-gray-600 normal-case">(promedio por partido)</span>
+          <div className="bg-[#104443]/50 rounded-2xl p-4 sm:p-5 border border-[#1a6866]/60">
+            <h2 className="text-[9px] font-black uppercase tracking-widest text-[#b79753]/70 mb-3 flex items-center gap-2">
+              <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
+              Métricas de rendimiento
+              <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
             </h2>
-            <div className="grid grid-cols-4 gap-2 sm:gap-4">
-              <CircularMetric value={player.rating} label="Rating" max={10} subtitle="sobre 10" />
-              <CircularMetric value={player.passesCompleted} label="Pases completados" max={player.matchesPlayed ?? 40} subtitle={player.matchesPlayed ? `sobre ${player.matchesPlayed} PJ` : '—'} />
-              <CircularMetric value={player.shots} label="Remates" max={player.matchesPlayed ?? 10} subtitle={player.matchesPlayed ? `sobre ${player.matchesPlayed} PJ` : '—'} />
-              <CircularMetric value={player.interceptions} label="Intercepciones" max={player.matchesPlayed ?? 10} subtitle={player.matchesPlayed ? `sobre ${player.matchesPlayed} PJ` : '—'} />
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+              {/* Partidos — tile destacado */}
+              <div className="bg-[#0b3332] rounded-xl border border-[#b79753]/40 shadow-md text-center p-3 sm:p-4">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-[#b79753]/70 mb-1 leading-tight">Partidos</span>
+                <span className="text-2xl sm:text-3xl font-black text-[#b79753]">
+                  {player.matchesPlayed ?? <span className="text-gray-600 text-lg">—</span>}
+                </span>
+              </div>
+              {/* Rating — tile destacado */}
+              <div className="bg-[#0b3332] rounded-xl border border-[#b79753]/40 shadow-md text-center p-3 sm:p-4">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-[#b79753]/70 mb-1 leading-tight">Rating</span>
+                <span className="text-2xl sm:text-3xl font-black text-[#b79753]">
+                  {player.rating != null ? player.rating.toFixed(2) : <span className="text-gray-600 text-lg">—</span>}
+                </span>
+              </div>
+              {/* Métricas promedio */}
+              {[
+                { label: 'Pases prom.', value: player.passesCompleted },
+                { label: 'Remates prom.', value: player.shots },
+                { label: 'Intercepciones prom.', value: player.interceptions },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-[#0b3332]/70 rounded-xl border border-[#1a6866]/50 shadow-md text-center p-3 sm:p-4">
+                  <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1 leading-tight break-words">{label}</span>
+                  <span className="text-lg sm:text-2xl font-black text-gray-200">
+                    {value != null ? value.toFixed(1) : <span className="text-gray-600 text-sm">—</span>}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Estadísticas de temporada */}
-          <div>
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
-              Estadísticas de temporada <span className="text-gray-600 normal-case">(totales acumulados)</span>
+          <div className="bg-[#104443]/30 rounded-2xl p-4 sm:p-5 border border-[#1a6866]/40">
+            <h2 className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-2">
+              <span className="w-4 h-px bg-[#1a6866] inline-block"></span>
+              Estadísticas de temporada
+              <span className="w-4 h-px bg-[#1a6866] inline-block"></span>
             </h2>
-            <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {[
-                { label: 'Goles', value: player.goals, color: 'text-white' },
-                { label: 'Asistencias', value: player.assists, color: 'text-white' },
-                { label: 'Pases clave', value: player.keyPasses, color: 'text-white' },
-                { label: 'Regates', value: player.dribbles, color: 'text-white' },
-                { label: 'Entradas', value: player.totalTackles, color: 'text-white' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="bg-[#0b3332] p-2 sm:p-4 rounded-xl border border-[#1a6866] shadow-md text-center">
-                  <span className="block text-[8px] sm:text-[9px] font-black uppercase tracking-wide text-[#b79753] mb-1 sm:mb-1.5 leading-tight break-words">
-                    {label}
-                  </span>
-                  <span className={`text-base sm:text-xl font-black ${color}`}>
-                    {value != null ? value : <span className="text-gray-500 text-sm">—</span>}
+                { label: 'Goles', value: player.goals },
+                { label: 'Asistencias', value: player.assists },
+                { label: 'Pases clave', value: player.keyPasses },
+                { label: 'Regates', value: player.dribbles },
+                { label: 'Entradas', value: player.totalTackles },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-[#1a6866]/40 text-center">
+                  <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1 leading-tight break-words">{label}</span>
+                  <span className="text-base sm:text-xl font-black text-gray-300">
+                    {value != null ? value : <span className="text-gray-600 text-sm">—</span>}
                   </span>
                 </div>
               ))}
-              {/* Amarillas */}
-              <div className="bg-[#0b3332] p-2 sm:p-4 rounded-xl border border-yellow-500/40 shadow-md text-center">
-                <span className="block text-[8px] sm:text-[9px] font-black uppercase tracking-wide text-[#b79753] mb-1 sm:mb-1.5">Amarillas</span>
-                <div className="flex items-center justify-center gap-1 sm:gap-1.5">
-                  <span className="inline-block w-3 h-4 sm:w-3.5 sm:h-5 rounded-[2px] bg-yellow-400 shadow-sm shadow-yellow-400/40 shrink-0"></span>
+              <div className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-yellow-500/30 text-center">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1">Amarillas</span>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="inline-block w-2.5 h-4 rounded-[2px] bg-yellow-400 shrink-0"></span>
                   <span className="text-base sm:text-xl font-black text-yellow-400">
-                    {player.yellowCards != null ? player.yellowCards : <span className="text-gray-500 text-sm">—</span>}
+                    {player.yellowCards ?? <span className="text-gray-600 text-sm">—</span>}
                   </span>
                 </div>
               </div>
-              {/* Rojas */}
-              <div className="bg-[#0b3332] p-2 sm:p-4 rounded-xl border border-red-500/40 shadow-md text-center">
-                <span className="block text-[8px] sm:text-[9px] font-black uppercase tracking-wide text-[#b79753] mb-1 sm:mb-1.5">Rojas</span>
-                <div className="flex items-center justify-center gap-1 sm:gap-1.5">
-                  <span className="inline-block w-3 h-4 sm:w-3.5 sm:h-5 rounded-[2px] bg-red-500 shadow-sm shadow-red-500/40 shrink-0"></span>
+              <div className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-red-500/30 text-center">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1">Rojas</span>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="inline-block w-2.5 h-4 rounded-[2px] bg-red-500 shrink-0"></span>
                   <span className="text-base sm:text-xl font-black text-red-400">
-                    {player.redCards != null ? player.redCards : <span className="text-gray-500 text-sm">—</span>}
+                    {player.redCards ?? <span className="text-gray-600 text-sm">—</span>}
                   </span>
                 </div>
               </div>
