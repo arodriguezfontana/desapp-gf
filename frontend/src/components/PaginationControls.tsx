@@ -9,20 +9,22 @@ interface PaginationControlsProps {
   onPageChange: (page: number) => void;
 }
 
-function getPageNumbers(current: number, total: number): (number | '...')[] {
+type PageItem = number | 'ellipsis-left' | 'ellipsis-right';
+
+function getPageNumbers(current: number, total: number): PageItem[] {
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
 
-  const pages: (number | '...')[] = [1];
+  const pages: PageItem[] = [1];
 
-  if (current > 3) pages.push('...');
+  if (current > 3) pages.push('ellipsis-left');
 
   const start = Math.max(2, current - 1);
   const end = Math.min(total - 1, current + 1);
   for (let i = start; i <= end; i++) pages.push(i);
 
-  if (current < total - 2) pages.push('...');
+  if (current < total - 2) pages.push('ellipsis-right');
 
   pages.push(total);
   return pages;
@@ -60,10 +62,10 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
         </button>
 
         {/* Números de página */}
-        {pages.map((p, i) =>
-          p === '...' ? (
+        {pages.map((p) =>
+          p === 'ellipsis-left' || p === 'ellipsis-right' ? (
             <span
-              key={`ellipsis-${i}`}
+              key={p}
               className="px-2 py-2 text-xs font-bold text-slate-500 select-none"
             >
               &hellip;
