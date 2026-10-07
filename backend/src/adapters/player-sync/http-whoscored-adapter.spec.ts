@@ -231,6 +231,13 @@ describe('HttpWhoScoredAdapter', () => {
         shots: 3.8,
         interceptions: 0,
         rating: 7.391999999999999,
+        goals: 3,
+        assists: 1,
+        keyPasses: 13,
+        dribbles: 2,
+        totalTackles: 5,
+        yellowCards: 0,
+        redCards: 0,
       });
     });
 
@@ -309,12 +316,26 @@ describe('HttpWhoScoredAdapter', () => {
         shots: 3.8,
         interceptions: 0,
         rating: 7.391999999999999,
+        goals: 3,
+        assists: 1,
+        keyPasses: 13,
+        dribbles: 2,
+        totalTackles: 5,
+        yellowCards: 0,
+        redCards: 0,
       });
       expect(brunoChampionsLeague.metrics).toEqual({
         passesCompleted: 46,
         shots: 3,
         interceptions: 1,
         rating: 8.47,
+        goals: 1,
+        assists: 0,
+        keyPasses: 4,
+        dribbles: 0,
+        totalTackles: 1,
+        yellowCards: 0,
+        redCards: 0,
       });
     });
 

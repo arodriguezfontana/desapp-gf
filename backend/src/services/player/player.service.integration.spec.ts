@@ -143,6 +143,13 @@ describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres 
         shots: 2.1,
         interceptions: 0.4,
         rating: 6.9,
+        goals: 12,
+        assists: 5,
+        keyPasses: 25,
+        dribbles: 14,
+        totalTackles: 8,
+        yellowCards: 2,
+        redCards: 0,
       }),
       Object.assign(new PlayerEntity(), {
         id: '55555555-5555-5555-5555-555555555555',
@@ -168,7 +175,7 @@ describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres 
       await dataSource.getRepository(PlayerEntity).save(metricsFixtures);
     });
 
-    it('expone las 4 métricas con valor cuando están disponibles', async () => {
+    it('expone las métricas con valor cuando están disponibles', async () => {
       const player = await service.getPlayerById(
         '44444444-4444-4444-4444-444444444444',
       );
@@ -176,9 +183,16 @@ describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres 
       expect(player.shots).toBe(2.1);
       expect(player.interceptions).toBe(0.4);
       expect(player.rating).toBe(6.9);
+      expect(player.goals).toBe(12);
+      expect(player.assists).toBe(5);
+      expect(player.keyPasses).toBe(25);
+      expect(player.dribbles).toBe(14);
+      expect(player.totalTackles).toBe(8);
+      expect(player.yellowCards).toBe(2);
+      expect(player.redCards).toBe(0);
     });
 
-    it('expone las 4 métricas en null cuando no hay valor disponible', async () => {
+    it('expone las métricas en null cuando no hay valor disponible', async () => {
       const player = await service.getPlayerById(
         '55555555-5555-5555-5555-555555555555',
       );
@@ -186,6 +200,13 @@ describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres 
       expect(player.shots).toBeNull();
       expect(player.interceptions).toBeNull();
       expect(player.rating).toBeNull();
+      expect(player.goals).toBeNull();
+      expect(player.assists).toBeNull();
+      expect(player.keyPasses).toBeNull();
+      expect(player.dribbles).toBeNull();
+      expect(player.totalTackles).toBeNull();
+      expect(player.yellowCards).toBeNull();
+      expect(player.redCards).toBeNull();
     });
 
     it('findPage excluye a los jugadores dados de baja (removedAt) del listado y del total', async () => {

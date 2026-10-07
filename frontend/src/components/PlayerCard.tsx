@@ -68,6 +68,34 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
             </p>
           </div>
         </div>
+
+        {/* Quick Stats: Goals, Assists, Yellow Cards */}
+        <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-[#1a6866]/60 text-center">
+          <div className="bg-[#0b3332] py-1.5 px-1 rounded-lg border border-[#1a6866]/40">
+            <span className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider">
+              Goles
+            </span>
+            <span className="text-sm font-black text-white">
+              {player.goals != null ? player.goals : '—'}
+            </span>
+          </div>
+          <div className="bg-[#0b3332] py-1.5 px-1 rounded-lg border border-[#1a6866]/40">
+            <span className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider">
+              Asist.
+            </span>
+            <span className="text-sm font-black text-white">
+              {player.assists != null ? player.assists : '—'}
+            </span>
+          </div>
+          <div className="bg-[#0b3332] py-1.5 px-1 rounded-lg border border-[#1a6866]/40">
+            <span className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider">
+              Amarillas
+            </span>
+            <span className="text-sm font-black text-yellow-400">
+              {player.yellowCards != null ? player.yellowCards : '—'}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Card Action Footer */}

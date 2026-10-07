@@ -36,6 +36,13 @@ const PLAYER_FIXTURES: Partial<PlayerEntity>[] = [
     shots: 3.9,
     interceptions: 0.2,
     rating: 7.31,
+    goals: 3,
+    assists: 1,
+    keyPasses: 13,
+    dribbles: 2,
+    totalTackles: 5,
+    yellowCards: 0,
+    redCards: 0,
   },
   { id: 'e87510fd-cce9-4b09-8503-42d685005e3b', externalId: 'ws-e87510fd', name: 'Callum Whitfield', league: 'Premier League', team: 'Northbridge FC', position: 'DF' },
   { id: 'b95ea36b-10c9-4886-90d4-a6ce2cf5b88d', externalId: 'ws-b95ea36b', name: 'Reece Dalton', league: 'Premier League', team: 'Northbridge FC', position: 'MF' },
@@ -247,6 +254,13 @@ describe('Catálogo de Jugadores (e2e)', () => {
         shots: 3.9,
         interceptions: 0.2,
         rating: 7.31,
+        goals: 3,
+        assists: 1,
+        keyPasses: 13,
+        dribbles: 2,
+        totalTackles: 5,
+        yellowCards: 0,
+        redCards: 0,
       });
 
       const sinValor = await request(server())
@@ -258,6 +272,13 @@ describe('Catálogo de Jugadores (e2e)', () => {
         shots: null,
         interceptions: null,
         rating: null,
+        goals: null,
+        assists: null,
+        keyPasses: null,
+        dribbles: null,
+        totalTackles: null,
+        yellowCards: null,
+        redCards: null,
       });
     });
 

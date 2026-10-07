@@ -1,11 +1,18 @@
 import { Position } from './enums/position';
 
-/** Las 4 métricas de rendimiento, promedio por partido de la temporada en curso. */
+/** Métricas de rendimiento y estadísticas de la temporada en curso. */
 export interface PlayerMetrics {
   passesCompleted: number;
   shots: number;
   interceptions: number;
   rating: number;
+  goals: number | null;
+  assists: number | null;
+  keyPasses: number | null;
+  dribbles: number | null;
+  totalTackles: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
 }
 
 /**

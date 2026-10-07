@@ -10,6 +10,13 @@ export interface WhoScoredRawMetrics {
   shots: number;
   interceptions: number;
   rating: number;
+  goals: number | null;
+  assists: number | null;
+  keyPasses: number | null;
+  dribbles: number | null;
+  totalTackles: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
 }
 
 /**
