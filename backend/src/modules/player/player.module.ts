@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ApiKeyModule } from '../api-key/api-key.module';
-import { FootballDataSyncModule } from '../competition/football-data-sync.module';
 import { TeamCrosswalkModule } from '../competition/team-crosswalk.module';
 import { PLAYER_REPOSITORY } from './player.constants';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
@@ -17,7 +16,6 @@ import { PlayerEnrichmentService } from '../../services/player/player-enrichment
   imports: [
     ApiKeyModule,
     TypeOrmModule.forFeature([PlayerEntity]),
-    FootballDataSyncModule,
     TeamCrosswalkModule,
   ],
   controllers: [PlayerController],

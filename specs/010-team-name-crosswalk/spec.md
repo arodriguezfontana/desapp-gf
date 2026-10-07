@@ -43,6 +43,23 @@ Como equipo de desarrollo, quiero poder ejecutar una verificación de cobertura 
 
 ---
 
+### User Story 3 - Tabla persistente de equipos resueltos con escudo garantizado (Priority: P1)
+
+Como sistema de cotización y como catálogo de jugadores, necesito poder obtener el escudo de un equipo dado su nombre de WhoScored con una única consulta a la base de datos, sin recalcular `resolveTeam` en cada request, y con la garantía de que todos los equipos que alguna vez se sincronizaron tienen su escudo persistido.
+
+**Why this priority**: La resolución en memoria de `resolveTeam` por cada request (con carga de standings y excepciones completas) no escala y no garantiza que todos los equipos tengan escudo. Una tabla `teams` convierte el resultado del crosswalk en un dato de primera clase, consultable directamente por `Player.team`.
+
+**Independent Test**: Dado una tabla `teams` con filas cargadas, una consulta por `whoScoredName` devuelve el `Team` correspondiente con su `crestUrl`. Si el nombre no existe en la tabla, devuelve `null`. No requiere lógica de normalización ni carga de standings.
+
+**Acceptance Scenarios**:
+
+1. **Given** que el script de crosswalk corrió exitosamente para un equipo cuyo nombre WhoScored resuelve por normalización o excepción, **When** se consulta la tabla `teams` por ese nombre, **Then** devuelve el equipo con `footballDataTeamId`, `footballDataTeamName`, `leagueCode` y `crestUrl` correctos.
+2. **Given** un `Player` con `team = "Lyon"` y una excepción manual que lo mapea a "Olympique Lyonnais", y el script se ejecutó, **When** el catálogo consulta el escudo del jugador, **Then** devuelve el escudo del Olympique Lyonnais sin recalcular nada en memoria.
+3. **Given** un nombre de equipo WhoScored que no tiene match (ni por normalización ni por excepción), **When** se consulta la tabla `teams` por ese nombre, **Then** devuelve `null` — la tabla no tiene entradas especulativas.
+4. **Given** que se agrega una excepción manual y se re-ejecuta el script, **When** se consulta la tabla `teams`, **Then** el equipo antes sin resolver ahora tiene su fila con escudo.
+
+---
+
 ### Edge Cases
 
 - **Nombre de equipo vacío o nulo desde WhoScored**: la función de resolución devuelve `null` sin lanzar excepción.
@@ -58,13 +75,17 @@ Como equipo de desarrollo, quiero poder ejecutar una verificación de cobertura 
 - **FR-002**: El sistema MUST proveer una función pura de dominio `resolveTeam(whoScoredTeamName: string, standings: Standing[], exceptions: TeamNameException[]): Standing | null` que recibe standings del repositorio existente (feature 007) — no se crea ninguna entidad nueva para este fin. Intenta resolver el equipo en dos pasos: primero compara `normalizeTeamName(whoScoredTeamName)` contra `normalizeTeamName(standing.teamName)` para cada elemento de `standings`; si no hay coincidencia, busca en `exceptions` por `whoScoredRawName` exacto (case-sensitive, exactamente como WhoScored lo devuelve). Devuelve `null` si ningún paso resuelve. Los campos del standing resultante relevantes para el consumidor son `externalTeamId: number` y `teamName: string`.
 - **FR-003**: El sistema MUST proveer una tabla persistente `team_name_exception` con los campos `whoScoredRawName` (clave, string exacto de WhoScored), `footballDataTeamId` (número), `footballDataTeamName` (string) y `league` (una de las 5 ligas soportadas). La tabla MUST comenzar vacía; las entradas se agregan solo cuando se detecta un mismatch real, nunca preventivamente.
 - **FR-004**: El sistema MUST proveer un script ejecutable con `npm run seed:crosswalk` que: (a) consulta el endpoint de standings de Football-Data para las 5 ligas, (b) obtiene los valores distintos de `Player.team` actualmente persistidos, (c) ejecuta `resolveTeam` para cada uno, (d) imprime en consola un resumen con el total de equipos evaluados, cuántos resuelven por normalización y cuántos no, y (e) escribe los nombres sin resolver en `team_crosswalk_unresolved.txt` en la raíz del proyecto. El script MUST NOT escribir en la base de datos.
-- **FR-005**: La función `resolveTeam` MUST NOT exponer ningún endpoint HTTP ni ser invocable desde fuera del sistema. Es exclusivamente de uso interno, consumida por la feature de cotización.
+- **FR-005**: La función `resolveTeam` MUST NOT exponer ningún endpoint HTTP ni ser invocable desde fuera del sistema. Es exclusivamente de uso interno, usada por el script de crosswalk para poblar la tabla `teams`.
 - **FR-006**: El sistema MUST documentar como decisión de diseño explícita la elección de normalización + excepciones manuales por sobre fuzzy matching, incluyendo la justificación: en un universo acotado de ~98 equipos, el fuzzy matching introduce falsos positivos inevitables (ej. "Atletico Madrid" matcheando "Atletico Bilbao"), mientras que la normalización cubre el 90% de casos sin ambigüedad y las excepciones manuales resuelven los restantes de forma explícita y auditable.
+- **FR-007**: El sistema MUST proveer una tabla persistente `teams` con los campos: `id` (uuid, PK), `whoscored_name` (varchar, unique — exactamente como WhoScored lo devuelve), `football_data_team_id` (integer), `football_data_team_name` (varchar), `league_code` (varchar), `crest_url` (varchar, nullable). Esta tabla es el resultado materializado del crosswalk: almacena el mapping WhoScored → Football-Data junto con el escudo, de modo que las consultas por `whoscored_name` sean O(1) sin recalcular `resolveTeam` en cada request.
+- **FR-008**: El script `seed:crosswalk` MUST, además de imprimir el resumen en consola, hacer upsert en la tabla `teams` de todos los equipos que resuelven (por normalización o excepción), utilizando `whoscored_name` como clave de upsert. Los equipos que no resuelven NO se insertan — su ausencia en la tabla indica que requieren intervención manual. El script MUST NOT eliminar filas existentes que ya no aparezcan en el resultado (las excepciones recién agregadas se acumulan en corridas sucesivas).
+- **FR-009**: El servicio que enriquece al jugador con su escudo (`PlayerEnrichmentService`) MUST consultar la tabla `teams` por `whoscored_name = player.team` para obtener el `crestUrl`, en lugar de ejecutar `resolveTeam` en memoria con carga completa de standings y excepciones. Si el nombre no existe en `teams`, devuelve `crestUrl = null`.
 
 ### Key Entities
 
 - **TeamNameException**: excepción manual que mapea un nombre de equipo exacto de WhoScored (`whoScoredRawName`) al equipo correspondiente en Football-Data (`footballDataTeamId`, `footballDataTeamName`, `league`). Persiste en base de datos. Tabla: `team_name_exception`.
-- **Standing**: entidad existente (feature 007). Es la que `resolveTeam` recibe y devuelve — no se crea ninguna entidad nueva. Los campos que usa el crosswalk son `externalTeamId: number` y `teamName: string`.
+- **Standing**: entidad existente (feature 007). Es la que `resolveTeam` recibe como input para resolver el mapping. Los campos que usa el crosswalk son `externalTeamId: number`, `teamName: string` y `crestUrl: string | null`.
+- **Team** *(nuevo)*: resultado materializado del crosswalk. Almacena el mapping WhoScored → Football-Data con el escudo para consulta directa. Campos: `id`, `whoScoredName`, `footballDataTeamId`, `footballDataTeamName`, `leagueCode`, `crestUrl`. Tabla: `teams`. Clave de negocio: `whoScoredName` (único). Poblada por `seed:crosswalk`, consumida por `PlayerEnrichmentService`.
 
 ## Success Criteria *(mandatory)*
 
@@ -73,7 +94,8 @@ Como equipo de desarrollo, quiero poder ejecutar una verificación de cobertura 
 - **SC-001**: Para las 5 ligas soportadas, al menos el 90% de los equipos distintos persistidos desde WhoScored resuelven a su equipo Football-Data correspondiente por normalización sola, sin requerir ninguna excepción manual. (Medible ejecutando `npm run seed:crosswalk` tras la primera sincronización real de datos.)
 - **SC-002**: El 100% de los equipos que no resuelven por normalización quedan documentados en `team_crosswalk_unresolved.txt` tras ejecutar el script de cobertura, sin que el script omita ninguno ni falle en su ejecución.
 - **SC-003**: La función `resolveTeam` es una función pura verificable en tests unitarios sin levantar NestJS ni conectarse a ninguna base de datos ni red.
-- **SC-004**: Agregar una excepción manual a la tabla `team_name_exception` hace que el equipo correspondiente resuelva en la próxima ejecución de `resolveTeam`, sin necesidad de modificar código ni redeployar.
+- **SC-004**: Agregar una excepción manual a la tabla `team_name_exception` y re-ejecutar `seed:crosswalk` hace que el equipo correspondiente aparezca en la tabla `teams` con su escudo, sin necesidad de modificar código ni redeployar.
+- **SC-005**: Tras ejecutar `seed:crosswalk` con 0 equipos sin resolver, todos los jugadores cuyo `Player.team` tiene entrada en la tabla `teams` muestran el escudo de su equipo en el catálogo y en el detalle, sin ninguna llamada adicional a standings ni a `resolveTeam` en runtime.
 
 ## Assumptions
 

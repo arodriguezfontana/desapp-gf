@@ -765,7 +765,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('defaults page=1/pageSize=10, forma de la respuesta con las 4 métricas', function () {",
+                  "pm.test('defaults page=1/pageSize=10, forma de la respuesta con las 4 métricas y crestUrl', function () {",
                   "  const body = pm.response.json();",
                   "  pm.expect(body.page).to.eql(1);",
                   "  pm.expect(body.pageSize).to.eql(10);",
@@ -775,6 +775,7 @@
                   "    ['passesCompleted', 'shots', 'interceptions', 'rating'].forEach((field) => {",
                   "      pm.expect(p).to.have.property(field);",
                   "    });",
+                  "    pm.expect(p).to.have.property('crestUrl');",
                   "  });",
                   "});",
                   "if (pm.response.code === 200 && pm.response.json().items.length > 0) {",
@@ -1458,6 +1459,9 @@
                   "  pm.test('200 OK', function () { pm.response.to.have.status(200); });",
                   "  pm.test('id coincide con el pedido', function () {",
                   "    pm.expect(pm.response.json().id).to.eql(playerId);",
+                  "  });",
+                  "  pm.test('crestUrl está presente en la respuesta (string o null)', function () {",
+                  "    pm.expect(pm.response.json()).to.have.property('crestUrl');",
                   "  });",
                   "}"
                 ]

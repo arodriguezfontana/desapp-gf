@@ -1,9 +1,9 @@
 /**
- * Script de verificación de cobertura del crosswalk WhoScored ↔ Football-Data.
- * No escribe en la base de datos.
+ * Script de crosswalk WhoScored ↔ Football-Data.
+ * Resuelve los equipos de los jugadores contra los standings de Football-Data
+ * y hace upsert en la tabla `teams` con el resultado.
  *
  * Uso: npm run seed:crosswalk (desde backend/)
- *
  * Requiere en .env: DATABASE_URL, FOOTBALL_DATA_API_TOKEN
  */
 import 'dotenv/config';
@@ -15,6 +15,7 @@ import { DataSource } from 'typeorm';
 import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
 import { StandingEntity } from '../src/repositories/competition/entities/standing.entity';
 import { TeamNameExceptionEntity } from '../src/repositories/competition/entities/team-name-exception.entity';
+import { TeamEntity } from '../src/repositories/competition/entities/team.entity';
 import { TeamNameException } from '../src/domain/competition/team-name-exception';
 import { Standing } from '../src/domain/competition/standing';
 import { resolveTeam } from '../src/domain/competition/resolve-team';
@@ -35,7 +36,7 @@ async function fetchStandingsFromApi(token: string): Promise<Standing[]> {
         `${BASE_URL}/competitions/${code}/standings`,
         { headers: { 'X-Auth-Token': token } },
       );
-      const table = (response.data.standings as Array<{ type: string; table: Array<{ team: { id: number; name: string }; position: number; playedGames: number; won: number; draw: number; lost: number; points: number; goalsFor: number; goalsAgainst: number; goalDifference: number; form: string | null }> }>)?.find(
+      const table = (response.data.standings as Array<{ type: string; table: Array<{ team: { id: number; name: string; crest?: string | null }; position: number; playedGames: number; won: number; draw: number; lost: number; points: number; goalsFor: number; goalsAgainst: number; goalDifference: number; form: string | null }> }>)?.find(
         (s) => s.type === 'TOTAL' || s.type === 'REGULAR_SEASON',
       );
       if (table) {
@@ -56,7 +57,7 @@ async function fetchStandingsFromApi(token: string): Promise<Standing[]> {
               goalsAgainst: row.goalsAgainst,
               goalDifference: row.goalDifference,
               form: row.form ?? null,
-              crestUrl: null,
+              crestUrl: row.team.crest ?? null,
             }),
           );
         }
@@ -73,20 +74,14 @@ async function main(): Promise<void> {
   const token = process.env.FOOTBALL_DATA_API_TOKEN;
   const dbUrl = process.env.DATABASE_URL;
 
-  if (!token) {
-    console.error('Falta FOOTBALL_DATA_API_TOKEN en .env');
-    process.exit(1);
-  }
-  if (!dbUrl) {
-    console.error('Falta DATABASE_URL en .env');
-    process.exit(1);
-  }
+  if (!token) { console.error('Falta FOOTBALL_DATA_API_TOKEN en .env'); process.exit(1); }
+  if (!dbUrl) { console.error('Falta DATABASE_URL en .env'); process.exit(1); }
 
   const dataSource = new DataSource({
     type: 'postgres',
     url: dbUrl,
     driver: pg,
-    entities: [PlayerEntity, StandingEntity, TeamNameExceptionEntity],
+    entities: [PlayerEntity, StandingEntity, TeamNameExceptionEntity, TeamEntity],
     synchronize: false,
   });
 
@@ -95,12 +90,13 @@ async function main(): Promise<void> {
   try {
     const playerRepo = dataSource.getRepository(PlayerEntity);
     const exceptionRepo = dataSource.getRepository(TeamNameExceptionEntity);
+    const teamRepo = dataSource.getRepository(TeamEntity);
 
     const [rawPlayers, rawExceptions] = await Promise.all([
       playerRepo
         .createQueryBuilder('p')
         .select('DISTINCT p.team', 'team')
-        .where('p.removed_at IS NULL')
+        .where('p."removedAt" IS NULL')
         .getRawMany<{ team: string }>(),
       exceptionRepo.find(),
     ]);
@@ -122,19 +118,32 @@ async function main(): Promise<void> {
     let resolvedByNormalization = 0;
     let resolvedByException = 0;
     const unresolved: string[] = [];
+    const teamsToUpsert: Partial<TeamEntity>[] = [];
 
-    for (const team of distinctTeams) {
-      const result = resolveTeam(team, standings, exceptions);
-      if (result) {
-        const usedException = exceptions.some((e) => e.whoScoredRawName === team);
+    for (const teamName of distinctTeams) {
+      const standing = resolveTeam(teamName, standings, exceptions);
+      if (standing) {
+        const usedException = exceptions.some((e) => e.whoScoredRawName === teamName);
         if (usedException) {
           resolvedByException++;
         } else {
           resolvedByNormalization++;
         }
+        teamsToUpsert.push({
+          whoScoredName: teamName,
+          footballDataTeamId: standing.externalTeamId,
+          footballDataTeamName: standing.teamName,
+          leagueCode: standing.leagueCode,
+          crestUrl: standing.crestUrl,
+        });
       } else {
-        unresolved.push(team);
+        unresolved.push(teamName);
       }
+    }
+
+    if (teamsToUpsert.length > 0) {
+      await teamRepo.upsert(teamsToUpsert, ['whoScoredName']);
+      console.log(`Upsert en tabla teams: ${teamsToUpsert.length} equipos.\n`);
     }
 
     const total = distinctTeams.length;
@@ -153,7 +162,7 @@ async function main(): Promise<void> {
       fs.writeFileSync(outPath, unresolved.join('\n') + '\n', 'utf8');
       console.log(`\nNombres sin resolver escritos en: ${outPath}`);
     } else {
-      console.log('\nTodos los equipos resueltos. No se generó team_crosswalk_unresolved.txt.');
+      console.log('\nTodos los equipos resueltos.');
     }
   } finally {
     await dataSource.destroy();
