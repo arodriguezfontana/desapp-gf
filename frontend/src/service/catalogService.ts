@@ -9,7 +9,6 @@ export interface GetPlayersParams {
   position?: string;
 }
 
-/** Forma real que devuelve `GET /players` en el backend (no trae `data`/`meta`). */
 interface BackendPlayerListResponse {
   items: Player[];
   total: number;
@@ -29,15 +28,15 @@ export const catalogService = {
       query.append('pageSize', params.pageSize.toString());
     }
 
-    if (params.league && params.league.trim()) {
+    if (params.league?.trim()) {
       query.append('league', params.league.trim());
     }
 
-    if (params.team && params.team.trim()) {
+    if (params.team?.trim()) {
       query.append('team', params.team.trim());
     }
 
-    if (params.position && params.position.trim()) {
+    if (params.position?.trim()) {
       query.append('position', params.position.trim());
     }
 

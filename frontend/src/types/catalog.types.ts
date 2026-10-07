@@ -4,14 +4,9 @@ export type Position = 'GK' | 'DF' | 'MF' | 'FW';
 export interface Player {
   id: string;
   name: string;
-  league: League | string;
+  league: League | (string & {});
   team: string;
-  position: Position | string;
-  passesCompleted: number | null;
-  shots: number | null;
-  interceptions: number | null;
-  rating: number | null;
-  crestUrl?: string | null;
+  position: Position | (string & {});
 }
 
 export interface PlayerListResponseDto {
@@ -47,8 +42,6 @@ const POSITION_LABELS: Record<Position, string> = {
   FW: 'Delantero',
 };
 
-/** Nombre completo en español de una posición; si no es una de las 4 conocidas, la devuelve tal cual. */
 export function getPositionLabel(position: string): string {
   return POSITION_LABELS[position as Position] ?? position;
 }
-

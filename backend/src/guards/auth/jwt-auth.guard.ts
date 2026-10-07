@@ -15,7 +15,7 @@ import { IS_PUBLIC_KEY } from '../public.decorator';
 
 /**
  * Guard global (constitucion, Principio IV). Exige un JWT valido y vigente en
- * todo endpoint que no este marcado @Public(). Sin token, con uno invalido o
+ * endpoints que no este marcado @Public(). Sin token, con uno invalido o
  * vencido, o si el usuario del token ya no existe -> 401 (spec FR-015..FR-019).
  */
 @Injectable()
