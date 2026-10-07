@@ -1,6 +1,30 @@
 <!--
 Sync Impact Report
 ==================
+Version change: 1.8.0 → 1.9.0
+Rationale: MINOR. Dos enmiendas que expanden principios y constraints existentes sin
+redefinir ni eliminar nada:
+  1. Principio IV → Autenticación: nuevo párrafo al final que regula los endpoints de
+     operación de sistema (ApiKeyGuard, lectura desde env, tiempo constante, no log).
+  2. Technology Stack & Constraints → Persistencia: nuevo bullet que exige DECIMAL con
+     precision/scale explícitos para pesos, scores y precios; prohíbe float/double.
+
+Modified principles:
+  - IV. Autenticación (nuevo párrafo de endpoints de operación de sistema con ApiKeyGuard)
+
+Modified sections:
+  - Technology Stack & Constraints → bullet "Persistencia" (nuevo sub-requisito DECIMAL)
+
+Added sections: none
+Removed sections: none
+Renumbered principles: none
+
+Follow-up TODOs: ninguno.
+-->
+
+<!--
+Sync Impact Report (enmienda anterior)
+==================
 Version change: 1.7.0 → 1.8.0
 Rationale: MINOR. Se detectó en la práctica que el frontend podía tener "tests" y aun así
 dejar una capa entera sin ejecutarse nunca: los tests de página mockean `authService`, y
@@ -127,11 +151,20 @@ ni dato personal del usuario MUST loguearse ni persistirse en texto plano, y est
 rige en todas las capas del sistema (Controller, Service, dominio, Repository, Adapter y
 logs), no solo en la de autenticación.
 
+Los endpoints de operación de sistema —operaciones no ligadas a un usuario individual,
+como disparar un recálculo masivo de cotizaciones o una sincronización de datos externos—
+MUST protegerse con `ApiKeyGuard` en lugar de JWT. El API key MUST leerse exclusivamente
+desde variables de entorno, nunca hardcodeado en el código fuente; MUST compararse en
+tiempo constante (p. ej. `timingSafeEqual`) para evitar timing attacks; y MUST NOT
+loguearse en ninguna capa (Controller, Service, dominio, Repository, Adapter ni logs).
+
 **Rationale**: Autenticar con un JWT evita transmitir las credenciales en cada request;
 que el token venza acota en el tiempo el daño si el JWT se filtra; y separar el login del
 alta permite renovar la sesión sin volver a registrarse. El hashing de contraseñas y la
 ausencia de secretos —en logs o en almacenamiento en texto plano— son mínimos de
-seguridad no negociables.
+seguridad no negociables. Separar `ApiKeyGuard` de JWT para operaciones de sistema deja
+claro en la firma del endpoint si se trata de una operación user-scoped o de sistema, y
+extiende el mismo criterio de protección de secretos que ya rige para JWT y contraseñas.
 
 ### V. Auditoría inmutable
 
@@ -284,7 +317,13 @@ constitución:
   nunca invocada directamente desde un componente de UI: centraliza en un solo lugar la
   base URL, los headers y el manejo de errores de red. El testing de componentes se realiza
   con Vitest + React Testing Library.
-- **Persistencia**: PostgreSQL, accedida vía TypeORM.
+- **Persistencia**: PostgreSQL, accedida vía TypeORM. Las columnas que representen pesos
+  de estrategia, scores calculados o precios/valores de token MUST declararse con
+  `type: 'decimal'` en TypeORM con `precision` y `scale` explícitos, nunca como `float`
+  ni `double precision`. Convención de escala:
+  - Pesos de estrategia → `DECIMAL(5,4)`
+  - Score calculado → `DECIMAL(8,6)`
+  - Valor/precio de token → `DECIMAL(10,2)`
 - **Base local**: PostgreSQL levantado con Docker (`docker-compose`).
 - **CI**: los tests de integración y end-to-end MUST correr en CI usando la base efímera
   de Testcontainers (el runner MUST tener Docker disponible); MUST NOT depender de un
@@ -346,4 +385,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.8.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-09-16
+**Version**: 1.9.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-07
