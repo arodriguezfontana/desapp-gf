@@ -135,6 +135,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
               league,
               team,
               position: input.position,
+              matchesPlayed: input.metrics?.matchesPlayed ?? null,
               passesCompleted: input.metrics?.passesCompleted ?? null,
               shots: input.metrics?.shots ?? null,
               interceptions: input.metrics?.interceptions ?? null,
