@@ -7,6 +7,7 @@ export interface Player {
   league: League | string;
   team: string;
   position: Position | string;
+  crestUrl?: string | null;
 }
 
 export interface PlayerListResponseDto {

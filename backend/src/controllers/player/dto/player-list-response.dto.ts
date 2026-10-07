@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PlayerPage } from '../../../domain/player/player-page';
 import { PlayerResponseDto } from './player-response.dto';
 
 export class PlayerListResponseDto {
@@ -15,7 +14,7 @@ export class PlayerListResponseDto {
   @ApiProperty({ example: 10 })
   pageSize: number;
 
-  private constructor(
+  constructor(
     items: PlayerResponseDto[],
     total: number,
     page: number,
@@ -25,18 +24,5 @@ export class PlayerListResponseDto {
     this.total = total;
     this.page = page;
     this.pageSize = pageSize;
-  }
-
-  static fromDomain(
-    result: PlayerPage,
-    page: number,
-    pageSize: number,
-  ): PlayerListResponseDto {
-    return new PlayerListResponseDto(
-      result.items.map((player) => PlayerResponseDto.fromDomain(player)),
-      result.total,
-      page,
-      pageSize,
-    );
   }
 }

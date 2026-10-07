@@ -82,9 +82,19 @@ export const PlayerDetailPage: React.FC = () => {
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black tracking-wider uppercase mb-2">
-            {player.name}
-          </h1>
+          <div className="flex items-center gap-4 mb-2">
+            {player.crestUrl && (
+              <img
+                src={player.crestUrl}
+                alt={player.team}
+                className="w-14 h-14 object-contain drop-shadow-md"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            )}
+            <h1 className="text-3xl sm:text-4xl font-black tracking-wider uppercase">
+              {player.name}
+            </h1>
+          </div>
 
           <p className="text-[#b79753] font-bold text-lg flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#b79753] inline-block"></span>
@@ -104,7 +114,17 @@ export const PlayerDetailPage: React.FC = () => {
             <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-1">
               Club Actual
             </span>
-            <span className="text-base font-black text-[#b79753]">{player.team}</span>
+            <div className="flex items-center gap-2 mt-1">
+              {player.crestUrl && (
+                <img
+                  src={player.crestUrl}
+                  alt={player.team}
+                  className="w-6 h-6 object-contain"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
+              <span className="text-base font-black text-[#b79753]">{player.team}</span>
+            </div>
           </div>
 
           <div className="bg-[#0b3332] p-5 rounded-xl border border-[#1a6866] shadow-md">

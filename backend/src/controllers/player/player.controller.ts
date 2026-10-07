@@ -6,7 +6,7 @@ import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
 import { parseLeague } from '../../domain/player/enums/league';
 import { parsePosition } from '../../domain/player/enums/position';
 import { PlayerFilters } from '../../domain/player/player-filters';
-import { PlayerService } from '../../services/player/player.service';
+import { PlayerEnrichmentService } from '../../services/player/player-enrichment.service';
 import { ListPlayersQueryDto } from './dto/list-players-query.dto';
 import { PlayerListResponseDto } from './dto/player-list-response.dto';
 import { PlayerResponseDto } from './dto/player-response.dto';
@@ -23,7 +23,7 @@ import { PlayerResponseDto } from './dto/player-response.dto';
 @UseGuards(ApiKeyGuard)
 @Controller('players')
 export class PlayerController {
-  constructor(private readonly players: PlayerService) {}
+  constructor(private readonly players: PlayerEnrichmentService) {}
 
   @Get()
   @ApiOperation({
@@ -42,12 +42,19 @@ export class PlayerController {
       position: query.position ? parsePosition(query.position) : undefined,
     };
 
-    const result = await this.players.listPlayers(filters, {
+    const result = await this.players.listPlayersWithCrests(filters, {
       page: query.page,
       pageSize: query.pageSize,
     });
 
-    return PlayerListResponseDto.fromDomain(result, query.page, query.pageSize);
+    return new PlayerListResponseDto(
+      result.items.map(({ player, crestUrl }) =>
+        PlayerResponseDto.fromDomain(player, crestUrl),
+      ),
+      result.total,
+      query.page,
+      query.pageSize,
+    );
   }
 
   @Get(':id')
@@ -56,7 +63,7 @@ export class PlayerController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 404, description: 'No existe un jugador con ese id.' })
   async detail(@Param('id') id: string): Promise<PlayerResponseDto> {
-    const player = await this.players.getPlayerById(id);
-    return PlayerResponseDto.fromDomain(player);
+    const { player, crestUrl } = await this.players.getPlayerByIdWithCrest(id);
+    return PlayerResponseDto.fromDomain(player, crestUrl);
   }
 }

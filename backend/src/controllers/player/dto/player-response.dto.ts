@@ -34,6 +34,13 @@ export class PlayerResponseDto {
   @ApiProperty({ example: 7.31, nullable: true })
   rating: number | null;
 
+  @ApiProperty({
+    example: 'https://crests.football-data.org/65.png',
+    nullable: true,
+    description: 'URL del escudo del equipo; null si no se pudo resolver el cruce con Football-Data.',
+  })
+  crestUrl: string | null;
+
   private constructor(props: {
     id: string;
     name: string;
@@ -44,6 +51,7 @@ export class PlayerResponseDto {
     shots: number | null;
     interceptions: number | null;
     rating: number | null;
+    crestUrl: string | null;
   }) {
     this.id = props.id;
     this.name = props.name;
@@ -54,9 +62,10 @@ export class PlayerResponseDto {
     this.shots = props.shots;
     this.interceptions = props.interceptions;
     this.rating = props.rating;
+    this.crestUrl = props.crestUrl;
   }
 
-  static fromDomain(player: Player): PlayerResponseDto {
+  static fromDomain(player: Player, crestUrl: string | null = null): PlayerResponseDto {
     return new PlayerResponseDto({
       id: player.id,
       name: player.name,
@@ -67,6 +76,7 @@ export class PlayerResponseDto {
       shots: player.shots,
       interceptions: player.interceptions,
       rating: player.rating,
+      crestUrl,
     });
   }
 }
