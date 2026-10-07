@@ -30,6 +30,35 @@ function getPageNumbers(current: number, total: number): PageItem[] {
   return pages;
 }
 
+const PageButton: React.FC<{
+  page: number;
+  isActive: boolean;
+  isLoading: boolean;
+  onPageChange: (page: number) => void;
+}> = ({ page, isActive, isLoading, onPageChange }) => {
+  let className: string;
+  if (isActive) {
+    className = 'bg-[#b79753] text-[#0b3332] border-[#b79753] shadow-md shadow-[#b79753]/30';
+  } else if (isLoading) {
+    className = 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed';
+  } else {
+    className = 'bg-[#0b3332] text-gray-300 border-[#1a6866] hover:border-[#b79753]/50 hover:text-[#b79753]';
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={isLoading}
+      onClick={() => onPageChange(page)}
+      aria-label={`Página ${page}`}
+      aria-current={isActive ? 'page' : undefined}
+      className={`min-w-[2rem] px-2 py-2 text-xs font-black rounded-xl border transition-all cursor-pointer ${className}`}
+    >
+      {page}
+    </button>
+  );
+};
+
 export const PaginationControls: React.FC<PaginationControlsProps> = ({
   currentPage,
   totalPages,
@@ -71,23 +100,13 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               &hellip;
             </span>
           ) : (
-            <button
+            <PageButton
               key={p}
-              type="button"
-              disabled={isLoading}
-              onClick={() => onPageChange(p)}
-              aria-label={`Página ${p}`}
-              aria-current={p === currentPage ? 'page' : undefined}
-              className={`min-w-[2rem] px-2 py-2 text-xs font-black rounded-xl border transition-all cursor-pointer ${
-                p === currentPage
-                  ? 'bg-[#b79753] text-[#0b3332] border-[#b79753] shadow-md shadow-[#b79753]/30'
-                  : isLoading
-                    ? 'bg-[#0b3332] text-slate-500 border-[#1a6866] cursor-not-allowed'
-                    : 'bg-[#0b3332] text-gray-300 border-[#1a6866] hover:border-[#b79753]/50 hover:text-[#b79753]'
-              }`}
-            >
-              {p}
-            </button>
+              page={p}
+              isActive={p === currentPage}
+              isLoading={isLoading}
+              onPageChange={onPageChange}
+            />
           ),
         )}
 
