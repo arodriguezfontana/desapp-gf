@@ -71,6 +71,22 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
 
       </div>
 
+      {/* Mini stats row */}
+      <div className="px-6 pb-4 flex items-center gap-4">
+        {[
+          { label: 'Goles', value: player.goals },
+          { label: 'Asist.', value: player.assists },
+          { label: 'Amarillas', value: player.yellowCards },
+        ].map(({ label, value }) => (
+          <div key={label} className="text-center">
+            <span className="block text-[9px] font-black uppercase tracking-wide text-gray-500 leading-tight">{label}</span>
+            <span className="text-sm font-black text-gray-200">
+              {value != null ? value : '—'}
+            </span>
+          </div>
+        ))}
+      </div>
+
       {/* Card Action Footer */}
       <div className="bg-[#0b3332] px-6 py-3.5 border-t border-[#1a6866] flex items-center justify-between group-hover:border-[#b79753]/30 transition-colors">
         <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
