@@ -26,6 +26,7 @@ const UPSERT_OVERWRITE_COLUMNS = [
   'league',
   'team',
   'position',
+  'matchesPlayed',
   'passesCompleted',
   'shots',
   'interceptions',

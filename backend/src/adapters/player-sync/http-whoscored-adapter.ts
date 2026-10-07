@@ -290,6 +290,7 @@ export class HttpWhoScoredAdapter implements WhoScoredAdapter {
       const appearances = stats.GameStarted + stats.SubOn;
       return {
         metrics: {
+          matchesPlayed: appearances,
           passesCompleted: stats.AccuratePasses / appearances,
           shots: stats.TotalShots / appearances,
           interceptions: stats.Interceptions / appearances,

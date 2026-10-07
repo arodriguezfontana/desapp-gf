@@ -74,6 +74,7 @@ describe('PlayerSyncService — startManualRun (integración, spec 009)', () => 
         name: 'Jugador Int',
         rawPosition: 'GK',
         metrics: {
+          matchesPlayed: 15,
           passesCompleted: 5,
           shots: 1,
           interceptions: 0.2,

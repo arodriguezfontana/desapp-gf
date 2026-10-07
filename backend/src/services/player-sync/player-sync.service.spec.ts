@@ -18,6 +18,7 @@ const rawPlayer = (
   name: 'Jugador',
   rawPosition: 'GK',
   metrics: {
+    matchesPlayed: 20,
     passesCompleted: 10,
     shots: 1,
     interceptions: 0.5,
@@ -108,6 +109,7 @@ describe('PlayerSyncService', () => {
           name: 'Jugador',
           position: Position.GK,
           metrics: {
+            matchesPlayed: 20,
             passesCompleted: 10,
             shots: 1,
             interceptions: 0.5,

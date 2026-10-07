@@ -2,6 +2,7 @@ import { Position } from './enums/position';
 
 /** Métricas de rendimiento y estadísticas de la temporada en curso. */
 export interface PlayerMetrics {
+  matchesPlayed: number;
   passesCompleted: number;
   shots: number;
   interceptions: number;

@@ -7,6 +7,7 @@ export interface Player {
   league: League | (string & {});
   team: string;
   position: Position | (string & {});
+  matchesPlayed?: number | null;
   passesCompleted: number | null;
   shots: number | null;
   interceptions: number | null;
