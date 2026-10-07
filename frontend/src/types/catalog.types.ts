@@ -7,6 +7,10 @@ export interface Player {
   league: League | string;
   team: string;
   position: Position | string;
+  passesCompleted: number | null;
+  shots: number | null;
+  interceptions: number | null;
+  rating: number | null;
   crestUrl?: string | null;
 }
 

@@ -42,7 +42,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
         </div>
 
         {/* Player Avatar & Details Header */}
-        <div className="flex items-center gap-4 my-2">
+        <div className="flex items-start gap-4 my-2">
           <div className="w-12 h-12 rounded-full bg-[#0b3332] border-2 border-[#b79753]/40 flex items-center justify-center shadow-inner group-hover:border-[#b79753] group-hover:scale-105 transition-all overflow-hidden shrink-0">
             {player.crestUrl ? (
               <img
