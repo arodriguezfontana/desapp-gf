@@ -14,6 +14,7 @@ import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error'
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { ApiKeyAlreadyRevokedError } from '../../domain/api-key/errors/api-key-already-revoked.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
+import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
 
 interface ErrorBody {
   statusCode: number;
@@ -21,6 +22,8 @@ interface ErrorBody {
   message: string | string[];
   timestamp: string;
   path: string;
+  /** Solo en el 409 de sincronización cuando la feature tiene estado de corrida (spec 009, FR-015). */
+  runId?: string;
 }
 
 const REASON_PHRASES: Record<number, string> = {
@@ -46,13 +49,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const { status, message } = this.resolve(exception);
+    const { status, message, runId } = this.resolve(exception);
     const body: ErrorBody = {
       statusCode: status,
       error: REASON_PHRASES[status] ?? 'Error',
       message,
       timestamp: new Date().toISOString(),
       path: request.url,
+      ...(runId !== undefined && { runId }),
     };
 
     if (status >= 500) {
@@ -70,6 +74,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private resolve(exception: unknown): {
     status: number;
     message: string | string[];
+    runId?: string;
   } {
     if (
       exception instanceof InvalidEmailError ||
@@ -91,6 +96,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       exception instanceof ApiKeyAlreadyRevokedError
     ) {
       return { status: HttpStatus.CONFLICT, message: exception.message };
+    }
+
+    if (exception instanceof SyncInProgressError) {
+      return {
+        status: HttpStatus.CONFLICT,
+        message: exception.message,
+        runId: exception.runId,
+      };
     }
 
     if (exception instanceof HttpException) {

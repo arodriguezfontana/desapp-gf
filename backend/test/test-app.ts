@@ -1,10 +1,15 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { UserEntity } from '../src/repositories/auth/entities/user.entity';
 import { runPlayerCatalogMigrations } from '../src/database/run-player-catalog-migrations';
 import { createGlobalValidationPipe } from '../src/shared/validation/global-validation-pipe';
+
+export interface ProviderOverride {
+  token: string | symbol | Type<unknown>;
+  useValue: unknown;
+}
 
 export interface TestContext {
   app: INestApplication;
@@ -14,10 +19,16 @@ export interface TestContext {
 }
 
 /** Levanta la app real (misma config que producción) para los tests e2e. */
-export async function createTestApp(): Promise<TestContext> {
-  const moduleRef = await Test.createTestingModule({
+export async function createTestApp(overrides?: ProviderOverride[]): Promise<TestContext> {
+  let builder = Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  });
+
+  for (const { token, useValue } of overrides ?? []) {
+    builder = builder.overrideProvider(token).useValue(useValue);
+  }
+
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication();
   app.useGlobalPipes(createGlobalValidationPipe());

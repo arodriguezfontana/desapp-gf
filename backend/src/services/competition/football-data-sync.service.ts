@@ -11,6 +11,11 @@ import {
 import { classifyMatchStatus } from '../../domain/competition/match-status-classifier';
 import { Match } from '../../domain/competition/match';
 import { Standing } from '../../domain/competition/standing';
+import {
+  FootballDataSyncSummary,
+  LeagueSyncResult,
+} from '../../domain/competition/sync-summary';
+import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
 
 export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
 
@@ -18,6 +23,7 @@ export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
 export class FootballDataSyncService {
   private readonly logger = new Logger(FootballDataSyncService.name);
   private requestDelayMs = 7000;
+  private isRunning = false;
 
   constructor(
     @Inject(FOOTBALL_DATA_ADAPTER)
@@ -39,42 +45,85 @@ export class FootballDataSyncService {
   }
 
   /**
-   * `waitForCompletion: true`: mismo criterio que `PlayerSyncService.sync`
-   * (006-whoscored-catalog-sync) — evita que el scheduler dispare una corrida
-   * nueva mientras la anterior sigue corriendo. Verificado en la práctica: sin
-   * este guard, corridas superpuestas contra Football-Data pisan el delay de
-   * ~7s entre requests y disparan 429 (Too Many Requests) por exceder el
-   * límite de 10 req/min del plan free.
+   * Disparo manual sincrónico. Comprueba el lock, lo toma, corre la sincronización
+   * y devuelve el resumen. Lanza `SyncInProgressError()` (sin runId, Football-Data
+   * no tiene estado de corrida) si ya hay una corrida en curso.
    */
-  @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
-  async handleCron(): Promise<void> {
-    this.logger.log('Starting scheduled Football-Data synchronization...');
-    await this.syncAllLeagues();
-    this.logger.log('Scheduled Football-Data synchronization finished.');
-  }
-
-  async syncAllLeagues(): Promise<void> {
-    // Secuencial a propósito, no un descuido: el plan free de Football-Data.org
-    // limita a 10 req/min. Disparar las 5 ligas en paralelo (sin el delay entre
-    // cada request) agotaría ese límite y dispararía 429 — mismo criterio que
-    // el `requestDelayMs` ya documentado en `handleCron`.
-    for (const leagueCode of TARGET_LEAGUES) {
-      await this.syncStandingsForLeague(leagueCode); // NOSONAR
-      await this.delay(); // NOSONAR
-
-      await this.syncMatchesForLeague(leagueCode); // NOSONAR
-      await this.delay(); // NOSONAR
+  async triggerManualRun(): Promise<FootballDataSyncSummary> {
+    if (this.isRunning) {
+      throw new SyncInProgressError();
+    }
+    this.isRunning = true;
+    try {
+      return await this.syncAllLeagues();
+    } finally {
+      this.isRunning = false;
     }
   }
 
-  async syncStandingsForLeague(leagueCode: string): Promise<void> {
+  /**
+   * `waitForCompletion: true`: evita que el scheduler dispare una corrida nueva
+   * mientras la anterior sigue corriendo. Si el lock manual ya está tomado,
+   * se salta esta ejecución y loguea una advertencia (FR-015).
+   */
+  @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
+  async handleCron(): Promise<void> {
+    if (this.isRunning) {
+      this.logger.warn(
+        'El @Cron de Football-Data se salta porque ya hay una corrida en curso (spec 009, FR-015).',
+      );
+      return;
+    }
+    this.isRunning = true;
+    try {
+      this.logger.log('Starting scheduled Football-Data synchronization...');
+      await this.syncAllLeagues();
+      this.logger.log('Scheduled Football-Data synchronization finished.');
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  async syncAllLeagues(): Promise<FootballDataSyncSummary> {
+    // Secuencial a propósito, no un descuido: el plan free de Football-Data.org
+    // limita a 10 req/min. Disparar las 5 ligas en paralelo (sin el delay entre
+    // cada request) agotaría ese límite y dispararía 429.
+    const leagues: LeagueSyncResult[] = [];
+
+    for (const leagueCode of TARGET_LEAGUES) {
+      const standingsResult = await this.syncStandingsForLeague(leagueCode); // NOSONAR
+      await this.delay(); // NOSONAR
+
+      const matchesResult = await this.syncMatchesForLeague(leagueCode); // NOSONAR
+      await this.delay(); // NOSONAR
+
+      const failedSteps: ('standings' | 'matches')[] = [];
+      if (standingsResult.failed) failedSteps.push('standings');
+      if (matchesResult.failed) failedSteps.push('matches');
+
+      leagues.push({
+        leagueCode,
+        standingsSynced: standingsResult.synced,
+        matchesSynced: matchesResult.synced,
+        failedSteps,
+      });
+    }
+
+    const failedLeagues = leagues
+      .filter((l) => l.failedSteps.length > 0)
+      .map((l) => l.leagueCode);
+
+    return { leagues, failedLeagues };
+  }
+
+  async syncStandingsForLeague(leagueCode: string): Promise<{ synced: number; failed: boolean }> {
     try {
       this.logger.log(`Fetching standings for league ${leagueCode}...`);
       const rows = await this.adapter.fetchStandings(leagueCode);
 
       if (rows.length === 0) {
         this.logger.log(`No standings data received for league ${leagueCode}`);
-        return;
+        return { synced: 0, failed: false };
       }
 
       const currentYear = new Date().getFullYear();
@@ -100,21 +149,23 @@ export class FootballDataSyncService {
 
       await this.standingRepository.upsertStandings(standings);
       this.logger.log(`Successfully synchronized ${standings.length} standings for ${leagueCode}`);
+      return { synced: standings.length, failed: false };
     } catch (error) {
       this.logger.error(
         `Error synchronizing standings for league ${leagueCode}: ${error instanceof Error ? error.message : String(error)}`,
       );
+      return { synced: 0, failed: true };
     }
   }
 
-  async syncMatchesForLeague(leagueCode: string): Promise<void> {
+  async syncMatchesForLeague(leagueCode: string): Promise<{ synced: number; failed: boolean }> {
     try {
       this.logger.log(`Fetching matches for league ${leagueCode}...`);
       const rawMatches = await this.adapter.fetchMatches(leagueCode);
 
       if (rawMatches.length === 0) {
         this.logger.log(`No matches data received for league ${leagueCode}`);
-        return;
+        return { synced: 0, failed: false };
       }
 
       const matches: Match[] = [];
@@ -150,11 +201,13 @@ export class FootballDataSyncService {
           `Successfully synchronized ${matches.length} matches (filtered from ${rawMatches.length}) for ${leagueCode}`,
         );
       }
+
+      return { synced: matches.length, failed: false };
     } catch (error) {
       this.logger.error(
         `Error synchronizing matches for league ${leagueCode}: ${error instanceof Error ? error.message : String(error)}`,
       );
+      return { synced: 0, failed: true };
     }
   }
 }
-

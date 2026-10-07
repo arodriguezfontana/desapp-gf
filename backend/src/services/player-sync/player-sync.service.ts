@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { randomUUID } from 'node:crypto';
 import { WHOSCORED_ADAPTER } from '../../modules/player-sync/player-sync.constants';
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import {
@@ -12,30 +13,29 @@ import { computePlayersToRemove } from '../../domain/player/team-roster-sync';
 import { mapWhoScoredPosition } from '../../domain/player/whoscored-position-mapping';
 import { PlayerSyncInput } from '../../domain/player/player-sync-input';
 import { PlayerRepository } from '../../repositories/player/player.repository';
+import {
+  SyncFailedUnit,
+  SyncRunState,
+  WhoScoredSyncSummary,
+} from '../../domain/player/sync-run';
+import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
+
+const MAX_RETAINED_RUNS = 20;
+const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error inesperado.';
 
 /**
  * Sincroniza el catálogo con datos reales de WhoScored (006-whoscored-catalog-sync).
- * No expuesto a clientes (FR-008, FR-017): sólo lo dispara el scheduler
- * (`@Cron`, ver `player-sync.module.ts`). Nunca lo importa `PlayerService`
- * ni `PlayerController` (verificado por `architecture.spec.ts`).
- *
- * Éxito/fracaso en tres niveles independientes, ninguno se propaga a los
- * demás (FR-014, research.md §1 — "todo-o-nada" acotado a la unidad que
- * falla, no a la corrida completa):
- * - **Liga**: si `fetchLeagueTeams` falla, se saltea sólo esa liga.
- * - **Equipo**: si no hay un jugador semilla conocido para el equipo, o si
- *   `fetchTeamRoster` falla, se saltea sólo ese equipo — el upsert/baja de
- *   ese equipo (`applyTeamRosterSync`) es una única transacción atómica
- *   (FR-016).
- * - **Jugador**: un código de posición no reconocido (FR-012/013) o una
- *   falla puntual de la página de estadísticas (FR-018) no hacen fallar a su
- *   equipo; ambos casos generan una entrada en el log de revisión manual,
- *   con motivos distintos (spec, Key Entities).
+ * Spec 009 agrega el disparo manual: `startManualRun()` / `getRun()`, lock en memoria
+ * (`activeRunId`) y registro de corridas (`runs`). El método `sync()` del `@Cron` conserva
+ * su firma `Promise<void>` para no romper los tests existentes.
  */
 @Injectable()
 export class PlayerSyncService {
   private readonly logger = new Logger(PlayerSyncService.name);
   private readonly manualReviewLogger = new Logger('PlayerSyncManualReview');
+
+  private activeRunId: string | null = null;
+  private readonly runs = new Map<string, SyncRunState>();
 
   constructor(
     @Inject(WHOSCORED_ADAPTER) private readonly whoScored: WhoScoredAdapter,
@@ -43,25 +43,98 @@ export class PlayerSyncService {
   ) {}
 
   /**
-   * Frecuencia semanal (research.md §7 de 006-whoscored-catalog-sync).
-   * `waitForCompletion: true` es defensa en profundidad, no la solución de
-   * fondo: le pide al scheduler que nunca dispare una corrida nueva mientras
-   * la anterior sigue corriendo. La solución de fondo es que
-   * `HttpWhoScoredAdapter` ya no tiene ningún estado de instancia entre
-   * corridas (`tournamentId`, el jugador semilla de un equipo viajan acá
-   * como variables locales de esta misma invocación de `sync()`, nunca
-   * guardados en el Adapter) — así que aunque dos corridas llegaran a
-   * solaparse (dos instancias del scheduler, un `sync()` disparado a mano en
-   * paralelo, etc.), no hay ningún dato compartido entre ellas que puedan
-   * pisarse.
+   * Comprueba el lock y, si está libre, genera un runId, registra la corrida
+   * y la arranca en background. Lanza `SyncInProgressError(activeRunId)` si el lock
+   * ya está tomado.
+   */
+  startManualRun(): string {
+    if (this.activeRunId !== null) {
+      throw new SyncInProgressError(this.activeRunId);
+    }
+    const runId = randomUUID();
+    this.activeRunId = runId;
+    this.runs.set(runId, {
+      runId,
+      status: 'running',
+      trigger: 'manual',
+      startedAt: new Date(),
+    });
+    this.evictOldRuns();
+    // Arrancar en background; el caller recibe el runId de inmediato.
+    void this.runSyncAndRecord(runId, 'manual');
+    return runId;
+  }
+
+  /** Devuelve el estado de una corrida, o undefined si no existe / fue descartada. */
+  getRun(runId: string): SyncRunState | undefined {
+    return this.runs.get(runId);
+  }
+
+  /**
+   * Frecuencia semanal. Conserva la firma `Promise<void>` para no romper los tests
+   * existentes (D1). Si el lock está tomado, loguea y retorna sin lanzar (FR-015).
    */
   @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async sync(): Promise<void> {
-    // Las dos awaits de este método son secuenciales a propósito, no un
-    // descuido: paralelizar ligas o equipos dispararía ráfagas de requests
-    // concurrentes contra WhoScored, justo lo que `HttpWhoScoredAdapter` evita
-    // imitando el comportamiento de un único browser real navegando de a una
-    // página por vez (ver el comentario de ese Adapter sobre `got-scraping`).
+    if (this.activeRunId !== null) {
+      this.logger.warn(
+        'El @Cron de WhoScored se salta porque ya hay una corrida en curso (spec 009, FR-015).',
+      );
+      return;
+    }
+    const runId = randomUUID();
+    this.activeRunId = runId;
+    this.runs.set(runId, {
+      runId,
+      status: 'running',
+      trigger: 'cron',
+      startedAt: new Date(),
+    });
+    this.evictOldRuns();
+    await this.runSyncAndRecord(runId, 'cron');
+  }
+
+  // ---- Lógica interna -------------------------------------------------------
+
+  private async runSyncAndRecord(
+    runId: string,
+    trigger: 'manual' | 'cron',
+  ): Promise<void> {
+    const summary: WhoScoredSyncSummary = {
+      teamsSynced: 0,
+      playersSynced: 0,
+      failedUnits: [],
+    };
+    try {
+      await this.executeSync(summary);
+      this.runs.set(runId, {
+        runId,
+        status: 'completed',
+        trigger,
+        startedAt: this.runs.get(runId)!.startedAt,
+        finishedAt: new Date(),
+        summary,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Corrida ${runId} abortada por error inesperado.`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      this.runs.set(runId, {
+        runId,
+        status: 'failed',
+        trigger,
+        startedAt: this.runs.get(runId)!.startedAt,
+        finishedAt: new Date(),
+        summary,
+        errorMessage: FATAL_ERROR_MESSAGE,
+      });
+    } finally {
+      this.activeRunId = null;
+    }
+  }
+
+  private async executeSync(summary: WhoScoredSyncSummary): Promise<void> {
     for (const league of Object.values(League)) {
       let leagueTeams: Awaited<ReturnType<WhoScoredAdapter['fetchLeagueTeams']>>;
       try {
@@ -71,16 +144,23 @@ export class PlayerSyncService {
           `No se pudo obtener la lista de equipos de ${league}; se saltea esta liga en esta corrida.`,
           this.stackOf(error),
         );
+        summary.failedUnits.push({ league, reason: 'league-fetch-failed' });
         continue;
       }
 
       for (const team of leagueTeams.teams) {
-        await this.syncTeam( // NOSONAR
+        const result = await this.syncTeam( // NOSONAR
           league,
           team,
           leagueTeams.tournamentId,
           leagueTeams.seedPlayerByTeam,
         );
+        if (result.failed) {
+          summary.failedUnits.push(result.failed);
+        } else {
+          summary.teamsSynced++;
+          summary.playersSynced += result.playersSynced;
+        }
       }
     }
   }
@@ -90,13 +170,13 @@ export class PlayerSyncService {
     team: WhoScoredTeamRef,
     tournamentId: number,
     seedPlayerByTeam: Map<string, string>,
-  ): Promise<void> {
+  ): Promise<{ failed?: SyncFailedUnit; playersSynced: number }> {
     const seedPlayerId = seedPlayerByTeam.get(team.externalTeamId);
     if (!seedPlayerId) {
       this.logger.error(
         `No se encontró un jugador semilla para el equipo ${team.team} (${league}); se saltea este equipo en esta corrida.`,
       );
-      return;
+      return { failed: { league, team: team.team, reason: 'no-seed-player' }, playersSynced: 0 };
     }
 
     let roster: Awaited<ReturnType<WhoScoredAdapter['fetchTeamRoster']>>;
@@ -111,7 +191,7 @@ export class PlayerSyncService {
         `No se pudo obtener el plantel de ${team.team} (${league}); se saltea este equipo en esta corrida.`,
         this.stackOf(error),
       );
-      return;
+      return { failed: { league, team: team.team, reason: 'roster-fetch-failed' }, playersSynced: 0 };
     }
 
     const upserts = this.buildSyncInputs(roster, team, league);
@@ -131,14 +211,10 @@ export class PlayerSyncService {
       upserts,
       removeExternalIds,
     );
+
+    return { playersSynced: upserts.length };
   }
 
-  /**
-   * Traduce el plantel crudo de WhoScored a `PlayerSyncInput[]`, aplicando las
-   * reglas de exclusión/logging de revisión manual: un código de posición no
-   * reconocido excluye al jugador de esta corrida (FR-012/FR-013); una falla
-   * puntual de métricas no lo excluye, pero igual se loguea (FR-018).
-   */
   private buildSyncInputs(
     roster: WhoScoredRawPlayer[],
     team: WhoScoredTeamRef,
@@ -179,6 +255,20 @@ export class PlayerSyncService {
     }
 
     return upserts;
+  }
+
+  private evictOldRuns(): void {
+    if (this.runs.size <= MAX_RETAINED_RUNS) return;
+    // Descartar la entrada terminada más vieja (nunca la que está running)
+    let oldestKey: string | undefined;
+    let oldestTime = Infinity;
+    for (const [key, state] of this.runs) {
+      if (state.status !== 'running' && state.startedAt.getTime() < oldestTime) {
+        oldestTime = state.startedAt.getTime();
+        oldestKey = key;
+      }
+    }
+    if (oldestKey) this.runs.delete(oldestKey);
   }
 
   private stackOf(error: unknown): string | undefined {
