@@ -10,6 +10,7 @@ describe('PlayerDetailPage', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValue(null);
   });
 
   it('muestra aviso si no existe ApiKey guardada', () => {
