@@ -15,6 +15,10 @@ import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.
 import { ApiKeyAlreadyRevokedError } from '../../domain/api-key/errors/api-key-already-revoked.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
+import { InvalidStrategyWeightsError } from '../../domain/quotation/errors/invalid-strategy-weights.error';
+import { NoActiveStrategyError } from '../../domain/quotation/errors/no-active-strategy.error';
+import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
+import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 
 interface ErrorBody {
   statusCode: number;
@@ -32,6 +36,7 @@ const REASON_PHRASES: Record<number, string> = {
   403: 'Forbidden',
   404: 'Not Found',
   409: 'Conflict',
+  422: 'Unprocessable Entity',
   500: 'Internal Server Error',
 };
 
@@ -104,6 +109,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message: exception.message,
         runId: exception.runId,
       };
+    }
+
+    if (exception instanceof RecalculationInProgressError) {
+      return { status: HttpStatus.CONFLICT, message: exception.message };
+    }
+
+    if (
+      exception instanceof InvalidStrategyWeightsError ||
+      exception instanceof NoActiveStrategyError
+    ) {
+      return { status: HttpStatus.UNPROCESSABLE_ENTITY, message: exception.message };
+    }
+
+    if (exception instanceof StrategyNotFoundError) {
+      return { status: HttpStatus.NOT_FOUND, message: exception.message };
     }
 
     if (exception instanceof HttpException) {

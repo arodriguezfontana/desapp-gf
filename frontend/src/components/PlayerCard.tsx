@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { getPositionLabel, type Player } from '../types/catalog.types';
+import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
 
 interface PlayerCardProps {
   player: Player;
+  quote?: PlayerQuote | null;
 }
 
-export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
+export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
   const getPositionBadgeColor = (pos: string) => {
     switch (pos) {
       case 'GK':
@@ -86,6 +87,19 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
           </div>
         ))}
       </div>
+
+      {/* Valor del token */}
+      {quote != null ? (
+        <div className="mx-6 mb-3 bg-[#b79753]/10 border border-[#b79753]/30 rounded-xl px-3 py-2 flex items-center justify-between">
+          <span className="text-[9px] font-black uppercase tracking-widest text-[#b79753]/70">Valor token</span>
+          <span className="text-sm font-black text-[#b79753]">{quote.value.toFixed(2)} <span className="text-[9px] font-bold text-[#b79753]/60">cr.</span></span>
+        </div>
+      ) : (
+        <div className="mx-6 mb-3 rounded-xl px-3 py-2 flex items-center justify-between opacity-40">
+          <span className="text-[9px] font-black uppercase tracking-widest text-gray-600">Valor token</span>
+          <span className="text-xs font-bold text-gray-600">—</span>
+        </div>
+      )}
 
       {/* Card Action Footer */}
       <div className="bg-[#0b3332] px-6 py-3.5 border-t border-[#1a6866] flex items-center justify-between group-hover:border-[#b79753]/30 transition-colors">

@@ -32,6 +32,15 @@ export interface PlayerListResponseDto {
   };
 }
 
+export interface PlayerQuote {
+  id: string;
+  playerId: string;
+  strategyId: string;
+  score: number;
+  value: number;
+  calculatedAt: string;
+}
+
 export interface CatalogFilters {
   league?: string;
   team?: string;

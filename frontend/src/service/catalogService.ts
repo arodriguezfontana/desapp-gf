@@ -1,5 +1,5 @@
 import { httpClient } from './httpClient';
-import type { Player, PlayerListResponseDto } from '../types/catalog.types';
+import type { Player, PlayerListResponseDto, PlayerQuote } from '../types/catalog.types';
 
 export interface GetPlayersParams {
   page?: number;
@@ -62,5 +62,13 @@ export const catalogService = {
 
   async getPlayerById(id: string): Promise<Player> {
     return httpClient.get<Player>(`/players/${id}`, { useApiKey: true });
+  },
+
+  async getLatestQuoteByPlayerId(playerId: string): Promise<PlayerQuote | null> {
+    try {
+      return await httpClient.get<PlayerQuote>(`/quotes/player/${playerId}`, { useApiKey: true });
+    } catch {
+      return null;
+    }
   },
 };

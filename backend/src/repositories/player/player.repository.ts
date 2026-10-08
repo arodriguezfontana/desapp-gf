@@ -31,6 +31,13 @@ export interface PlayerRepository {
   findActiveExternalIdsByTeam(league: League, team: string): Promise<string[]>;
 
   /**
+   * Todos los jugadores vigentes (`removedAt IS NULL`) sin paginación.
+   * Usado por QuotationService para recalcular cotizaciones de todo el catálogo
+   * (012-valuation-strategies, research.md §4).
+   */
+  findAllActive(): Promise<Player[]>;
+
+  /**
    * Aplica, en una única transacción, el resultado de sincronizar un equipo
    * puntual (research.md §1: "todo-o-nada" acotado a esta unidad): upsert por
    * `externalId` de `upserts` (reactivando `removedAt = NULL` si el jugador

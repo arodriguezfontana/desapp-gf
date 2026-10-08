@@ -82,6 +82,11 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
     return { items: entities.map((e) => this.mapper.toDomain(e)), total };
   }
 
+  async findAllActive(): Promise<Player[]> {
+    const entities = await this.repo.find({ where: { removedAt: IsNull() } });
+    return entities.map((e) => this.mapper.toDomain(e));
+  }
+
   async findById(id: string): Promise<Player | null> {
     try {
       const entity = await this.repo.findOne({
