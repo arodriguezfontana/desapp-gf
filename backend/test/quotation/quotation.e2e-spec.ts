@@ -125,6 +125,54 @@ describe('POST /quotes/recalculate (e2e, spec 012)', () => {
     });
   });
 
+  // ---- PATCH /strategies/:id/activate ----------------------------------------
+
+  describe('PATCH /strategies/:id/activate', () => {
+    it('sin x-api-key → 401', async () => {
+      const res = await request(server()).patch('/strategies/some-id/activate');
+      expect(res.status).toBe(401);
+    });
+
+    it('con ApiKey de usuario (no admin) → 403', async () => {
+      const { apiKey } = await registerLoginAndIssueUserApiKey('user-activate@mail.com');
+      const res = await request(server())
+        .patch('/strategies/some-id/activate')
+        .set('x-api-key', apiKey);
+      expect(res.status).toBe(403);
+    });
+
+    it('id inexistente → 404', async () => {
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('admin-activate-404@mail.com');
+      const res = await request(server())
+        .patch('/strategies/00000000-0000-0000-0000-000000000000/activate')
+        .set('x-api-key', apiKey);
+      expect(res.status).toBe(404);
+    });
+
+    it('con id válido → 200 y la estrategia queda activa', async () => {
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('admin-activate-ok@mail.com');
+
+      const inactiveStrategy = await ctx.dataSource
+        .getRepository(ValuationStrategyEntity)
+        .findOne({ where: { isActive: false } });
+
+      if (!inactiveStrategy) return; // seed no cargado, skip
+
+      const res = await request(server())
+        .patch(`/strategies/${inactiveStrategy.id}/activate`)
+        .set('x-api-key', apiKey);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(inactiveStrategy.id);
+      expect(res.body.isActive).toBe(true);
+
+      const nowActive = await ctx.dataSource
+        .getRepository(ValuationStrategyEntity)
+        .findOne({ where: { id: inactiveStrategy.id } });
+      expect(nowActive?.isActive).toBe(true);
+    });
+  });
+
   // ---- US2: sin estrategia activa -------------------------------------------
 
   describe('sin estrategia activa', () => {

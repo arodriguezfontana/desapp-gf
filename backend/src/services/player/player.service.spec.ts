@@ -28,6 +28,7 @@ describe('PlayerService', () => {
       findById: jest.fn(),
       findActiveExternalIdsByTeam: jest.fn(),
       applyTeamRosterSync: jest.fn(),
+      findAllActive: jest.fn(),
     };
     service = new PlayerService(players);
   });

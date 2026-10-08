@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, NotFoundException, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, NotFoundException, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../guards/public.decorator';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
@@ -6,6 +6,7 @@ import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
 import { QuotationService } from '../../services/quotation/quotation.service';
 import { PlayerQuoteResponseDto } from './dto/player-quote-response.dto';
 import { RecalculateResponseDto } from './dto/recalculate-response.dto';
+import { StrategyResponseDto } from './dto/strategy-response.dto';
 
 @ApiTags('quotes')
 @Controller('quotes')
@@ -29,6 +30,21 @@ export class QuotationController {
       throw new NotFoundException(`No hay cotización disponible para el jugador '${playerId}'.`);
     }
     return PlayerQuoteResponseDto.fromDomain(quote);
+  }
+
+  @Patch('strategies/:id/activate')
+  @UseGuards(AdminApiKeyGuard)
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Activar una estrategia de valuación',
+    description: 'Requiere ApiKey de admin. Desactiva la estrategia activa actual y activa la indicada. El próximo recálculo usará esta estrategia.',
+  })
+  @ApiResponse({ status: 200, type: StrategyResponseDto })
+  @ApiResponse({ status: 404, description: 'Estrategia no encontrada' })
+  async activateStrategy(@Param('id') id: string): Promise<StrategyResponseDto> {
+    const strategy = await this.quotationService.activateStrategy(id);
+    return StrategyResponseDto.fromDomain(strategy);
   }
 
   @Post('recalculate')

@@ -43,6 +43,10 @@ export class QuotationService {
     return this.quoteRepository.findLatestByPlayerId(playerId);
   }
 
+  async activateStrategy(id: string) {
+    return this.strategyRepository.activateStrategy(id);
+  }
+
   /**
    * Recalcula las cotizaciones de todos los jugadores activos usando la estrategia activa.
    *
