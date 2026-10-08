@@ -88,70 +88,47 @@ export const PlayerDetailPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {player.crestUrl && (
-              <img
-                src={player.crestUrl}
-                alt={player.team}
-                className="w-10 h-10 sm:w-14 sm:h-14 object-contain drop-shadow-md shrink-0"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-            )}
-            <div>
-              <h1 className="text-xl sm:text-4xl font-black tracking-wider uppercase leading-tight">
-                {player.name}
-              </h1>
-              <p className="text-[#b79753] font-bold text-sm sm:text-lg flex items-center gap-2 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-[#b79753] inline-block shrink-0"></span>
-                {player.team}
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {player.crestUrl && (
+                <img
+                  src={player.crestUrl}
+                  alt={player.team}
+                  className="w-10 h-10 sm:w-14 sm:h-14 object-contain drop-shadow-md shrink-0"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
+              <div>
+                <h1 className="text-xl sm:text-4xl font-black tracking-wider uppercase leading-tight">
+                  {player.name}
+                </h1>
+                <p className="text-[#b79753] font-bold text-sm sm:text-lg flex items-center gap-2 mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-[#b79753] inline-block shrink-0"></span>
+                  {player.team}
+                </p>
+              </div>
             </div>
+
+            {/* Valor del token en el header */}
+            {quote ? (
+              <div className="shrink-0 text-right bg-[#b79753]/10 border border-[#b79753]/30 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
+                <span className="block text-[9px] font-black uppercase tracking-widest text-[#b79753]/60 mb-1">Valor token</span>
+                <span className="text-3xl sm:text-5xl font-black text-[#b79753] leading-none tabular-nums">
+                  {quote.value.toFixed(2)}
+                </span>
+                <span className="block text-[9px] font-bold text-[#b79753]/50 uppercase tracking-widest mt-1">créditos</span>
+              </div>
+            ) : (
+              <div className="shrink-0 text-right opacity-30 border border-white/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
+                <span className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Valor token</span>
+                <span className="text-3xl sm:text-5xl font-black text-gray-600 leading-none">—</span>
+                <span className="block text-[9px] font-bold text-gray-600 uppercase tracking-widest mt-1">sin cotización</span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="p-4 sm:p-6 space-y-4 bg-[#0b3332]/60">
-
-          {/* Valor del token */}
-          {quote ? (
-            <div className="bg-gradient-to-r from-[#b79753]/15 via-[#b79753]/10 to-[#b79753]/5 rounded-2xl p-4 sm:p-5 border border-[#b79753]/40 shadow-lg">
-              <h2 className="text-[9px] font-black uppercase tracking-widest text-[#b79753]/70 mb-3 flex items-center gap-2">
-                <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
-                Valor del token
-                <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
-              </h2>
-              <div className="flex items-end gap-4 flex-wrap">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753]/60 mb-0.5">Precio actual</span>
-                  <span className="text-4xl sm:text-5xl font-black text-[#b79753] leading-none tracking-tight">
-                    {quote.value.toFixed(2)}
-                  </span>
-                  <span className="text-[10px] font-bold text-[#b79753]/50 mt-1 uppercase tracking-widest">créditos</span>
-                </div>
-                <div className="flex flex-col gap-1 pb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-500">Score</span>
-                    <span className="text-sm font-black text-gray-300">{quote.score.toFixed(4)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-500">Calculado</span>
-                    <span className="text-xs font-bold text-gray-400">
-                      {new Date(quote.calculatedAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl p-4 border border-[#1a6866]/40 bg-[#0b3332]/40 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full border border-[#1a6866] flex items-center justify-center text-gray-600 text-sm font-bold shrink-0">
-                $
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">Valor del token</p>
-                <p className="text-xs text-gray-500 font-medium mt-0.5">Sin cotización todavía — pendiente de recálculo</p>
-              </div>
-            </div>
-          )}
 
           {/* Métricas de rendimiento */}
           <div className="bg-[#104443]/50 rounded-2xl p-4 sm:p-5 border border-[#1a6866]/60">

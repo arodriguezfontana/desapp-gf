@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { getPositionLabel, type Player } from '../types/catalog.types';
+import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
 
 interface PlayerCardProps {
   player: Player;
+  quote?: PlayerQuote | null;
 }
 
-export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
+export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
   const getPositionBadgeColor = (pos: string) => {
     switch (pos) {
       case 'GK':
@@ -58,16 +59,31 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
               <span className="text-[#b79753] font-black text-lg">⚽</span>
             )}
           </div>
-          <div className="overflow-hidden">
-            <h3 className="text-lg font-black text-white group-hover:text-[#b79753] transition-colors line-clamp-1 tracking-tight">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-black text-white group-hover:text-[#b79753] transition-colors tracking-tight">
               {player.name}
             </h3>
             <p className="text-xs font-bold text-gray-300 mt-0.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#b79753]"></span>
-              <span className="truncate">{player.team}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#b79753] shrink-0"></span>
+              <span>{player.team}</span>
             </p>
           </div>
         </div>
+
+        {/* Valor del token */}
+        {quote != null ? (
+          <div className="mt-4 flex items-center justify-between bg-[#b79753]/10 border border-[#b79753]/30 rounded-xl px-4 py-2.5">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[#b79753]/60">Valor token</span>
+            <span className="text-xl font-black text-[#b79753] tabular-nums">
+              {quote.value.toFixed(2)} <span className="text-[10px] font-bold text-[#b79753]/50">cr.</span>
+            </span>
+          </div>
+        ) : (
+          <div className="mt-4 flex items-center justify-between rounded-xl px-4 py-2.5 opacity-30">
+            <span className="text-[9px] font-black uppercase tracking-widest text-gray-600">Valor token</span>
+            <span className="text-xl font-black text-gray-600">—</span>
+          </div>
+        )}
 
       </div>
 

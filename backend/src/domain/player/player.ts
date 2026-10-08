@@ -91,7 +91,6 @@ export class Player {
     return this._matchesPlayed;
   }
 
-  /** Promedio por partido de la temporada en curso; `null` si no hay valor disponible. */
   get passesCompleted(): number | null {
     return this._passesCompleted;
   }

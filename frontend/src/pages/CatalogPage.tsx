@@ -6,11 +6,11 @@ import { useDebounce } from '../hooks/useDebounce';
 import { CatalogFilters } from '../components/CatalogFilters';
 import { PaginationControls } from '../components/PaginationControls';
 import { PlayerCard } from '../components/PlayerCard';
-import type { Player, PlayerListResponseDto } from '../types/catalog.types';
+import type { Player, PlayerListResponseDto, PlayerQuote } from '../types/catalog.types';
 
 export const CatalogPage: React.FC = () => {
   const { hasApiKey } = useApiKey();
-  const { getPlayers } = useCatalog();
+  const { getPlayers, getLatestQuoteByPlayerId } = useCatalog();
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [selectedPosition, setSelectedPosition] = useState<string>('');
   const [teamInput, setTeamInput] = useState<string>('');
@@ -18,6 +18,7 @@ export const CatalogPage: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [quotes, setQuotes] = useState<Map<string, PlayerQuote>>(new Map());
   const [meta, setMeta] = useState<PlayerListResponseDto['meta']>({
     total: 0,
     page: 1,
@@ -35,6 +36,7 @@ export const CatalogPage: React.FC = () => {
     const executeFetch = async () => {
       setIsLoading(true);
       setErrorMsg(null);
+      setQuotes(new Map());
 
       try {
         const response = await getPlayers({
@@ -51,6 +53,18 @@ export const CatalogPage: React.FC = () => {
           if (response.meta) {
             setMeta(response.meta);
           }
+
+          void Promise.all(
+            loadedPlayers.map((p) => getLatestQuoteByPlayerId(p.id)),
+          ).then((results) => {
+            if (isCancelled) return;
+            const map = new Map<string, PlayerQuote>();
+            loadedPlayers.forEach((p, i) => {
+              const q = results[i];
+              if (q) map.set(p.id, q);
+            });
+            setQuotes(map);
+          });
         }
       } catch (err: unknown) {
         if (!isCancelled) {
@@ -138,7 +152,7 @@ export const CatalogPage: React.FC = () => {
       <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {players.map((player) => (
-            <PlayerCard key={player.id} player={player} />
+            <PlayerCard key={player.id} player={player} quote={quotes.get(player.id) ?? null} />
           ))}
         </div>
 
