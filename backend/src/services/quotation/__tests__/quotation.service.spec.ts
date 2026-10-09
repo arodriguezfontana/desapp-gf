@@ -6,17 +6,21 @@ import { ValuationStrategy } from '../../../domain/quotation/valuation-strategy'
 import { NoActiveStrategyError } from '../../../domain/quotation/errors/no-active-strategy.error';
 import { RecalculationInProgressError } from '../../../domain/quotation/errors/recalculation-in-progress.error';
 import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy-not-found.error';
+import { League } from '../../../domain/player/enums/league';
+import { Position } from '../../../domain/player/enums/position';
+import { Player } from '../../../domain/player/player';
 
 const WEIGHTS = { goals: 0.25, assists: 0.15, shots: 0.10, keyPasses: 0.10, dribbles: 0.10, totalTackles: 0.10, rating: 0.20 };
 
 const makeStrategy = (overrides: Partial<Parameters<typeof ValuationStrategy.restore>[0]> = {}) =>
   ValuationStrategy.restore({ id: 's-1', name: 'Test', weights: WEIGHTS, factorEscala: 99, isActive: true, ...overrides });
 
-const makePlayer = () => ({
-  id: 'p-1', name: 'Test Player', league: 'La Liga' as any, team: 'FC Test', position: 'FW' as any,
-  matchesPlayed: 30, goals: 10, assists: 5, keyPasses: 40, dribbles: 20, totalTackles: 15,
-  shots: 30, passesCompleted: 800, interceptions: 10, rating: 7.5, yellowCards: 2, redCards: 0,
-});
+const makePlayer = (): Player =>
+  Player.restore({
+    id: 'p-1', name: 'Test Player', league: League.LA_LIGA, team: 'FC Test', position: Position.FW,
+    matchesPlayed: 30, goals: 10, assists: 5, keyPasses: 40, dribbles: 20, totalTackles: 15,
+    shots: 30, passesCompleted: 800, interceptions: 10, rating: 7.5, yellowCards: 2, redCards: 0,
+  });
 
 describe('QuotationService', () => {
   let service: QuotationService;
@@ -97,7 +101,7 @@ describe('QuotationService', () => {
     });
 
     it('procesa jugadores y devuelve resumen con processedPlayers y errors', async () => {
-      const player = makePlayer() as any;
+      const player = makePlayer();
       strategyRepo.findActive.mockResolvedValue(makeStrategy());
       playerRepo.findAllActive.mockResolvedValue([player]);
 
@@ -111,7 +115,7 @@ describe('QuotationService', () => {
 
     it('libera el lock (isRunning = false) aunque falle saveMany', async () => {
       strategyRepo.findActive.mockResolvedValue(makeStrategy());
-      playerRepo.findAllActive.mockResolvedValue([makePlayer() as any]);
+      playerRepo.findAllActive.mockResolvedValue([makePlayer()]);
       quoteRepo.saveMany.mockRejectedValue(new Error('DB error'));
 
       await expect(service.recalculateAll()).rejects.toThrow('DB error');
