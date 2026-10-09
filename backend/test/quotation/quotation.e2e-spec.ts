@@ -129,14 +129,14 @@ describe('POST /quotes/recalculate (e2e, spec 012)', () => {
 
   describe('PATCH /strategies/:id/activate', () => {
     it('sin x-api-key → 401', async () => {
-      const res = await request(server()).patch('/strategies/some-id/activate');
+      const res = await request(server()).patch('/quotes/strategies/some-id/activate');
       expect(res.status).toBe(401);
     });
 
     it('con ApiKey de usuario (no admin) → 403', async () => {
       const { apiKey } = await registerLoginAndIssueUserApiKey('user-activate@mail.com');
       const res = await request(server())
-        .patch('/strategies/some-id/activate')
+        .patch('/quotes/strategies/some-id/activate')
         .set('x-api-key', apiKey);
       expect(res.status).toBe(403);
     });
@@ -144,7 +144,7 @@ describe('POST /quotes/recalculate (e2e, spec 012)', () => {
     it('id inexistente → 404', async () => {
       const { apiKey } = await registerLoginAndIssueAdminApiKey('admin-activate-404@mail.com');
       const res = await request(server())
-        .patch('/strategies/00000000-0000-0000-0000-000000000000/activate')
+        .patch('/quotes/strategies/00000000-0000-0000-0000-000000000000/activate')
         .set('x-api-key', apiKey);
       expect(res.status).toBe(404);
     });
@@ -159,7 +159,7 @@ describe('POST /quotes/recalculate (e2e, spec 012)', () => {
       if (!inactiveStrategy) return; // seed no cargado, skip
 
       const res = await request(server())
-        .patch(`/strategies/${inactiveStrategy.id}/activate`)
+        .patch(`/quotes/strategies/${inactiveStrategy.id}/activate`)
         .set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
@@ -180,8 +180,7 @@ describe('POST /quotes/recalculate (e2e, spec 012)', () => {
       const { apiKey } = await registerLoginAndIssueAdminApiKey('admin-noactive@mail.com');
 
       await ctx.dataSource
-        .getRepository(ValuationStrategyEntity)
-        .update({}, { isActive: false });
+        .query('UPDATE "valuation_strategies" SET "is_active" = false WHERE "is_active" = true');
 
       const res = await request(server())
         .post('/quotes/recalculate')

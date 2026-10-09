@@ -9,6 +9,7 @@ import { RecalculateResponseDto } from './dto/recalculate-response.dto';
 import { StrategyResponseDto } from './dto/strategy-response.dto';
 
 @ApiTags('quotes')
+@Public()
 @Controller('quotes')
 export class QuotationController {
   constructor(private readonly quotationService: QuotationService) {}
