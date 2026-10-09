@@ -76,6 +76,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
         'Equipo Nuevo',
         [
           input('ws-10', 'Nuevo Uno', {
+            matchesPlayed: 20,
             passesCompleted: 5,
             shots: 1,
             interceptions: 2,
@@ -99,6 +100,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       expect(page[0]).toMatchObject({
         externalId: 'ws-10',
         name: 'Nuevo Uno',
+        matchesPlayed: 20,
         passesCompleted: 5,
         goals: 4,
         assists: 2,

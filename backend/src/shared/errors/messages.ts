@@ -9,3 +9,6 @@ export const SYNC_IN_PROGRESS_MESSAGE = 'Ya hay una sincronización en curso.';
 
 /** 404 de `GET /sync/whoscored/:runId`: el runId no existe, fue descartado o se perdió al reiniciar el servidor (spec 009, FR-014). */
 export const SYNC_RUN_NOT_FOUND_MESSAGE = 'La corrida de sincronización no existe o ya no está disponible.';
+
+/** 409 de `RecalculationInProgressError`: ya hay un recálculo de cotizaciones en curso (spec 012, FR-012). */
+export const RECALCULATION_IN_PROGRESS_MESSAGE = 'Ya hay un recálculo de cotizaciones en curso.';

@@ -13,6 +13,7 @@ export class Player {
     private readonly _league: League,
     private readonly _team: string,
     private readonly _position: Position,
+    private readonly _matchesPlayed: number | null,
     private readonly _passesCompleted: number | null,
     private readonly _shots: number | null,
     private readonly _interceptions: number | null,
@@ -32,6 +33,7 @@ export class Player {
     league: League;
     team: string;
     position: Position;
+    matchesPlayed?: number | null;
     passesCompleted: number | null;
     shots: number | null;
     interceptions: number | null;
@@ -50,6 +52,7 @@ export class Player {
       props.league,
       props.team,
       props.position,
+      props.matchesPlayed ?? null,
       props.passesCompleted,
       props.shots,
       props.interceptions,
@@ -84,7 +87,10 @@ export class Player {
     return this._position;
   }
 
-  /** Promedio por partido de la temporada en curso; `null` si no hay valor disponible. */
+  get matchesPlayed(): number | null {
+    return this._matchesPlayed;
+  }
+
   get passesCompleted(): number | null {
     return this._passesCompleted;
   }

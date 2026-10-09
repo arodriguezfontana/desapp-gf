@@ -64,6 +64,10 @@ export class PlayerEntity {
   @Column({ type: 'timestamptz', nullable: true })
   removedAt!: Date | null;
 
+  /** Partidos jugados en la temporada en curso (titularidades + sustituciones). */
+  @Column({ type: 'integer', nullable: true })
+  matchesPlayed!: number | null;
+
   /** Métrica de rendimiento, promedio por partido de la temporada en curso. */
   @Column({ type: 'double precision', nullable: true })
   passesCompleted!: number | null;

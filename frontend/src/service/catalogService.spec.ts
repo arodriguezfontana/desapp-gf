@@ -106,5 +106,31 @@ describe('catalogService', () => {
     expect(result).toEqual(playerMock);
     expect(getSpy).toHaveBeenCalledWith('/players/player-1', { useApiKey: true });
   });
+
+  it('getLatestQuoteByPlayerId llama a /quotes/player/:id con useApiKey: true y retorna la cotización', async () => {
+    const quoteMock = {
+      id: 'q-1',
+      playerId: 'player-1',
+      strategyId: 's-1',
+      score: 0.75,
+      value: 75.25,
+      calculatedAt: '2026-10-08T00:00:00.000Z',
+    };
+
+    const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValueOnce(quoteMock);
+
+    const result = await catalogService.getLatestQuoteByPlayerId('player-1');
+
+    expect(result).toEqual(quoteMock);
+    expect(getSpy).toHaveBeenCalledWith('/quotes/player/player-1', { useApiKey: true });
+  });
+
+  it('getLatestQuoteByPlayerId retorna null cuando httpClient lanza cualquier error (incluido 404)', async () => {
+    vi.spyOn(httpClient, 'get').mockRejectedValueOnce(new Error('Not Found'));
+
+    const result = await catalogService.getLatestQuoteByPlayerId('player-999');
+
+    expect(result).toBeNull();
+  });
 });
 

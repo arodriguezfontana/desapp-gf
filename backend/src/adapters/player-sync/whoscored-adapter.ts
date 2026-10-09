@@ -6,6 +6,7 @@ export interface WhoScoredTeamRef {
 }
 
 export interface WhoScoredRawMetrics {
+  matchesPlayed: number;
   passesCompleted: number;
   shots: number;
   interceptions: number;

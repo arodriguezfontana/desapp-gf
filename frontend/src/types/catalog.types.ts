@@ -7,6 +7,7 @@ export interface Player {
   league: League | (string & {});
   team: string;
   position: Position | (string & {});
+  matchesPlayed?: number | null;
   passesCompleted: number | null;
   shots: number | null;
   interceptions: number | null;
@@ -29,6 +30,15 @@ export interface PlayerListResponseDto {
     pageSize: number;
     totalPages: number;
   };
+}
+
+export interface PlayerQuote {
+  id: string;
+  playerId: string;
+  strategyId: string;
+  score: number;
+  value: number;
+  calculatedAt: string;
 }
 
 export interface CatalogFilters {

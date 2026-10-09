@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
-import { getPositionLabel, type Player } from '../types/catalog.types';
+import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
+
 
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { hasApiKey } = useApiKey();
-  const { getPlayerById } = useCatalog();
+  const { getPlayerById, getLatestQuoteByPlayerId } = useCatalog();
   const [player, setPlayer] = useState<Player | null>(null);
+  const [quote, setQuote] = useState<PlayerQuote | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -22,9 +24,13 @@ export const PlayerDetailPage: React.FC = () => {
       setErrorMessage(null);
 
       try {
-        const data = await getPlayerById(id);
+        const [data, latestQuote] = await Promise.all([
+          getPlayerById(id),
+          getLatestQuoteByPlayerId(id),
+        ]);
         if (isMounted) {
           setPlayer(data);
+          setQuote(latestQuote);
         }
       } catch (err: unknown) {
         if (!isMounted) return;
@@ -47,7 +53,7 @@ export const PlayerDetailPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [hasApiKey, id, getPlayerById]);
+  }, [hasApiKey, id, getPlayerById, getLatestQuoteByPlayerId]);
 
   let detailContent: React.ReactNode;
   if (isLoading) {
@@ -72,57 +78,90 @@ export const PlayerDetailPage: React.FC = () => {
   } else if (player) {
     detailContent = (
       <div className="bg-[#104443] rounded-2xl border border-[#b79753]/30 shadow-2xl overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0b3332] via-[#104443] to-[#0b3332] p-8 text-white border-b border-[#1a6866]">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="bg-[#b79753] text-[#0b3332] font-black text-xs px-3.5 py-1 rounded-md uppercase tracking-widest">
+        <div className="bg-gradient-to-r from-[#0b3332] via-[#104443] to-[#0b3332] p-5 sm:p-8 text-white border-b border-[#1a6866]">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="bg-[#b79753] text-[#0b3332] font-black text-[10px] px-3 py-0.5 rounded-md uppercase tracking-widest">
               {getPositionLabel(player.position)}
             </span>
-            <span className="bg-[#0b3332] text-[#b79753] font-bold text-xs px-3.5 py-1 rounded-md border border-[#b79753]/30">
+            <span className="bg-[#0b3332] text-[#b79753] font-bold text-[10px] px-3 py-0.5 rounded-md border border-[#b79753]/30">
               {player.league}
             </span>
           </div>
 
-          <div className="flex items-start gap-4 mb-2">
-            {player.crestUrl && (
-              <img
-                src={player.crestUrl}
-                alt={player.team}
-                className="w-14 h-14 object-contain drop-shadow-md shrink-0 mt-1"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-            )}
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-wider uppercase">
-                {player.name}
-              </h1>
-              <p className="text-[#b79753] font-bold text-lg flex items-center gap-2 mt-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#b79753] inline-block shrink-0"></span>
-                {player.team}
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {player.crestUrl && (
+                <img
+                  src={player.crestUrl}
+                  alt={player.team}
+                  className="w-10 h-10 sm:w-14 sm:h-14 object-contain drop-shadow-md shrink-0"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
+              <div>
+                <h1 className="text-xl sm:text-4xl font-black tracking-wider uppercase leading-tight">
+                  {player.name}
+                </h1>
+                <p className="text-[#b79753] font-bold text-sm sm:text-lg flex items-center gap-2 mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-[#b79753] inline-block shrink-0"></span>
+                  {player.team}
+                </p>
+              </div>
             </div>
+
+            {/* Valor del token en el header */}
+            {quote ? (
+              <div className="shrink-0 text-right bg-[#b79753]/10 border border-[#b79753]/30 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
+                <span className="block text-[9px] font-black uppercase tracking-widest text-[#b79753]/60 mb-1">Valor token</span>
+                <span className="text-3xl sm:text-5xl font-black text-[#b79753] leading-none tabular-nums">
+                  {quote.value.toFixed(2)}
+                </span>
+                <span className="block text-[9px] font-bold text-[#b79753]/50 uppercase tracking-widest mt-1">créditos</span>
+              </div>
+            ) : (
+              <div className="shrink-0 text-right opacity-30 border border-white/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
+                <span className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Valor token</span>
+                <span className="text-3xl sm:text-5xl font-black text-gray-600 leading-none">—</span>
+                <span className="block text-[9px] font-bold text-gray-600 uppercase tracking-widest mt-1">sin cotización</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="p-8 space-y-6 bg-[#0b3332]/60">
+        <div className="p-4 sm:p-6 space-y-4 bg-[#0b3332]/60">
 
           {/* Métricas de rendimiento */}
-          <div>
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
-              Métricas de rendimiento <span className="text-gray-600 normal-case">(promedio por partido)</span>
+          <div className="bg-[#104443]/50 rounded-2xl p-4 sm:p-5 border border-[#1a6866]/60">
+            <h2 className="text-[9px] font-black uppercase tracking-widest text-[#b79753]/70 mb-3 flex items-center gap-2">
+              <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
+              Métricas de rendimiento
+              <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+              {/* Partidos — tile destacado */}
+              <div className="bg-[#0b3332] rounded-xl border border-[#b79753]/40 shadow-md text-center p-3 sm:p-4">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-[#b79753]/70 mb-1 leading-tight">Partidos</span>
+                <span className="text-2xl sm:text-3xl font-black text-[#b79753]">
+                  {player.matchesPlayed ?? <span className="text-gray-600 text-lg">—</span>}
+                </span>
+              </div>
+              {/* Rating — tile destacado */}
+              <div className="bg-[#0b3332] rounded-xl border border-[#b79753]/40 shadow-md text-center p-3 sm:p-4">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-[#b79753]/70 mb-1 leading-tight">Rating</span>
+                <span className="text-2xl sm:text-3xl font-black text-[#b79753]">
+                  {player.rating != null ? player.rating.toFixed(2) : <span className="text-gray-600 text-lg">—</span>}
+                </span>
+              </div>
+              {/* Métricas promedio */}
               {[
-                { label: 'Rating', value: player.rating },
-                { label: 'Pases completados', value: player.passesCompleted },
-                { label: 'Remates', value: player.shots },
-                { label: 'Intercepciones', value: player.interceptions },
+                { label: 'Pases prom.', value: player.passesCompleted },
+                { label: 'Remates prom.', value: player.shots },
+                { label: 'Intercepciones prom.', value: player.interceptions },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-[#0b3332] p-5 rounded-xl border border-[#1a6866] shadow-md text-center">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-[#b79753] mb-2">
-                    {label}
-                  </span>
-                  <span className="text-2xl font-black text-white">
-                    {value != null ? value.toFixed(2) : <span className="text-gray-500 text-base">—</span>}
+                <div key={label} className="bg-[#0b3332]/70 rounded-xl border border-[#1a6866]/50 shadow-md text-center p-3 sm:p-4">
+                  <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1 leading-tight break-words">{label}</span>
+                  <span className="text-lg sm:text-2xl font-black text-gray-200">
+                    {value != null ? value.toFixed(1) : <span className="text-gray-600 text-sm">—</span>}
                   </span>
                 </div>
               ))}
@@ -130,29 +169,45 @@ export const PlayerDetailPage: React.FC = () => {
           </div>
 
           {/* Estadísticas de temporada */}
-          <div>
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
-              Estadísticas de temporada <span className="text-gray-600 normal-case">(totales acumulados)</span>
+          <div className="bg-[#104443]/30 rounded-2xl p-4 sm:p-5 border border-[#1a6866]/40">
+            <h2 className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-2">
+              <span className="w-4 h-px bg-[#1a6866] inline-block"></span>
+              Estadísticas de temporada
+              <span className="w-4 h-px bg-[#1a6866] inline-block"></span>
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {[
-                { label: 'Goles', value: player.goals, color: 'text-white' },
-                { label: 'Asistencias', value: player.assists, color: 'text-white' },
-                { label: 'Pases clave', value: player.keyPasses, color: 'text-white' },
-                { label: 'Regates', value: player.dribbles, color: 'text-white' },
-                { label: 'Entradas', value: player.totalTackles, color: 'text-white' },
-                { label: 'Amarillas', value: player.yellowCards, color: 'text-yellow-400' },
-                { label: 'Rojas', value: player.redCards, color: 'text-red-400' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] shadow-md text-center">
-                  <span className="block text-[9px] font-black uppercase tracking-widest text-[#b79753] mb-1.5 truncate">
-                    {label}
-                  </span>
-                  <span className={`text-xl font-black ${color}`}>
-                    {value != null ? value : <span className="text-gray-500 text-base">—</span>}
+                { label: 'Goles', value: player.goals },
+                { label: 'Asistencias', value: player.assists },
+                { label: 'Pases clave', value: player.keyPasses },
+                { label: 'Regates', value: player.dribbles },
+                { label: 'Entradas', value: player.totalTackles },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-[#1a6866]/40 text-center">
+                  <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1 leading-tight break-words">{label}</span>
+                  <span className="text-base sm:text-xl font-black text-gray-300">
+                    {value != null ? value : <span className="text-gray-600 text-sm">—</span>}
                   </span>
                 </div>
               ))}
+              <div className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-yellow-500/30 text-center">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1">Amarillas</span>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="inline-block w-2.5 h-4 rounded-[2px] bg-yellow-400 shrink-0"></span>
+                  <span className="text-base sm:text-xl font-black text-yellow-400">
+                    {player.yellowCards ?? <span className="text-gray-600 text-sm">—</span>}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-red-500/30 text-center">
+                <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1">Rojas</span>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="inline-block w-2.5 h-4 rounded-[2px] bg-red-500 shrink-0"></span>
+                  <span className="text-base sm:text-xl font-black text-red-400">
+                    {player.redCards ?? <span className="text-gray-600 text-sm">—</span>}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -187,7 +242,7 @@ export const PlayerDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
+    <div className="max-w-4xl mx-auto py-4 sm:py-8 px-3 sm:px-6">
       <title>{player ? `${player.name} — FútVal` : 'Detalle de Jugador — FútVal'}</title>
 
       <Link

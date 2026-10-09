@@ -13,7 +13,7 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
+import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
 import { Public } from '../../guards/public.decorator';
 import { PlayerSyncService } from '../../services/player-sync/player-sync.service';
 import { SyncAcceptedDto } from './dto/sync-accepted.dto';
@@ -23,7 +23,7 @@ import { SYNC_RUN_NOT_FOUND_MESSAGE } from '../../shared/errors/messages';
 @ApiTags('sync')
 @ApiSecurity('ApiKeyAuth')
 @Public()
-@UseGuards(ApiKeyGuard)
+@UseGuards(AdminApiKeyGuard)
 @Controller('sync')
 export class PlayerSyncController {
   constructor(private readonly playerSyncService: PlayerSyncService) {}

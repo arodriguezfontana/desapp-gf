@@ -26,6 +26,7 @@ const UPSERT_OVERWRITE_COLUMNS = [
   'league',
   'team',
   'position',
+  'matchesPlayed',
   'passesCompleted',
   'shots',
   'interceptions',
@@ -81,6 +82,11 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
     return { items: entities.map((e) => this.mapper.toDomain(e)), total };
   }
 
+  async findAllActive(): Promise<Player[]> {
+    const entities = await this.repo.find({ where: { removedAt: IsNull() } });
+    return entities.map((e) => this.mapper.toDomain(e));
+  }
+
   async findById(id: string): Promise<Player | null> {
     try {
       const entity = await this.repo.findOne({
@@ -134,6 +140,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
               league,
               team,
               position: input.position,
+              matchesPlayed: input.metrics?.matchesPlayed ?? null,
               passesCompleted: input.metrics?.passesCompleted ?? null,
               shots: input.metrics?.shots ?? null,
               interceptions: input.metrics?.interceptions ?? null,

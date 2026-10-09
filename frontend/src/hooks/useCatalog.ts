@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { catalogService, type GetPlayersParams } from '../service/catalogService';
-import type { Player, PlayerListResponseDto } from '../types/catalog.types';
+import type { Player, PlayerListResponseDto, PlayerQuote } from '../types/catalog.types';
 
 /**
  * Encapsula las llamadas de red del catálogo (`service/catalogService`)
@@ -19,7 +19,13 @@ export function useCatalog() {
     [],
   );
 
-  return { getPlayers, getPlayerById };
+  const getLatestQuoteByPlayerId = useCallback(
+    (playerId: string): Promise<PlayerQuote | null> =>
+      catalogService.getLatestQuoteByPlayerId(playerId),
+    [],
+  );
+
+  return { getPlayers, getPlayerById, getLatestQuoteByPlayerId };
 }
 
 // Re-exportado para que PlayerDetailPage pueda narrowear el error sin importar `service/` directamente.

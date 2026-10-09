@@ -35,4 +35,22 @@ describe('useCatalog', () => {
     expect(spy).toHaveBeenCalledWith('p-1');
     expect(player.name).toBe('Lionel Messi');
   });
+
+  it('getLatestQuoteByPlayerId delega en catalogService.getLatestQuoteByPlayerId con el playerId', async () => {
+    const quoteMock = {
+      id: 'q-1',
+      playerId: 'p-1',
+      strategyId: 's-1',
+      score: 0.75,
+      value: 75.25,
+      calculatedAt: '2026-10-08T00:00:00.000Z',
+    };
+    const spy = vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValueOnce(quoteMock);
+
+    const { result } = renderHook(() => useCatalog());
+    const quote = await result.current.getLatestQuoteByPlayerId('p-1');
+
+    expect(spy).toHaveBeenCalledWith('p-1');
+    expect(quote).toEqual(quoteMock);
+  });
 });

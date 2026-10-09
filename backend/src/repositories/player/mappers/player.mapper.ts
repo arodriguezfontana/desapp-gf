@@ -14,6 +14,7 @@ export class PlayerMapper {
       league: parseLeague(entity.league),
       team: entity.team,
       position: parsePosition(entity.position),
+      matchesPlayed: entity.matchesPlayed,
       passesCompleted: entity.passesCompleted,
       shots: entity.shots,
       interceptions: entity.interceptions,
@@ -35,6 +36,7 @@ export class PlayerMapper {
     entity.league = player.league;
     entity.team = player.team;
     entity.position = player.position;
+    entity.matchesPlayed = player.matchesPlayed;
     entity.passesCompleted = player.passesCompleted;
     entity.shots = player.shots;
     entity.interceptions = player.interceptions;

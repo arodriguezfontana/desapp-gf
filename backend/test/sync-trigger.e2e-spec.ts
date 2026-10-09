@@ -46,6 +46,15 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
     return { token, apiKey: issued.body.apiKey as string };
   };
 
+  const registerLoginAndIssueAdminApiKey = async (email: string) => {
+    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!' });
+    await ctx.dataSource.getRepository(UserEntity).update({ email }, { role: 'admin' });
+    const login = await request(server()).post('/auth/login').send({ email, password: 'Abcd1234!' });
+    const token = login.body.accessToken as string;
+    const issued = await request(server()).post('/auth/api-key').set('Authorization', `Bearer ${token}`);
+    return { token, apiKey: issued.body.apiKey as string };
+  };
+
   beforeAll(async () => {
     ctx = await createTestApp([
       { token: WHOSCORED_ADAPTER, useValue: new FakeWhoScoredAdapter() },
@@ -95,7 +104,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
 
   describe('US1: POST /sync/whoscored → 202 + GET de estado', () => {
     it('POST responde 202 con runId y status running', async () => {
-      const { apiKey } = await registerLoginAndIssueApiKey('ws-run@mail.com');
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('ws-run@mail.com');
 
       const res = await request(server())
         .post('/sync/whoscored')
@@ -107,7 +116,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
     });
 
     it('GET /sync/whoscored/:runId eventualmente devuelve completed con resumen', async () => {
-      const { apiKey } = await registerLoginAndIssueApiKey('ws-get@mail.com');
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('ws-get@mail.com');
 
       const postRes = await request(server())
         .post('/sync/whoscored')
@@ -132,7 +141,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
     });
 
     it('GET con runId inexistente → 404', async () => {
-      const { apiKey } = await registerLoginAndIssueApiKey('ws-404@mail.com');
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('ws-404@mail.com');
 
       const res = await request(server())
         .get('/sync/whoscored/00000000-0000-0000-0000-000000000000')
@@ -142,7 +151,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
     });
 
     it('segundo POST con corrida en curso → 409 con runId de la corrida en curso', async () => {
-      const { apiKey } = await registerLoginAndIssueApiKey('ws-409@mail.com');
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('ws-409@mail.com');
 
       // Primera corrida
       const first = await request(server())
@@ -176,7 +185,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
 
   describe('US2: POST /sync/football-data → 200 con resumen', () => {
     it('responde 200 con leagues y failedLeagues', async () => {
-      const { apiKey } = await registerLoginAndIssueApiKey('fd-run@mail.com');
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('fd-run@mail.com');
 
       const res = await request(server())
         .post('/sync/football-data')
@@ -189,7 +198,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
     });
 
     it('cada elemento de leagues tiene los campos del contrato', async () => {
-      const { apiKey } = await registerLoginAndIssueApiKey('fd-fields@mail.com');
+      const { apiKey } = await registerLoginAndIssueAdminApiKey('fd-fields@mail.com');
 
       const res = await request(server())
         .post('/sync/football-data')

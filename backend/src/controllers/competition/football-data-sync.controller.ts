@@ -5,7 +5,7 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
+import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
 import { Public } from '../../guards/public.decorator';
 import { FootballDataSyncService } from '../../services/competition/football-data-sync.service';
 import { SyncSummaryDto } from './dto/sync-summary.dto';
@@ -13,7 +13,7 @@ import { SyncSummaryDto } from './dto/sync-summary.dto';
 @ApiTags('sync')
 @ApiSecurity('ApiKeyAuth')
 @Public()
-@UseGuards(ApiKeyGuard)
+@UseGuards(AdminApiKeyGuard)
 @Controller('sync')
 export class FootballDataSyncController {
   constructor(private readonly footballDataSyncService: FootballDataSyncService) {}

@@ -765,14 +765,14 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('defaults page=1/pageSize=10, forma de la respuesta con las 4 métricas y crestUrl', function () {",
+                  "pm.test('defaults page=1/pageSize=10, forma de la respuesta con métricas, matchesPlayed y crestUrl', function () {",
                   "  const body = pm.response.json();",
                   "  pm.expect(body.page).to.eql(1);",
                   "  pm.expect(body.pageSize).to.eql(10);",
                   "  pm.expect(body.items.length).to.be.at.most(10);",
                   "  pm.expect(body.total).to.be.at.least(body.items.length);",
                   "  body.items.forEach((p) => {",
-                  "    ['passesCompleted', 'shots', 'interceptions', 'rating'].forEach((field) => {",
+                  "    ['matchesPlayed', 'passesCompleted', 'shots', 'interceptions', 'rating'].forEach((field) => {",
                   "      pm.expect(p).to.have.property(field);",
                   "    });",
                   "    pm.expect(p).to.have.property('crestUrl');",
@@ -1460,8 +1460,9 @@
                   "  pm.test('id coincide con el pedido', function () {",
                   "    pm.expect(pm.response.json().id).to.eql(playerId);",
                   "  });",
-                  "  pm.test('crestUrl está presente en la respuesta (string o null)', function () {",
+                  "  pm.test('crestUrl y matchesPlayed están presentes en la respuesta', function () {",
                   "    pm.expect(pm.response.json()).to.have.property('crestUrl');",
+                  "    pm.expect(pm.response.json()).to.have.property('matchesPlayed');",
                   "  });",
                   "}"
                 ]

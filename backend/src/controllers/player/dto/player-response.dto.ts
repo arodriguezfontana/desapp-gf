@@ -17,6 +17,9 @@ export class PlayerResponseDto {
   @ApiProperty({ example: 'GK' })
   position: string;
 
+  @ApiProperty({ example: 28, nullable: true, description: 'Partidos jugados en la temporada en curso (titularidades + sustituciones); null si no hay valor disponible.' })
+  matchesPlayed: number | null;
+
   @ApiProperty({
     example: 8.4,
     nullable: true,
@@ -68,6 +71,7 @@ export class PlayerResponseDto {
     league: string;
     team: string;
     position: string;
+    matchesPlayed: number | null;
     passesCompleted: number | null;
     shots: number | null;
     interceptions: number | null;
@@ -86,6 +90,7 @@ export class PlayerResponseDto {
     this.league = props.league;
     this.team = props.team;
     this.position = props.position;
+    this.matchesPlayed = props.matchesPlayed;
     this.passesCompleted = props.passesCompleted;
     this.shots = props.shots;
     this.interceptions = props.interceptions;
@@ -107,6 +112,7 @@ export class PlayerResponseDto {
       league: player.league,
       team: player.team,
       position: player.position,
+      matchesPlayed: player.matchesPlayed,
       passesCompleted: player.passesCompleted,
       shots: player.shots,
       interceptions: player.interceptions,

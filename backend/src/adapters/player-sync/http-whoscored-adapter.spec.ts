@@ -227,6 +227,7 @@ describe('HttpWhoScoredAdapter', () => {
       const brunoFernandes = roster.find((p) => p.externalId === BRUNO_FERNANDES_ID)!;
       expect(brunoFernandes.metricsFetchFailed).toBe(false);
       expect(brunoFernandes.metrics).toEqual({
+        matchesPlayed: 5,
         passesCompleted: 55.6,
         shots: 3.8,
         interceptions: 0,
@@ -312,6 +313,7 @@ describe('HttpWhoScoredAdapter', () => {
       )!;
 
       expect(brunoPremierLeague.metrics).toEqual({
+        matchesPlayed: 5,
         passesCompleted: 55.6,
         shots: 3.8,
         interceptions: 0,
@@ -325,6 +327,7 @@ describe('HttpWhoScoredAdapter', () => {
         redCards: 0,
       });
       expect(brunoChampionsLeague.metrics).toEqual({
+        matchesPlayed: 1,
         passesCompleted: 46,
         shots: 3,
         interceptions: 1,
