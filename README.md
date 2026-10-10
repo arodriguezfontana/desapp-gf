@@ -21,6 +21,8 @@ Variables de entorno (copiar los `.env.example`):
 
 - `backend/.env` → `PORT`, `DATABASE_URL`, `JWT_SECRET` (secreto real de firma del JWT,
   generar uno propio: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
+  `QUOTES_API_KEY` (clave para que el frontend consulte el catálogo y dispare recálculos),
+  `ADMIN_API_KEY` (clave exclusiva del administrador para operaciones privilegiadas, como activar estrategias de cotización),
   y `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` (sólo si se
   levanta Postgres con docker-compose; deben coincidir con lo que codifica `DATABASE_URL`).
 - `frontend/.env` → `VITE_API_URL` (ej. `http://localhost:3000`)
@@ -46,12 +48,9 @@ cd frontend && pnpm dev   # http://localhost:5173
 
 ## Autenticación
 
-- `POST /auth/register` — alta con `email` + `password` (8–16 chars, mayúscula, minúscula,
-  número y carácter especial). No inicia sesión ni devuelve token.
-- `POST /auth/login` — devuelve `{ accessToken, tokenType: "Bearer", expiresIn: 86400 }`.
-  El JWT vence a las 24 h.
-- El resto de endpoints exige `Authorization: Bearer <jwt>` (guard global). `GET /auth/me`
-  es el endpoint protegido de referencia. Colección Postman en `docs/postman/`.
+El sistema usa JWT (24 h). El guard global protege todos los endpoints salvo los marcados con
+`@Public()`, que usan ApiKey en su lugar. La colección Postman está en `docs/postman/`.
+Los endpoints se documentan en Swagger.
 
 ## Documentación de la API
 
