@@ -11,9 +11,9 @@ export class PlayerQuoteMapper {
       playerId: entity.playerId,
       strategyId: entity.strategyId,
       weightSnapshot: entity.weightSnapshot,
-      factorEscalaSnapshot: parseFloat(entity.factorEscalaSnapshot),
-      score: parseFloat(entity.score),
-      value: parseFloat(entity.value),
+      factorEscalaSnapshot: Number.parseFloat(entity.factorEscalaSnapshot),
+      score: Number.parseFloat(entity.score),
+      value: Number.parseFloat(entity.value),
       calculatedAt: entity.calculatedAt,
     });
   }

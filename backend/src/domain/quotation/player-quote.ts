@@ -27,16 +27,7 @@ export class PlayerQuote {
     value: number;
     calculatedAt: Date;
   }): PlayerQuote {
-    return new PlayerQuote(
-      props.id,
-      props.playerId,
-      props.strategyId,
-      props.weightSnapshot,
-      props.factorEscalaSnapshot,
-      props.score,
-      props.value,
-      props.calculatedAt,
-    );
+    return PlayerQuote.restore(props);
   }
 
   static restore(props: {

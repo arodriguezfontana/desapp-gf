@@ -103,8 +103,7 @@ export const PlayerDetailPage: React.FC = () => {
                   {player.name}
                 </h1>
                 <p className="text-[#b79753] font-bold text-sm sm:text-lg flex items-center gap-2 mt-0.5">
-                  <span className="w-2 h-2 rounded-full bg-[#b79753] inline-block shrink-0"></span>
-                  {player.team}
+                  <span className="w-2 h-2 rounded-full bg-[#b79753] inline-block shrink-0"></span>{player.team}
                 </p>
               </div>
             </div>
@@ -186,7 +185,7 @@ export const PlayerDetailPage: React.FC = () => {
                 <div key={label} className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-[#1a6866]/40 text-center">
                   <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1 leading-tight break-words">{label}</span>
                   <span className="text-base sm:text-xl font-black text-gray-300">
-                    {value != null ? value : <span className="text-gray-600 text-sm">—</span>}
+                    {value ?? <span className="text-gray-600 text-sm">—</span>}
                   </span>
                 </div>
               ))}

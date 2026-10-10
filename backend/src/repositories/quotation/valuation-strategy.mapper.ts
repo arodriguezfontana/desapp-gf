@@ -10,7 +10,7 @@ export class ValuationStrategyMapper {
       id: entity.id,
       name: entity.name,
       weights: entity.weights,
-      factorEscala: parseFloat(entity.factorEscala),
+      factorEscala: Number.parseFloat(entity.factorEscala),
       isActive: entity.isActive,
     });
   }
