@@ -4,7 +4,70 @@ import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
 
+// ── Mismos accentos que PlayerCard ──────────────────────────────────────────
+const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
+  GK: { from: '#b79753', via: '#8a6f35', text: '#b79753' },
+  DF: { from: '#3b82f6', via: '#1d4ed8', text: '#60a5fa' },
+  MF: { from: '#2dd4bf', via: '#0d9488', text: '#2dd4bf' },
+  FW: { from: '#a855f7', via: '#7c3aed', text: '#c084fc' },
+};
+const getAccent = (pos: string) =>
+  POSITION_ACCENT[pos] ?? { from: '#b79753', via: '#8a6f35', text: '#b79753' };
 
+const POSITION_SILHOUETTE: Record<string, string> = {
+  GK: '/assets/player_silhouette_gk.svg',
+  DF: '/assets/player_silhouette_df.svg',
+  MF: '/assets/player_silhouette_mf.svg',
+  FW: '/assets/player_silhouette_fw.svg',
+};
+const getSilhouette = (pos: string) =>
+  POSITION_SILHOUETTE[pos] ?? '/assets/player_silhouette_mf.svg';
+
+// ── Componente de métrica individual ────────────────────────────────────────
+const StatBlock: React.FC<{
+  label: string;
+  value: number | null | undefined;
+  color: string;
+  highlight?: boolean;
+}> = ({ label, value, color, highlight }) => (
+  <div
+    className={`flex flex-col items-center justify-center gap-1 rounded-xl p-3 border text-center transition-all ${
+      highlight ? 'border-opacity-60' : 'border-white/8'
+    }`}
+    style={{
+      backgroundColor: highlight ? `${color}18` : 'rgba(0,0,0,0.25)',
+      borderColor: highlight ? `${color}50` : undefined,
+    }}
+  >
+    <span className="text-xl font-black tabular-nums" style={{ color: highlight ? color : '#e2e8f0' }}>
+      {value ?? <span className="text-white/20 text-base">—</span>}
+    </span>
+    <span className="text-[8px] font-black uppercase tracking-widest text-white/40">{label}</span>
+  </div>
+);
+
+// ── Barra de rating ──────────────────────────────────────────────────────────
+const RatingBar: React.FC<{ label: string; value: number | null; max?: number; color: string }> = ({
+  label, value, max = 10, color,
+}) => {
+  const pct = value != null ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[9px] font-black uppercase tracking-widest text-white/40 w-20 shrink-0">{label}</span>
+      <div className="flex-1 h-2 bg-white/8 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}aa)` }}
+        />
+      </div>
+      <span className="text-xs font-black tabular-nums w-10 text-right" style={{ color }}>
+        {value != null ? value.toFixed(1) : '—'}
+      </span>
+    </div>
+  );
+};
+
+// ── Página ───────────────────────────────────────────────────────────────────
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { hasApiKey } = useApiKey();
@@ -16,223 +79,40 @@ export const PlayerDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!hasApiKey || !id) return;
-
     let isMounted = true;
 
     const fetchDetail = async () => {
       setIsLoading(true);
       setErrorMessage(null);
-
       try {
         const [data, latestQuote] = await Promise.all([
           getPlayerById(id),
           getLatestQuoteByPlayerId(id),
         ]);
-        if (isMounted) {
-          setPlayer(data);
-          setQuote(latestQuote);
-        }
+        if (isMounted) { setPlayer(data); setQuote(latestQuote); }
       } catch (err: unknown) {
         if (!isMounted) return;
-        if (err instanceof ApiError) {
+        if (err instanceof ApiError) setErrorMessage(err.message);
+        else if (err instanceof Error && err.message !== 'ApiKey no válida o expirada.')
           setErrorMessage(err.message);
-        } else if (err instanceof Error && err.message !== 'ApiKey no válida o expirada.') {
-          setErrorMessage(err.message);
-        } else {
-          setErrorMessage('Error al cargar la información del jugador.');
-        }
+        else setErrorMessage('Error al cargar la información del jugador.');
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
 
     void fetchDetail();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [hasApiKey, id, getPlayerById, getLatestQuoteByPlayerId]);
-
-  let detailContent: React.ReactNode;
-  if (isLoading) {
-    detailContent = (
-      <div className="bg-[#104443] rounded-2xl p-12 border border-[#1a6866] text-center shadow-2xl">
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4"></div>
-        <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">
-          Cargando ficha del jugador...
-        </p>
-      </div>
-    );
-  } else if (errorMessage) {
-    detailContent = (
-      <div className="bg-[#104443] border-2 border-[#f43f5e] rounded-2xl p-8 text-center shadow-2xl">
-        <div className="w-12 h-12 bg-[#f43f5e]/20 text-[#f43f5e] border border-[#f43f5e]/40 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl">
-          !
-        </div>
-        <h2 className="text-xl font-black uppercase tracking-wider text-white mb-2">Información de Jugador</h2>
-        <p className="text-sm font-bold text-gray-200">{errorMessage}</p>
-      </div>
-    );
-  } else if (player) {
-    detailContent = (
-      <div className="bg-[#104443] rounded-2xl border border-[#b79753]/30 shadow-2xl overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0b3332] via-[#104443] to-[#0b3332] p-5 sm:p-8 text-white border-b border-[#1a6866]">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="bg-[#b79753] text-[#0b3332] font-black text-[10px] px-3 py-0.5 rounded-md uppercase tracking-widest">
-              {getPositionLabel(player.position)}
-            </span>
-            <span className="bg-[#0b3332] text-[#b79753] font-bold text-[10px] px-3 py-0.5 rounded-md border border-[#b79753]/30">
-              {player.league}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              {player.crestUrl && (
-                <img
-                  src={player.crestUrl}
-                  alt={player.team}
-                  className="w-10 h-10 sm:w-14 sm:h-14 object-contain drop-shadow-md shrink-0"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              )}
-              <div>
-                <h1 className="text-xl sm:text-4xl font-black tracking-wider uppercase leading-tight">
-                  {player.name}
-                </h1>
-                <p className="text-[#b79753] font-bold text-sm sm:text-lg flex items-center gap-2 mt-0.5">
-                  <span className="w-2 h-2 rounded-full bg-[#b79753] inline-block shrink-0"></span>{player.team}
-                </p>
-              </div>
-            </div>
-
-            {/* Valor del token en el header */}
-            {quote ? (
-              <div className="shrink-0 text-right bg-[#b79753]/10 border border-[#b79753]/30 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
-                <span className="block text-[9px] font-black uppercase tracking-widest text-[#b79753]/60 mb-1">Valor token</span>
-                <span className="text-3xl sm:text-5xl font-black text-[#b79753] leading-none tabular-nums">
-                  {quote.value.toFixed(2)}
-                </span>
-                <span className="block text-[9px] font-bold text-[#b79753]/50 uppercase tracking-widest mt-1">créditos</span>
-              </div>
-            ) : (
-              <div className="shrink-0 text-right opacity-30 border border-white/10 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
-                <span className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Valor token</span>
-                <span className="text-3xl sm:text-5xl font-black text-gray-600 leading-none">—</span>
-                <span className="block text-[9px] font-bold text-gray-600 uppercase tracking-widest mt-1">sin cotización</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-6 space-y-4 bg-[#0b3332]/60">
-
-          {/* Métricas de rendimiento */}
-          <div className="bg-[#104443]/50 rounded-2xl p-4 sm:p-5 border border-[#1a6866]/60">
-            <h2 className="text-[9px] font-black uppercase tracking-widest text-[#b79753]/70 mb-3 flex items-center gap-2">
-              <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
-              Métricas de rendimiento
-              <span className="w-4 h-px bg-[#b79753]/40 inline-block"></span>
-            </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
-              {/* Partidos — tile destacado */}
-              <div className="bg-[#0b3332] rounded-xl border border-[#b79753]/40 shadow-md text-center p-3 sm:p-4">
-                <span className="block text-[8px] font-black uppercase tracking-wide text-[#b79753]/70 mb-1 leading-tight">Partidos</span>
-                <span className="text-2xl sm:text-3xl font-black text-[#b79753]">
-                  {player.matchesPlayed ?? <span className="text-gray-600 text-lg">—</span>}
-                </span>
-              </div>
-              {/* Rating — tile destacado */}
-              <div className="bg-[#0b3332] rounded-xl border border-[#b79753]/40 shadow-md text-center p-3 sm:p-4">
-                <span className="block text-[8px] font-black uppercase tracking-wide text-[#b79753]/70 mb-1 leading-tight">Rating</span>
-                <span className="text-2xl sm:text-3xl font-black text-[#b79753]">
-                  {player.rating != null ? player.rating.toFixed(2) : <span className="text-gray-600 text-lg">—</span>}
-                </span>
-              </div>
-              {/* Métricas promedio */}
-              {[
-                { label: 'Pases prom.', value: player.passesCompleted },
-                { label: 'Remates prom.', value: player.shots },
-                { label: 'Intercepciones prom.', value: player.interceptions },
-              ].map(({ label, value }) => (
-                <div key={label} className="bg-[#0b3332]/70 rounded-xl border border-[#1a6866]/50 shadow-md text-center p-3 sm:p-4">
-                  <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1 leading-tight break-words">{label}</span>
-                  <span className="text-lg sm:text-2xl font-black text-gray-200">
-                    {value != null ? value.toFixed(1) : <span className="text-gray-600 text-sm">—</span>}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Estadísticas de temporada */}
-          <div className="bg-[#104443]/30 rounded-2xl p-4 sm:p-5 border border-[#1a6866]/40">
-            <h2 className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-2">
-              <span className="w-4 h-px bg-[#1a6866] inline-block"></span>
-              Estadísticas de temporada
-              <span className="w-4 h-px bg-[#1a6866] inline-block"></span>
-            </h2>
-            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-              {[
-                { label: 'Goles', value: player.goals },
-                { label: 'Asistencias', value: player.assists },
-                { label: 'Pases clave', value: player.keyPasses },
-                { label: 'Regates', value: player.dribbles },
-                { label: 'Entradas', value: player.totalTackles },
-              ].map(({ label, value }) => (
-                <div key={label} className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-[#1a6866]/40 text-center">
-                  <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1 leading-tight break-words">{label}</span>
-                  <span className="text-base sm:text-xl font-black text-gray-300">
-                    {value ?? <span className="text-gray-600 text-sm">—</span>}
-                  </span>
-                </div>
-              ))}
-              <div className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-yellow-500/30 text-center">
-                <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1">Amarillas</span>
-                <div className="flex items-center justify-center gap-1">
-                  <span className="inline-block w-2.5 h-4 rounded-[2px] bg-yellow-400 shrink-0"></span>
-                  <span className="text-base sm:text-xl font-black text-yellow-400">
-                    {player.yellowCards ?? <span className="text-gray-600 text-sm">—</span>}
-                  </span>
-                </div>
-              </div>
-              <div className="bg-[#0b3332]/50 p-2 sm:p-3 rounded-xl border border-red-500/30 text-center">
-                <span className="block text-[8px] font-black uppercase tracking-wide text-gray-500 mb-1">Rojas</span>
-                <div className="flex items-center justify-center gap-1">
-                  <span className="inline-block w-2.5 h-4 rounded-[2px] bg-red-500 shrink-0"></span>
-                  <span className="text-base sm:text-xl font-black text-red-400">
-                    {player.redCards ?? <span className="text-gray-600 text-sm">—</span>}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  } else {
-    detailContent = null;
-  }
 
   if (!hasApiKey) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">
         <div className="bg-[#104443] border-2 border-[#b79753]/50 rounded-2xl p-8 text-center shadow-2xl">
-          <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753] text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-            🔑
-          </div>
-          <h2 className="text-2xl font-black uppercase tracking-wider text-white mb-3">
-            Clave de Acceso Requerida
-          </h2>
-          <p className="text-base text-gray-300 font-medium mb-6">
-            Necesitás generar una ApiKey para ver el catálogo.
-          </p>
-          <Link
-            to="/account"
-            className="inline-flex items-center gap-2 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xl hover:shadow-[#b79753]/40 cursor-pointer"
-          >
+          <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753] text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">🔑</div>
+          <h2 className="text-2xl font-black uppercase tracking-wider text-white mb-3">Clave de Acceso Requerida</h2>
+          <p className="text-base text-gray-300 font-medium mb-6">Necesitás generar una ApiKey para ver el catálogo.</p>
+          <Link to="/account" className="inline-flex items-center gap-2 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xl cursor-pointer">
             Ir a Mi Cuenta para generar ApiKey &rarr;
           </Link>
         </div>
@@ -240,18 +120,198 @@ export const PlayerDetailPage: React.FC = () => {
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto py-4 sm:py-8 px-3 sm:px-6">
-      <title>{player ? `${player.name} — FútVal` : 'Detalle de Jugador — FútVal'}</title>
+  if (isLoading) {
+    return (
+      <div className="max-w-5xl mx-auto py-8 px-3 sm:px-6">
+        <div className="bg-[#104443] rounded-2xl p-12 border border-[#1a6866] text-center shadow-2xl">
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4" />
+          <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando ficha del jugador...</p>
+        </div>
+      </div>
+    );
+  }
 
+  if (errorMessage) {
+    return (
+      <div className="max-w-5xl mx-auto py-8 px-3 sm:px-6">
+        <div className="bg-[#104443] border-2 border-[#f43f5e] rounded-2xl p-8 text-center shadow-2xl">
+          <div className="w-12 h-12 bg-[#f43f5e]/20 text-[#f43f5e] border border-[#f43f5e]/40 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl">!</div>
+          <h2 className="text-xl font-black uppercase tracking-wider text-white mb-2">Información de Jugador</h2>
+          <p className="text-sm font-bold text-gray-200">{errorMessage}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!player) return null;
+
+  const accent = getAccent(player.position);
+
+  return (
+    <div className="max-w-5xl mx-auto py-4 sm:py-8 px-3 sm:px-6 animate-fade-in">
+      <title>{`${player.name} — FútVal`}</title>
+
+      {/* Volver */}
       <Link
         to="/catalog"
-        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#b79753] hover:text-white mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/40 hover:text-[#b79753] mb-6 transition-colors"
       >
-        &larr; Volver al catálogo
+        ← Volver al catálogo
       </Link>
 
-      {detailContent}
+      {/* ── Card FIFA expandida ── */}
+      <div
+        className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+        style={{ background: 'linear-gradient(160deg, #0e4040 0%, #072221 55%, #041915 100%)' }}
+      >
+        {/* Franja de posición */}
+        <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${accent.from}, ${accent.via})` }} />
+
+        {/* ── HERO: silueta + info principal ── */}
+        <div className="relative flex flex-col md:flex-row">
+          {/* Glow detrás de la silueta */}
+          <div
+            className="absolute inset-0 opacity-15 blur-3xl pointer-events-none"
+            style={{ background: `radial-gradient(ellipse at 25% 60%, ${accent.from}99 0%, transparent 65%)` }}
+          />
+
+          {/* Silueta + rating FIFA */}
+          <div className="relative flex flex-col items-center justify-end pt-6 pb-2 px-6 md:w-56 shrink-0">
+            {/* Rating grande — estilo FIFA */}
+            <div className="absolute top-5 left-5 flex flex-col items-start leading-none">
+              <span className="text-5xl font-black tabular-nums drop-shadow-lg" style={{ color: accent.text }}>
+                {player.rating != null ? Math.round(player.rating * 10) : '?'}
+              </span>
+              <span className="text-[11px] font-black uppercase tracking-widest mt-1" style={{ color: accent.text }}>
+                {getPositionLabel(player.position)}
+              </span>
+            </div>
+
+            <img
+              src={getSilhouette(player.position)}
+              alt="Silueta del jugador"
+              className="h-52 object-contain select-none pointer-events-none drop-shadow-2xl"
+              draggable={false}
+            />
+          </div>
+
+          {/* Datos principales */}
+          <div className="flex-1 flex flex-col justify-between p-6 sm:p-8">
+            {/* Escudo + nombre + equipo */}
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 shrink-0 flex items-center justify-center">
+                {player.crestUrl ? (
+                  <img
+                    src={player.crestUrl}
+                    alt={player.team}
+                    className="w-full h-full object-contain drop-shadow-lg"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      (e.currentTarget.parentElement as HTMLElement).textContent = '⚽';
+                    }}
+                  />
+                ) : (
+                  <span className="text-3xl select-none">⚽</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span
+                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border"
+                    style={{ color: accent.text, borderColor: `${accent.from}50`, backgroundColor: `${accent.from}18` }}
+                  >
+                    {getPositionLabel(player.position)}
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-white/10 text-white/50">
+                    {player.league}
+                  </span>
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white leading-tight line-clamp-2">
+                  {player.name}
+                </h1>
+                <p className="font-bold text-sm mt-1 flex items-center gap-2" style={{ color: accent.text }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block shrink-0" style={{ backgroundColor: accent.from }} />
+                  {player.team}
+                </p>
+              </div>
+            </div>
+
+            {/* Valor del token */}
+            <div className="mt-6">
+              {quote ? (
+                <div
+                  className="inline-flex flex-col rounded-2xl px-6 py-4 border"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent.from}22, ${accent.via}12)`,
+                    borderColor: `${accent.from}45`,
+                  }}
+                >
+                  <span className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: `${accent.text}99` }}>
+                    Valor token
+                  </span>
+                  <span className="text-4xl font-black tabular-nums leading-none" style={{ color: accent.text }}>
+                    {quote.value.toFixed(2)}
+                    <span className="text-sm font-bold ml-1.5 opacity-50">cr.</span>
+                  </span>
+                </div>
+              ) : (
+                <div className="inline-flex flex-col rounded-2xl px-6 py-4 border border-white/8 opacity-25">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Valor token</span>
+                  <span className="text-4xl font-black text-gray-600 leading-none">—</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── STATS ── */}
+        <div className="border-t border-white/8 p-5 sm:p-8 space-y-6" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+
+          {/* Rendimiento: rating bars */}
+          <div>
+            <h2 className="text-[9px] font-black uppercase tracking-widest mb-4 flex items-center gap-3" style={{ color: `${accent.text}80` }}>
+              <span className="flex-1 h-px" style={{ backgroundColor: `${accent.from}40` }} />
+              Métricas de rendimiento
+              <span className="flex-1 h-px" style={{ backgroundColor: `${accent.from}40` }} />
+            </h2>
+            <div className="space-y-2.5">
+              <RatingBar label="Rating" value={player.rating} max={10} color={accent.text} />
+              <RatingBar label="Pases compl." value={player.passesCompleted} max={100} color="#60a5fa" />
+              <RatingBar label="Remates" value={player.shots} max={10} color="#2dd4bf" />
+              <RatingBar label="Intercepciones" value={player.interceptions} max={10} color="#a855f7" />
+            </div>
+          </div>
+
+          {/* Estadísticas de temporada */}
+          <div>
+            <h2 className="text-[9px] font-black uppercase tracking-widest mb-4 flex items-center gap-3 text-white/25">
+              <span className="flex-1 h-px bg-white/8" />
+              Estadísticas de temporada
+              <span className="flex-1 h-px bg-white/8" />
+            </h2>
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+              <StatBlock label="Goles" value={player.goals} color="#2dd4bf" highlight />
+              <StatBlock label="Asistencias" value={player.assists} color="#b79753" highlight />
+              <StatBlock label="Pases clave" value={player.keyPasses} color={accent.text} highlight />
+              <StatBlock label="Regates" value={player.dribbles} color="#c084fc" />
+              <StatBlock label="Entradas" value={player.totalTackles} color="#60a5fa" />
+              <StatBlock label="Amarillas" value={player.yellowCards} color="#facc15" />
+              <StatBlock label="Rojas" value={player.redCards} color="#f87171" />
+            </div>
+          </div>
+
+          {/* Partidos */}
+          {player.matchesPlayed != null && (
+            <div className="flex items-center justify-between rounded-xl px-5 py-3 border border-white/8" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+              <span className="text-[9px] font-black uppercase tracking-widest text-white/35">Partidos jugados</span>
+              <span className="text-2xl font-black" style={{ color: accent.text }}>{player.matchesPlayed}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Franja de color inferior */}
+        <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent.via}, ${accent.from})` }} />
+      </div>
     </div>
   );
 };

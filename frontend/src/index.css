@@ -35,6 +35,28 @@
   animation: heroSlide 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes fifaShine {
+  0% {
+    transform: translateX(-150%) rotate(25deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+  }
+  45% {
+    transform: translateX(250%) rotate(25deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(250%) rotate(25deg);
+    opacity: 0;
+  }
+}
+
+.fifa-card-shine {
+  animation: fifaShine 5s infinite ease-in-out;
+}
+
 /* Custom scrollbar styling for Deep Petrol Green & Soft Gold Dashboard */
 ::-webkit-scrollbar {
   width: 8px;

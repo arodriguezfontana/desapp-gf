@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" fill="none">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#0b3332" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.90"/>
+      <stop offset="60%" stop-color="#1d4ed8" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#0b3332" stop-opacity="0.4"/>
+    </linearGradient>
+    <filter id="blur-edge"><feGaussianBlur stdDeviation="1.2"/></filter>
+  </defs>
+  <ellipse cx="100" cy="200" rx="90" ry="110" fill="url(#glow)"/>
+  <ellipse cx="100" cy="300" rx="45" ry="8" fill="#000" fill-opacity="0.35"/>
+  <path d="M88 220 Q82 255 78 295 Q82 300 90 300 Q94 265 96 230Z" fill="url(#body)" filter="url(#blur-edge)"/>
+  <path d="M112 220 Q118 255 122 295 Q118 300 110 300 Q106 265 104 230Z" fill="url(#body)" filter="url(#blur-edge)"/>
+  <path d="M82 195 Q80 215 78 228 Q100 235 122 228 Q120 215 118 195Z" fill="url(#body)"/>
+  <path d="M78 145 Q68 150 62 175 Q70 195 82 195 Q100 200 118 195 Q130 195 138 175 Q132 150 122 145 Q110 140 100 138 Q90 140 78 145Z" fill="url(#body)"/>
+  <path d="M78 148 Q60 160 52 185 Q56 190 62 188 Q68 165 82 158Z" fill="url(#body)" filter="url(#blur-edge)"/>
+  <path d="M122 148 Q140 160 148 185 Q144 190 138 188 Q132 165 118 158Z" fill="url(#body)" filter="url(#blur-edge)"/>
+  <path d="M94 120 Q94 138 100 140 Q106 138 106 120Z" fill="url(#body)"/>
+  <circle cx="100" cy="105" r="26" fill="url(#body)"/>
+  <rect x="89" y="162" width="22" height="16" rx="3" fill="#0b3332" fill-opacity="0.3"/>
+  <circle cx="100" cy="105" r="26" fill="none" stroke="#60a5fa" stroke-opacity="0.30" stroke-width="1.5"/>
+  <path d="M78 145 Q68 150 62 175 Q70 195 82 195 Q100 200 118 195 Q130 195 138 175 Q132 150 122 145 Q110 140 100 138 Q90 140 78 145Z" fill="none" stroke="#3b82f6" stroke-opacity="0.22" stroke-width="1"/>
+</svg>
+

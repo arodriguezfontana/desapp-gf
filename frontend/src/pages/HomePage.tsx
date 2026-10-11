@@ -26,7 +26,7 @@ const HERO_SLIDES = [
   },
   {
     id: 3,
-    image: '/assets/player_celebration.jpg',
+    image: '/assets/soccer_player.jpg',
     badge: 'PASIÓN & COMPETICIÓN',
     badgeColor: 'bg-[#b79753] text-[#0b3332]',
     title: 'EMOCIÓN DEL FÚTBOL DE ÉLITE',
@@ -52,39 +52,38 @@ export function HomePage() {
 
   return (
     <div className="w-full animate-fade-in">
-      <title>Inicio — FútVal</title>
+      <title>FútVal</title>
 
       {/* FULL WIDTH HERO SLIDER SECTION (3 SLIDES MAX) */}
-      <section className="relative w-full bg-[#0b3332] border-b border-[#1a6866] min-h-[480px] sm:min-h-[520px] flex flex-col justify-between overflow-hidden group">
+      <section className="relative w-screen -ml-[calc((100vw-100%)/2)] bg-[#0b3332] border-b border-[#1a6866] min-h-[calc(100vh-160px)] flex flex-col justify-between overflow-hidden group">
         {/* Background Slide Image */}
         <div key={currentSlide.id} className="absolute inset-0 z-0 animate-hero-fade flex items-center justify-center bg-[#072221]">
           <img
             src={currentSlide.image}
             alt={currentSlide.title}
-            className={`w-full h-full ${currentSlide.position} filter brightness-60 contrast-110 group-hover:scale-105 transition-transform duration-700`}
+            className={`w-full h-full ${currentSlide.position} filter brightness-75 contrast-105 group-hover:scale-105 transition-transform duration-700`}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/75 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0b3332]/90 via-[#0b3332]/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b3332] via-[#0b3332]/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b3332]/70 via-[#0b3332]/30 to-transparent" />
         </div>
 
-        {/* Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
-          {/* Top Floating Badge */}
-          <div className="flex justify-between items-start mb-6">
-            <span className={`px-4 py-1.5 font-black text-[11px] uppercase tracking-widest rounded-xl shadow-lg ${currentSlide.badgeColor}`}>
-              {currentSlide.badge}
+        {/* Badge + Temporada — anclados al top de la sección */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 flex justify-between items-start">
+          <span className={`px-4 py-1.5 font-black text-[11px] uppercase tracking-widest rounded-xl shadow-lg ${currentSlide.badgeColor}`}>
+            {currentSlide.badge}
+          </span>
+
+          <div className="flex items-center gap-2 bg-[#072221]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#b79753]/30">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-ping" />
+            <span className="text-xs font-black uppercase tracking-widest text-white">
+              TEMPORADA 2026 / 2027
             </span>
-
-            <div className="flex items-center gap-2 bg-[#072221]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#b79753]/30">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-ping" />
-              <span className="text-xs font-black uppercase tracking-widest text-white">
-                TEMPORADA 2026 / 2027
-              </span>
-            </div>
           </div>
+        </div>
 
-          {/* Hero Main Copy */}
-          <div className="max-w-3xl my-4 sm:my-8">
+        {/* Título, subtítulo y CTA — pegados al fondo */}
+        <div className="relative z-10 flex-1 flex flex-col justify-end max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12">
+          <div className="max-w-3xl">
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-wider text-white leading-tight mb-4 drop-shadow-md">
               {currentSlide.title}
             </h1>
@@ -190,7 +189,7 @@ export function HomePage() {
           <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
             <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
               <img
-                src="/assets/soccer_player.jpg"
+                src="/assets/player_celebration.jpg"
                 alt="Futbolista en Acción"
                 className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
               />
