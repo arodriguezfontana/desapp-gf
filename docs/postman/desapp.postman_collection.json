@@ -1618,6 +1618,106 @@
             },
             "description": "Mismo criterio que el listado: GET /players/:id también exige ApiKeyGuard y está marcado @Public() respecto de JwtAuthGuard, así que un JWT válido solo no alcanza."
           }
+        },
+        {
+          "name": "Cotización de jugador — última cotización vigente (200 o 204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('200 OK — cotización obtenida', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.playerId).to.be.a('string');",
+                  "    pm.expect(body.valor).to.be.a('number');",
+                  "    pm.expect(body.score).to.be.a('number');",
+                  "    pm.expect(body.strategyName).to.be.a('string');",
+                  "    pm.expect(body.weights).to.be.an('object');",
+                  "    pm.expect(body.calculatedAt).to.be.a('string');",
+                  "  });",
+                  "} else {",
+                  "  pm.test('204 No Content — el jugador no tiene cotizaciones', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "quote"
+              ]
+            },
+            "description": "Retorna la última cotización calculada para el jugador o 204 No Content si aún no tiene cotizaciones. Exige x-api-key."
+          }
+        },
+        {
+          "name": "Cotización de jugador — histórica vigente en fecha at (200, 204 o 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('200 OK — cotización histórica obtenida', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.valor).to.be.a('number');",
+                  "    pm.expect(body.score).to.be.a('number');",
+                  "  });",
+                  "} else {",
+                  "  pm.test('204 No Content — sin cotización para esa fecha', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quote?at=2026-09-15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "quote"
+              ],
+              "query": [
+                {
+                  "key": "at",
+                  "value": "2026-09-15"
+                }
+              ]
+            },
+            "description": "Retorna la cotización vigente al cierre del día UTC (23:59:59.999Z) especificado en 'at'. 400 si la fecha es inválida; 204 si no hay cotizaciones vigentes."
+          }
         }
       ]
     },

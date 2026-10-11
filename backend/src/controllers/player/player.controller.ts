@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, HttpStatus, Param, Query, Res, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 
 import { Public } from '../../guards/public.decorator';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
@@ -7,9 +8,12 @@ import { parseLeague } from '../../domain/player/enums/league';
 import { parsePosition } from '../../domain/player/enums/position';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerEnrichmentService } from '../../services/player/player-enrichment.service';
+import { QuotationService } from '../../services/quotation/quotation.service';
 import { ListPlayersQueryDto } from './dto/list-players-query.dto';
 import { PlayerListResponseDto } from './dto/player-list-response.dto';
 import { PlayerResponseDto } from './dto/player-response.dto';
+import { PlayerQuoteDetailResponseDto } from './dto/player-quote-detail-response.dto';
+import { ParseDatePipe } from './pipes/parse-date.pipe';
 
 /**
  * Catálogo de jugadores (datos de prueba). Protegido con ApiKey, no con JWT
@@ -23,7 +27,10 @@ import { PlayerResponseDto } from './dto/player-response.dto';
 @UseGuards(ApiKeyGuard)
 @Controller('players')
 export class PlayerController {
-  constructor(private readonly players: PlayerEnrichmentService) {}
+  constructor(
+    private readonly players: PlayerEnrichmentService,
+    private readonly quotationService: QuotationService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -65,5 +72,35 @@ export class PlayerController {
   async detail(@Param('id') id: string): Promise<PlayerResponseDto> {
     const { player, crestUrl } = await this.players.getPlayerByIdWithCrest(id);
     return PlayerResponseDto.fromDomain(player, crestUrl);
+  }
+
+  @Get(':id/quote')
+  @ApiOperation({
+    summary: 'Cotización vigente o histórica de un jugador',
+    description:
+      'Devuelve el valor del token, score normalizado, snapshot de pesos y estrategia aplicada. Si "at" está presente, devuelve la cotización vigente al final de ese día UTC (23:59:59.999Z). Si "at" está ausente, devuelve la última cotización sin restricción de fecha. Retorna 204 si el jugador existe pero no tiene cotizaciones para esa fecha.',
+  })
+  @ApiQuery({
+    name: 'at',
+    required: false,
+    description: 'Fecha en formato ISO 8601 (ej. 2026-09-15)',
+    type: String,
+  })
+  @ApiResponse({ status: 200, type: PlayerQuoteDetailResponseDto })
+  @ApiResponse({ status: 204, description: 'El jugador no posee cotización calculada para esa fecha.' })
+  @ApiResponse({ status: 400, description: 'Formato de fecha "at" inválido.' })
+  @ApiResponse({ status: 401, description: 'No autenticado.' })
+  @ApiResponse({ status: 404, description: 'No existe un jugador con ese id (PLAYER_NOT_FOUND).' })
+  async quote(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+    @Query('at', ParseDatePipe) at?: Date,
+  ): Promise<PlayerQuoteDetailResponseDto | void> {
+    const result = await this.quotationService.getQuoteAtDate(id, at);
+    if (!result) {
+      res.status(HttpStatus.NO_CONTENT);
+      return;
+    }
+    return PlayerQuoteDetailResponseDto.fromDomain(result.quote, result.strategyName);
   }
 }
