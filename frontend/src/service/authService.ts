@@ -1,5 +1,5 @@
 import { httpClient } from './httpClient';
-import type { LoginResponseDto, IssueApiKeyResponseDto } from '../types/auth.types';
+import type { LoginResponseDto, IssueApiKeyResponseDto, MeResponseDto } from '../types/auth.types';
 
 /**
  * Operaciones de autenticación del cliente.
@@ -29,6 +29,13 @@ export const authService = {
    */
   async generateApiKey(): Promise<IssueApiKeyResponseDto> {
     return httpClient.post<IssueApiKeyResponseDto>('/auth/api-key', {});
+  },
+
+  /**
+   * Obtiene los datos del usuario autenticado (id, email, role).
+   */
+  async me(): Promise<MeResponseDto> {
+    return httpClient.get<MeResponseDto>('/auth/me');
   },
 };
 

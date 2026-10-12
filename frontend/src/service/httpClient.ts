@@ -100,6 +100,14 @@ export const httpClient = {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   },
+
+  patch<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<T> {
+    return request<T>(url, {
+      ...options,
+      method: 'PATCH',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  },
 };
 
 export { ApiError };

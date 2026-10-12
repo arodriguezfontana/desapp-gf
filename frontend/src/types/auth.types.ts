@@ -33,3 +33,11 @@ export interface ApiErrorDto {
   path: string;
 }
 
+export type UserRole = 'admin' | 'user';
+
+export interface MeResponseDto {
+  id: string;
+  email: string;
+  role: UserRole;
+}
+

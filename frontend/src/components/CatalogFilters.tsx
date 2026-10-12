@@ -87,7 +87,7 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = ({
         {/* Búsqueda por Equipo libre */}
         <div>
           <label htmlFor="team-filter" className="block text-[11px] font-black uppercase tracking-widest text-[#b79753] mb-1.5">
-            Equipo / Club
+            Equipo
           </label>
           <input
             id="team-filter"

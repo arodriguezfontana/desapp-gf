@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 export function AppLayout() {
   const { isAuthenticated, logout } = useAuth();
+  const { isAdmin } = useCurrentUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -82,6 +84,21 @@ export function AppLayout() {
                   Mi cuenta
                 </NavLink>
 
+                {isAdmin && (
+                  <NavLink
+                    to="/admin"
+                    className={({ isActive }) =>
+                      `px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all ${
+                        isActive
+                          ? 'bg-[#104443] text-[#2dd4bf] border-[#2dd4bf]'
+                          : 'text-[#2dd4bf] border-[#2dd4bf]/40 hover:bg-[#104443] hover:text-white'
+                      }`
+                    }
+                  >
+                    Panel Admin
+                  </NavLink>
+                )}
+
                 <button
                   onClick={logout}
                   className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white bg-[#f43f5e] hover:bg-[#e11d48] rounded-xl shadow-md transition-all cursor-pointer"
@@ -144,6 +161,15 @@ export function AppLayout() {
                 >
                   Mi cuenta
                 </NavLink>
+                {isAdmin && (
+                  <NavLink
+                    to="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-2.5 text-xs font-black uppercase tracking-wider text-[#2dd4bf] hover:bg-[#104443] rounded-xl"
+                  >
+                    Panel Admin
+                  </NavLink>
+                )}
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
@@ -272,6 +298,9 @@ export function AppLayout() {
                 <li><Link to="/home" className="hover:text-[#b79753] transition-colors">Inicio Plataforma</Link></li>
                 <li><Link to="/catalog" className="hover:text-[#b79753] transition-colors">Catálogo de Jugadores</Link></li>
                 <li><Link to="/account" className="hover:text-[#b79753] transition-colors">Mi Cuenta</Link></li>
+                {isAdmin && (
+                  <li><Link to="/admin" className="text-[#2dd4bf] hover:text-white transition-colors font-bold">Panel Admin</Link></li>
+                )}
               </ul>
             </div>
 

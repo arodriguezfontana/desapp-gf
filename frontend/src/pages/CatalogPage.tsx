@@ -213,7 +213,7 @@ export const CatalogPage: React.FC = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#0b3332]/90 backdrop-blur-md px-3.5 py-1 rounded-full border border-[#b79753]/30 inline-block mb-2">
-                FÚTVAL — MERCADO DE FICHAJES
+                MERCADO DE FICHAJES
               </span>
               <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-wider text-white">
                 Catálogo de Jugadores

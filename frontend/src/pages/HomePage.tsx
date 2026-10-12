@@ -141,15 +141,15 @@ export function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-          {/* Module 1: Catálogo de Jugadores con Imagen Decorativa Táctica */}
+          {/* Module 1: Catálogo de Jugadores con Imagen Decorativa Dinámica */}
           <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
-            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+            <div className="relative h-52 sm:h-56 overflow-hidden border-b border-[#1a6866]">
               <img
-                src="/assets/tactics_board.jpg"
-                alt="Táctica y Análisis de Fútbol"
-                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+                src="/assets/home_catalog_players.jpg"
+                alt="Duelo y Acción de Jugadores de Fútbol"
+                className="w-full h-full object-cover object-[center_40%] filter brightness-90 group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/20 to-transparent" />
               <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#2dd4bf]/40">
                 FUTBOLISTAS & CLUBES
               </span>
@@ -185,15 +185,15 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Module 2: Claves de Acceso Personal con Imagen Decorativa Jugador en Acción */}
+          {/* Module 2: Claves de Acceso Personal con Imagen Decorativa Seguridad VIP */}
           <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
-            <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+            <div className="relative h-52 sm:h-56 overflow-hidden border-b border-[#1a6866]">
               <img
-                src="/assets/player_celebration.jpg"
-                alt="Futbolista en Acción"
-                className="w-full h-full object-cover filter brightness-85 group-hover:scale-105 transition-transform duration-500"
+                src="/assets/home_key_security.jpg"
+                alt="Credencial y Acceso Seguro"
+                className="w-full h-full object-cover object-top filter brightness-90 group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/20 to-transparent" />
               <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#b79753]/40">
                 ACCESO SEGURO
               </span>
