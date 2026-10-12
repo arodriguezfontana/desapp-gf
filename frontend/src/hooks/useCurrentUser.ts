@@ -36,8 +36,26 @@ export function useCurrentUser() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    fetchUser().catch(() => {});
-  }, [fetchUser]);
+    if (!isAuthenticated) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    authService
+      .me()
+      .then((data) => { if (!cancelled) setUser(data); })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setUser(null);
+          setError(err instanceof Error ? err.message : 'Error al obtener perfil del usuario.');
+        }
+      })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, [isAuthenticated]);
 
   return {
     user,
