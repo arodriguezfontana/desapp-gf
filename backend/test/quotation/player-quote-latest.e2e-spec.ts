@@ -1,7 +1,5 @@
 import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
-import { ApiKeyEntity } from '../../src/repositories/api-key/entities/api-key.entity';
 import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
 import { ValuationStrategyEntity } from '../../src/repositories/quotation/entities/valuation-strategy.entity';
 import { PlayerQuoteEntity } from '../../src/repositories/quotation/entities/player-quote.entity';

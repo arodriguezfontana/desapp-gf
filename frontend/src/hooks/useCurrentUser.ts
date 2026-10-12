@@ -36,7 +36,7 @@ export function useCurrentUser() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    void fetchUser();
+    fetchUser().catch(() => {});
   }, [fetchUser]);
 
   return {

@@ -86,7 +86,7 @@ export const CatalogPage: React.FC = () => {
     return () => {
       isCancelled = true;
     };
-  }, [hasApiKey, currentPage, selectedLeague, selectedPosition, debouncedTeam, getPlayers]);
+  }, [hasApiKey, currentPage, selectedLeague, selectedPosition, debouncedTeam, getPlayers, getLatestQuoteByPlayerId]);
 
   const handleLeagueChange = (league: string) => {
     setSelectedLeague(league);
