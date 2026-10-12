@@ -36,24 +36,26 @@ export function useCurrentUser() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
     let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-    authService
-      .me()
-      .then((data) => { if (!cancelled) setUser(data); })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setUser(null);
-          setError(err instanceof Error ? err.message : 'Error al obtener perfil del usuario.');
-        }
-      })
-      .finally(() => { if (!cancelled) setIsLoading(false); });
+
+    Promise.resolve(isAuthenticated).then((authenticated) => {
+      if (!authenticated) {
+        if (!cancelled) { setUser(null); setIsLoading(false); }
+        return;
+      }
+      if (!cancelled) { setIsLoading(true); setError(null); }
+      authService
+        .me()
+        .then((data) => { if (!cancelled) setUser(data); })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            setUser(null);
+            setError(err instanceof Error ? err.message : 'Error al obtener perfil del usuario.');
+          }
+        })
+        .finally(() => { if (!cancelled) setIsLoading(false); });
+    });
+
     return () => { cancelled = true; };
   }, [isAuthenticated]);
 

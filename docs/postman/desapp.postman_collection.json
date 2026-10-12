@@ -1846,6 +1846,186 @@
           }
         }
       ]
+    },
+    {
+      "name": "Feature 13 — Cotización de jugador por fecha",
+      "description": "GET /players/:id/quote — cotización más reciente o vigente en una fecha histórica. Requiere apiKey. Ver specs/013-player-quote-by-date/.",
+      "item": [
+        {
+          "name": "Cotización más reciente (sin at) — 200 OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('tiene campos requeridos', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('playerId');",
+                  "  pm.expect(b).to.have.property('valor');",
+                  "  pm.expect(b).to.have.property('score');",
+                  "  pm.expect(b).to.have.property('strategyName');",
+                  "  pm.expect(b).to.have.property('weights');",
+                  "  pm.expect(b).to.have.property('calculatedAt');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quote",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "{{playerId}}", "quote"]
+            },
+            "description": "Retorna la cotización más reciente del jugador. Requiere haber corrido al menos un recálculo (POST /quotes/recalculate)."
+          }
+        },
+        {
+          "name": "Cotización histórica (con at) — 200 OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('calculatedAt es anterior o igual al fin del día solicitado', function () {",
+                  "  const b = pm.response.json();",
+                  "  const calculatedAt = new Date(b.calculatedAt);",
+                  "  const endOfDay = new Date('2026-09-15T23:59:59.999Z');",
+                  "  pm.expect(calculatedAt.getTime()).to.be.at.most(endOfDay.getTime());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quote?at=2026-09-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "{{playerId}}", "quote"],
+              "query": [{ "key": "at", "value": "2026-09-15" }]
+            },
+            "description": "Retorna la cotización vigente al 2026-09-15 (calculatedAt ≤ 2026-09-15T23:59:59.999Z). Ajustar la fecha según los datos disponibles."
+          }
+        },
+        {
+          "name": "Sin cotización para la fecha — 204 No Content",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', function () { pm.response.to.have.status(204); });",
+                  "pm.test('sin cuerpo', function () { pm.expect(pm.response.text()).to.equal(''); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quote?at=2000-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "{{playerId}}", "quote"],
+              "query": [{ "key": "at", "value": "2000-01-01" }]
+            },
+            "description": "Fecha anterior a cualquier recálculo → 204 sin cuerpo."
+          }
+        },
+        {
+          "name": "Formato de fecha inválido — 400 Bad Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quote?at=hola",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "{{playerId}}", "quote"],
+              "query": [{ "key": "at", "value": "hola" }]
+            }
+          }
+        },
+        {
+          "name": "Sin ApiKey — 401 Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quote",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "{{playerId}}", "quote"]
+            }
+          }
+        },
+        {
+          "name": "Jugador inexistente — 404 PLAYER_NOT_FOUND",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });",
+                  "pm.test('mensaje contiene PLAYER_NOT_FOUND o texto de jugador no encontrado', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.message).to.include('jugador');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/00000000-0000-0000-0000-000000000000/quote",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "00000000-0000-0000-0000-000000000000", "quote"]
+            }
+          }
+        }
+      ]
     }
   ]
 }
