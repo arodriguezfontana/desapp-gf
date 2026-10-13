@@ -43,7 +43,10 @@ describe('TypeOrmTeamRepository (integración)', () => {
     await dataSource.query(`DELETE FROM "teams" WHERE "whoscored_name" LIKE 'Test%'`);
   });
 
-  const insertTeam = async (whoScoredName: string, overrides: Partial<typeof BASE_PROPS> & { crestUrl?: string | null } = {}) => {
+  const insertTeam = async (
+    whoScoredName: string,
+    overrides: Omit<Partial<typeof BASE_PROPS>, 'crestUrl'> & { crestUrl?: string | null } = {},
+  ) => {
     const id = randomUUID();
     await dataSource.getRepository(TeamEntity).insert({
       id,

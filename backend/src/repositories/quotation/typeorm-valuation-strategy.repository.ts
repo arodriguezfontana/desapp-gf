@@ -26,6 +26,11 @@ export class TypeOrmValuationStrategyRepository implements ValuationStrategyRepo
     return entity ? this.mapper.toDomain(entity) : null;
   }
 
+  async findAll(): Promise<ValuationStrategy[]> {
+    const entities = await this.repo.find({ order: { name: 'ASC' } });
+    return entities.map((entity) => this.mapper.toDomain(entity));
+  }
+
   async save(strategy: ValuationStrategy): Promise<ValuationStrategy> {
     const entity = await this.repo.save(this.mapper.toPersistence(strategy));
     return this.mapper.toDomain(entity as ValuationStrategyEntity);

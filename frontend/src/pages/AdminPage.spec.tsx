@@ -12,6 +12,7 @@ describe('AdminPage', () => {
     vi.restoreAllMocks();
     apiKeyStorage.clearApiKey();
     authStorage.setToken('test-admin-jwt');
+    vi.spyOn(adminServiceModule.adminService, 'listStrategies').mockResolvedValue([]);
   });
 
   it('redirige a /home si el usuario no tiene rol admin', async () => {
@@ -156,6 +157,50 @@ describe('AdminPage', () => {
       expect(apiKeySpy).toHaveBeenCalledTimes(1);
       expect(apiKeyStorage.getApiKey()).toBe('pmk_admin_secret_key');
       expect(screen.getByText(/Clave de administrador emitida y vinculada correctamente/i)).toBeInTheDocument();
+    });
+  });
+
+  it('lista las estrategias de valuación y permite activar la que no está activa', async () => {
+    apiKeyStorage.setApiKey('pmk_existing_admin_key');
+
+    vi.spyOn(authServiceModule.authService, 'me').mockResolvedValueOnce({
+      id: 'u-admin',
+      email: 'admin@mail.com',
+      role: 'admin',
+    });
+
+    vi.spyOn(adminServiceModule.adminService, 'listStrategies')
+      .mockResolvedValueOnce([
+        { id: 'strat-1', name: 'Performance general', weights: { goals: 0.25 }, factorEscala: 99, isActive: true },
+        { id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: false },
+      ])
+      .mockResolvedValueOnce([
+        { id: 'strat-1', name: 'Performance general', weights: { goals: 0.25 }, factorEscala: 99, isActive: false },
+        { id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: true },
+      ]);
+
+    const activateSpy = vi
+      .spyOn(adminServiceModule.adminService, 'activateStrategy')
+      .mockResolvedValueOnce({ id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: true });
+
+    render(
+      <MemoryRouter>
+        <AdminPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Performance general')).toBeInTheDocument();
+      expect(screen.getByText('Impacto táctico')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Activa')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Activar esta estrategia/i }));
+
+    await waitFor(() => {
+      expect(activateSpy).toHaveBeenCalledWith('strat-2');
+      expect(screen.queryByRole('button', { name: /Activar esta estrategia/i })).toBeInTheDocument();
     });
   });
 });

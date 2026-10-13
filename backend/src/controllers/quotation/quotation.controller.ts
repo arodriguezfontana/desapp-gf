@@ -33,6 +33,19 @@ export class QuotationController {
     return PlayerQuoteResponseDto.fromDomain(quote);
   }
 
+  @Get('strategies')
+  @UseGuards(AdminApiKeyGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Listar estrategias de valuación',
+    description: 'Requiere ApiKey de admin. Devuelve todas las estrategias configuradas, indicando cuál está activa.',
+  })
+  @ApiResponse({ status: 200, type: [StrategyResponseDto] })
+  async listStrategies(): Promise<StrategyResponseDto[]> {
+    const strategies = await this.quotationService.listStrategies();
+    return strategies.map((strategy) => StrategyResponseDto.fromDomain(strategy));
+  }
+
   @Patch('strategies/:id/activate')
   @UseGuards(AdminApiKeyGuard)
   @HttpCode(200)

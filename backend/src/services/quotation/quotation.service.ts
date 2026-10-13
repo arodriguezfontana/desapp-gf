@@ -82,6 +82,10 @@ export class QuotationService {
     return this.strategyRepository.activateStrategy(id);
   }
 
+  async listStrategies() {
+    return this.strategyRepository.findAll();
+  }
+
   /**
    * Recalcula las cotizaciones de todos los jugadores activos usando la estrategia activa.
    *

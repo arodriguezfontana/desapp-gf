@@ -49,6 +49,15 @@ export const adminService = {
   },
 
   /**
+   * Lista todas las estrategias de valuación configuradas.
+   */
+  async listStrategies(): Promise<StrategyResponseDto[]> {
+    return httpClient.get<StrategyResponseDto[]>('/quotes/strategies', {
+      useApiKey: true,
+    });
+  },
+
+  /**
    * Activa una estrategia de valuación por ID.
    */
   async activateStrategy(strategyId: string): Promise<StrategyResponseDto> {

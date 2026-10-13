@@ -95,6 +95,18 @@ describe('TypeOrmValuationStrategyRepository (integración, spec 012 US3)', () =
     expect(result).toBeNull();
   });
 
+  it('findAll() devuelve todas las estrategias ordenadas por nombre', async () => {
+    await insertStrategy({ name: 'Test Zeta', weights: WEIGHTS_A, factorEscala: 10, isActive: false });
+    await insertStrategy({ name: 'Test Alfa', weights: WEIGHTS_B, factorEscala: 20, isActive: false });
+
+    const strategies = await repo.findAll();
+    const testStrategies = strategies.filter((s) => s.name.startsWith('Test'));
+
+    expect(testStrategies).toHaveLength(2);
+    expect(testStrategies[0].name).toBe('Test Alfa');
+    expect(testStrategies[1].name).toBe('Test Zeta');
+  });
+
   it('activateStrategy() desactiva la anterior y activa la nueva en una transacción', async () => {
     const idA = await insertStrategy({ name: 'Test A (activa)', weights: WEIGHTS_A, factorEscala: 10, isActive: true });
     const idB = await insertStrategy({ name: 'Test B (inactiva)', weights: WEIGHTS_B, factorEscala: 20, isActive: false });

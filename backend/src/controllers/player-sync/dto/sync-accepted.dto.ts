@@ -8,10 +8,18 @@ export class SyncAcceptedDto {
   @ApiProperty({ example: 'running', enum: ['running'] })
   status!: 'running';
 
+  @ApiProperty({ example: 'manual', enum: ['manual'] })
+  trigger!: 'manual';
+
+  @ApiProperty({ example: '2026-09-15T14:03:22.000Z' })
+  startedAt!: string;
+
   static fromDomain(state: SyncRunState): SyncAcceptedDto {
     const dto = new SyncAcceptedDto();
     dto.runId = state.runId;
     dto.status = 'running';
+    dto.trigger = 'manual';
+    dto.startedAt = state.startedAt.toISOString();
     return dto;
   }
 }

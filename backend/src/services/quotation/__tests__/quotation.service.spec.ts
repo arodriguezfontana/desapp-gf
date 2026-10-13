@@ -34,6 +34,7 @@ describe('QuotationService', () => {
     strategyRepo = {
       findActive: jest.fn(),
       findById: jest.fn(),
+      findAll: jest.fn(),
       save: jest.fn(),
       activateStrategy: jest.fn(),
     };
@@ -80,6 +81,20 @@ describe('QuotationService', () => {
       strategyRepo.activateStrategy.mockRejectedValue(new StrategyNotFoundError('s-999'));
 
       await expect(service.activateStrategy('s-999')).rejects.toBeInstanceOf(StrategyNotFoundError);
+    });
+  });
+
+  // ---- listStrategies ----------------------------------------------------------
+
+  describe('listStrategies()', () => {
+    it('delega en strategyRepository.findAll y retorna todas las estrategias', async () => {
+      const strategies = [makeStrategy({ id: 's-1' }), makeStrategy({ id: 's-2', isActive: false })];
+      strategyRepo.findAll.mockResolvedValue(strategies);
+
+      const result = await service.listStrategies();
+
+      expect(strategyRepo.findAll).toHaveBeenCalled();
+      expect(result).toBe(strategies);
     });
   });
 

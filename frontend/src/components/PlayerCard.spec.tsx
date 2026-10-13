@@ -9,6 +9,9 @@ const playerMock = {
   league: 'Premier League',
   team: 'Boca Juniors',
   position: 'FW',
+  goals: 10,
+  assists: 5,
+  yellowCards: 2,
 };
 
 describe('PlayerCard', () => {
@@ -35,7 +38,7 @@ describe('PlayerCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('71')).toBeInTheDocument();
+    expect(screen.getByText('72')).toBeInTheDocument();
   });
 
   it('muestra "—" cuando no hay cotización', () => {

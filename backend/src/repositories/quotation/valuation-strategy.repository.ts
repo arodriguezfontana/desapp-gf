@@ -8,6 +8,7 @@ import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 export interface ValuationStrategyRepository {
   findActive(): Promise<ValuationStrategy | null>;
   findById(id: string): Promise<ValuationStrategy | null>;
+  findAll(): Promise<ValuationStrategy[]>;
   save(strategy: ValuationStrategy): Promise<ValuationStrategy>;
   /**
    * Desactiva todas las estrategias y activa la indicada en una única transacción.

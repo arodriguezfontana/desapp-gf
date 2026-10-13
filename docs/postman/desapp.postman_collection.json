@@ -32,6 +32,10 @@
     {
       "key": "syncRunId",
       "value": ""
+    },
+    {
+      "key": "inactiveStrategyId",
+      "value": ""
     }
   ],
   "item": [
@@ -1843,6 +1847,165 @@
               ]
             },
             "description": "Responde ~70 s (plan free: 10 req/min, 7 s de espera entre cada una). Resultado: resumen por liga con standings y partidos actualizados."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature 12 — Estrategias de valuación (admin)",
+      "description": "GET /quotes/strategies y PATCH /quotes/strategies/:id/activate — protegidos con AdminApiKeyGuard (requieren que el rol copiado en la ApiKey sea 'admin'; una ApiKey emitida desde un usuario común da 403). Correr después de Feature 2 con una sesión logueada como el admin seedeado (ADMIN_EMAIL/ADMIN_PASSWORD) para que {{apiKey}} tenga rol admin. Ver specs/012-valuation-strategies/.",
+      "item": [
+        {
+          "name": "Listar estrategias (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('devuelve un array de estrategias con id, name, weights, factorEscala, isActive', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.be.an('array');",
+                  "  pm.expect(body.length).to.be.at.least(2);",
+                  "  body.forEach((s) => {",
+                  "    pm.expect(s).to.have.property('id');",
+                  "    pm.expect(s).to.have.property('name');",
+                  "    pm.expect(s).to.have.property('weights').that.is.an('object');",
+                  "    pm.expect(s).to.have.property('factorEscala');",
+                  "    pm.expect(s).to.have.property('isActive').that.is.a('boolean');",
+                  "  });",
+                  "});",
+                  "pm.test('hay exactamente una estrategia activa', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.filter((s) => s.isActive)).to.have.lengthOf(1);",
+                  "});",
+                  "const inactive = pm.response.json().find((s) => !s.isActive);",
+                  "if (inactive) {",
+                  "  pm.collectionVariables.set('inactiveStrategyId', inactive.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes", "strategies"]
+            },
+            "description": "Devuelve las estrategias seedeadas (012-valuation-strategies): 'Performance general' (activa por defecto) e 'Impacto táctico'. Guarda el id de una estrategia inactiva en inactiveStrategyId para la request de activación."
+          }
+        },
+        {
+          "name": "Listar estrategias — sin ApiKey (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes", "strategies"]
+            }
+          }
+        },
+        {
+          "name": "Activar una estrategia (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('inactiveStrategyId')) {",
+                  "  pm.test.skip('200 OK', function () {});",
+                  "  console.warn('inactiveStrategyId no seteado: correr antes \"Listar estrategias (200)\".');",
+                  "} else {",
+                  "  pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "  pm.test('la estrategia activada queda isActive=true', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.eql(pm.collectionVariables.get('inactiveStrategyId'));",
+                  "    pm.expect(body.isActive).to.eql(true);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/strategies/{{inactiveStrategyId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes", "strategies", "{{inactiveStrategyId}}", "activate"]
+            },
+            "description": "Desactiva la estrategia activa actual y activa inactiveStrategyId (seteada por 'Listar estrategias'). El próximo POST /quotes/recalculate usará esta estrategia."
+          }
+        },
+        {
+          "name": "Activar estrategia inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/strategies/00000000-0000-0000-0000-000000000000/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes", "strategies", "00000000-0000-0000-0000-000000000000", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Activar estrategia — sin ApiKey (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/strategies/{{inactiveStrategyId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotes", "strategies", "{{inactiveStrategyId}}", "activate"]
+            }
           }
         }
       ]

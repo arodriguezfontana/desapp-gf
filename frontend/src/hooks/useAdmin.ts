@@ -33,6 +33,10 @@ export function useAdmin() {
     return adminService.recalculateQuotes();
   }, []);
 
+  const listStrategies = useCallback((): Promise<StrategyResponseDto[]> => {
+    return adminService.listStrategies();
+  }, []);
+
   const activateStrategy = useCallback(
     (strategyId: string): Promise<StrategyResponseDto> => {
       return adminService.activateStrategy(strategyId);
@@ -45,6 +49,7 @@ export function useAdmin() {
     getWhoScoredRunStatus,
     triggerFootballDataSync,
     recalculateQuotes,
+    listStrategies,
     activateStrategy,
   };
 }
