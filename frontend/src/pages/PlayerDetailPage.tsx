@@ -212,7 +212,7 @@ export const PlayerDetailPage: React.FC = () => {
                     {player.name}
                   </h1>
                   <p className="font-bold text-sm mt-1 flex items-center gap-2" style={{ color: accent.text }}>
-                    <span className="w-1.5 h-1.5 rounded-full inline-block shrink-0" style={{ backgroundColor: accent.from }} />
+                    <span className="w-1.5 h-1.5 rounded-full inline-block shrink-0" style={{ backgroundColor: accent.from }} />{' '}
                     {player.team}
                   </p>
                 </div>
@@ -229,8 +229,8 @@ export const PlayerDetailPage: React.FC = () => {
           {/* Rendimiento: rating bars */}
           <div>
             <h2 className="text-[9px] font-black uppercase tracking-widest mb-4 flex items-center gap-3" style={{ color: `${accent.text}80` }}>
-              <span className="flex-1 h-px" style={{ backgroundColor: `${accent.from}40` }} />
-              Métricas de rendimiento
+              <span className="flex-1 h-px" style={{ backgroundColor: `${accent.from}40` }} />{' '}
+              Métricas de rendimiento{' '}
               <span className="flex-1 h-px" style={{ backgroundColor: `${accent.from}40` }} />
             </h2>
             <div className="space-y-2.5">
@@ -246,8 +246,8 @@ export const PlayerDetailPage: React.FC = () => {
           {/* Estadísticas de temporada */}
           <div>
             <h2 className="text-[9px] font-black uppercase tracking-widest mb-4 flex items-center gap-3 text-white/25">
-              <span className="flex-1 h-px bg-white/8" />
-              Estadísticas de temporada
+              <span className="flex-1 h-px bg-white/8" />{' '}
+              Estadísticas de temporada{' '}
               <span className="flex-1 h-px bg-white/8" />
             </h2>
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">

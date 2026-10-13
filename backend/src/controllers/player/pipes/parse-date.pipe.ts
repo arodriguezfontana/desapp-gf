@@ -1,8 +1,17 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 
 const ISO_DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const ISO_TIMESTAMP_REGEX =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/;
+const ISO_TIMESTAMP_BASE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?/;
+const ISO_TIMEZONE_SUFFIX_REGEX = /^(?:Z|[+-]\d{2}:?\d{2})$/;
+
+function isValidIsoTimestamp(value: string): boolean {
+  const match = ISO_TIMESTAMP_BASE_REGEX.exec(value);
+  if (!match) {
+    return false;
+  }
+  const suffix = value.slice(match[0].length);
+  return suffix === '' || ISO_TIMEZONE_SUFFIX_REGEX.test(suffix);
+}
 
 /**
  * Valida que el parámetro de fecha opcional "at" tenga un formato ISO 8601 válido.
@@ -17,14 +26,14 @@ export class ParseDatePipe implements PipeTransform<string | undefined, Date | u
       return undefined;
     }
 
-    if (!ISO_DATE_ONLY_REGEX.test(value) && !ISO_TIMESTAMP_REGEX.test(value)) {
+    if (!ISO_DATE_ONLY_REGEX.test(value) && !isValidIsoTimestamp(value)) {
       throw new BadRequestException(
         'El parámetro "at" debe ser una fecha válida en formato ISO 8601.',
       );
     }
 
     const parsed = new Date(value);
-    if (isNaN(parsed.getTime())) {
+    if (Number.isNaN(parsed.getTime())) {
       throw new BadRequestException(
         'El parámetro "at" debe ser una fecha válida en formato ISO 8601.',
       );

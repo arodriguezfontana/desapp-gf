@@ -11,6 +11,86 @@ import type {
   StrategyResponseDto,
 } from '../types/admin.types';
 
+function getWhoScoredBadgeClassName(status: SyncRunStatusDto['status'] | undefined): string {
+  if (status === 'running') {
+    return 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse';
+  }
+  if (status === 'completed') {
+    return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+  }
+  return 'bg-rose-500/20 text-rose-400 border border-rose-500/40';
+}
+
+const StrategiesList: React.FC<{
+  isLoading: boolean;
+  strategies: StrategyResponseDto[];
+  activatingStrategyId: string | null;
+  onActivate: (strategyId: string) => void;
+}> = ({ isLoading, strategies, activatingStrategyId, onActivate }) => {
+  if (isLoading) {
+    return <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cargando estrategias...</p>;
+  }
+
+  if (strategies.length === 0) {
+    return (
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+        No hay estrategias configuradas todavía.
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {strategies.map((strategy) => (
+        <div
+          key={strategy.id}
+          className={`rounded-xl p-4 border space-y-3 ${
+            strategy.isActive
+              ? 'bg-[#0b3332] border-[#2dd4bf]/60'
+              : 'bg-[#0b3332]/50 border-[#1a6866]'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-sm font-black uppercase tracking-wider text-white">{strategy.name}</h3>
+            {strategy.isActive && (
+              <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded">
+                Activa
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(strategy.weights).map(([metric, weight]) => (
+              <span
+                key={metric}
+                className="text-[9px] font-bold px-2 py-0.5 bg-[#104443] text-gray-200 rounded border border-white/10"
+              >
+                {metric}: {weight}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-400 font-medium">
+              Factor de escala: <span className="text-[#b79753] font-bold">{strategy.factorEscala}</span>
+            </span>
+          </div>
+
+          {!strategy.isActive && (
+            <button
+              onClick={() => onActivate(strategy.id)}
+              disabled={activatingStrategyId !== null}
+              className="w-full py-2 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-[10px] tracking-widest transition-all rounded-lg shadow-md active:scale-95 cursor-pointer"
+            >
+              {activatingStrategyId === strategy.id ? 'Activando...' : 'Activar esta estrategia'}
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const AdminPage: React.FC = () => {
   const { user, isAdmin, isLoading: isUserLoading } = useCurrentUser();
   const {
@@ -81,25 +161,27 @@ export const AdminPage: React.FC = () => {
   // Carga la lista de estrategias en cuanto hay clave de acceso disponible
   useEffect(() => {
     let cancelled = false;
-    Promise.resolve(hasApiKey).then((apiKeyAvailable) => {
-      if (!apiKeyAvailable) return;
+
+    const loadStrategies = async () => {
+      if (!hasApiKey) return;
       if (!cancelled) {
         setIsLoadingStrategies(true);
         setStrategiesError(null);
       }
-      listStrategies()
-        .then((data) => {
-          if (!cancelled) setStrategies(data);
-        })
-        .catch((err: unknown) => {
-          if (!cancelled) {
-            setStrategiesError(err instanceof Error ? err.message : 'No se pudieron cargar las estrategias.');
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setIsLoadingStrategies(false);
-        });
-    });
+      try {
+        const data = await listStrategies();
+        if (!cancelled) setStrategies(data);
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setStrategiesError(err instanceof Error ? err.message : 'No se pudieron cargar las estrategias.');
+        }
+      } finally {
+        if (!cancelled) setIsLoadingStrategies(false);
+      }
+    };
+
+    void loadStrategies();
+
     return () => {
       cancelled = true;
     };
@@ -313,13 +395,9 @@ export const AdminPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Progreso:</span>
                     <span
-                      className={`font-black uppercase tracking-wider px-2 py-0.5 rounded text-[10px] ${
-                        whoScoredStatus.status === 'running'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
-                          : whoScoredStatus.status === 'completed'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                          : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                      }`}
+                      className={`font-black uppercase tracking-wider px-2 py-0.5 rounded text-[10px] ${getWhoScoredBadgeClassName(
+                        whoScoredStatus.status,
+                      )}`}
                     >
                       {whoScoredStatus.status === 'running' ? 'Actualización en curso' : 'Actualización finalizada'}
                     </span>
@@ -497,62 +575,12 @@ export const AdminPage: React.FC = () => {
           </div>
         )}
 
-        {isLoadingStrategies ? (
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cargando estrategias...</p>
-        ) : strategies.length === 0 ? (
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-            No hay estrategias configuradas todavía.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {strategies.map((strategy) => (
-              <div
-                key={strategy.id}
-                className={`rounded-xl p-4 border space-y-3 ${
-                  strategy.isActive
-                    ? 'bg-[#0b3332] border-[#2dd4bf]/60'
-                    : 'bg-[#0b3332]/50 border-[#1a6866]'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-white">{strategy.name}</h3>
-                  {strategy.isActive && (
-                    <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded">
-                      Activa
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-1">
-                  {Object.entries(strategy.weights).map(([metric, weight]) => (
-                    <span
-                      key={metric}
-                      className="text-[9px] font-bold px-2 py-0.5 bg-[#104443] text-gray-200 rounded border border-white/10"
-                    >
-                      {metric}: {weight}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400 font-medium">
-                    Factor de escala: <span className="text-[#b79753] font-bold">{strategy.factorEscala}</span>
-                  </span>
-                </div>
-
-                {!strategy.isActive && (
-                  <button
-                    onClick={() => handleActivateStrategy(strategy.id)}
-                    disabled={activatingStrategyId !== null}
-                    className="w-full py-2 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-[10px] tracking-widest transition-all rounded-lg shadow-md active:scale-95 cursor-pointer"
-                  >
-                    {activatingStrategyId === strategy.id ? 'Activando...' : 'Activar esta estrategia'}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <StrategiesList
+          isLoading={isLoadingStrategies}
+          strategies={strategies}
+          activatingStrategyId={activatingStrategyId}
+          onActivate={handleActivateStrategy}
+        />
       </div>
     </div>
   );
