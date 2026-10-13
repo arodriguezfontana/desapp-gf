@@ -7,6 +7,7 @@ import { RecalculationInProgressError } from '../../domain/quotation/errors/reca
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
+import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import {
   VALUATION_STRATEGY_REPOSITORY,
   PLAYER_QUOTE_REPOSITORY,
@@ -17,6 +18,11 @@ export interface RecalculateResult {
   processedPlayers: number;
   errors: number;
   durationMs: number;
+}
+
+export interface PlayerQuoteWithStrategy {
+  quote: PlayerQuote;
+  strategyName: string;
 }
 
 /**
@@ -43,8 +49,41 @@ export class QuotationService {
     return this.quoteRepository.findLatestByPlayerId(playerId);
   }
 
+  /**
+   * Obtiene la cotización vigente de un jugador a una fecha determinada (o la más reciente si date es undefined).
+   * Lanza PlayerNotFoundError si el jugador no existe (013-player-quote-endpoint).
+   * Retorna null sin excepción si el jugador existe pero no tiene cotizaciones para esa fecha.
+   */
+  async getQuoteAtDate(
+    playerId: string,
+    date?: Date,
+  ): Promise<PlayerQuoteWithStrategy | null> {
+    const player = await this.playerRepository.findById(playerId);
+    if (!player) {
+      throw new PlayerNotFoundError();
+    }
+
+    const quote = date
+      ? await this.quoteRepository.findLatestAtDate(playerId, date)
+      : await this.quoteRepository.findLatestByPlayerId(playerId);
+
+    if (!quote) {
+      return null;
+    }
+
+    const strategy = await this.strategyRepository.findById(quote.strategyId);
+    return {
+      quote,
+      strategyName: strategy?.name ?? 'Estrategia por Defecto',
+    };
+  }
+
   async activateStrategy(id: string) {
     return this.strategyRepository.activateStrategy(id);
+  }
+
+  async listStrategies() {
+    return this.strategyRepository.findAll();
   }
 
   /**

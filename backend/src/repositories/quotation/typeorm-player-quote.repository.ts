@@ -26,4 +26,15 @@ export class TypeOrmPlayerQuoteRepository implements PlayerQuoteRepository {
     });
     return entity ? this.mapper.toDomain(entity) : null;
   }
+
+  async findLatestAtDate(playerId: string, date: Date): Promise<PlayerQuote | null> {
+    const entity = await this.repo
+      .createQueryBuilder('quote')
+      .where('quote.playerId = :playerId', { playerId })
+      .andWhere('quote.calculatedAt <= :date', { date })
+      .orderBy('quote.calculatedAt', 'DESC')
+      .limit(1)
+      .getOne();
+    return entity ? this.mapper.toDomain(entity) : null;
+  }
 }

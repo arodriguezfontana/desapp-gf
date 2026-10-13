@@ -27,6 +27,7 @@ export class PlayerQuoteMapper {
       factorEscalaSnapshot: domain.factorEscalaSnapshot.toString(),
       score: domain.score.toString(),
       value: domain.value.toString(),
+      calculatedAt: domain.calculatedAt,
     };
   }
 }

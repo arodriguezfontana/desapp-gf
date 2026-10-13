@@ -9,6 +9,7 @@ import { HomePage } from '../pages/HomePage';
 import { AccountPage } from '../pages/AccountPage';
 import { CatalogPage } from '../pages/CatalogPage';
 import { PlayerDetailPage } from '../pages/PlayerDetailPage';
+import { AdminPage } from '../pages/AdminPage';
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
             children: [
               { path: '/home', element: <HomePage /> },
               { path: '/account', element: <AccountPage /> },
+              { path: '/admin', element: <AdminPage /> },
             ],
           },
         ],

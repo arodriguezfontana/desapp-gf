@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiKeyModule } from '../api-key/api-key.module';
@@ -21,7 +21,7 @@ import {
 
 @Module({
   imports: [
-    PlayerModule,
+    forwardRef(() => PlayerModule),
     ApiKeyModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([ValuationStrategyEntity, PlayerQuoteEntity]),
@@ -37,5 +37,6 @@ import {
     { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
     { provide: PLAYER_QUOTE_REPOSITORY, useClass: TypeOrmPlayerQuoteRepository },
   ],
+  exports: [QuotationService, PLAYER_QUOTE_REPOSITORY],
 })
 export class QuotationModule {}

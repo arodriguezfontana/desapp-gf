@@ -9,6 +9,8 @@ import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy
 import { League } from '../../../domain/player/enums/league';
 import { Position } from '../../../domain/player/enums/position';
 import { Player } from '../../../domain/player/player';
+import { PlayerNotFoundError } from '../../../domain/player/errors/player-not-found.error';
+import { PlayerQuote } from '../../../domain/quotation/player-quote';
 
 const WEIGHTS = { goals: 0.25, assists: 0.15, shots: 0.10, keyPasses: 0.10, dribbles: 0.10, totalTackles: 0.10, rating: 0.20 };
 
@@ -32,12 +34,14 @@ describe('QuotationService', () => {
     strategyRepo = {
       findActive: jest.fn(),
       findById: jest.fn(),
+      findAll: jest.fn(),
       save: jest.fn(),
       activateStrategy: jest.fn(),
     };
     quoteRepo = {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findLatestByPlayerId: jest.fn(),
+      findLatestAtDate: jest.fn(),
     };
     playerRepo = {
       findPage: jest.fn(),
@@ -77,6 +81,20 @@ describe('QuotationService', () => {
       strategyRepo.activateStrategy.mockRejectedValue(new StrategyNotFoundError('s-999'));
 
       await expect(service.activateStrategy('s-999')).rejects.toBeInstanceOf(StrategyNotFoundError);
+    });
+  });
+
+  // ---- listStrategies ----------------------------------------------------------
+
+  describe('listStrategies()', () => {
+    it('delega en strategyRepository.findAll y retorna todas las estrategias', async () => {
+      const strategies = [makeStrategy({ id: 's-1' }), makeStrategy({ id: 's-2', isActive: false })];
+      strategyRepo.findAll.mockResolvedValue(strategies);
+
+      const result = await service.listStrategies();
+
+      expect(strategyRepo.findAll).toHaveBeenCalled();
+      expect(result).toBe(strategies);
     });
   });
 
@@ -123,6 +141,102 @@ describe('QuotationService', () => {
       // Después del fallo, el lock debe haberse liberado
       strategyRepo.findActive.mockResolvedValue(null);
       await expect(service.recalculateAll()).rejects.toBeInstanceOf(NoActiveStrategyError);
+    });
+  });
+
+  // ---- getQuoteAtDate ---------------------------------------------------------
+
+  describe('getQuoteAtDate()', () => {
+    const makeQuote = (overrides: Partial<Parameters<typeof PlayerQuote.restore>[0]> = {}) =>
+      PlayerQuote.restore({
+        id: 'q-1',
+        playerId: 'p-1',
+        strategyId: 's-1',
+        weightSnapshot: WEIGHTS,
+        factorEscalaSnapshot: 99,
+        score: 0.712345,
+        value: 71.52,
+        calculatedAt: new Date('2026-09-15T18:30:00.000Z'),
+        ...overrides,
+      });
+
+    it('lanza PlayerNotFoundError si el jugador no existe', async () => {
+      playerRepo.findById.mockResolvedValue(null);
+
+      await expect(service.getQuoteAtDate('p-inexistente')).rejects.toBeInstanceOf(PlayerNotFoundError);
+      expect(playerRepo.findById).toHaveBeenCalledWith('p-inexistente');
+      expect(quoteRepo.findLatestByPlayerId).not.toHaveBeenCalled();
+      expect(quoteRepo.findLatestAtDate).not.toHaveBeenCalled();
+    });
+
+    it('retorna null sin lanzar excepción si el jugador existe pero no tiene cotizaciones', async () => {
+      playerRepo.findById.mockResolvedValue(makePlayer());
+      quoteRepo.findLatestByPlayerId.mockResolvedValue(null);
+
+      const result = await service.getQuoteAtDate('p-1');
+
+      expect(result).toBeNull();
+      expect(playerRepo.findById).toHaveBeenCalledWith('p-1');
+      expect(quoteRepo.findLatestByPlayerId).toHaveBeenCalledWith('p-1');
+    });
+
+    it('retorna cotización y strategyName cuando date no está provisto (cotización más reciente)', async () => {
+      playerRepo.findById.mockResolvedValue(makePlayer());
+      const quote = makeQuote();
+      quoteRepo.findLatestByPlayerId.mockResolvedValue(quote);
+      strategyRepo.findById.mockResolvedValue(makeStrategy({ id: 's-1', name: 'Performance General' }));
+
+      const result = await service.getQuoteAtDate('p-1');
+
+      expect(quoteRepo.findLatestByPlayerId).toHaveBeenCalledWith('p-1');
+      expect(quoteRepo.findLatestAtDate).not.toHaveBeenCalled();
+      expect(strategyRepo.findById).toHaveBeenCalledWith('s-1');
+      expect(result).toEqual({
+        quote,
+        strategyName: 'Performance General',
+      });
+    });
+
+    it('retorna cotización filtrada por fecha cuando date está provisto', async () => {
+      playerRepo.findById.mockResolvedValue(makePlayer());
+      const targetDate = new Date('2026-09-15T23:59:59.999Z');
+      const quote = makeQuote({ calculatedAt: new Date('2026-09-15T12:00:00.000Z') });
+      quoteRepo.findLatestAtDate.mockResolvedValue(quote);
+      strategyRepo.findById.mockResolvedValue(makeStrategy({ id: 's-1', name: 'Performance General' }));
+
+      const result = await service.getQuoteAtDate('p-1', targetDate);
+
+      expect(quoteRepo.findLatestAtDate).toHaveBeenCalledWith('p-1', targetDate);
+      expect(quoteRepo.findLatestByPlayerId).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        quote,
+        strategyName: 'Performance General',
+      });
+    });
+
+    it('retorna null sin lanzar excepción si date está provisto y no hay cotización vigente para esa fecha', async () => {
+      playerRepo.findById.mockResolvedValue(makePlayer());
+      const targetDate = new Date('2026-09-15T23:59:59.999Z');
+      quoteRepo.findLatestAtDate.mockResolvedValue(null);
+
+      const result = await service.getQuoteAtDate('p-1', targetDate);
+
+      expect(result).toBeNull();
+      expect(quoteRepo.findLatestAtDate).toHaveBeenCalledWith('p-1', targetDate);
+    });
+
+    it('usa nombre por defecto si la estrategia asociada no se encuentra en el repositorio', async () => {
+      playerRepo.findById.mockResolvedValue(makePlayer());
+      const quote = makeQuote();
+      quoteRepo.findLatestByPlayerId.mockResolvedValue(quote);
+      strategyRepo.findById.mockResolvedValue(null);
+
+      const result = await service.getQuoteAtDate('p-1');
+
+      expect(result).toEqual({
+        quote,
+        strategyName: 'Estrategia por Defecto',
+      });
     });
   });
 });
