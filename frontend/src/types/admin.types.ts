@@ -1,3 +1,5 @@
+import type { Position } from './catalog.types';
+
 export interface SyncAcceptedDto {
   runId: string;
   status: 'running' | 'completed' | 'failed';
@@ -47,5 +49,6 @@ export interface StrategyResponseDto {
   weights: Record<string, number>;
   factorEscala: number;
   isActive: boolean;
+  positionWeights: Partial<Record<Position, Record<string, number>>>;
 }
 

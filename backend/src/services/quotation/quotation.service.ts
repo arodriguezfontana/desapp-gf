@@ -113,17 +113,21 @@ export class QuotationService {
       const quotes: PlayerQuote[] = [];
       for (const player of players) {
         try {
-          const { score, value } = calculatePlayerValue(player, strategy);
+          const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(
+            player,
+            strategy,
+          );
           quotes.push(
             PlayerQuote.create({
               id: randomUUID(),
               playerId: player.id,
               strategyId: strategy.id,
-              weightSnapshot: strategy.weights,
+              weightSnapshot: weightsUsed,
               factorEscalaSnapshot: strategy.factorEscala,
               score,
               value,
               calculatedAt: new Date(),
+              appliedPosition,
             }),
           );
           processedPlayers++;

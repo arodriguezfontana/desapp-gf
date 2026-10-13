@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
+import { Position } from '../../domain/player/enums/position';
 import { PlayerQuoteEntity } from './entities/player-quote.entity';
 
 /** Conversión dominio ↔ persistencia. Sin lógica de negocio. */
@@ -15,6 +16,7 @@ export class PlayerQuoteMapper {
       score: Number.parseFloat(entity.score),
       value: Number.parseFloat(entity.value),
       calculatedAt: entity.calculatedAt,
+      appliedPosition: entity.appliedPosition as Position | null,
     });
   }
 
@@ -28,6 +30,7 @@ export class PlayerQuoteMapper {
       score: domain.score.toString(),
       value: domain.value.toString(),
       calculatedAt: domain.calculatedAt,
+      appliedPosition: domain.appliedPosition,
     };
   }
 }

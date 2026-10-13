@@ -70,6 +70,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
     weights: Record<string, number>;
     factorEscala: number;
     isActive: boolean;
+    positionWeights?: Record<string, Record<string, number>>;
   }): Promise<string> => {
     const id = randomUUID();
     await dataSource.getRepository(ValuationStrategyEntity).insert({
@@ -78,6 +79,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       weights: opts.weights,
       factorEscala: String(opts.factorEscala),
       isActive: opts.isActive,
+      positionWeights: opts.positionWeights ?? null,
     });
     return id;
   };
@@ -166,6 +168,41 @@ describe('QuotationService (integración contra Postgres real)', () => {
       expect(result.processedPlayers).toBe(0);
       const quotes = await dataSource.getRepository(PlayerQuoteEntity).find();
       expect(quotes).toHaveLength(0);
+    });
+
+    it('persiste applied_position y weight_snapshot del perfil cuando la estrategia define perfil para la posición del jugador (US1, 014-position-weight-profiles)', async () => {
+      const fwProfile = { goals: 0.5, shots: 0.5 };
+      await insertStrategy({
+        name: 'Con perfil FW',
+        weights: WEIGHTS_GOALS_ONLY,
+        factorEscala: 10,
+        isActive: true,
+        positionWeights: { FW: fwProfile },
+      });
+      await insertPlayer({ position: 'FW', goals: 20 });
+
+      await service.recalculateAll();
+
+      const [quote] = await dataSource.getRepository(PlayerQuoteEntity).find();
+      expect(quote.appliedPosition).toBe('FW');
+      expect(quote.weightSnapshot).toEqual(fwProfile);
+    });
+
+    it('persiste applied_position null y weight_snapshot general cuando no hay perfil para la posición del jugador (US2, 014-position-weight-profiles)', async () => {
+      await insertStrategy({
+        name: 'Con perfil solo GK',
+        weights: WEIGHTS_GOALS_ONLY,
+        factorEscala: 10,
+        isActive: true,
+        positionWeights: { GK: { rating: 1.0 } },
+      });
+      await insertPlayer({ position: 'FW', goals: 20 });
+
+      await service.recalculateAll();
+
+      const [quote] = await dataSource.getRepository(PlayerQuoteEntity).find();
+      expect(quote.appliedPosition).toBeNull();
+      expect(quote.weightSnapshot).toEqual(WEIGHTS_GOALS_ONLY);
     });
   });
 

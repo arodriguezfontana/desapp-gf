@@ -1,4 +1,5 @@
 import { Player } from '../player/player';
+import { Position } from '../player/enums/position';
 import { ValuationStrategy } from './valuation-strategy';
 
 /**
@@ -56,6 +57,13 @@ function getMetric(player: Player, key: string): number | null {
  * Función de dominio pura: sin acceso a base de datos ni dependencias de NestJS
  * (012-valuation-strategies, spec FR-008, constitución Principio I).
  *
+ * Si la estrategia define un perfil de pesos para la posición declarada del
+ * jugador, se usa ese perfil; si no, se usan los pesos generales de la
+ * estrategia, igual que antes de 014-position-weight-profiles (spec FR-004,
+ * FR-005). `appliedPosition` y `weightsUsed` informan cuál de los dos casos
+ * ocurrió, para que el caller pueda registrar el snapshot correcto en
+ * `PlayerQuote` (spec FR-009).
+ *
  * Algoritmo:
  *   normalizada_i = clamp(metrica_i ?? 0, 0, bound_i) / bound_i
  *   score = Σ(peso_i × normalizada_i)
@@ -67,10 +75,19 @@ function getMetric(player: Player, key: string): number | null {
 export function calculatePlayerValue(
   player: Player,
   strategy: ValuationStrategy,
-): { score: number; value: number } {
+): {
+  score: number;
+  value: number;
+  appliedPosition: Position | null;
+  weightsUsed: Record<string, number>;
+} {
+  const profile = strategy.positionWeights[player.position];
+  const weightsUsed = profile ?? strategy.weights;
+  const appliedPosition = profile ? player.position : null;
+
   let score = 0;
 
-  for (const [metricKey, weight] of Object.entries(strategy.weights)) {
+  for (const [metricKey, weight] of Object.entries(weightsUsed)) {
     const bound = NORMALIZATION_BOUNDS[metricKey];
     if (bound === undefined) continue;
 
@@ -81,5 +98,5 @@ export function calculatePlayerValue(
   }
 
   const value = 1 + score * strategy.factorEscala;
-  return { score, value };
+  return { score, value, appliedPosition, weightsUsed };
 }

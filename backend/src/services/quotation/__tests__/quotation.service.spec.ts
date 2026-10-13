@@ -131,6 +131,35 @@ describe('QuotationService', () => {
       expect(quoteRepo.saveMany).toHaveBeenCalledTimes(1);
     });
 
+    it('persiste la PlayerQuote con el perfil de posición cuando la estrategia lo define (US1)', async () => {
+      const player = makePlayer(); // position: FW
+      const fwProfile = { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 };
+      strategyRepo.findActive.mockResolvedValue(
+        makeStrategy({ positionWeights: { FW: fwProfile } }),
+      );
+      playerRepo.findAllActive.mockResolvedValue([player]);
+
+      await service.recalculateAll();
+
+      const [savedQuotes] = quoteRepo.saveMany.mock.calls[0] as [PlayerQuote[]];
+      expect(savedQuotes[0].appliedPosition).toBe(Position.FW);
+      expect(savedQuotes[0].weightSnapshot).toEqual(fwProfile);
+    });
+
+    it('persiste la PlayerQuote con los pesos generales cuando no hay perfil aplicable (US2)', async () => {
+      const player = makePlayer(); // position: FW
+      strategyRepo.findActive.mockResolvedValue(
+        makeStrategy({ positionWeights: { GK: { rating: 1.0 } } }),
+      );
+      playerRepo.findAllActive.mockResolvedValue([player]);
+
+      await service.recalculateAll();
+
+      const [savedQuotes] = quoteRepo.saveMany.mock.calls[0] as [PlayerQuote[]];
+      expect(savedQuotes[0].appliedPosition).toBeNull();
+      expect(savedQuotes[0].weightSnapshot).toEqual(WEIGHTS);
+    });
+
     it('libera el lock (isRunning = false) aunque falle saveMany', async () => {
       strategyRepo.findActive.mockResolvedValue(makeStrategy());
       playerRepo.findAllActive.mockResolvedValue([makePlayer()]);

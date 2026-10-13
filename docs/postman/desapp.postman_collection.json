@@ -1640,6 +1640,7 @@
                   "    pm.expect(body.strategyName).to.be.a('string');",
                   "    pm.expect(body.weights).to.be.an('object');",
                   "    pm.expect(body.calculatedAt).to.be.a('string');",
+                  "    pm.expect(body).to.have.property('appliedPosition');",
                   "  });",
                   "} else {",
                   "  pm.test('204 No Content — el jugador no tiene cotizaciones', function () {",
@@ -1685,6 +1686,7 @@
                   "    const body = pm.response.json();",
                   "    pm.expect(body.valor).to.be.a('number');",
                   "    pm.expect(body.score).to.be.a('number');",
+                  "    pm.expect(body).to.have.property('appliedPosition');",
                   "  });",
                   "} else {",
                   "  pm.test('204 No Content — sin cotización para esa fecha', function () {",
@@ -2031,6 +2033,7 @@
                   "  pm.expect(b).to.have.property('strategyName');",
                   "  pm.expect(b).to.have.property('weights');",
                   "  pm.expect(b).to.have.property('calculatedAt');",
+                  "  pm.expect(b).to.have.property('appliedPosition');",
                   "});"
                 ]
               }
@@ -2063,6 +2066,10 @@
                   "  const calculatedAt = new Date(b.calculatedAt);",
                   "  const endOfDay = new Date('2026-09-15T23:59:59.999Z');",
                   "  pm.expect(calculatedAt.getTime()).to.be.at.most(endOfDay.getTime());",
+                  "});",
+                  "pm.test('tiene el campo appliedPosition', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('appliedPosition');",
                   "});"
                 ]
               }

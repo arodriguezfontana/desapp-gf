@@ -178,6 +178,13 @@ export const PlayerDetailPage: React.FC = () => {
                 <span className="text-[11px] font-black uppercase tracking-widest mt-1" style={{ color: accent.text }}>
                   Valor token
                 </span>
+                {quote != null && (
+                  <span className="text-[9px] font-bold text-white/40 mt-1">
+                    {quote.appliedPosition != null
+                      ? `Perfil de posición (${getPositionLabel(quote.appliedPosition)})`
+                      : 'Pesos generales de la estrategia'}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-start gap-4 min-w-0">

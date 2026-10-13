@@ -10,6 +10,7 @@ import type {
   RecalculateResponseDto,
   StrategyResponseDto,
 } from '../types/admin.types';
+import { POSITIONS, getPositionLabel } from '../types/catalog.types';
 
 function getWhoScoredBadgeClassName(status: SyncRunStatusDto['status'] | undefined): string {
   if (status === 'running') {
@@ -69,6 +70,31 @@ const StrategiesList: React.FC<{
               </span>
             ))}
           </div>
+
+          {Object.keys(strategy.positionWeights).length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+                Perfiles por posición
+              </span>
+              {POSITIONS.filter((position) => strategy.positionWeights[position] != null).map(
+                (position) => (
+                  <div key={position} className="flex flex-wrap items-center gap-1">
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-[#1a6866] text-[#2dd4bf] rounded border border-[#2dd4bf]/30">
+                      {getPositionLabel(position)}
+                    </span>
+                    {Object.entries(strategy.positionWeights[position]!).map(([metric, weight]) => (
+                      <span
+                        key={metric}
+                        className="text-[9px] font-bold px-2 py-0.5 bg-[#104443]/60 text-gray-300 rounded border border-white/5"
+                      >
+                        {metric}: {weight}
+                      </span>
+                    ))}
+                  </div>
+                ),
+              )}
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-400 font-medium">

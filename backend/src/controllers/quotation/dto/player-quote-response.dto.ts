@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PlayerQuote } from '../../../domain/quotation/player-quote';
+import { Position } from '../../../domain/player/enums/position';
 
 export class PlayerQuoteResponseDto {
   @ApiProperty({ example: 'b3f1c2a4-1234-4a4a-8a8a-abcdef123456' })
@@ -20,6 +21,15 @@ export class PlayerQuoteResponseDto {
   @ApiProperty({ example: '2026-10-08T03:00:00.000Z' })
   calculatedAt: string;
 
+  @ApiProperty({
+    example: 'FW',
+    description:
+      'Posición cuyo perfil de pesos se usó en el cálculo, o null si se usaron los pesos generales de la estrategia',
+    nullable: true,
+    enum: Position,
+  })
+  appliedPosition: Position | null;
+
   private constructor(props: {
     id: string;
     playerId: string;
@@ -27,6 +37,7 @@ export class PlayerQuoteResponseDto {
     score: number;
     value: number;
     calculatedAt: Date;
+    appliedPosition: Position | null;
   }) {
     this.id = props.id;
     this.playerId = props.playerId;
@@ -34,6 +45,7 @@ export class PlayerQuoteResponseDto {
     this.score = props.score;
     this.value = props.value;
     this.calculatedAt = props.calculatedAt.toISOString();
+    this.appliedPosition = props.appliedPosition;
   }
 
   static fromDomain(quote: PlayerQuote): PlayerQuoteResponseDto {
@@ -44,6 +56,7 @@ export class PlayerQuoteResponseDto {
       score: quote.score,
       value: quote.value,
       calculatedAt: quote.calculatedAt,
+      appliedPosition: quote.appliedPosition,
     });
   }
 }

@@ -131,6 +131,98 @@ describe('ValuationStrategy', () => {
     });
   });
 
+  describe('create() con positionWeights (014-position-weight-profiles)', () => {
+    it('acepta un perfil de posición cuyo subconjunto de métricas suma 1.0', () => {
+      const strategy = ValuationStrategy.create({
+        id: 'id-9',
+        name: 'Con perfil',
+        weights: VALID_WEIGHTS,
+        factorEscala: 99,
+        isActive: true,
+        positionWeights: {
+          FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 },
+        },
+      });
+
+      expect(strategy.positionWeights.FW).toEqual({
+        goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15,
+      });
+    });
+
+    it('acepta positionWeights ausente (estrategia sin ningún perfil)', () => {
+      const strategy = ValuationStrategy.create({
+        id: 'id-10',
+        name: 'Sin perfil',
+        weights: VALID_WEIGHTS,
+        factorEscala: 99,
+        isActive: true,
+      });
+
+      expect(strategy.positionWeights).toEqual({});
+    });
+
+    it('acepta pesos negativos en un perfil si la suma algebraica es 1.0', () => {
+      expect(() =>
+        ValuationStrategy.create({
+          id: 'id-11',
+          name: 'Perfil con negativos',
+          weights: VALID_WEIGHTS,
+          factorEscala: 99,
+          isActive: true,
+          positionWeights: {
+            FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.20, yellowCards: -0.05 },
+          },
+        }),
+      ).not.toThrow();
+    });
+
+    it('lanza InvalidStrategyWeightsError si un perfil no suma 1.0 (±0.001)', () => {
+      expect(() =>
+        ValuationStrategy.create({
+          id: 'id-12',
+          name: 'Perfil inválido',
+          weights: VALID_WEIGHTS,
+          factorEscala: 99,
+          isActive: true,
+          positionWeights: {
+            FW: { goals: 0.5, shots: 0.3 }, // suma 0.8
+          },
+        }),
+      ).toThrow(InvalidStrategyWeightsError);
+    });
+
+    it('lanza InvalidStrategyWeightsError si un perfil referencia una métrica inválida', () => {
+      expect(() =>
+        ValuationStrategy.create({
+          id: 'id-13',
+          name: 'Perfil con métrica inválida',
+          weights: VALID_WEIGHTS,
+          factorEscala: 99,
+          isActive: true,
+          positionWeights: {
+            GK: { saves: 1.0 },
+          },
+        }),
+      ).toThrow(InvalidStrategyWeightsError);
+    });
+
+    it('valida cada perfil de forma independiente (uno inválido entre varios válidos)', () => {
+      expect(() =>
+        ValuationStrategy.create({
+          id: 'id-14',
+          name: 'Mix',
+          weights: VALID_WEIGHTS,
+          factorEscala: 99,
+          isActive: true,
+          positionWeights: {
+            FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 },
+            MF: { assists: 0.9 }, // suma 0.9, fuera de tolerancia
+          },
+        }),
+      ).toThrow(InvalidStrategyWeightsError);
+    });
+  });
+
   describe('restore()', () => {
     it('crea una instancia sin validar (para rehidratación desde persistencia)', () => {
       // Pesos inválidos no lanzan error en restore()
