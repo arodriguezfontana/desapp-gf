@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * Entidad de persistencia para PlayerQuote.
@@ -31,6 +31,6 @@ export class PlayerQuoteEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   value!: string;
 
-  @CreateDateColumn({ name: 'calculated_at', type: 'timestamptz' })
+  @Column({ name: 'calculated_at', type: 'timestamptz' })
   calculatedAt!: Date;
 }

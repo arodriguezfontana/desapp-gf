@@ -58,9 +58,9 @@ const StatPill: React.FC<{ value: number | null | undefined; label: string; colo
 // Geometría del escudo FIFA (recorte superior biselado + punta inferior)
 const FIFA_SHIELD_CLIP = 'polygon(5% 0, 95% 0, 100% 3.5%, 100% calc(100% - 24px), 50% 100%, 0 calc(100% - 24px), 0 3.5%)';
 
-export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
+export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
   const accent = getAccent(player.position);
-  const ovr = player.rating != null ? Math.round(player.rating * 10) : 75;
+  const displayValue = quote != null ? Math.round(quote.value) : null;
 
   return (
     <div
@@ -106,7 +106,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
                 className="text-4xl font-black tabular-nums tracking-tighter drop-shadow-md"
                 style={{ color: accent.from }}
               >
-                {ovr}
+                {displayValue ?? '—'}
               </span>
               <span
                 className={`text-[10px] font-black uppercase tracking-widest mt-0.5 ${getPositionColorClass(
