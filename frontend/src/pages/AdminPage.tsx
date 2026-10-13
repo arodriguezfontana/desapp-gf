@@ -80,22 +80,26 @@ export const AdminPage: React.FC = () => {
 
   // Carga la lista de estrategias en cuanto hay clave de acceso disponible
   useEffect(() => {
-    if (!hasApiKey) return;
     let cancelled = false;
-    setIsLoadingStrategies(true);
-    setStrategiesError(null);
-    listStrategies()
-      .then((data) => {
-        if (!cancelled) setStrategies(data);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setStrategiesError(err instanceof Error ? err.message : 'No se pudieron cargar las estrategias.');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingStrategies(false);
-      });
+    Promise.resolve(hasApiKey).then((apiKeyAvailable) => {
+      if (!apiKeyAvailable) return;
+      if (!cancelled) {
+        setIsLoadingStrategies(true);
+        setStrategiesError(null);
+      }
+      listStrategies()
+        .then((data) => {
+          if (!cancelled) setStrategies(data);
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            setStrategiesError(err instanceof Error ? err.message : 'No se pudieron cargar las estrategias.');
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoadingStrategies(false);
+        });
+    });
     return () => {
       cancelled = true;
     };

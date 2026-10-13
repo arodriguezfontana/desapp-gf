@@ -69,8 +69,11 @@ describe('calculatePlayerValue', () => {
       expect(Object.keys(NORMALIZATION_BOUNDS)).toHaveLength(11);
       expect(NORMALIZATION_BOUNDS.goals).toBe(40);
       expect(NORMALIZATION_BOUNDS.assists).toBe(25);
-      expect(NORMALIZATION_BOUNDS.shots).toBe(200);
-      expect(NORMALIZATION_BOUNDS.passesCompleted).toBe(2500);
+      // shots/passesCompleted/interceptions son promedio por partido (player.entity.ts),
+      // no acumulado de temporada: el bound tiene que ser un techo de partido.
+      expect(NORMALIZATION_BOUNDS.shots).toBe(6);
+      expect(NORMALIZATION_BOUNDS.passesCompleted).toBe(100);
+      expect(NORMALIZATION_BOUNDS.interceptions).toBe(4);
       expect(NORMALIZATION_BOUNDS.rating).toBe(10);
     });
   });
@@ -79,7 +82,7 @@ describe('calculatePlayerValue', () => {
     it('calcula value = 1 + score × factorEscala', () => {
       const strategy = makeStrategy(STRATEGY_1_WEIGHTS, 99);
       const player = makePlayer({
-        goals: 20, assists: 10, shots: 100, keyPasses: 75,
+        goals: 20, assists: 10, shots: 3, keyPasses: 75,
         dribbles: 100, totalTackles: 75, rating: 7.5,
       });
 
@@ -88,7 +91,7 @@ describe('calculatePlayerValue', () => {
       const expectedScore =
         0.25 * (20 / 40) +
         0.15 * (10 / 25) +
-        0.10 * (100 / 200) +
+        0.10 * (3 / 6) +
         0.10 * (75 / 150) +
         0.10 * (100 / 200) +
         0.10 * (75 / 150) +
@@ -176,7 +179,7 @@ describe('calculatePlayerValue', () => {
     it('calcula el score esperado para datos deterministas', () => {
       const strategy = makeStrategy(STRATEGY_1_WEIGHTS, 99);
       const player = makePlayer({
-        goals: 40, assists: 25, shots: 200, keyPasses: 150,
+        goals: 40, assists: 25, shots: 6, keyPasses: 150,
         dribbles: 200, totalTackles: 150, rating: 10,
       });
 

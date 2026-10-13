@@ -14,15 +14,6 @@ const POSITION_ACCENT: Record<string, { from: string; via: string; text: string 
 const getAccent = (pos: string) =>
   POSITION_ACCENT[pos] ?? { from: '#b79753', via: '#8a6f35', text: '#b79753' };
 
-const POSITION_SILHOUETTE: Record<string, string> = {
-  GK: '/assets/player_silhouette_gk.svg',
-  DF: '/assets/player_silhouette_df.svg',
-  MF: '/assets/player_silhouette_mf.svg',
-  FW: '/assets/player_silhouette_fw.svg',
-};
-const getSilhouette = (pos: string) =>
-  POSITION_SILHOUETTE[pos] ?? '/assets/player_silhouette_mf.svg';
-
 // ── Componente de métrica individual ────────────────────────────────────────
 const StatBlock: React.FC<{
   label: string;
@@ -167,99 +158,67 @@ export const PlayerDetailPage: React.FC = () => {
         {/* Franja de posición */}
         <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${accent.from}, ${accent.via})` }} />
 
-        {/* ── HERO: silueta + info principal ── */}
-        <div className="relative flex flex-col md:flex-row">
-          {/* Glow detrás de la silueta */}
+        {/* ── HERO: info principal ── */}
+        <div className="relative flex flex-col">
+          {/* Glow de fondo */}
           <div
             className="absolute inset-0 opacity-15 blur-3xl pointer-events-none"
             style={{ background: `radial-gradient(ellipse at 25% 60%, ${accent.from}99 0%, transparent 65%)` }}
           />
 
-          {/* Silueta + rating FIFA */}
-          <div className="relative flex flex-col items-center justify-end pt-6 pb-2 px-6 md:w-56 shrink-0">
-            {/* Rating grande — estilo FIFA */}
-            <div className="absolute top-5 left-5 flex flex-col items-start leading-none">
-              <span className="text-5xl font-black tabular-nums drop-shadow-lg" style={{ color: accent.text }}>
-                {player.rating != null ? Math.round(player.rating * 10) : '?'}
-              </span>
-              <span className="text-[11px] font-black uppercase tracking-widest mt-1" style={{ color: accent.text }}>
-                {getPositionLabel(player.position)}
-              </span>
-            </div>
-
-            <img
-              src={getSilhouette(player.position)}
-              alt="Silueta del jugador"
-              className="h-52 object-contain select-none pointer-events-none drop-shadow-2xl"
-              draggable={false}
-            />
-          </div>
-
           {/* Datos principales */}
           <div className="flex-1 flex flex-col justify-between p-6 sm:p-8">
-            {/* Escudo + nombre + equipo */}
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 shrink-0 flex items-center justify-center">
-                {player.crestUrl ? (
-                  <img
-                    src={player.crestUrl}
-                    alt={player.team}
-                    className="w-full h-full object-contain drop-shadow-lg"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      (e.currentTarget.parentElement as HTMLElement).textContent = '⚽';
-                    }}
-                  />
-                ) : (
-                  <span className="text-3xl select-none">⚽</span>
-                )}
+            {/* Valor del token a la izquierda, info del jugador centrada */}
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              {/* Valor del token */}
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-5xl font-black tabular-nums drop-shadow-lg" style={{ color: accent.text }}>
+                  {quote != null ? Math.round(quote.value) : '—'}
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-widest mt-1" style={{ color: accent.text }}>
+                  Valor token
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <span
-                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border"
-                    style={{ color: accent.text, borderColor: `${accent.from}50`, backgroundColor: `${accent.from}18` }}
-                  >
-                    {getPositionLabel(player.position)}
-                  </span>
-                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-white/10 text-white/50">
-                    {player.league}
-                  </span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white leading-tight line-clamp-2">
-                  {player.name}
-                </h1>
-                <p className="font-bold text-sm mt-1 flex items-center gap-2" style={{ color: accent.text }}>
-                  <span className="w-1.5 h-1.5 rounded-full inline-block shrink-0" style={{ backgroundColor: accent.from }} />
-                  {player.team}
-                </p>
-              </div>
-            </div>
 
-            {/* Valor del token */}
-            <div className="mt-6">
-              {quote ? (
-                <div
-                  className="inline-flex flex-col rounded-2xl px-6 py-4 border"
-                  style={{
-                    background: `linear-gradient(135deg, ${accent.from}22, ${accent.via}12)`,
-                    borderColor: `${accent.from}45`,
-                  }}
-                >
-                  <span className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: `${accent.text}99` }}>
-                    Valor token
-                  </span>
-                  <span className="text-4xl font-black tabular-nums leading-none" style={{ color: accent.text }}>
-                    {quote.value.toFixed(2)}
-                    <span className="text-sm font-bold ml-1.5 opacity-50">cr.</span>
-                  </span>
+              <div className="flex items-start gap-4 min-w-0">
+                <div className="w-16 h-16 shrink-0 flex items-center justify-center">
+                  {player.crestUrl ? (
+                    <img
+                      src={player.crestUrl}
+                      alt={player.team}
+                      className="w-full h-full object-contain drop-shadow-lg"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        (e.currentTarget.parentElement as HTMLElement).textContent = '⚽';
+                      }}
+                    />
+                  ) : (
+                    <span className="text-3xl select-none">⚽</span>
+                  )}
                 </div>
-              ) : (
-                <div className="inline-flex flex-col rounded-2xl px-6 py-4 border border-white/8 opacity-25">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Valor token</span>
-                  <span className="text-4xl font-black text-gray-600 leading-none">—</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    <span
+                      className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border"
+                      style={{ color: accent.text, borderColor: `${accent.from}50`, backgroundColor: `${accent.from}18` }}
+                    >
+                      {getPositionLabel(player.position)}
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-white/10 text-white/50">
+                      {player.league}
+                    </span>
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white leading-tight line-clamp-2">
+                    {player.name}
+                  </h1>
+                  <p className="font-bold text-sm mt-1 flex items-center gap-2" style={{ color: accent.text }}>
+                    <span className="w-1.5 h-1.5 rounded-full inline-block shrink-0" style={{ backgroundColor: accent.from }} />
+                    {player.team}
+                  </p>
                 </div>
-              )}
+              </div>
+
+              <div />
             </div>
           </div>
         </div>
@@ -275,10 +234,12 @@ export const PlayerDetailPage: React.FC = () => {
               <span className="flex-1 h-px" style={{ backgroundColor: `${accent.from}40` }} />
             </h2>
             <div className="space-y-2.5">
+              {/* max de cada barra = NORMALIZATION_BOUNDS del backend (calculate-player-value.ts):
+                  rating/pases/remates/intercepciones son promedio por partido, no acumulado de temporada */}
               <RatingBar label="Rating" value={player.rating} max={10} color={accent.text} />
               <RatingBar label="Pases compl." value={player.passesCompleted} max={100} color="#60a5fa" />
-              <RatingBar label="Remates" value={player.shots} max={10} color="#2dd4bf" />
-              <RatingBar label="Intercepciones" value={player.interceptions} max={10} color="#a855f7" />
+              <RatingBar label="Remates" value={player.shots} max={6} color="#2dd4bf" />
+              <RatingBar label="Intercepciones" value={player.interceptions} max={4} color="#a855f7" />
             </div>
           </div>
 

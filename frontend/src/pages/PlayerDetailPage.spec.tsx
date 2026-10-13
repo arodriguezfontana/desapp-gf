@@ -96,6 +96,40 @@ describe('PlayerDetailPage', () => {
     expect(screen.getByText('Asistencias')).toBeInTheDocument();
   });
 
+  it('muestra el valor del token redondeado como número principal cuando hay cotización', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+      rating: 8.12,
+    });
+    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValueOnce({
+      id: 'q-1',
+      playerId: 'p-1',
+      strategyId: 's-1',
+      score: 0.712,
+      value: 71.52,
+      calculatedAt: '2026-10-08T00:00:00.000Z',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Kylian Mbappé')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('72')).toBeInTheDocument();
+  });
+
   it('muestra textualmente el mensaje 404 devuelto por el backend sin alterarlo', async () => {
     apiKeyStorage.setApiKey('valid-key');
     vi.spyOn(catalogService, 'getPlayerById').mockRejectedValueOnce(

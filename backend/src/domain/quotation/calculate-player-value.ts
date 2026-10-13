@@ -2,10 +2,21 @@ import { Player } from '../player/player';
 import { ValuationStrategy } from './valuation-strategy';
 
 /**
- * Bounds máximos realistas de temporada para jugadores de élite.
- * Constante exportada para que los tests la usen directamente y para que
- * ValuationStrategy pueda validar las claves de sus pesos (012-valuation-strategies,
- * data-model.md §NormalizationBounds, spec DD-002).
+ * Bounds máximos realistas para jugadores de élite (012-valuation-strategies,
+ * data-model.md §NormalizationBounds, spec DD-002). Constante exportada para
+ * que los tests la usen directamente y para que ValuationStrategy pueda
+ * validar las claves de sus pesos.
+ *
+ * `goals`, `assists`, `keyPasses`, `dribbles`, `totalTackles`, `yellowCards` y
+ * `redCards` son ACUMULADOS de temporada (ver player.entity.ts): el bound es
+ * un techo de temporada completa.
+ *
+ * `passesCompleted`, `shots`, `interceptions` y `rating` son PROMEDIO POR
+ * PARTIDO de la temporada en curso (mismo comentario en player.entity.ts), así
+ * que su bound tiene que ser un techo de promedio por partido, no de
+ * temporada — usar un bound de temporada ahí (p. ej. 2500 para
+ * passesCompleted) dejaba la métrica casi siempre normalizada a ~0, sin peso
+ * real en el score.
  */
 export const NORMALIZATION_BOUNDS: Readonly<Record<string, number>> = {
   goals: 40,
@@ -13,9 +24,9 @@ export const NORMALIZATION_BOUNDS: Readonly<Record<string, number>> = {
   keyPasses: 150,
   dribbles: 200,
   totalTackles: 150,
-  shots: 200,
-  passesCompleted: 2500,
-  interceptions: 100,
+  shots: 6,
+  passesCompleted: 100,
+  interceptions: 4,
   rating: 10,
   yellowCards: 15,
   redCards: 5,

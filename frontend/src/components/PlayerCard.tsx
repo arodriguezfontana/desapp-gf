@@ -98,9 +98,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
             }}
           />
 
-          {/* ── Cabecera superior: OVR + Posición a la izquierda, Escudo a la derecha ── */}
+          {/* ── Cabecera superior: Valor del token a la izquierda, Escudo a la derecha ── */}
           <div className="relative z-10 pt-4 px-4 flex items-start justify-between">
-            {/* OVR + Posición + Liga estilo FIFA */}
+            {/* Valor del token estilo FIFA */}
             <div className="flex flex-col items-start leading-none">
               <span
                 className="text-4xl font-black tabular-nums tracking-tighter drop-shadow-md"
@@ -108,15 +108,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
               >
                 {displayValue ?? '—'}
               </span>
-              <span
-                className={`text-[10px] font-black uppercase tracking-widest mt-0.5 ${getPositionColorClass(
-                  player.position,
-                )}`}
-              >
-                {getPositionLabel(player.position)}
-              </span>
-              <span className="text-[8px] font-bold uppercase tracking-wider text-white/50 mt-1 px-1.5 py-0.5 rounded bg-black/40 border border-white/10">
-                {player.league}
+              <span className="text-[9px] font-black uppercase tracking-widest mt-0.5 text-white/50">
+                Valor token
               </span>
             </div>
 
@@ -148,8 +141,21 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
             />
           </div>
 
-          {/* ── Separador de cinta dorada y Nombre del jugador ── */}
+          {/* ── Posición + Liga, Separador de cinta dorada y Nombre del jugador ── */}
           <div className="relative z-10 px-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1.5">
+              <span
+                className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-black/40 border border-white/10 ${getPositionColorClass(
+                  player.position,
+                )}`}
+              >
+                {getPositionLabel(player.position)}
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-white/50 px-2 py-0.5 rounded bg-black/40 border border-white/10">
+                {player.league}
+              </span>
+            </div>
+
             <div className="flex items-center gap-2 mb-1.5">
               <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20" />
               <div className="w-1.5 h-1.5 rotate-45 shrink-0" style={{ backgroundColor: accent.from }} />
