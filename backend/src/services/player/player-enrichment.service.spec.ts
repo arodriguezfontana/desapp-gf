@@ -35,6 +35,7 @@ describe('PlayerEnrichmentService', () => {
   beforeEach(() => {
     playerService = {
       listPlayers: jest.fn(),
+      findRanking: jest.fn(),
       getPlayerById: jest.fn(),
     } as unknown as jest.Mocked<PlayerService>;
 
@@ -133,6 +134,101 @@ describe('PlayerEnrichmentService', () => {
       playerService.getPlayerById.mockRejectedValue(new PlayerNotFoundError());
 
       await expect(service.getPlayerByIdWithCrest('id-x')).rejects.toThrow(PlayerNotFoundError);
+    });
+  });
+
+  describe('getRankingWithCrests', () => {
+    const quoteDate = new Date('2026-10-14T12:00:00Z');
+
+    it('calcula la posición rank secuencial y enriquece crestUrl', async () => {
+      const secondPlayer = Player.restore({
+        id: 'id-2',
+        name: 'Bukayo Saka',
+        league: League.PREMIER_LEAGUE,
+        team: 'Arsenal FC',
+        position: Position.FW,
+        passesCompleted: 15.2,
+        shots: 4.1,
+        interceptions: 0.5,
+        rating: 7.85,
+      });
+
+      playerService.findRanking.mockResolvedValue({
+        items: [
+          {
+            player: somePlayer,
+            valor: 80000000,
+            score: 9.1,
+            strategyName: 'Elite Strategy',
+            calculatedAt: quoteDate,
+          },
+          {
+            player: secondPlayer,
+            valor: 75000000,
+            score: 8.8,
+            strategyName: 'Elite Strategy',
+            calculatedAt: quoteDate,
+          },
+        ],
+        total: 10,
+      });
+      teams.findByWhoScoredName.mockResolvedValue(someTeam);
+
+      const result = await service.getRankingWithCrests(
+        { league: League.PREMIER_LEAGUE },
+        { page: 2, pageSize: 5 },
+      );
+
+      expect(playerService.findRanking).toHaveBeenCalledWith(
+        { league: League.PREMIER_LEAGUE },
+        { page: 2, pageSize: 5 },
+      );
+      expect(result.total).toBe(10);
+      expect(result.items).toHaveLength(2);
+
+      // Página 2, pageSize 5 -> índice 0 es rank 6, índice 1 es rank 7
+      expect(result.items[0]).toEqual({
+        player: somePlayer,
+        crestUrl: 'https://crests.football-data.org/57.png',
+        rank: 6,
+        valor: 80000000,
+        score: 9.1,
+        strategyName: 'Elite Strategy',
+        calculatedAt: quoteDate,
+      });
+      expect(result.items[1].rank).toBe(7);
+      expect(result.items[1].crestUrl).toBe('https://crests.football-data.org/57.png');
+    });
+
+    it('devuelve crestUrl null cuando el equipo no existe en la base de datos', async () => {
+      playerService.findRanking.mockResolvedValue({
+        items: [
+          {
+            player: somePlayer,
+            valor: 50000000,
+            score: 7.5,
+            strategyName: 'Default Strategy',
+            calculatedAt: quoteDate,
+          },
+        ],
+        total: 1,
+      });
+      teams.findByWhoScoredName.mockResolvedValue(null);
+
+      const result = await service.getRankingWithCrests({}, { page: 1, pageSize: 10 });
+
+      expect(result.items[0].rank).toBe(1);
+      expect(result.items[0].crestUrl).toBeNull();
+    });
+
+    it('devuelve lista vacía sin llamar a teams cuando no hay items', async () => {
+      playerService.findRanking.mockResolvedValue({ items: [], total: 0 });
+
+      const result = await service.getRankingWithCrests({}, { page: 1, pageSize: 10 });
+
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(teams.findByWhoScoredName).not.toHaveBeenCalled();
     });
   });
 });

@@ -3,6 +3,10 @@ import { TEAM_REPOSITORY } from '../../modules/player/player-enrichment.constant
 import { Player } from '../../domain/player/player';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPagination } from '../../domain/player/player-page';
+import {
+  PlayerRankingPageWithCrests,
+  RankedPlayerWithCrest,
+} from '../../domain/player/player-ranking';
 import { TeamRepository } from '../../repositories/competition/team.repository';
 import { PlayerService } from './player.service';
 
@@ -32,6 +36,25 @@ export class PlayerEnrichmentService {
       page.items.map(async (player) => ({
         player,
         crestUrl: await this.resolveCrest(player),
+      })),
+    );
+    return { items, total: page.total };
+  }
+
+  async getRankingWithCrests(
+    filters: PlayerFilters,
+    pagination: PlayerPagination,
+  ): Promise<PlayerRankingPageWithCrests> {
+    const page = await this.playerService.findRanking(filters, pagination);
+    const items = await Promise.all(
+      page.items.map(async (item, index) => ({
+        player: item.player,
+        crestUrl: await this.resolveCrest(item.player),
+        rank: (pagination.page - 1) * pagination.pageSize + index + 1,
+        valor: item.valor,
+        score: item.score,
+        strategyName: item.strategyName,
+        calculatedAt: item.calculatedAt,
       })),
     );
     return { items, total: page.total };

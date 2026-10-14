@@ -26,6 +26,7 @@ describe('PlayerSyncService — disparo manual (spec 009)', () => {
     players = {
       findPage: jest.fn(),
       findById: jest.fn(),
+      findRanking: jest.fn(),
       findActiveExternalIdsByTeam: jest.fn().mockResolvedValue([]),
       applyTeamRosterSync: jest.fn().mockResolvedValue(undefined),
       findAllActive: jest.fn(),

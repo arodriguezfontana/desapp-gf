@@ -102,6 +102,8 @@ describe('Catálogo de Jugadores (e2e)', () => {
     // directamente, con la misma forma que dejaría una sincronización
     // exitosa (research.md §2 de 004-player-catalog ya establecía este
     // criterio para los tests de integración; acá se extiende al e2e).
+    await ctx.dataSource.query('DELETE FROM "player_quotes"');
+    await ctx.dataSource.getRepository(PlayerEntity).clear();
     await ctx.dataSource.getRepository(PlayerEntity).save(PLAYER_FIXTURES);
   });
 

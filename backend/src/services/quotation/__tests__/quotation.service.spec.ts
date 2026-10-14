@@ -47,6 +47,7 @@ describe('QuotationService', () => {
     playerRepo = {
       findPage: jest.fn(),
       findById: jest.fn(),
+      findRanking: jest.fn(),
       findActiveExternalIdsByTeam: jest.fn(),
       applyTeamRosterSync: jest.fn(),
       findAllActive: jest.fn(),

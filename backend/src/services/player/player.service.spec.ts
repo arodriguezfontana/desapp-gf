@@ -26,6 +26,7 @@ describe('PlayerService', () => {
     players = {
       findPage: jest.fn(),
       findById: jest.fn(),
+      findRanking: jest.fn(),
       findActiveExternalIdsByTeam: jest.fn(),
       applyTeamRosterSync: jest.fn(),
       findAllActive: jest.fn(),
@@ -51,6 +52,40 @@ describe('PlayerService', () => {
 
       const result = await service.listPlayers({}, { page: 1, pageSize: 10 });
 
+      expect(result).toEqual({ items: [], total: 0 });
+    });
+  });
+
+  describe('findRanking', () => {
+    it('delega los filtros y la paginación al repositorio findRanking', async () => {
+      const rankingPage = {
+        items: [
+          {
+            player: somePlayer,
+            valor: 50000000,
+            score: 8.5,
+            strategyName: 'Estrategia Default',
+            calculatedAt: new Date('2026-10-14T10:00:00Z'),
+          },
+        ],
+        total: 1,
+      };
+      players.findRanking.mockResolvedValue(rankingPage);
+
+      const filters = { league: League.PREMIER_LEAGUE };
+      const pagination = { page: 1, pageSize: 10 };
+      const result = await service.findRanking(filters, pagination);
+
+      expect(players.findRanking).toHaveBeenCalledWith(filters, pagination);
+      expect(result).toBe(rankingPage);
+    });
+
+    it('devuelve lista vacía sin error cuando no hay coincidencias', async () => {
+      players.findRanking.mockResolvedValue({ items: [], total: 0 });
+
+      const result = await service.findRanking({}, { page: 1, pageSize: 10 });
+
+      expect(players.findRanking).toHaveBeenCalledWith({}, { page: 1, pageSize: 10 });
       expect(result).toEqual({ items: [], total: 0 });
     });
   });
