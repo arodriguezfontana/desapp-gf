@@ -8,6 +8,8 @@ import { DatabaseModule } from '../../database/database.module';
 import { League } from '../../domain/player/enums/league';
 import { Position } from '../../domain/player/enums/position';
 import { PlayerSyncInput } from '../../domain/player/player-sync-input';
+import { PlayerQuoteEntity } from '../quotation/entities/player-quote.entity';
+import { ValuationStrategyEntity } from '../quotation/entities/valuation-strategy.entity';
 import { PlayerEntity } from './entities/player.entity';
 import { PlayerMapper } from './mappers/player.mapper';
 import { TypeOrmPlayerRepository } from './typeorm-player.repository';
@@ -22,7 +24,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         DatabaseModule,
-        TypeOrmModule.forFeature([PlayerEntity]),
+        TypeOrmModule.forFeature([PlayerEntity, PlayerQuoteEntity, ValuationStrategyEntity]),
       ],
       providers: [PlayerMapper, TypeOrmPlayerRepository],
     }).compile();
