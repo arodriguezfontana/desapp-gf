@@ -12,16 +12,19 @@ export class ValuationStrategyMapper {
       weights: entity.weights,
       factorEscala: Number.parseFloat(entity.factorEscala),
       isActive: entity.isActive,
+      positionWeights: entity.positionWeights ?? {},
     });
   }
 
   toPersistence(domain: ValuationStrategy): Partial<ValuationStrategyEntity> {
+    const positionWeights = domain.positionWeights;
     return {
       id: domain.id,
       name: domain.name,
       weights: domain.weights,
       factorEscala: domain.factorEscala.toString(),
       isActive: domain.isActive,
+      positionWeights: Object.keys(positionWeights).length > 0 ? positionWeights : null,
     };
   }
 }

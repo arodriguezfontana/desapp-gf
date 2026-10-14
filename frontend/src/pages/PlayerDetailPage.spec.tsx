@@ -11,6 +11,7 @@ describe('PlayerDetailPage', () => {
     localStorage.clear();
     vi.restoreAllMocks();
     vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValue(null);
+    vi.spyOn(catalogService, 'getQuoteHistoryByPlayerId').mockResolvedValue([]);
   });
 
   it('muestra aviso si no existe ApiKey guardada', () => {
@@ -113,6 +114,7 @@ describe('PlayerDetailPage', () => {
       score: 0.712,
       value: 71.52,
       calculatedAt: '2026-10-08T00:00:00.000Z',
+      appliedPosition: null,
     });
 
     render(
@@ -128,6 +130,157 @@ describe('PlayerDetailPage', () => {
     });
 
     expect(screen.getByText('72')).toBeInTheDocument();
+  });
+
+  it('renderiza el gráfico de evolución cuando el jugador tiene historial de cotizaciones (015-player-quote-history, US2)', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+    });
+    vi.spyOn(catalogService, 'getQuoteHistoryByPlayerId').mockResolvedValueOnce([
+      { id: 'q-1', playerId: 'p-1', strategyId: 's-1', score: 0.5, value: 50, calculatedAt: '2026-09-01T00:00:00.000Z', appliedPosition: null },
+      { id: 'q-2', playerId: 'p-1', strategyId: 's-1', score: 0.7, value: 71, calculatedAt: '2026-09-08T00:00:00.000Z', appliedPosition: null },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Kylian Mbappé')).toBeInTheDocument();
+    });
+
+    expect(document.querySelector('svg[aria-label="Evolución del valor del token en el tiempo"]')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Todavía no hay historial de cotizaciones para este jugador.'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('muestra el estado vacío del historial cuando el jugador no tiene cotizaciones (015-player-quote-history, US2)', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+    });
+    // getQuoteHistoryByPlayerId ya está mockeado a [] por el beforeEach global.
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Kylian Mbappé')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText('Todavía no hay historial de cotizaciones para este jugador.'),
+    ).toBeInTheDocument();
+  });
+
+  it('indica que la cotización se calculó con el perfil de posición cuando appliedPosition no es null (014-position-weight-profiles, US4)', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+    });
+    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValueOnce({
+      id: 'q-1',
+      playerId: 'p-1',
+      strategyId: 's-1',
+      score: 0.712,
+      value: 71.52,
+      calculatedAt: '2026-10-08T00:00:00.000Z',
+      appliedPosition: 'FW',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Perfil de posición (Delantero)')).toBeInTheDocument();
+    });
+  });
+
+  it('indica que la cotización se calculó con los pesos generales cuando appliedPosition es null (014-position-weight-profiles, US4)', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+    });
+    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValueOnce({
+      id: 'q-1',
+      playerId: 'p-1',
+      strategyId: 's-1',
+      score: 0.712,
+      value: 71.52,
+      calculatedAt: '2026-10-08T00:00:00.000Z',
+      appliedPosition: null,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Pesos generales de la estrategia')).toBeInTheDocument();
+    });
+  });
+
+  it('no muestra ningún indicador de origen de pesos cuando el jugador no tiene cotización', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+    });
+    // getLatestQuoteByPlayerId ya está mockeado a null por el beforeEach global.
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Kylian Mbappé')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Pesos generales de la estrategia')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Perfil de posición/)).not.toBeInTheDocument();
   });
 
   it('muestra textualmente el mensaje 404 devuelto por el backend sin alterarlo', async () => {

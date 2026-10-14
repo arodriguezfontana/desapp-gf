@@ -1,9 +1,15 @@
+import { Position } from '../player/enums/position';
+
 /**
  * Cotización calculada de un jugador en un momento dado.
  *
  * Registra un snapshot completo de los parámetros de cálculo para garantizar
  * reproducibilidad histórica aunque la estrategia cambie después
  * (012-valuation-strategies, spec DD-001).
+ *
+ * `appliedPosition` indica si el snapshot corresponde al perfil de una
+ * posición (y cuál) o a los pesos generales de la estrategia (`null`)
+ * (014-position-weight-profiles, spec FR-009, research.md Decisión 2).
  */
 export class PlayerQuote {
   private constructor(
@@ -15,6 +21,7 @@ export class PlayerQuote {
     private readonly _score: number,
     private readonly _value: number,
     private readonly _calculatedAt: Date,
+    private readonly _appliedPosition: Position | null,
   ) {}
 
   static create(props: {
@@ -26,6 +33,7 @@ export class PlayerQuote {
     score: number;
     value: number;
     calculatedAt: Date;
+    appliedPosition?: Position | null;
   }): PlayerQuote {
     return PlayerQuote.restore(props);
   }
@@ -39,6 +47,7 @@ export class PlayerQuote {
     score: number;
     value: number;
     calculatedAt: Date;
+    appliedPosition?: Position | null;
   }): PlayerQuote {
     return new PlayerQuote(
       props.id,
@@ -49,6 +58,7 @@ export class PlayerQuote {
       props.score,
       props.value,
       props.calculatedAt,
+      props.appliedPosition ?? null,
     );
   }
 
@@ -60,4 +70,5 @@ export class PlayerQuote {
   get score(): number { return this._score; }
   get value(): number { return this._value; }
   get calculatedAt(): Date { return this._calculatedAt; }
+  get appliedPosition(): Position | null { return this._appliedPosition; }
 }

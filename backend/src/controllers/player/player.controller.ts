@@ -13,6 +13,7 @@ import { ListPlayersQueryDto } from './dto/list-players-query.dto';
 import { PlayerListResponseDto } from './dto/player-list-response.dto';
 import { PlayerResponseDto } from './dto/player-response.dto';
 import { PlayerQuoteDetailResponseDto } from './dto/player-quote-detail-response.dto';
+import { PlayerQuoteResponseDto } from '../quotation/dto/player-quote-response.dto';
 import { ParseDatePipe } from './pipes/parse-date.pipe';
 
 /**
@@ -102,5 +103,19 @@ export class PlayerController {
       return;
     }
     return PlayerQuoteDetailResponseDto.fromDomain(result.quote, result.strategyName);
+  }
+
+  @Get(':id/quotes')
+  @ApiOperation({
+    summary: 'Historial completo de cotizaciones de un jugador',
+    description:
+      'Devuelve todas las cotizaciones calculadas para el jugador, ordenadas de la más antigua a la más reciente. Si el jugador existe pero no tiene cotizaciones todavía, devuelve un array vacío (200), no 404.',
+  })
+  @ApiResponse({ status: 200, type: [PlayerQuoteResponseDto] })
+  @ApiResponse({ status: 401, description: 'No autenticado.' })
+  @ApiResponse({ status: 404, description: 'No existe un jugador con ese id (PLAYER_NOT_FOUND).' })
+  async quotes(@Param('id') id: string): Promise<PlayerQuoteResponseDto[]> {
+    const history = await this.quotationService.getQuoteHistory(id);
+    return history.map((quote) => PlayerQuoteResponseDto.fromDomain(quote));
   }
 }

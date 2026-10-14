@@ -39,6 +39,7 @@ export interface PlayerQuote {
   score: number;
   value: number;
   calculatedAt: string;
+  appliedPosition: Position | null;
 }
 
 export interface CatalogFilters {

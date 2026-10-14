@@ -171,17 +171,17 @@ describe('AdminPage', () => {
 
     vi.spyOn(adminServiceModule.adminService, 'listStrategies')
       .mockResolvedValueOnce([
-        { id: 'strat-1', name: 'Performance general', weights: { goals: 0.25 }, factorEscala: 99, isActive: true },
-        { id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: false },
+        { id: 'strat-1', name: 'Performance general', weights: { goals: 0.25 }, factorEscala: 99, isActive: true, positionWeights: {} },
+        { id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: false, positionWeights: {} },
       ])
       .mockResolvedValueOnce([
-        { id: 'strat-1', name: 'Performance general', weights: { goals: 0.25 }, factorEscala: 99, isActive: false },
-        { id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: true },
+        { id: 'strat-1', name: 'Performance general', weights: { goals: 0.25 }, factorEscala: 99, isActive: false, positionWeights: {} },
+        { id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: true, positionWeights: {} },
       ]);
 
     const activateSpy = vi
       .spyOn(adminServiceModule.adminService, 'activateStrategy')
-      .mockResolvedValueOnce({ id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: true });
+      .mockResolvedValueOnce({ id: 'strat-2', name: 'Impacto táctico', weights: { totalTackles: 0.25 }, factorEscala: 99, isActive: true, positionWeights: {} });
 
     render(
       <MemoryRouter>
@@ -202,5 +202,52 @@ describe('AdminPage', () => {
       expect(activateSpy).toHaveBeenCalledWith('strat-2');
       expect(screen.queryByRole('button', { name: /Activar esta estrategia/i })).toBeInTheDocument();
     });
+  });
+
+  it('muestra los perfiles de posición de una estrategia como detalle de solo lectura', async () => {
+    apiKeyStorage.setApiKey('pmk_existing_admin_key');
+
+    vi.spyOn(authServiceModule.authService, 'me').mockResolvedValueOnce({
+      id: 'u-admin',
+      email: 'admin@mail.com',
+      role: 'admin',
+    });
+
+    vi.spyOn(adminServiceModule.adminService, 'listStrategies').mockResolvedValueOnce([
+      {
+        id: 'strat-1',
+        name: 'Performance general',
+        weights: { goals: 0.25 },
+        factorEscala: 99,
+        isActive: true,
+        positionWeights: {
+          FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 },
+        },
+      },
+      {
+        id: 'strat-2',
+        name: 'Impacto táctico',
+        weights: { totalTackles: 0.25 },
+        factorEscala: 99,
+        isActive: false,
+        positionWeights: {},
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <AdminPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Performance general')).toBeInTheDocument();
+    });
+
+    // Solo "Performance general" define positionWeights: una sola sección renderizada.
+    expect(screen.getAllByText('Perfiles por posición')).toHaveLength(1);
+    expect(screen.getByText('Delantero')).toBeInTheDocument();
+    expect(screen.getByText('goals: 0.45')).toBeInTheDocument();
+    expect(screen.getByText('rating: 0.15')).toBeInTheDocument();
   });
 });

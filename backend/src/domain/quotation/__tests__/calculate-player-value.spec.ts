@@ -20,6 +20,7 @@ const STRATEGY_1_WEIGHTS = {
 function makeStrategy(
   weights: Record<string, number>,
   factorEscala = 99,
+  positionWeights?: Partial<Record<Position, Record<string, number>>>,
 ): ValuationStrategy {
   return ValuationStrategy.restore({
     id: 'strategy-1',
@@ -27,6 +28,7 @@ function makeStrategy(
     weights,
     factorEscala,
     isActive: true,
+    positionWeights,
   });
 }
 
@@ -42,13 +44,14 @@ function makePlayer(metrics: {
   rating?: number | null;
   yellowCards?: number | null;
   redCards?: number | null;
+  position?: Position;
 } = {}): Player {
   return Player.restore({
     id: 'player-1',
     name: 'Test Player',
     league: League.PREMIER_LEAGUE,
     team: 'Test FC',
-    position: Position.FW,
+    position: metrics.position ?? Position.FW,
     passesCompleted: metrics.passesCompleted ?? null,
     shots: metrics.shots ?? null,
     interceptions: metrics.interceptions ?? null,
@@ -172,6 +175,63 @@ describe('calculatePlayerValue', () => {
 
       expect(score).toBe(-1.0);
       expect(value).toBeCloseTo(1 + (-1.0) * 99, 4); // value = -98
+    });
+  });
+
+  describe('perfil de posición aplicable (014-position-weight-profiles, US1)', () => {
+    it('usa el perfil de la posición del jugador en lugar de los pesos generales', () => {
+      const fwProfile = { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 };
+      const strategy = makeStrategy(STRATEGY_1_WEIGHTS, 99, { FW: fwProfile });
+      const player = makePlayer({
+        position: Position.FW,
+        goals: 20, shots: 3, assists: 10, rating: 5,
+        // Métricas presentes en los pesos generales pero fuera del perfil FW:
+        // no deben aportar nada al score.
+        keyPasses: 150, dribbles: 200, totalTackles: 150,
+      });
+
+      const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(player, strategy);
+
+      const expectedScore =
+        0.45 * (20 / 40) + 0.25 * (3 / 6) + 0.15 * (10 / 25) + 0.15 * (5 / 10);
+
+      expect(appliedPosition).toBe(Position.FW);
+      expect(weightsUsed).toEqual(fwProfile);
+      expect(score).toBeCloseTo(expectedScore, 6);
+      expect(value).toBeCloseTo(1 + expectedScore * 99, 4);
+    });
+  });
+
+  describe('sin perfil aplicable (014-position-weight-profiles, US2 — fallback a pesos generales)', () => {
+    it('usa los pesos generales si la estrategia solo define perfil para otra posición', () => {
+      const strategy = makeStrategy(STRATEGY_1_WEIGHTS, 99, {
+        FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 },
+      });
+      const player = makePlayer({
+        position: Position.DF,
+        goals: 20, assists: 10, shots: 3, keyPasses: 75,
+        dribbles: 100, totalTackles: 75, rating: 7.5,
+      });
+
+      const { score, appliedPosition, weightsUsed } = calculatePlayerValue(player, strategy);
+
+      const expectedScore =
+        0.25 * (20 / 40) + 0.15 * (10 / 25) + 0.10 * (3 / 6) + 0.10 * (75 / 150) +
+        0.10 * (100 / 200) + 0.10 * (75 / 150) + 0.20 * (7.5 / 10);
+
+      expect(appliedPosition).toBeNull();
+      expect(weightsUsed).toEqual(STRATEGY_1_WEIGHTS);
+      expect(score).toBeCloseTo(expectedScore, 6);
+    });
+
+    it('usa los pesos generales si la estrategia no define ningún positionWeights', () => {
+      const strategy = makeStrategy(STRATEGY_1_WEIGHTS, 99);
+      const player = makePlayer({ position: Position.GK, goals: 20, assists: 10 });
+
+      const { appliedPosition, weightsUsed } = calculatePlayerValue(player, strategy);
+
+      expect(appliedPosition).toBeNull();
+      expect(weightsUsed).toEqual(STRATEGY_1_WEIGHTS);
     });
   });
 

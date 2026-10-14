@@ -16,6 +16,9 @@ export class ValuationStrategyEntity {
   @Column({ type: 'jsonb' })
   weights!: Record<string, number>;
 
+  @Column({ name: 'position_weights', type: 'jsonb', nullable: true })
+  positionWeights!: Record<string, Record<string, number>> | null;
+
   @Column({ name: 'factor_escala', type: 'decimal', precision: 10, scale: 4 })
   factorEscala!: string;
 

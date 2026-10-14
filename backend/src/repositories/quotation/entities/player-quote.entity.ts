@@ -33,4 +33,7 @@ export class PlayerQuoteEntity {
 
   @Column({ name: 'calculated_at', type: 'timestamptz' })
   calculatedAt!: Date;
+
+  @Column({ name: 'applied_position', type: 'varchar', length: 2, nullable: true })
+  appliedPosition!: string | null;
 }

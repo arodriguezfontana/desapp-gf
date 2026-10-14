@@ -25,7 +25,13 @@ export function useCatalog() {
     [],
   );
 
-  return { getPlayers, getPlayerById, getLatestQuoteByPlayerId };
+  const getQuoteHistoryByPlayerId = useCallback(
+    (playerId: string): Promise<PlayerQuote[]> =>
+      catalogService.getQuoteHistoryByPlayerId(playerId),
+    [],
+  );
+
+  return { getPlayers, getPlayerById, getLatestQuoteByPlayerId, getQuoteHistoryByPlayerId };
 }
 
 // Re-exportado para que PlayerDetailPage pueda narrowear el error sin importar `service/` directamente.

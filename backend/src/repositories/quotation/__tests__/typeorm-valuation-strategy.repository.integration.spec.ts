@@ -8,6 +8,7 @@ import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy
 import { ValuationStrategyMapper } from '../valuation-strategy.mapper';
 import { TypeOrmValuationStrategyRepository } from '../typeorm-valuation-strategy.repository';
 import { ValuationStrategyEntity } from '../entities/valuation-strategy.entity';
+import { SeedPositionWeightProfiles1791763200000 } from '../../../database/migrations/1791763200000-SeedPositionWeightProfiles';
 
 const WEIGHTS_A = { goals: 0.5, assists: 0.3, rating: 0.2 };
 const WEIGHTS_B = { totalTackles: 0.6, interceptions: 0.4 };
@@ -124,6 +125,103 @@ describe('TypeOrmValuationStrategyRepository (integración, spec 012 US3)', () =
     await expect(
       repo.activateStrategy('00000000-0000-0000-0000-000000000000'),
     ).rejects.toThrow(StrategyNotFoundError);
+  });
+
+  describe('migration SeedPositionWeightProfiles (014-position-weight-profiles, US3)', () => {
+    // Mismos ids que SeedValuationStrategies1791590400000 — la migration de esta
+    // feature los referencia por id en su WHERE. El entorno de test usa
+    // `synchronize: true` (no corre migrations de archivo), así que este test
+    // ejercita la migration directamente: inserta las dos filas con esos ids
+    // (como si SeedValuationStrategies ya hubiera corrido) y aplica `up()`.
+    const PERFORMANCE_GENERAL_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+    const IMPACTO_TACTICO_ID = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
+    const POSITIONS = ['FW', 'MF', 'DF', 'GK'] as const;
+
+    const sumOf = (weights: Record<string, number>) =>
+      Object.values(weights).reduce((acc, w) => acc + w, 0);
+
+    beforeEach(async () => {
+      await dataSource.getRepository(ValuationStrategyEntity).insert([
+        {
+          id: PERFORMANCE_GENERAL_ID,
+          name: 'Performance general',
+          weights: WEIGHTS_A,
+          factorEscala: '99.0000',
+          isActive: false,
+        },
+        {
+          id: IMPACTO_TACTICO_ID,
+          name: 'Impacto táctico',
+          weights: WEIGHTS_B,
+          factorEscala: '99.0000',
+          isActive: false,
+        },
+      ]);
+
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      try {
+        await new SeedPositionWeightProfiles1791763200000().up(queryRunner);
+      } finally {
+        await queryRunner.release();
+      }
+    });
+
+    afterEach(async () => {
+      await dataSource.query(
+        `DELETE FROM "valuation_strategies" WHERE "id" IN ($1, $2)`,
+        [PERFORMANCE_GENERAL_ID, IMPACTO_TACTICO_ID],
+      );
+    });
+
+    it('carga los 4 perfiles de posición de "Performance general", cada uno sumando 1.0 ±0.001', async () => {
+      const strategy = await repo.findById(PERFORMANCE_GENERAL_ID);
+
+      expect(strategy).not.toBeNull();
+      for (const position of POSITIONS) {
+        const profile = strategy!.positionWeights[position];
+        expect(profile).toBeDefined();
+        expect(sumOf(profile!)).toBeCloseTo(1.0, 3);
+      }
+      expect(strategy!.positionWeights.FW).toEqual({
+        goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15,
+      });
+      expect(strategy!.positionWeights.GK).toEqual({
+        rating: 0.50, passesCompleted: 0.30, interceptions: 0.20,
+      });
+    });
+
+    it('carga los 4 perfiles de posición de "Impacto táctico", cada uno sumando 1.0 ±0.001', async () => {
+      const strategy = await repo.findById(IMPACTO_TACTICO_ID);
+
+      expect(strategy).not.toBeNull();
+      for (const position of POSITIONS) {
+        const profile = strategy!.positionWeights[position];
+        expect(profile).toBeDefined();
+        expect(sumOf(profile!)).toBeCloseTo(1.0, 3);
+      }
+      expect(strategy!.positionWeights.FW).toEqual({
+        goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.20, yellowCards: -0.05,
+      });
+      expect(strategy!.positionWeights.DF).toEqual({
+        totalTackles: 0.40, interceptions: 0.35, rating: 0.25,
+      });
+    });
+
+    it('down() revierte position_weights a NULL para ambas estrategias', async () => {
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      try {
+        await new SeedPositionWeightProfiles1791763200000().down(queryRunner);
+      } finally {
+        await queryRunner.release();
+      }
+
+      const a = await repo.findById(PERFORMANCE_GENERAL_ID);
+      const b = await repo.findById(IMPACTO_TACTICO_ID);
+      expect(a!.positionWeights).toEqual({});
+      expect(b!.positionWeights).toEqual({});
+    });
   });
 
   it('save() persiste una nueva estrategia y devuelve el dominio con id asignado', async () => {
