@@ -3,10 +3,7 @@ import { TEAM_REPOSITORY } from '../../modules/player/player-enrichment.constant
 import { Player } from '../../domain/player/player';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPagination } from '../../domain/player/player-page';
-import {
-  PlayerRankingPageWithCrests,
-  RankedPlayerWithCrest,
-} from '../../domain/player/player-ranking';
+import { PlayerRankingPageWithCrests } from '../../domain/player/player-ranking';
 import { TeamRepository } from '../../repositories/competition/team.repository';
 import { PlayerService } from './player.service';
 

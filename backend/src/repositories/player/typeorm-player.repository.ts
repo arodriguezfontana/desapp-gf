@@ -17,6 +17,17 @@ import { PlayerMapper } from './mappers/player.mapper';
 import { PlayerRepository } from './player.repository';
 
 /**
+ * Columnas agregadas por el CTE `latest_quotes` de `findRanking` sobre las
+ * columnas nativas de `PlayerEntity` (`p.*`).
+ */
+interface RankingRow {
+  quote_value: string;
+  quote_score: string;
+  quote_strategy_name: string;
+  quote_calculated_at: string;
+}
+
+/**
  * Columnas que un upsert de sincronización sobrescribe en un conflicto de
  * `externalId` (006-whoscored-catalog-sync, data-model.md). `id` queda afuera
  * a propósito: en un conflicto, Postgres descarta el id recién generado y
@@ -91,7 +102,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
     pagination: PlayerPagination,
   ): Promise<PlayerRankingPage> {
     const conditions: string[] = ['lq.rn = 1', 'p."removedAt" IS NULL'];
-    const countParams: any[] = [];
+    const countParams: Array<string | number> = [];
     let paramIndex = 1;
 
     if (filters.league) {
@@ -136,7 +147,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
     dataParams.push(pagination.pageSize);
     const limitParam = `$${paramIndex++}`;
     dataParams.push((pagination.page - 1) * pagination.pageSize);
-    const offsetParam = `$${paramIndex++}`;
+    const offsetParam = `$${paramIndex}`;
 
     const dataSql = `
       WITH latest_quotes AS (
@@ -168,7 +179,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
 
     const rows = await this.dataSource.query(dataSql, dataParams);
 
-    const items: RankedPlayerQuote[] = rows.map((row: any) => ({
+    const items: RankedPlayerQuote[] = rows.map((row: PlayerEntity & RankingRow) => ({
       player: this.mapper.toDomain(row as PlayerEntity),
       valor: Number(row.quote_value),
       score: Number(row.quote_score),
