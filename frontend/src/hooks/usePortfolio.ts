@@ -7,6 +7,37 @@ export interface UsePortfolioOptions {
   userId?: string;
 }
 
+function extractErrorMessage(err: unknown): string | null {
+  if (!(err instanceof Error)) {
+    return 'Error inesperado al consultar el portfolio.';
+  }
+  if (err.message === 'No autorizado.') {
+    return null;
+  }
+  return err.message || 'Error inesperado al consultar el portfolio.';
+}
+
+function computeHoldingProfitLoss(holding: Holding): number {
+  if (holding.totalProfitLoss !== undefined) {
+    return holding.totalProfitLoss;
+  }
+  return (holding.currentPrice - holding.averageBuyPrice) * holding.tokenQuantity;
+}
+
+function computeSummary(holdings: Holding[]): PortfolioSummary {
+  let totalInvested = 0;
+  let totalCurrentValue = 0;
+  let netProfitLoss = 0;
+
+  for (const h of holdings) {
+    totalInvested += h.tokenQuantity * h.averageBuyPrice;
+    totalCurrentValue += h.tokenQuantity * h.currentPrice;
+    netProfitLoss += computeHoldingProfitLoss(h);
+  }
+
+  return { totalInvested, totalCurrentValue, netProfitLoss };
+}
+
 export function usePortfolio(options: UsePortfolioOptions = {}) {
   const { user, isLoading: isUserLoading } = useCurrentUser();
   const targetUserId = options.userId ?? user?.id;
@@ -17,9 +48,7 @@ export function usePortfolio(options: UsePortfolioOptions = {}) {
 
   const fetchPortfolio = useCallback(async () => {
     if (!targetUserId) {
-      if (!isUserLoading) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
       return;
     }
 
@@ -30,62 +59,21 @@ export function usePortfolio(options: UsePortfolioOptions = {}) {
       const response = await portfolioService.getPortfolio(targetUserId);
       setData(response);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message !== 'No autorizado.') {
-          setError(err.message || 'Error inesperado al consultar el portfolio.');
-        }
-      } else {
-        setError('Error inesperado al consultar el portfolio.');
+      const message = extractErrorMessage(err);
+      if (message) {
+        setError(message);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [targetUserId, isUserLoading]);
+  }, [targetUserId]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadPortfolio = async () => {
-      if (!targetUserId) {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      if (!cancelled) {
-        setIsLoading(true);
-        setError(null);
-      }
-
-      try {
-        const res = await portfolioService.getPortfolio(targetUserId);
-        if (!cancelled) {
-          setData(res);
-        }
-      } catch (err: unknown) {
-        if (!cancelled) {
-          if (err instanceof Error) {
-            if (err.message !== 'No autorizado.') {
-              setError(err.message || 'Error inesperado al consultar el portfolio.');
-            }
-          } else {
-            setError('Error inesperado al consultar el portfolio.');
-          }
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
+    const load = async () => {
+      await fetchPortfolio();
     };
-
-    void loadPortfolio();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [targetUserId]);
+    void load();
+  }, [fetchPortfolio]);
 
   const holdings: Holding[] = useMemo(() => data?.holdings ?? [], [data]);
 
@@ -93,39 +81,18 @@ export function usePortfolio(options: UsePortfolioOptions = {}) {
     if (data?.summary) {
       return data.summary;
     }
-
-    const totalInvested = holdings.reduce(
-      (acc, h) => acc + h.tokenQuantity * h.averageBuyPrice,
-      0,
-    );
-    const totalCurrentValue = holdings.reduce(
-      (acc, h) => acc + h.tokenQuantity * h.currentPrice,
-      0,
-    );
-    const netProfitLoss = holdings.reduce(
-      (acc, h) =>
-        acc +
-        (h.totalProfitLoss !== undefined
-          ? h.totalProfitLoss
-          : (h.currentPrice - h.averageBuyPrice) * h.tokenQuantity),
-      0,
-    );
-
-    return {
-      totalInvested,
-      totalCurrentValue,
-      netProfitLoss,
-    };
+    return computeSummary(holdings);
   }, [data, holdings]);
 
   const isEmpty = holdings.length === 0;
+  const isPendingUser = isUserLoading && !options.userId;
 
   return {
     data,
     holdings,
     summary,
     isEmpty,
-    isLoading: isUserLoading && !options.userId ? true : isLoading,
+    isLoading: isPendingUser ? true : isLoading,
     error,
     refetch: fetchPortfolio,
   };
