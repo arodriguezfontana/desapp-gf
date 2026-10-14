@@ -11,6 +11,7 @@ import { PlayerSyncModule } from './modules/player-sync/player-sync.module';
 import { FootballDataSyncModule } from './modules/competition/football-data-sync.module';
 import { TeamCrosswalkModule } from './modules/competition/team-crosswalk.module';
 import { QuotationModule } from './modules/quotation/quotation.module';
+import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -24,6 +25,7 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     FootballDataSyncModule,
     TeamCrosswalkModule,
     QuotationModule,
+    PortfolioModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],

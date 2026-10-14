@@ -72,6 +72,19 @@ export function AppLayout() {
             {isAuthenticated ? (
               <div className="flex items-center gap-3 ml-2 pl-4 border-l border-[#1a6866]">
                 <NavLink
+                  to="/portfolio"
+                  className={({ isActive }) =>
+                    `px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all ${
+                      isActive
+                        ? 'bg-[#104443] text-white border-[#b79753]'
+                        : 'text-gray-300 border-[#1a6866] hover:text-white hover:border-gray-400'
+                    }`
+                  }
+                >
+                  Portfolio
+                </NavLink>
+
+                <NavLink
                   to="/account"
                   className={({ isActive }) =>
                     `px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all ${
@@ -154,6 +167,13 @@ export function AppLayout() {
             </NavLink>
             {isAuthenticated ? (
               <>
+                <NavLink
+                  to="/portfolio"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-[#104443] rounded-xl"
+                >
+                  Mi Portfolio
+                </NavLink>
                 <NavLink
                   to="/account"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -246,17 +266,30 @@ export function AppLayout() {
         </NavLink>
 
         {isAuthenticated ? (
-          <NavLink
-            to="/account"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
-                isActive ? 'text-[#b79753]' : 'text-gray-400 hover:text-white'
-              }`
-            }
-          >
-            <span className="text-base">🔑</span>{' '}
-            <span>Mi Cuenta</span>
-          </NavLink>
+          <>
+            <NavLink
+              to="/portfolio"
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+                  isActive ? 'text-[#b79753]' : 'text-gray-400 hover:text-white'
+                }`
+              }
+            >
+              <span className="text-base">💼</span>{' '}
+              <span>Portfolio</span>
+            </NavLink>
+            <NavLink
+              to="/account"
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+                  isActive ? 'text-[#b79753]' : 'text-gray-400 hover:text-white'
+                }`
+              }
+            >
+              <span className="text-base">🔑</span>{' '}
+              <span>Mi Cuenta</span>
+            </NavLink>
+          </>
         ) : (
           <Link
             to="/login"
@@ -297,6 +330,7 @@ export function AppLayout() {
               <ul className="space-y-2 text-xs font-medium text-gray-300">
                 <li><Link to="/home" className="hover:text-[#b79753] transition-colors">Inicio Plataforma</Link></li>
                 <li><Link to="/catalog" className="hover:text-[#b79753] transition-colors">Catálogo de Jugadores</Link></li>
+                <li><Link to="/portfolio" className="hover:text-[#b79753] transition-colors">Mi Portfolio</Link></li>
                 <li><Link to="/account" className="hover:text-[#b79753] transition-colors">Mi Cuenta</Link></li>
                 {isAdmin && (
                   <li><Link to="/admin" className="text-[#2dd4bf] hover:text-white transition-colors font-bold">Panel Admin</Link></li>
