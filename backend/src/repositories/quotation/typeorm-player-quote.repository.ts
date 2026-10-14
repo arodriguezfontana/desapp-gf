@@ -37,4 +37,12 @@ export class TypeOrmPlayerQuoteRepository implements PlayerQuoteRepository {
       .getOne();
     return entity ? this.mapper.toDomain(entity) : null;
   }
+
+  async findAllByPlayerId(playerId: string): Promise<PlayerQuote[]> {
+    const entities = await this.repo.find({
+      where: { playerId },
+      order: { calculatedAt: 'ASC' },
+    });
+    return entities.map((entity) => this.mapper.toDomain(entity));
+  }
 }

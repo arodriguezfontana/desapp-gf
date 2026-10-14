@@ -71,4 +71,8 @@ export const catalogService = {
       return null;
     }
   },
+
+  async getQuoteHistoryByPlayerId(playerId: string): Promise<PlayerQuote[]> {
+    return httpClient.get<PlayerQuote[]>(`/players/${playerId}/quotes`, { useApiKey: true });
+  },
 };

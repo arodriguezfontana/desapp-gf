@@ -8,4 +8,5 @@ export interface PlayerQuoteRepository {
   saveMany(quotes: PlayerQuote[]): Promise<void>;
   findLatestByPlayerId(playerId: string): Promise<PlayerQuote | null>;
   findLatestAtDate(playerId: string, date: Date): Promise<PlayerQuote | null>;
+  findAllByPlayerId(playerId: string): Promise<PlayerQuote[]>;
 }

@@ -42,6 +42,7 @@ describe('QuotationService', () => {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findLatestByPlayerId: jest.fn(),
       findLatestAtDate: jest.fn(),
+      findAllByPlayerId: jest.fn(),
     };
     playerRepo = {
       findPage: jest.fn(),
@@ -170,6 +171,46 @@ describe('QuotationService', () => {
       // Después del fallo, el lock debe haberse liberado
       strategyRepo.findActive.mockResolvedValue(null);
       await expect(service.recalculateAll()).rejects.toBeInstanceOf(NoActiveStrategyError);
+    });
+  });
+
+  // ---- getQuoteHistory ---------------------------------------------------------
+
+  describe('getQuoteHistory() (015-player-quote-history)', () => {
+    it('lanza PlayerNotFoundError si el jugador no existe', async () => {
+      playerRepo.findById.mockResolvedValue(null);
+
+      await expect(service.getQuoteHistory('p-999')).rejects.toBeInstanceOf(PlayerNotFoundError);
+      expect(quoteRepo.findAllByPlayerId).not.toHaveBeenCalled();
+    });
+
+    it('retorna [] si el jugador existe y no tiene cotizaciones', async () => {
+      playerRepo.findById.mockResolvedValue(makePlayer());
+      quoteRepo.findAllByPlayerId.mockResolvedValue([]);
+
+      const result = await service.getQuoteHistory('p-1');
+
+      expect(result).toEqual([]);
+    });
+
+    it('retorna exactamente lo que resuelve el repositorio, sin reordenar ni transformar', async () => {
+      playerRepo.findById.mockResolvedValue(makePlayer());
+      const quotes = [
+        PlayerQuote.restore({
+          id: 'q-1', playerId: 'p-1', strategyId: 's-1', weightSnapshot: WEIGHTS,
+          factorEscalaSnapshot: 99, score: 0.1, value: 10.9, calculatedAt: new Date('2026-01-01'),
+        }),
+        PlayerQuote.restore({
+          id: 'q-2', playerId: 'p-1', strategyId: 's-1', weightSnapshot: WEIGHTS,
+          factorEscalaSnapshot: 99, score: 0.2, value: 20.8, calculatedAt: new Date('2026-02-01'),
+        }),
+      ];
+      quoteRepo.findAllByPlayerId.mockResolvedValue(quotes);
+
+      const result = await service.getQuoteHistory('p-1');
+
+      expect(result).toBe(quotes);
+      expect(quoteRepo.findAllByPlayerId).toHaveBeenCalledWith('p-1');
     });
   });
 

@@ -158,4 +158,41 @@ describe('TypeOrmPlayerQuoteRepository (integración)', () => {
       expect(result!.calculatedAt).toEqual(new Date('2026-09-12T14:00:00.000Z'));
     });
   });
+
+  describe('findAllByPlayerId (015-player-quote-history)', () => {
+    it('retorna [] cuando el jugador no tiene cotizaciones', async () => {
+      const result = await repo.findAllByPlayerId(PLAYER_ID);
+      expect(result).toEqual([]);
+    });
+
+    it('retorna todas las cotizaciones del jugador ordenadas ascendente por calculatedAt', async () => {
+      await repo.saveMany([
+        makeQuote({ id: randomUUID(), calculatedAt: new Date('2026-09-20T00:00:00.000Z'), score: 0.7, value: 70 }),
+        makeQuote({ id: randomUUID(), calculatedAt: new Date('2026-09-05T00:00:00.000Z'), score: 0.3, value: 30 }),
+        makeQuote({ id: randomUUID(), calculatedAt: new Date('2026-09-12T00:00:00.000Z'), score: 0.55, value: 55 }),
+      ]);
+
+      const result = await repo.findAllByPlayerId(PLAYER_ID);
+
+      expect(result).toHaveLength(3);
+      expect(result.map((q) => q.calculatedAt.toISOString())).toEqual([
+        new Date('2026-09-05T00:00:00.000Z').toISOString(),
+        new Date('2026-09-12T00:00:00.000Z').toISOString(),
+        new Date('2026-09-20T00:00:00.000Z').toISOString(),
+      ]);
+    });
+
+    it('no incluye cotizaciones de otro jugador', async () => {
+      const otherPlayerId = randomUUID();
+      await repo.saveMany([
+        makeQuote({ id: randomUUID(), calculatedAt: new Date('2026-09-10T00:00:00.000Z') }),
+        makeQuote({ id: randomUUID(), playerId: otherPlayerId, calculatedAt: new Date('2026-09-11T00:00:00.000Z') }),
+      ]);
+
+      const result = await repo.findAllByPlayerId(PLAYER_ID);
+
+      expect(result).toHaveLength(1);
+      expect(result.every((q) => q.playerId === PLAYER_ID)).toBe(true);
+    });
+  });
 });

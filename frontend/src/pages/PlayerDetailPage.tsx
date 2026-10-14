@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
+import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
 
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
 const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
@@ -62,9 +63,10 @@ const RatingBar: React.FC<{ label: string; value: number | null; max?: number; c
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { hasApiKey } = useApiKey();
-  const { getPlayerById, getLatestQuoteByPlayerId } = useCatalog();
+  const { getPlayerById, getLatestQuoteByPlayerId, getQuoteHistoryByPlayerId } = useCatalog();
   const [player, setPlayer] = useState<Player | null>(null);
   const [quote, setQuote] = useState<PlayerQuote | null>(null);
+  const [quoteHistory, setQuoteHistory] = useState<PlayerQuote[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -76,11 +78,12 @@ export const PlayerDetailPage: React.FC = () => {
       setIsLoading(true);
       setErrorMessage(null);
       try {
-        const [data, latestQuote] = await Promise.all([
+        const [data, latestQuote, history] = await Promise.all([
           getPlayerById(id),
           getLatestQuoteByPlayerId(id),
+          getQuoteHistoryByPlayerId(id),
         ]);
-        if (isMounted) { setPlayer(data); setQuote(latestQuote); }
+        if (isMounted) { setPlayer(data); setQuote(latestQuote); setQuoteHistory(history); }
       } catch (err: unknown) {
         if (!isMounted) return;
         if (err instanceof ApiError) setErrorMessage(err.message);
@@ -94,7 +97,7 @@ export const PlayerDetailPage: React.FC = () => {
 
     void fetchDetail();
     return () => { isMounted = false; };
-  }, [hasApiKey, id, getPlayerById, getLatestQuoteByPlayerId]);
+  }, [hasApiKey, id, getPlayerById, getLatestQuoteByPlayerId, getQuoteHistoryByPlayerId]);
 
   if (!hasApiKey) {
     return (
@@ -275,6 +278,16 @@ export const PlayerDetailPage: React.FC = () => {
               <span className="text-2xl font-black" style={{ color: accent.text }}>{player.matchesPlayed}</span>
             </div>
           )}
+
+          {/* Evolución del valor del token */}
+          <div>
+            <h2 className="text-[9px] font-black uppercase tracking-widest mb-4 flex items-center gap-3 text-white/25">
+              <span className="flex-1 h-px bg-white/8" />{' '}
+              Evolución del valor{' '}
+              <span className="flex-1 h-px bg-white/8" />
+            </h2>
+            <QuoteHistoryChart quotes={quoteHistory} color={accent.text} />
+          </div>
         </div>
 
         {/* Franja de color inferior */}

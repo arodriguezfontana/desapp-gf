@@ -13,20 +13,22 @@ export class AddPositionWeightsColumns1791676800000 implements MigrationInterfac
   name = 'AddPositionWeightsColumns1791676800000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // IF NOT EXISTS: idempotente ante reintentos de migration sobre la misma base
+    // (p. ej. un Testcontainers Postgres compartido entre corridas de test e2e).
     await queryRunner.query(`
-      ALTER TABLE "valuation_strategies" ADD COLUMN "position_weights" jsonb NULL;
+      ALTER TABLE "valuation_strategies" ADD COLUMN IF NOT EXISTS "position_weights" jsonb NULL;
     `);
     await queryRunner.query(`
-      ALTER TABLE "player_quotes" ADD COLUMN "applied_position" varchar(2) NULL;
+      ALTER TABLE "player_quotes" ADD COLUMN IF NOT EXISTS "applied_position" varchar(2) NULL;
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      ALTER TABLE "player_quotes" DROP COLUMN "applied_position";
+      ALTER TABLE "player_quotes" DROP COLUMN IF EXISTS "applied_position";
     `);
     await queryRunner.query(`
-      ALTER TABLE "valuation_strategies" DROP COLUMN "position_weights";
+      ALTER TABLE "valuation_strategies" DROP COLUMN IF EXISTS "position_weights";
     `);
   }
 }

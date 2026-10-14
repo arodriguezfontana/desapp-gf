@@ -78,6 +78,21 @@ export class QuotationService {
     };
   }
 
+  /**
+   * Historial completo de cotizaciones de un jugador, ordenado ascendente por
+   * calculatedAt. Lanza PlayerNotFoundError si el jugador no existe
+   * (015-player-quote-history, spec FR-004). Si existe sin cotizaciones,
+   * retorna [] (spec FR-005).
+   */
+  async getQuoteHistory(playerId: string): Promise<PlayerQuote[]> {
+    const player = await this.playerRepository.findById(playerId);
+    if (!player) {
+      throw new PlayerNotFoundError();
+    }
+
+    return this.quoteRepository.findAllByPlayerId(playerId);
+  }
+
   async activateStrategy(id: string) {
     return this.strategyRepository.activateStrategy(id);
   }

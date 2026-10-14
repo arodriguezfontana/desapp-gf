@@ -1724,6 +1724,44 @@
             },
             "description": "Retorna la cotización vigente al cierre del día UTC (23:59:59.999Z) especificado en 'at'. 400 si la fecha es inválida; 204 si no hay cotizaciones vigentes."
           }
+        },
+        {
+          "name": "Historial completo de cotizaciones (200 ordenado ascendente, [] o 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('es un array ordenado ascendente por calculatedAt', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.be.an('array');",
+                  "  for (let i = 1; i < body.length; i++) {",
+                  "    const prev = new Date(body[i - 1].calculatedAt).getTime();",
+                  "    const curr = new Date(body[i].calculatedAt).getTime();",
+                  "    pm.expect(curr).to.be.at.least(prev);",
+                  "  }",
+                  "  if (body.length > 0) {",
+                  "    pm.expect(body[0]).to.have.property('appliedPosition');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quotes",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "{{playerId}}", "quotes"]
+            },
+            "description": "Devuelve todas las cotizaciones del jugador, ordenadas de la más antigua a la más reciente. 200 con [] si el jugador existe sin cotizaciones (no 404). 404 si el id no corresponde a ningún jugador (015-player-quote-history)."
+          }
         }
       ]
     },
