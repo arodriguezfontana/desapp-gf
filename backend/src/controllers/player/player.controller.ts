@@ -11,6 +11,7 @@ import { PlayerEnrichmentService } from '../../services/player/player-enrichment
 import { QuotationService } from '../../services/quotation/quotation.service';
 import { ListPlayersQueryDto } from './dto/list-players-query.dto';
 import { PlayerListResponseDto } from './dto/player-list-response.dto';
+import { PlayerRankingListResponseDto } from './dto/player-ranking-list-response.dto';
 import { PlayerResponseDto } from './dto/player-response.dto';
 import { PlayerQuoteDetailResponseDto } from './dto/player-quote-detail-response.dto';
 import { PlayerQuoteResponseDto } from '../quotation/dto/player-quote-response.dto';
@@ -63,6 +64,66 @@ export class PlayerController {
       query.page,
       query.pageSize,
     );
+  }
+
+  @Get('ranking')
+  @ApiOperation({
+    summary:
+      'Ranking de jugadores ordenados descendentemente por su cotización vigente',
+    description:
+      'Retorna el listado de jugadores ordenados por valor desc, score desc, id asc bajo la estrategia activa o más reciente. Solo incluye jugadores con cotizaciones calculadas.',
+  })
+  @ApiQuery({
+    name: 'league',
+    required: false,
+    description: 'Filtrar por liga (Premier League, Bundesliga, La Liga, Serie A, Ligue 1)',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'position',
+    required: false,
+    description: 'Filtrar por posición táctica (GK, DF, MF, FW)',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'team',
+    required: false,
+    description: 'Filtrar por coincidencia parcial en nombre del equipo',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Número de página solicitada (mínimo 1)',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: 'Cantidad de elementos por página (1..50)',
+    type: Number,
+  })
+  @ApiResponse({ status: 200, type: PlayerRankingListResponseDto })
+  @ApiResponse({ status: 400, description: 'Filtro o paginación inválidos.' })
+  @ApiResponse({ status: 401, description: 'API key inválida o ausente.' })
+  async ranking(
+    @Query() query: ListPlayersQueryDto,
+  ): Promise<PlayerRankingListResponseDto> {
+    const filters: PlayerFilters = {
+      league: query.league ? parseLeague(query.league) : undefined,
+      team: query.team,
+      position: query.position ? parsePosition(query.position) : undefined,
+    };
+
+    const result = await this.players.getRankingWithCrests(filters, {
+      page: query.page,
+      pageSize: query.pageSize,
+    });
+
+    return PlayerRankingListResponseDto.fromDomain(result, {
+      page: query.page,
+      pageSize: query.pageSize,
+    });
   }
 
   @Get(':id')

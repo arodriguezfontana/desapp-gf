@@ -4,6 +4,7 @@ import { Player } from '../../domain/player/player';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPage, PlayerPagination } from '../../domain/player/player-page';
+import { PlayerRankingPage } from '../../domain/player/player-ranking';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 
 @Injectable()
@@ -17,6 +18,13 @@ export class PlayerService {
     pagination: PlayerPagination,
   ): Promise<PlayerPage> {
     return this.players.findPage(filters, pagination);
+  }
+
+  async findRanking(
+    filters: PlayerFilters,
+    pagination: PlayerPagination,
+  ): Promise<PlayerRankingPage> {
+    return this.players.findRanking(filters, pagination);
   }
 
   /** @throws PlayerNotFoundError si no existe ningún jugador con ese id (FR-010) */

@@ -175,9 +175,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
             className="mx-4 my-2 rounded-xl py-1.5 px-2.5 grid grid-cols-3 gap-1 border border-white/10"
             style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
           >
-            <StatPill value={player.goals} label="Goles" color="#2dd4bf" />
+            <StatPill value={player.goals} label="Goles" color="#b79753" />
             <StatPill value={player.assists} label="Asis." color="#b79753" />
-            <StatPill value={player.yellowCards} label="TA" color="#facc15" />
+            <StatPill value={player.yellowCards} label="TA" color="#b79753" />
           </div>
 
           {/* ── Pie con forma de punta de escudo: Botón 'Ver detalle' ── */}

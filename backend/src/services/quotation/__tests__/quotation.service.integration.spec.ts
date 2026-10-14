@@ -59,6 +59,12 @@ describe('QuotationService (integración contra Postgres real)', () => {
     await moduleRef.close();
   });
 
+  beforeEach(async () => {
+    await dataSource.getRepository(PlayerQuoteEntity).clear();
+    await dataSource.getRepository(ValuationStrategyEntity).clear();
+    await dataSource.getRepository(PlayerEntity).clear();
+  });
+
   afterEach(async () => {
     await dataSource.getRepository(PlayerQuoteEntity).clear();
     await dataSource.getRepository(ValuationStrategyEntity).clear();

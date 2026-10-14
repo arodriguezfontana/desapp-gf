@@ -2,6 +2,7 @@ import { League } from '../../domain/player/enums/league';
 import { Player } from '../../domain/player/player';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPage, PlayerPagination } from '../../domain/player/player-page';
+import { PlayerRankingPage } from '../../domain/player/player-ranking';
 import { PlayerSyncInput } from '../../domain/player/player-sync-input';
 
 /**
@@ -21,6 +22,15 @@ export interface PlayerRepository {
     pagination: PlayerPagination,
   ): Promise<PlayerPage>;
   findById(id: string): Promise<Player | null>;
+
+  /**
+   * Consulta el ranking de jugadores ordenados descendentemente por su última cotización
+   * (valor DESC, score DESC, id ASC) aplicando filtros opcionales y paginación en base de datos.
+   */
+  findRanking(
+    filters: PlayerFilters,
+    pagination: PlayerPagination,
+  ): Promise<PlayerRankingPage>;
 
   /**
    * Ids externos (WhoScored) de los jugadores hoy vigentes de ese equipo

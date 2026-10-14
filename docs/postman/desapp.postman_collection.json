@@ -2234,6 +2234,150 @@
           }
         }
       ]
+    },
+    {
+      "name": "Feature 16 — Ranking de jugadores por cotización vigente",
+      "description": "GET /players/ranking — listado de jugadores ordenados descendentemente según su cotización vigente (valor) bajo la estrategia activa o más reciente. Requiere apiKey. Ver specs/016-player-ranking-endpoint/.",
+      "item": [
+        {
+          "name": "Ranking general — 200 OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('estructura paginada de ranking', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('items');",
+                  "  pm.expect(b).to.have.property('total');",
+                  "  pm.expect(b).to.have.property('page');",
+                  "  pm.expect(b).to.have.property('pageSize');",
+                  "  if (b.items.length > 0) {",
+                  "    pm.expect(b.items[0]).to.have.property('rank');",
+                  "    pm.expect(b.items[0]).to.have.property('valor');",
+                  "    pm.expect(b.items[0]).to.have.property('score');",
+                  "    pm.expect(b.items[0]).to.have.property('strategyName');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "ranking"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            },
+            "description": "Consulta el ranking general de jugadores ordenados descendentemente por valor."
+          }
+        },
+        {
+          "name": "Ranking filtrado por liga y posición — 200 OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('items cumplen los filtros de liga y posición', function () {",
+                  "  const b = pm.response.json();",
+                  "  b.items.forEach(item => {",
+                  "    pm.expect(item.league).to.equal('La Liga');",
+                  "    pm.expect(item.position).to.equal('FW');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?league=La%20Liga&position=FW",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "ranking"],
+              "query": [
+                { "key": "league", "value": "La Liga" },
+                { "key": "position", "value": "FW" }
+              ]
+            },
+            "description": "Filtra el ranking por liga La Liga y posición FW."
+          }
+        },
+        {
+          "name": "Ranking sin coincidencias — 200 OK con lista vacía",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('items vacío y total 0', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.items).to.be.an('array').that.is.empty;",
+                  "  pm.expect(b.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?team=EquipoInexistente",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "ranking"],
+              "query": [
+                { "key": "team", "value": "EquipoInexistente" }
+              ]
+            },
+            "description": "Filtro sin coincidencias retorna 200 OK con items: [] y total: 0."
+          }
+        },
+        {
+          "name": "Ranking sin ApiKey — 401 Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "ranking"]
+            },
+            "description": "Rechazo 401 ante solicitud sin cabecera x-api-key."
+          }
+        }
+      ]
     }
   ]
 }
