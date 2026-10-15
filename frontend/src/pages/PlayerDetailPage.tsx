@@ -321,7 +321,7 @@ export const PlayerDetailPage: React.FC = () => {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white/40">
                   <span className="w-4 h-px bg-white/20" />
-                  Tu valuación de este jugador en el tiempo
+                  <span>Tu valuación de este jugador en el tiempo</span>
                   <span className="flex-1 h-px bg-white/10" />
                 </h2>
               </div>
