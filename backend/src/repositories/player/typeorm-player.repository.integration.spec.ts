@@ -10,6 +10,7 @@ import { Position } from '../../domain/player/enums/position';
 import { PlayerSyncInput } from '../../domain/player/player-sync-input';
 import { PlayerQuoteEntity } from '../quotation/entities/player-quote.entity';
 import { ValuationStrategyEntity } from '../quotation/entities/valuation-strategy.entity';
+import { UserEntity } from '../auth/entities/user.entity';
 import { PlayerEntity } from './entities/player.entity';
 import { PlayerMapper } from './mappers/player.mapper';
 import { TypeOrmPlayerRepository } from './typeorm-player.repository';
@@ -24,7 +25,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         DatabaseModule,
-        TypeOrmModule.forFeature([PlayerEntity, PlayerQuoteEntity, ValuationStrategyEntity]),
+        TypeOrmModule.forFeature([PlayerEntity, PlayerQuoteEntity, ValuationStrategyEntity, UserEntity]),
       ],
       providers: [PlayerMapper, TypeOrmPlayerRepository],
     }).compile();
@@ -205,13 +206,24 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
   describe('findRanking', () => {
     let strategyId: string;
     let otherStrategyId: string;
+    let userId: string;
 
-    const createStrategy = async (name: string, isActive = true): Promise<string> => {
+    const createUser = async (): Promise<string> => {
+      const id = randomUUID();
+      await dataSource.getRepository(UserEntity).insert({
+        id,
+        email: `${id}@test.local`,
+        passwordHash: '$2b$10$abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1',
+      });
+      return id;
+    };
+
+    const createStrategy = async (name: string, isSelected = true): Promise<string> => {
       const id = randomUUID();
       await dataSource.query(
-        `INSERT INTO "valuation_strategies" ("id", "name", "weights", "factor_escala", "is_active")
-         VALUES ($1, $2, $3, $4, $5)`,
-        [id, name, JSON.stringify({ rating: 1 }), '99.0000', isActive],
+        `INSERT INTO "valuation_strategies" ("id", "user_id", "name", "weights", "factor_escala", "is_selected")
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [id, userId, name, JSON.stringify({ rating: 1 }), '99.0000', isSelected],
       );
       return id;
     };
@@ -249,10 +261,11 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
     }): Promise<string> => {
       const id = randomUUID();
       await dataSource.query(
-        `INSERT INTO "player_quotes" ("id", "player_id", "strategy_id", "weight_snapshot", "factor_escala_snapshot", "score", "value", "calculated_at")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO "player_quotes" ("id", "user_id", "player_id", "strategy_id", "weight_snapshot", "factor_escala_snapshot", "score", "value", "calculated_at")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           id,
+          userId,
           props.playerId,
           props.strategyId,
           JSON.stringify({ rating: 1 }),
@@ -266,6 +279,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
     };
 
     beforeEach(async () => {
+      userId = await createUser();
       strategyId = await createStrategy('Estrategia Principal', true);
       otherStrategyId = await createStrategy('Estrategia Histórica', false);
     });
@@ -277,6 +291,9 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
           strategyId,
           otherStrategyId,
         ]);
+      }
+      if (userId) {
+        await dataSource.query('DELETE FROM "users" WHERE id = $1', [userId]);
       }
       await dataSource.getRepository(PlayerEntity).clear();
     });
