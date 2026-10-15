@@ -12,6 +12,7 @@ import { Position } from '../../../domain/player/enums/position';
 import { Player } from '../../../domain/player/player';
 import { PlayerNotFoundError } from '../../../domain/player/errors/player-not-found.error';
 import { PlayerQuote } from '../../../domain/quotation/player-quote';
+import * as calculatePlayerValueModule from '../../../domain/quotation/calculate-player-value';
 
 const USER_ID = 'user-1';
 const OTHER_USER_ID = 'user-2';
@@ -252,16 +253,13 @@ describe('QuotationService', () => {
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([okPlayer, brokenPlayer]);
 
-      const calc = jest.spyOn(
-        require('../../../domain/quotation/calculate-player-value'),
-        'calculatePlayerValue',
-      );
-      calc.mockImplementation(((player: Player) => {
+      const calc = jest.spyOn(calculatePlayerValueModule, 'calculatePlayerValue');
+      calc.mockImplementation((player) => {
         if (player.id === 'p-2') {
           throw new Error('fallo simulado de cálculo');
         }
         return { score: 0.5, value: 50.5, appliedPosition: null, weightsUsed: WEIGHTS };
-      }) as any);
+      });
 
       const result = await service.recalculate(USER_ID);
 
@@ -281,7 +279,8 @@ describe('QuotationService', () => {
       quoteRepo.saveMany.mockImplementation(() => {
         throw new Error('no debería llamarse');
       });
-      jest.spyOn(require('../../../domain/quotation/calculate-player-value'), 'calculatePlayerValue')
+      jest
+        .spyOn(calculatePlayerValueModule, 'calculatePlayerValue')
         .mockImplementation(() => {
           throw new Error('fallo simulado de cálculo');
         });
