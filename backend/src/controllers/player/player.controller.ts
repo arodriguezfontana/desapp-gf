@@ -72,14 +72,12 @@ export class PlayerController {
   }
 
   @Get('ranking')
-  @Public()
-  @UseGuards(ApiKeyGuard)
-  @ApiSecurity('ApiKeyAuth')
+  @ApiBearerAuth()
   @ApiOperation({
     summary:
-      'Ranking de jugadores ordenados descendentemente por su cotización vigente',
+      'Mi ranking de jugadores ordenados descendentemente por mi cotización vigente',
     description:
-      'Retorna el listado de jugadores ordenados por valor desc, score desc, id asc bajo la estrategia activa o más reciente. Solo incluye jugadores con cotizaciones calculadas.',
+      'Retorna el listado de jugadores ordenados por valor desc, score desc, id asc, según las cotizaciones que yo mismo generé con mis propios recálculos (019-per-user-valuation-strategies). Solo incluye jugadores con al menos una cotización propia.',
   })
   @ApiQuery({
     name: 'league',
@@ -113,9 +111,10 @@ export class PlayerController {
   })
   @ApiResponse({ status: 200, type: PlayerRankingListResponseDto })
   @ApiResponse({ status: 400, description: 'Filtro o paginación inválidos.' })
-  @ApiResponse({ status: 401, description: 'API key inválida o ausente.' })
+  @ApiResponse({ status: 401, description: 'No autenticado.' })
   async ranking(
     @Query() query: ListPlayersQueryDto,
+    @CurrentUser() userId: string,
   ): Promise<PlayerRankingListResponseDto> {
     const filters: PlayerFilters = {
       league: query.league ? parseLeague(query.league) : undefined,
@@ -123,7 +122,7 @@ export class PlayerController {
       position: query.position ? parsePosition(query.position) : undefined,
     };
 
-    const result = await this.players.getRankingWithCrests(filters, {
+    const result = await this.players.getRankingWithCrests(userId, filters, {
       page: query.page,
       pageSize: query.pageSize,
     });

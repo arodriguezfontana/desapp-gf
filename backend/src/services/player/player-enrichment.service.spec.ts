@@ -175,11 +175,13 @@ describe('PlayerEnrichmentService', () => {
       teams.findByWhoScoredName.mockResolvedValue(someTeam);
 
       const result = await service.getRankingWithCrests(
+        'user-1',
         { league: League.PREMIER_LEAGUE },
         { page: 2, pageSize: 5 },
       );
 
       expect(playerService.findRanking).toHaveBeenCalledWith(
+        'user-1',
         { league: League.PREMIER_LEAGUE },
         { page: 2, pageSize: 5 },
       );
@@ -215,7 +217,7 @@ describe('PlayerEnrichmentService', () => {
       });
       teams.findByWhoScoredName.mockResolvedValue(null);
 
-      const result = await service.getRankingWithCrests({}, { page: 1, pageSize: 10 });
+      const result = await service.getRankingWithCrests('user-1', {}, { page: 1, pageSize: 10 });
 
       expect(result.items[0].rank).toBe(1);
       expect(result.items[0].crestUrl).toBeNull();
@@ -224,7 +226,7 @@ describe('PlayerEnrichmentService', () => {
     it('devuelve lista vacía sin llamar a teams cuando no hay items', async () => {
       playerService.findRanking.mockResolvedValue({ items: [], total: 0 });
 
-      const result = await service.getRankingWithCrests({}, { page: 1, pageSize: 10 });
+      const result = await service.getRankingWithCrests('user-1', {}, { page: 1, pageSize: 10 });
 
       expect(result.items).toEqual([]);
       expect(result.total).toBe(0);

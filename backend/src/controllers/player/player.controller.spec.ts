@@ -65,15 +65,19 @@ describe('PlayerController', () => {
         total: 150,
       });
 
-      const response = await controller.ranking({
-        league: 'La Liga',
-        position: 'FW',
-        team: 'Real Madrid',
-        page: 1,
-        pageSize: 10,
-      });
+      const response = await controller.ranking(
+        {
+          league: 'La Liga',
+          position: 'FW',
+          team: 'Real Madrid',
+          page: 1,
+          pageSize: 10,
+        },
+        'user-1',
+      );
 
       expect(enrichmentService.getRankingWithCrests).toHaveBeenCalledWith(
+        'user-1',
         {
           league: League.LA_LIGA,
           team: 'Real Madrid',
@@ -107,11 +111,14 @@ describe('PlayerController', () => {
         total: 0,
       });
 
-      const response = await controller.ranking({
-        team: 'Equipo Inexistente',
-        page: 1,
-        pageSize: 10,
-      });
+      const response = await controller.ranking(
+        {
+          team: 'Equipo Inexistente',
+          page: 1,
+          pageSize: 10,
+        },
+        'user-1',
+      );
 
       expect(response).toEqual({
         items: [],
@@ -123,21 +130,27 @@ describe('PlayerController', () => {
 
     it('falla con InvalidLeagueError si la liga proporcionada no existe en el enum', async () => {
       await expect(
-        controller.ranking({
-          league: 'Liga Inventada',
-          page: 1,
-          pageSize: 10,
-        }),
+        controller.ranking(
+          {
+            league: 'Liga Inventada',
+            page: 1,
+            pageSize: 10,
+          },
+          'user-1',
+        ),
       ).rejects.toThrow(InvalidLeagueError);
     });
 
     it('falla con InvalidPositionError si la posición proporcionada no existe en el enum', async () => {
       await expect(
-        controller.ranking({
-          position: 'DELANTERO',
-          page: 1,
-          pageSize: 10,
-        }),
+        controller.ranking(
+          {
+            position: 'DELANTERO',
+            page: 1,
+            pageSize: 10,
+          },
+          'user-1',
+        ),
       ).rejects.toThrow(InvalidPositionError);
     });
   });

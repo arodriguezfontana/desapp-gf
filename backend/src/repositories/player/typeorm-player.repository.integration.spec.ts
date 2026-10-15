@@ -311,7 +311,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       await createQuote({ playerId: p3.id, strategyId, value: 50000000, score: 7.5, calculatedAt: now });
       await createQuote({ playerId: p4.id, strategyId, value: 50000000, score: 8.0, calculatedAt: now });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(4);
       expect(result.items.map((i) => i.player.name)).toEqual([
@@ -331,7 +331,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
 
       await createQuote({ playerId: pWithQuote.id, strategyId, value: 35000000, score: 7.2, calculatedAt: new Date() });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(1);
       expect(result.items[0].player.name).toBe('Con Cotización');
@@ -345,7 +345,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       await createQuote({ playerId: activePlayer.id, strategyId, value: 40000000, score: 8.0, calculatedAt: now });
       await createQuote({ playerId: removedPlayer.id, strategyId, value: 60000000, score: 8.9, calculatedAt: now });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(1);
       expect(result.items[0].player.name).toBe('Activo');
@@ -362,7 +362,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       // Cotización reciente con estrategia principal
       await createQuote({ playerId: player.id, strategyId, value: 75000000, score: 8.7, calculatedAt: latestDate });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(1);
       expect(result.items[0].valor).toBe(75000000);
@@ -386,7 +386,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       await createQuote({ playerId: p5.id, strategyId, value: 85000000, score: 8.8, calculatedAt: now });
 
       // Filtro por league y position
-      const mfLaLiga = await repository.findRanking(
+      const mfLaLiga = await repository.findRanking(userId, 
         { league: League.LA_LIGA, position: Position.MF },
         { page: 1, pageSize: 10 },
       );
@@ -394,7 +394,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       expect(mfLaLiga.items.map((i) => i.player.name)).toEqual(['Bellingham', 'Pedri', 'Gavi']);
 
       // Filtro por team (parcial e insensible a mayúsculas)
-      const barcaMF = await repository.findRanking(
+      const barcaMF = await repository.findRanking(userId, 
         { team: 'barcelona', position: Position.MF },
         { page: 1, pageSize: 10 },
       );
@@ -410,27 +410,27 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       }
 
       // Página 1 (pageSize 2) -> Jugador 5 (50M) y Jugador 4 (40M)
-      const page1 = await repository.findRanking({}, { page: 1, pageSize: 2 });
+      const page1 = await repository.findRanking(userId, {}, { page: 1, pageSize: 2 });
       expect(page1.total).toBe(5);
       expect(page1.items).toHaveLength(2);
       expect(page1.items[0].player.name).toBe('Jugador 5');
       expect(page1.items[1].player.name).toBe('Jugador 4');
 
       // Página 2 (pageSize 2) -> Jugador 3 (30M) y Jugador 2 (20M)
-      const page2 = await repository.findRanking({}, { page: 2, pageSize: 2 });
+      const page2 = await repository.findRanking(userId, {}, { page: 2, pageSize: 2 });
       expect(page2.total).toBe(5);
       expect(page2.items).toHaveLength(2);
       expect(page2.items[0].player.name).toBe('Jugador 3');
       expect(page2.items[1].player.name).toBe('Jugador 2');
 
       // Página 99 (fuera de rango) -> items vacíos, total 5
-      const page99 = await repository.findRanking({}, { page: 99, pageSize: 2 });
+      const page99 = await repository.findRanking(userId, {}, { page: 99, pageSize: 2 });
       expect(page99.total).toBe(5);
       expect(page99.items).toEqual([]);
     });
 
     it('devuelve items vacíos y total 0 ante filtros sin coincidencias o sin cotizaciones', async () => {
-      const result = await repository.findRanking(
+      const result = await repository.findRanking(userId, 
         { team: 'Equipo Inexistente' },
         { page: 1, pageSize: 10 },
       );

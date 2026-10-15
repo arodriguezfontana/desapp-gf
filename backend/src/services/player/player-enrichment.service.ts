@@ -39,10 +39,11 @@ export class PlayerEnrichmentService {
   }
 
   async getRankingWithCrests(
+    userId: string,
     filters: PlayerFilters,
     pagination: PlayerPagination,
   ): Promise<PlayerRankingPageWithCrests> {
-    const page = await this.playerService.findRanking(filters, pagination);
+    const page = await this.playerService.findRanking(userId, filters, pagination);
     const items = await Promise.all(
       page.items.map(async (item, index) => ({
         player: item.player,
