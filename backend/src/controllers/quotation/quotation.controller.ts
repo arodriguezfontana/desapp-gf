@@ -26,6 +26,7 @@ export class QuotationController {
       'Recalcula y persiste cotizaciones usando mi estrategia seleccionada en este momento. Sin playerId, procesa todo el catálogo (salteando jugadores cuyo cálculo falle); con playerId, procesa solo ese jugador (rechaza todo si falla). Síncrono: la respuesta llega después de terminar.',
   })
   @ApiResponse({ status: 200, type: RecalculateResponseDto })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
   @ApiResponse({ status: 404, description: 'playerId indicado no existe' })
   @ApiResponse({ status: 409, description: 'Ya hay un recálculo propio en curso' })
   @ApiResponse({ status: 422, description: 'Falló el cálculo del playerId puntual indicado' })

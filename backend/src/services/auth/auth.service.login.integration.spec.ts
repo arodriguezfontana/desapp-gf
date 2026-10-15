@@ -11,12 +11,17 @@ import {
   TOKEN_ISSUER,
   USER_REPOSITORY,
 } from '../../modules/auth/auth.constants';
+import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
 import { JwtTokenIssuer } from '../../adapters/auth/jwt-token-issuer';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
 import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
+import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
+import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
+import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
+import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService.login (integración contra Postgres real)', () => {
@@ -30,15 +35,18 @@ describe('AuthService.login (integración contra Postgres real)', () => {
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         DatabaseModule,
-        TypeOrmModule.forFeature([UserEntity]),
+        TypeOrmModule.forFeature([UserEntity, ValuationStrategyEntity]),
         JwtModule.register({ secret: 'integration-secret' }),
       ],
       providers: [
         AuthService,
         UserMapper,
+        ValuationStrategyMapper,
+        UserStrategyProvisioningService,
         { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
         { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
         { provide: TOKEN_ISSUER, useClass: JwtTokenIssuer },
+        { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
       ],
     }).compile();
 
@@ -52,6 +60,7 @@ describe('AuthService.login (integración contra Postgres real)', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.getRepository(ValuationStrategyEntity).clear();
     await dataSource.getRepository(UserEntity).clear();
     await service.register('ana@mail.com', 'Abcd1234!');
   });

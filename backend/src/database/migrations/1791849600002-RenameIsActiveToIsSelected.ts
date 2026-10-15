@@ -10,8 +10,18 @@ export class RenameIsActiveToIsSelected1791849600002 implements MigrationInterfa
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_valuation_strategies_active";`);
+    // Guard: en desarrollo `synchronize: true` ya puede haber creado la tabla
+    // directamente con `is_selected` (a partir de la entidad actual), sin que
+    // `is_active` haya existido nunca en esa base.
     await queryRunner.query(`
-      ALTER TABLE "valuation_strategies" RENAME COLUMN "is_active" TO "is_selected";
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'valuation_strategies' AND column_name = 'is_active'
+        ) THEN
+          ALTER TABLE "valuation_strategies" RENAME COLUMN "is_active" TO "is_selected";
+        END IF;
+      END $$;
     `);
   }
 

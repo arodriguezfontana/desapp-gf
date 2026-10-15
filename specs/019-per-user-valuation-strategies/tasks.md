@@ -95,7 +95,7 @@ esperados y una seleccionada.
 - [X] T027 [US1] Inyectar `UserStrategyProvisioningService` en `AuthService.register()` para crear las dos estrategias del usuario justo después de persistirlo en `backend/src/services/auth/auth.service.ts`
 - [X] T028 [US1] Inyectar `UserStrategyProvisioningService` en `AdminSeedService.run()` para que el superusuario de seed también reciba sus dos estrategias en `backend/src/services/auth/admin-seed.service.ts`
 - [X] T029 [P] [US1] Test de integración (Testcontainers): registrar un usuario nuevo produce exactamente 2 `ValuationStrategy` con los pesos/perfiles correctos y una `isSelected=true` en `backend/src/services/auth/__tests__/auth.service.integration.spec.ts`
-- [ ] T030 [P] [US1] Test de integración (Testcontainers): correr `AdminSeedService.run()` crea las dos estrategias para el admin seedeado en `backend/src/services/auth/__tests__/admin-seed.service.integration.spec.ts`
+- [X] T030 [P] [US1] Test de integración (Testcontainers): correr `AdminSeedService.run()` crea las dos estrategias para el admin seedeado en `backend/src/services/auth/__tests__/admin-seed.service.integration.spec.ts`
 - [X] T031 [P] [US1] Test e2e (supertest): dos usuarios que se registran por separado obtienen pares de estrategias independientes, sin ids ni filas compartidas en `backend/test/user-strategy-provisioning.e2e-spec.ts`
 
 **Checkpoint**: User Story 1 funcional y testeable de forma independiente (MVP).
@@ -220,9 +220,9 @@ usuario que nunca recalculó y verificar que viene vacío.
 administrativa obsoleta.
 
 - [X] T075 [P] Quitar la sección de activación de estrategia de sistema de `frontend/src/pages/AdminPage.tsx` y las llamadas obsoletas en `frontend/src/service/adminService.ts`
-- [ ] T076 [P] Actualizar los decoradores Swagger de todos los DTOs/controllers nuevos o cambiados para que la documentación OpenAPI generada refleje los endpoints de esta feature (Principio VIII)
-- [ ] T077 Actualizar la colección de Postman del proyecto con los endpoints nuevos/modificados (Principio X)
-- [ ] T078 Ejecutar manualmente los escenarios de `quickstart.md` contra el stack local (`docker-compose` + `nest start` + `vite dev`)
+- [X] T076 [P] Actualizar los decoradores Swagger de todos los DTOs/controllers nuevos o cambiados para que la documentación OpenAPI generada refleje los endpoints de esta feature (Principio VIII)
+- [X] T077 Actualizar la colección de Postman del proyecto con los endpoints nuevos/modificados (Principio X)
+- [X] T078 Ejecutar manualmente los escenarios de `quickstart.md` contra el stack local (`docker-compose` + `nest start` + `vite dev`)
 - [X] T079 [P] Verificar que `nest build` (backend) y `vite build` (frontend) terminan sin errores tras todos los cambios
 
 ---

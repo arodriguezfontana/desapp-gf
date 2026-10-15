@@ -11,15 +11,23 @@ export class AddUserIdToPlayerQuotes1791849600004 implements MigrationInterface 
   name = 'AddUserIdToPlayerQuotes1791849600004';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // IF NOT EXISTS: en desarrollo `synchronize: true` ya puede haber creado
+    // esta columna a partir de la entidad antes de que corra esta migración.
     await queryRunner.query(`
       ALTER TABLE "player_quotes"
-        ADD COLUMN "user_id" uuid NOT NULL;
+        ADD COLUMN IF NOT EXISTS "user_id" uuid NOT NULL;
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "player_quotes"
-        ADD CONSTRAINT "fk_player_quotes_user"
-        FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'fk_player_quotes_user'
+        ) THEN
+          ALTER TABLE "player_quotes"
+            ADD CONSTRAINT "fk_player_quotes_user"
+            FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
     `);
 
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_player_quotes_player_date";`);

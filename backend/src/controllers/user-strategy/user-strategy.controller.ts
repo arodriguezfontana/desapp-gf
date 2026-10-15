@@ -23,6 +23,7 @@ export class UserStrategyController {
   @Get()
   @ApiOperation({ summary: 'Listar mis dos estrategias propias' })
   @ApiResponse({ status: 200, type: UserStrategyListResponseDto })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
   async list(@CurrentUser() userId: string): Promise<UserStrategyListResponseDto> {
     const strategies = await this.quotationService.listStrategies(userId);
     return UserStrategyListResponseDto.fromDomain(strategies);
@@ -32,6 +33,7 @@ export class UserStrategyController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Marcar una de mis estrategias como seleccionada' })
   @ApiResponse({ status: 200, type: UserStrategyResponseDto })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
   @ApiResponse({ status: 403, description: 'La estrategia no es propia del usuario autenticado' })
   @ApiResponse({ status: 404, description: 'La estrategia no existe' })
   async select(
@@ -46,6 +48,7 @@ export class UserStrategyController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Editar los pesos generales de una de mis estrategias' })
   @ApiResponse({ status: 200, type: UserStrategyResponseDto })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
   @ApiResponse({ status: 403, description: 'La estrategia no es propia del usuario autenticado' })
   @ApiResponse({ status: 404, description: 'La estrategia no existe' })
   @ApiResponse({ status: 422, description: 'La suma de los pesos no es 1.0 ±0.001' })
@@ -63,6 +66,7 @@ export class UserStrategyController {
   @ApiOperation({ summary: 'Editar el perfil de pesos de una posición de una de mis estrategias' })
   @ApiResponse({ status: 200, type: UserStrategyResponseDto })
   @ApiResponse({ status: 400, description: 'Posición inválida (no es FW/MF/DF/GK)' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
   @ApiResponse({ status: 403, description: 'La estrategia no es propia del usuario autenticado' })
   @ApiResponse({ status: 404, description: 'La estrategia no existe' })
   @ApiResponse({ status: 422, description: 'La suma de los pesos del perfil no es 1.0 ±0.001' })

@@ -11,15 +11,23 @@ export class AddUserIdToValuationStrategies1791849600001 implements MigrationInt
   name = 'AddUserIdToValuationStrategies1791849600001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // IF NOT EXISTS: en desarrollo `synchronize: true` ya puede haber creado esta
+    // columna a partir de la entidad antes de que corra esta migración.
     await queryRunner.query(`
       ALTER TABLE "valuation_strategies"
-        ADD COLUMN "user_id" uuid NOT NULL;
+        ADD COLUMN IF NOT EXISTS "user_id" uuid NOT NULL;
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "valuation_strategies"
-        ADD CONSTRAINT "fk_valuation_strategies_user"
-        FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'fk_valuation_strategies_user'
+        ) THEN
+          ALTER TABLE "valuation_strategies"
+            ADD CONSTRAINT "fk_valuation_strategies_user"
+            FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
     `);
 
     await queryRunner.query(`

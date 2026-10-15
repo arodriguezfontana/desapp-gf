@@ -6,9 +6,14 @@ import { DataSource } from 'typeorm';
 import { DatabaseModule } from '../../database/database.module';
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
 import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
+import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
 import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
+import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
+import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
+import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
+import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 import { AdminSeedService } from './admin-seed.service';
 
 describe('AdminSeedService.run (integración contra Postgres real)', () => {
@@ -23,13 +28,16 @@ describe('AdminSeedService.run (integración contra Postgres real)', () => {
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         DatabaseModule,
-        TypeOrmModule.forFeature([UserEntity]),
+        TypeOrmModule.forFeature([UserEntity, ValuationStrategyEntity]),
       ],
       providers: [
         AdminSeedService,
         UserMapper,
+        ValuationStrategyMapper,
+        UserStrategyProvisioningService,
         { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
         { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
+        { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
       ],
     }).compile();
 
@@ -44,6 +52,7 @@ describe('AdminSeedService.run (integración contra Postgres real)', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.getRepository(ValuationStrategyEntity).clear();
     await dataSource.getRepository(UserEntity).clear();
     process.env.ADMIN_EMAIL = EMAIL;
     process.env.ADMIN_PASSWORD = PASSWORD;
@@ -51,6 +60,9 @@ describe('AdminSeedService.run (integración contra Postgres real)', () => {
 
   const rowsFor = () =>
     dataSource.getRepository(UserEntity).find({ where: { email: EMAIL } });
+
+  const strategiesFor = (userId: string) =>
+    dataSource.getRepository(ValuationStrategyEntity).find({ where: { userId } });
 
   it('arrancar dos veces con las mismas variables deja una sola cuenta admin', async () => {
     await service.run();
@@ -79,6 +91,17 @@ describe('AdminSeedService.run (integración contra Postgres real)', () => {
     ).resolves.toBeDefined();
 
     expect(await rowsFor()).toHaveLength(1);
+  });
+
+  it('crea las dos estrategias propias del admin seedeado (019-per-user-valuation-strategies)', async () => {
+    await service.run();
+
+    const [admin] = await rowsFor();
+    const strategies = await strategiesFor(admin.id);
+
+    expect(strategies).toHaveLength(2);
+    expect(strategies.map((s) => s.name).sort()).toEqual(['Impacto táctico', 'Performance general']);
+    expect(strategies.filter((s) => s.isSelected)).toHaveLength(1);
   });
 
   it('no promueve a admin una cuenta existente con rol user', async () => {
