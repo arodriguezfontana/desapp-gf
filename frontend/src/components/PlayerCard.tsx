@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
+import { getPositionLabel, type Player } from '../types/catalog.types';
 
 interface PlayerCardProps {
   player: Player;
-  quote?: PlayerQuote | null;
+  quote?: { value: number } | null;
 }
 
 /** Colores de acento metálico por posición — estética FIFA */

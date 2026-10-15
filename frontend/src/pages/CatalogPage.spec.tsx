@@ -10,7 +10,7 @@ describe('CatalogPage', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
-    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValue(null);
+    vi.spyOn(catalogService, 'getMyValuationByPlayerId').mockResolvedValue(null);
   });
 
   it('muestra el aviso y el enlace a /account si no hay ApiKey guardada', () => {

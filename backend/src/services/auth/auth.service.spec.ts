@@ -9,11 +9,13 @@ import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-creden
 import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { UserRole } from '../../domain/auth/user-role';
+import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 
 describe('AuthService', () => {
   let users: jest.Mocked<UserRepository>;
   let hasher: jest.Mocked<PasswordHasher>;
   let tokens: jest.Mocked<TokenIssuer>;
+  let strategyProvisioning: jest.Mocked<UserStrategyProvisioningService>;
   let service: AuthService;
 
   const existingUser = User.register(
@@ -32,7 +34,10 @@ describe('AuthService', () => {
     };
     hasher = { hash: jest.fn(), compare: jest.fn(), timingSafeDummyHash: 'dummy-hash-para-test' };
     tokens = { issue: jest.fn(), verify: jest.fn() };
-    service = new AuthService(users, hasher, tokens);
+    strategyProvisioning = {
+      provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<UserStrategyProvisioningService>;
+    service = new AuthService(users, hasher, tokens, strategyProvisioning);
   });
 
   describe('register', () => {
@@ -46,6 +51,7 @@ describe('AuthService', () => {
       expect(user.passwordHash).toBe('new-hash');
       expect(users.save).toHaveBeenCalledWith(user);
       expect(tokens.issue).not.toHaveBeenCalled();
+      expect(strategyProvisioning.provisionDefaultStrategiesFor).toHaveBeenCalledWith(user.id);
     });
 
     it('la cuenta nueva siempre nace con rol user (el alta no recibe rol)', async () => {

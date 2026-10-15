@@ -10,7 +10,7 @@ describe('PlayerDetailPage', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
-    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValue(null);
+    vi.spyOn(catalogService, 'getMyValuationByPlayerId').mockResolvedValue(null);
     vi.spyOn(catalogService, 'getQuoteHistoryByPlayerId').mockResolvedValue([]);
   });
 
@@ -107,13 +107,11 @@ describe('PlayerDetailPage', () => {
       position: 'FW',
       rating: 8.12,
     });
-    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValueOnce({
-      id: 'q-1',
+    vi.spyOn(catalogService, 'getMyValuationByPlayerId').mockResolvedValueOnce({
       playerId: 'p-1',
       strategyId: 's-1',
       score: 0.712,
       value: 71.52,
-      calculatedAt: '2026-10-08T00:00:00.000Z',
       appliedPosition: null,
     });
 
@@ -158,7 +156,7 @@ describe('PlayerDetailPage', () => {
       expect(screen.getByText('Kylian Mbappé')).toBeInTheDocument();
     });
 
-    expect(document.querySelector('svg[aria-label="Evolución del valor del token en el tiempo"]')).toBeInTheDocument();
+    expect(document.querySelector('svg[aria-label="Tu valuación de este jugador en el tiempo"]')).toBeInTheDocument();
     expect(
       screen.queryByText('Todavía no hay historial de cotizaciones para este jugador.'),
     ).not.toBeInTheDocument();
@@ -201,13 +199,11 @@ describe('PlayerDetailPage', () => {
       team: 'PSG',
       position: 'FW',
     });
-    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValueOnce({
-      id: 'q-1',
+    vi.spyOn(catalogService, 'getMyValuationByPlayerId').mockResolvedValueOnce({
       playerId: 'p-1',
       strategyId: 's-1',
       score: 0.712,
       value: 71.52,
-      calculatedAt: '2026-10-08T00:00:00.000Z',
       appliedPosition: 'FW',
     });
 
@@ -233,13 +229,11 @@ describe('PlayerDetailPage', () => {
       team: 'PSG',
       position: 'FW',
     });
-    vi.spyOn(catalogService, 'getLatestQuoteByPlayerId').mockResolvedValueOnce({
-      id: 'q-1',
+    vi.spyOn(catalogService, 'getMyValuationByPlayerId').mockResolvedValueOnce({
       playerId: 'p-1',
       strategyId: 's-1',
       score: 0.712,
       value: 71.52,
-      calculatedAt: '2026-10-08T00:00:00.000Z',
       appliedPosition: null,
     });
 
@@ -265,7 +259,7 @@ describe('PlayerDetailPage', () => {
       team: 'PSG',
       position: 'FW',
     });
-    // getLatestQuoteByPlayerId ya está mockeado a null por el beforeEach global.
+    // getMyValuationByPlayerId ya está mockeado a null por el beforeEach global.
 
     render(
       <MemoryRouter initialEntries={['/catalog/p-1']}>

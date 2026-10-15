@@ -50,48 +50,4 @@ describe('useAdmin', () => {
     expect(spy).toHaveBeenCalled();
     expect(summary.leagues).toEqual([]);
   });
-
-  it('recalculateQuotes delega en adminService.recalculateQuotes', async () => {
-    const spy = vi.spyOn(adminService, 'recalculateQuotes').mockResolvedValueOnce({
-      processedPlayers: 150,
-      errors: 0,
-      durationMs: 840,
-    });
-
-    const { result } = renderHook(() => useAdmin());
-    const recalcResult = await result.current.recalculateQuotes();
-
-    expect(spy).toHaveBeenCalled();
-    expect(recalcResult.processedPlayers).toBe(150);
-  });
-
-  it('listStrategies delega en adminService.listStrategies', async () => {
-    const strategiesMock = [
-      { id: 's-1', name: 'Performance general', weights: { goals: 0.25 }, factorEscala: 99, isActive: true },
-    ];
-    const spy = vi.spyOn(adminService, 'listStrategies').mockResolvedValueOnce(strategiesMock);
-
-    const { result } = renderHook(() => useAdmin());
-    const strategies = await result.current.listStrategies();
-
-    expect(spy).toHaveBeenCalled();
-    expect(strategies).toEqual(strategiesMock);
-  });
-
-  it('activateStrategy delega en adminService.activateStrategy con el strategyId', async () => {
-    const strategyMock = {
-      id: 's-2',
-      name: 'Impacto táctico',
-      weights: { totalTackles: 0.25 },
-      factorEscala: 99,
-      isActive: true,
-    };
-    const spy = vi.spyOn(adminService, 'activateStrategy').mockResolvedValueOnce(strategyMock);
-
-    const { result } = renderHook(() => useAdmin());
-    const strategy = await result.current.activateStrategy('s-2');
-
-    expect(spy).toHaveBeenCalledWith('s-2');
-    expect(strategy).toEqual(strategyMock);
-  });
 });

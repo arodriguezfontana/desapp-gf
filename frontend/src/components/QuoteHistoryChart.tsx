@@ -59,7 +59,7 @@ export const QuoteHistoryChart: React.FC<QuoteHistoryChartProps> = ({ quotes, co
         viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         className="w-full h-auto"
         role="img"
-        aria-label="Evolución del valor del token en el tiempo"
+        aria-label="Tu valuación de este jugador en el tiempo"
       >
         {/* Línea base (eje X), recesiva */}
         <line

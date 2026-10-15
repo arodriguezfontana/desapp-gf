@@ -1,6 +1,7 @@
 import { Position } from '../player/enums/position';
 import { NORMALIZATION_BOUNDS } from './calculate-player-value';
 import { InvalidStrategyWeightsError } from './errors/invalid-strategy-weights.error';
+import { StrategyOwnershipError } from './errors/strategy-ownership.error';
 
 type PositionWeights = Partial<Record<Position, Record<string, number>>>;
 
@@ -29,13 +30,15 @@ function validateWeightsSum(weights: Record<string, number>, label: string): voi
 }
 
 /**
- * Estrategia de valuación de jugadores.
+ * Estrategia de valuación de jugadores, propia de exactamente un usuario
+ * (019-per-user-valuation-strategies, spec DD-001, reemplaza el modelo de
+ * estrategia única de sistema de 012-valuation-strategies). Todo usuario
+ * tiene siempre exactamente dos, y en todo momento exactamente una de las dos
+ * de un mismo usuario está seleccionada (spec FR-002, FR-003).
  *
- * Encapsula los pesos por métrica y el factor de escala que determinan cómo se
- * calcula el valor de un jugador. Solo puede haber una activa a la vez
- * (012-valuation-strategies, spec FR-004). Los pesos son decimales; se admiten
- * pesos negativos para métricas disciplinarias; la suma algebraica debe ser
- * 1.0 con tolerancia ±0.001 (spec FR-002, DD-003).
+ * Los pesos son decimales; se admiten pesos negativos para métricas
+ * disciplinarias; la suma algebraica debe ser 1.0 con tolerancia ±0.001
+ * (spec FR-008).
  *
  * Opcionalmente define, por posición (FW/MF/DF/GK), un perfil de pesos que
  * sustituye a los pesos generales al cotizar un jugador de esa posición
@@ -44,19 +47,21 @@ function validateWeightsSum(weights: Record<string, number>, label: string): voi
 export class ValuationStrategy {
   private constructor(
     private readonly _id: string,
+    private readonly _userId: string,
     private readonly _name: string,
     private readonly _weights: Record<string, number>,
     private readonly _factorEscala: number,
-    private readonly _isActive: boolean,
+    private readonly _isSelected: boolean,
     private readonly _positionWeights: PositionWeights,
   ) {}
 
   static create(props: {
     id: string;
+    userId: string;
     name: string;
     weights: Record<string, number>;
     factorEscala: number;
-    isActive: boolean;
+    isSelected: boolean;
     positionWeights?: PositionWeights;
   }): ValuationStrategy {
     validateWeightsSum(props.weights, 'los pesos generales');
@@ -74,35 +79,46 @@ export class ValuationStrategy {
 
     return new ValuationStrategy(
       props.id,
+      props.userId,
       props.name,
       props.weights,
       props.factorEscala,
-      props.isActive,
+      props.isSelected,
       positionWeights,
     );
   }
 
   static restore(props: {
     id: string;
+    userId: string;
     name: string;
     weights: Record<string, number>;
     factorEscala: number;
-    isActive: boolean;
+    isSelected: boolean;
     positionWeights?: PositionWeights;
   }): ValuationStrategy {
     return new ValuationStrategy(
       props.id,
+      props.userId,
       props.name,
       props.weights,
       props.factorEscala,
-      props.isActive,
+      props.isSelected,
       props.positionWeights ?? {},
     );
   }
 
-  activate(): ValuationStrategy {
+  /** @throws StrategyOwnershipError si la estrategia no pertenece a `userId` (spec FR-009). */
+  assertOwnedBy(userId: string): void {
+    if (this._userId !== userId) {
+      throw new StrategyOwnershipError();
+    }
+  }
+
+  select(): ValuationStrategy {
     return new ValuationStrategy(
       this._id,
+      this._userId,
       this._name,
       this._weights,
       this._factorEscala,
@@ -111,9 +127,10 @@ export class ValuationStrategy {
     );
   }
 
-  deactivate(): ValuationStrategy {
+  deselect(): ValuationStrategy {
     return new ValuationStrategy(
       this._id,
+      this._userId,
       this._name,
       this._weights,
       this._factorEscala,
@@ -122,10 +139,39 @@ export class ValuationStrategy {
     );
   }
 
+  /** Reemplazo completo de los pesos generales, revalidando la suma (spec FR-006, FR-008). */
+  withWeights(weights: Record<string, number>): ValuationStrategy {
+    validateWeightsSum(weights, 'los pesos generales');
+    return new ValuationStrategy(
+      this._id,
+      this._userId,
+      this._name,
+      weights,
+      this._factorEscala,
+      this._isSelected,
+      this._positionWeights,
+    );
+  }
+
+  /** Reemplazo completo del perfil de una posición, revalidando solo ese perfil (spec FR-007, FR-008). */
+  withPositionWeights(position: Position, weights: Record<string, number>): ValuationStrategy {
+    validateWeightsSum(weights, `el perfil de posición '${position}'`);
+    return new ValuationStrategy(
+      this._id,
+      this._userId,
+      this._name,
+      this._weights,
+      this._factorEscala,
+      this._isSelected,
+      { ...this._positionWeights, [position]: weights },
+    );
+  }
+
   get id(): string { return this._id; }
+  get userId(): string { return this._userId; }
   get name(): string { return this._name; }
   get weights(): Record<string, number> { return { ...this._weights }; }
   get factorEscala(): number { return this._factorEscala; }
-  get isActive(): boolean { return this._isActive; }
+  get isSelected(): boolean { return this._isSelected; }
   get positionWeights(): PositionWeights { return { ...this._positionWeights }; }
 }

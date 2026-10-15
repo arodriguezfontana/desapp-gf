@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -19,6 +19,7 @@ import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repo
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
 import { JwtTokenIssuer } from '../../adapters/auth/jwt-token-issuer';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { QuotationModule } from '../quotation/quotation.module';
 
 @Module({
   imports: [
@@ -31,6 +32,9 @@ import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
         signOptions: { expiresIn: JWT_EXPIRES_IN },
       }),
     }),
+    // Provisioning de las dos estrategias por defecto al alta/seed
+    // (019-per-user-valuation-strategies, research.md D3).
+    forwardRef(() => QuotationModule),
   ],
   controllers: [AuthController],
   providers: [

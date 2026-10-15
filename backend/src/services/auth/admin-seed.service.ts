@@ -12,6 +12,7 @@ import { Password } from '../../domain/auth/password';
 import { User } from '../../domain/auth/user';
 import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
+import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 
 /**
  * Crea el primer admin al arrancar, a partir de `ADMIN_EMAIL` y `ADMIN_PASSWORD`
@@ -29,6 +30,7 @@ export class AdminSeedService {
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     private readonly config: ConfigService,
+    private readonly strategyProvisioning: UserStrategyProvisioningService,
   ) {}
 
   async run(): Promise<void> {
@@ -72,6 +74,7 @@ export class AdminSeedService {
 
     try {
       await this.users.save(admin);
+      await this.strategyProvisioning.provisionDefaultStrategiesFor(admin.id);
       this.logger.log('Admin creado.');
     } catch (error) {
       // Arranque concurrente: otra instancia ganó la carrera por el índice único de email.

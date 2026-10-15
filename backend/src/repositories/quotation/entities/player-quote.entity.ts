@@ -1,17 +1,21 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * Entidad de persistencia para PlayerQuote.
  * El mapeo dominio ↔ persistencia lo hace PlayerQuoteMapper.
- * Tabla: player_quotes (012-valuation-strategies, data-model.md).
+ * Tabla: player_quotes (012-valuation-strategies, 019-per-user-valuation-strategies, data-model.md).
  *
  * weightSnapshot y factorEscalaSnapshot garantizan reproducibilidad histórica
  * independientemente de cambios futuros a la estrategia (spec DD-001).
  */
 @Entity('player_quotes')
+@Index(['userId', 'playerId', 'calculatedAt'])
 export class PlayerQuoteEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId!: string;
 
   @Column({ name: 'player_id', type: 'uuid' })
   playerId!: string;

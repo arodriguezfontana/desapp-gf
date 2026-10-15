@@ -4,13 +4,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useAdmin } from '../hooks/useAdmin';
 import { useApiKey } from '../hooks/useApiKey';
 import { useAuthActions } from '../hooks/useAuthActions';
-import type {
-  SyncRunStatusDto,
-  SyncSummaryDto,
-  RecalculateResponseDto,
-  StrategyResponseDto,
-} from '../types/admin.types';
-import { POSITIONS, getPositionLabel } from '../types/catalog.types';
+import type { SyncRunStatusDto, SyncSummaryDto } from '../types/admin.types';
 
 function getWhoScoredBadgeClassName(status: SyncRunStatusDto['status'] | undefined): string {
   if (status === 'running') {
@@ -22,111 +16,9 @@ function getWhoScoredBadgeClassName(status: SyncRunStatusDto['status'] | undefin
   return 'bg-rose-500/20 text-rose-400 border border-rose-500/40';
 }
 
-const StrategiesList: React.FC<{
-  isLoading: boolean;
-  strategies: StrategyResponseDto[];
-  activatingStrategyId: string | null;
-  onActivate: (strategyId: string) => void;
-}> = ({ isLoading, strategies, activatingStrategyId, onActivate }) => {
-  if (isLoading) {
-    return <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cargando estrategias...</p>;
-  }
-
-  if (strategies.length === 0) {
-    return (
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-        No hay estrategias configuradas todavía.
-      </p>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {strategies.map((strategy) => (
-        <div
-          key={strategy.id}
-          className={`rounded-xl p-4 border space-y-3 ${
-            strategy.isActive
-              ? 'bg-[#0b3332] border-[#2dd4bf]/60'
-              : 'bg-[#0b3332]/50 border-[#1a6866]'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-black uppercase tracking-wider text-white">{strategy.name}</h3>
-            {strategy.isActive && (
-              <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded">
-                Activa
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-1">
-            {Object.entries(strategy.weights).map(([metric, weight]) => (
-              <span
-                key={metric}
-                className="text-[9px] font-bold px-2 py-0.5 bg-[#104443] text-gray-200 rounded border border-white/10"
-              >
-                {metric}: {weight}
-              </span>
-            ))}
-          </div>
-
-          {Object.keys(strategy.positionWeights).length > 0 && (
-            <div className="space-y-1.5">
-              <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-                Perfiles por posición
-              </span>
-              {POSITIONS.filter((position) => strategy.positionWeights[position] != null).map(
-                (position) => (
-                  <div key={position} className="flex flex-wrap items-center gap-1">
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-[#1a6866] text-[#2dd4bf] rounded border border-[#2dd4bf]/30">
-                      {getPositionLabel(position)}
-                    </span>
-                    {Object.entries(strategy.positionWeights[position]!).map(([metric, weight]) => (
-                      <span
-                        key={metric}
-                        className="text-[9px] font-bold px-2 py-0.5 bg-[#104443]/60 text-gray-300 rounded border border-white/5"
-                      >
-                        {metric}: {weight}
-                      </span>
-                    ))}
-                  </div>
-                ),
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-400 font-medium">
-              Factor de escala: <span className="text-[#b79753] font-bold">{strategy.factorEscala}</span>
-            </span>
-          </div>
-
-          {!strategy.isActive && (
-            <button
-              onClick={() => onActivate(strategy.id)}
-              disabled={activatingStrategyId !== null}
-              className="w-full py-2 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-[10px] tracking-widest transition-all rounded-lg shadow-md active:scale-95 cursor-pointer"
-            >
-              {activatingStrategyId === strategy.id ? 'Activando...' : 'Activar esta estrategia'}
-            </button>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
-
 export const AdminPage: React.FC = () => {
   const { user, isAdmin, isLoading: isUserLoading } = useCurrentUser();
-  const {
-    triggerWhoScoredSync,
-    getWhoScoredRunStatus,
-    triggerFootballDataSync,
-    recalculateQuotes,
-    listStrategies,
-    activateStrategy,
-  } = useAdmin();
+  const { triggerWhoScoredSync, getWhoScoredRunStatus, triggerFootballDataSync } = useAdmin();
   const { hasApiKey, saveApiKey } = useApiKey();
   const { generateApiKey } = useAuthActions();
 
@@ -141,20 +33,9 @@ export const AdminPage: React.FC = () => {
   const [footballDataResult, setFootballDataResult] = useState<SyncSummaryDto | null>(null);
   const [footballDataError, setFootballDataError] = useState<string | null>(null);
 
-  // Estados de Recalculate Quotes
-  const [isRecalculating, setIsRecalculating] = useState<boolean>(false);
-  const [recalculateResult, setRecalculateResult] = useState<RecalculateResponseDto | null>(null);
-  const [recalculateError, setRecalculateError] = useState<string | null>(null);
-
   // Generación de clave de acceso
   const [isGeneratingKey, setIsGeneratingKey] = useState<boolean>(false);
   const [keySuccessMsg, setKeySuccessMsg] = useState<string | null>(null);
-
-  // Estados de Estrategias de Valuación
-  const [strategies, setStrategies] = useState<StrategyResponseDto[]>([]);
-  const [isLoadingStrategies, setIsLoadingStrategies] = useState<boolean>(false);
-  const [strategiesError, setStrategiesError] = useState<string | null>(null);
-  const [activatingStrategyId, setActivatingStrategyId] = useState<string | null>(null);
 
   // Polling para WhoScored cuando está en estado "running"
   const pollingRef = useRef<number | null>(null);
@@ -183,35 +64,6 @@ export const AdminPage: React.FC = () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [whoScoredRunId, whoScoredStatus?.status, getWhoScoredRunStatus]);
-
-  // Carga la lista de estrategias en cuanto hay clave de acceso disponible
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadStrategies = async () => {
-      if (!hasApiKey) return;
-      if (!cancelled) {
-        setIsLoadingStrategies(true);
-        setStrategiesError(null);
-      }
-      try {
-        const data = await listStrategies();
-        if (!cancelled) setStrategies(data);
-      } catch (err: unknown) {
-        if (!cancelled) {
-          setStrategiesError(err instanceof Error ? err.message : 'No se pudieron cargar las estrategias.');
-        }
-      } finally {
-        if (!cancelled) setIsLoadingStrategies(false);
-      }
-    };
-
-    void loadStrategies();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hasApiKey, listStrategies]);
 
   // Handlers
   const handleWhoScoredTrigger = async () => {
@@ -251,37 +103,6 @@ export const AdminPage: React.FC = () => {
       }
     } finally {
       setIsFootballDataSyncing(false);
-    }
-  };
-
-  const handleRecalculateTrigger = async () => {
-    setIsRecalculating(true);
-    setRecalculateError(null);
-    try {
-      const result = await recalculateQuotes();
-      setRecalculateResult(result);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setRecalculateError(err.message);
-      } else {
-        setRecalculateError('No se pudo calcular las cotizaciones.');
-      }
-    } finally {
-      setIsRecalculating(false);
-    }
-  };
-
-  const handleActivateStrategy = async (strategyId: string) => {
-    setActivatingStrategyId(strategyId);
-    setStrategiesError(null);
-    try {
-      await activateStrategy(strategyId);
-      const updated = await listStrategies();
-      setStrategies(updated);
-    } catch (err: unknown) {
-      setStrategiesError(err instanceof Error ? err.message : 'No se pudo activar la estrategia.');
-    } finally {
-      setActivatingStrategyId(null);
     }
   };
 
@@ -389,8 +210,8 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Grid de 3 Módulos con Imágenes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+      {/* Grid de 2 Módulos con Imágenes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
         {/* Módulo 1: WHOSCORED */}
         <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753]/50 rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden transition-all group">
           <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
@@ -523,90 +344,6 @@ export const AdminPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Módulo 3: MOTOR DE PRICING */}
-        <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753]/50 rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden transition-all group">
-          <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
-            <img
-              src="/assets/admin_pricing.jpg"
-              alt="Cotizaciones de Mercado"
-              className="w-full h-full object-cover filter brightness-90 group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
-            <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#c084fc] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#c084fc]/40">
-              MOTOR DE PRICING
-            </span>
-          </div>
-
-          <div className="p-6 flex-1 flex flex-col justify-between">
-            <div>
-              <h2 className="text-xl font-black uppercase tracking-wider text-white mb-2">
-                Calcular Cotizaciones
-              </h2>
-              <p className="text-xs text-gray-300 leading-relaxed mb-4">
-                Calcula en base al rendimiento deportivo el valor de mercado en créditos para cada jugador del catálogo,
-                dejando las cotizaciones listas para la consulta pública.
-              </p>
-
-              {/* Resultados */}
-              {recalculateResult && (
-                <div className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] space-y-2 mb-4 text-xs font-medium">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Cotizaciones calculadas:</span>
-                    <span className="font-bold text-[#b79753]">{recalculateResult.processedPlayers} jugadores</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Tiempo de proceso:</span>
-                    <span className="font-bold text-emerald-400">
-                      {(recalculateResult.durationMs / 1000).toFixed(1)} segundos
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {recalculateError && (
-                <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-3 rounded-xl mb-4 font-bold">
-                  {recalculateError}
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handleRecalculateTrigger}
-              disabled={isRecalculating}
-              className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
-            >
-              {isRecalculating ? 'Calculando valores...' : 'Calcular Todas las Cotizaciones'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Módulo de Estrategias de Valuación */}
-      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8">
-        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-          <div>
-            <h2 className="text-xl font-black uppercase tracking-wider text-white mb-1">
-              Estrategia de Valuación Activa
-            </h2>
-            <p className="text-xs text-gray-300 leading-relaxed max-w-2xl">
-              Elegí qué estrategia de pesos usa el motor de pricing. El próximo recálculo de cotizaciones usará la que
-              esté marcada como activa.
-            </p>
-          </div>
-        </div>
-
-        {strategiesError && (
-          <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-3 rounded-xl mb-4 font-bold">
-            {strategiesError}
-          </div>
-        )}
-
-        <StrategiesList
-          isLoading={isLoadingStrategies}
-          strategies={strategies}
-          activatingStrategyId={activatingStrategyId}
-          onActivate={handleActivateStrategy}
-        />
       </div>
     </div>
   );

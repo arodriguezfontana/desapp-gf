@@ -14,6 +14,7 @@ import { User } from '../../domain/auth/user';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { UserRepository } from '../../repositories/auth/user.repository';
+import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 
 @Injectable()
 export class AuthService {
@@ -21,10 +22,13 @@ export class AuthService {
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     @Inject(TOKEN_ISSUER) private readonly tokens: TokenIssuer,
+    private readonly strategyProvisioning: UserStrategyProvisioningService,
   ) {}
 
   /**
    * Alta de cuenta. No inicia sesion ni devuelve token (spec FR-006).
+   * Al crear el usuario, le provisiona automáticamente sus dos estrategias
+   * de valuación propias (019-per-user-valuation-strategies, spec FR-001/FR-002).
    * @throws InvalidEmailError | InvalidPasswordError | EmailAlreadyInUseError
    */
   async register(rawEmail: string, rawPassword: string): Promise<User> {
@@ -38,6 +42,7 @@ export class AuthService {
     const passwordHash = await this.hasher.hash(password.value());
     const user = User.register(randomUUID(), email, passwordHash, new Date());
     await this.users.save(user);
+    await this.strategyProvisioning.provisionDefaultStrategiesFor(user.id);
     return user;
   }
 

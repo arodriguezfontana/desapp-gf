@@ -8,10 +8,11 @@ export class ValuationStrategyMapper {
   toDomain(entity: ValuationStrategyEntity): ValuationStrategy {
     return ValuationStrategy.restore({
       id: entity.id,
+      userId: entity.userId,
       name: entity.name,
       weights: entity.weights,
       factorEscala: Number.parseFloat(entity.factorEscala),
-      isActive: entity.isActive,
+      isSelected: entity.isSelected,
       positionWeights: entity.positionWeights ?? {},
     });
   }
@@ -20,10 +21,11 @@ export class ValuationStrategyMapper {
     const positionWeights = domain.positionWeights;
     return {
       id: domain.id,
+      userId: domain.userId,
       name: domain.name,
       weights: domain.weights,
       factorEscala: domain.factorEscala.toString(),
-      isActive: domain.isActive,
+      isSelected: domain.isSelected,
       positionWeights: Object.keys(positionWeights).length > 0 ? positionWeights : null,
     };
   }

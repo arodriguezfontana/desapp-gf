@@ -7,11 +7,13 @@ import { User } from '../../domain/auth/user';
 import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { AdminSeedService } from './admin-seed.service';
+import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 
 describe('AdminSeedService', () => {
   const PASSWORD = 'Admin1234!';
   let users: jest.Mocked<UserRepository>;
   let hasher: jest.Mocked<PasswordHasher>;
+  let strategyProvisioning: jest.Mocked<UserStrategyProvisioningService>;
   let env: Record<string, string | undefined>;
   let config: ConfigService;
   let service: AdminSeedService;
@@ -36,7 +38,10 @@ describe('AdminSeedService', () => {
     };
     withEnv('admin@mail.com', PASSWORD);
     config = { get: (key: string) => env[key] } as unknown as ConfigService;
-    service = new AdminSeedService(users, hasher, config);
+    strategyProvisioning = {
+      provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<UserStrategyProvisioningService>;
+    service = new AdminSeedService(users, hasher, config, strategyProvisioning);
     warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     log = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
   });
@@ -79,6 +84,7 @@ describe('AdminSeedService', () => {
     expect(saved.email.toString()).toBe('admin@mail.com');
     expect(saved.passwordHash).toBe('hash-admin');
     expect(saved.role).toBe(UserRole.ADMIN);
+    expect(strategyProvisioning.provisionDefaultStrategiesFor).toHaveBeenCalledWith(saved.id);
   });
 
   it('si el save pierde una carrera por el email único, no lanza y lo registra como ya existente', async () => {
