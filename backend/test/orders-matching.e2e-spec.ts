@@ -266,7 +266,7 @@ describe('POST /orders — motor de matching (e2e)', () => {
     expect(seller2Tx[0]).toMatchObject({ type: 'DEBIT', quantity: 3, counterpartOrderId: buyRes.body.id });
   });
 
-  it('auto-match: una orden de un usuario puede matchear contra su propia orden opuesta, sin distinción (spec Edge Cases)', async () => {
+  it('auto-match bloqueado: una orden no puede matchear contra una orden propia del mismo usuario', async () => {
     const player = await insertPlayer();
     const user = await registerAndLogin('self-match@mail.com', 'self-match');
     await creditHolding(user.userId, player.id, 10);
@@ -281,13 +281,14 @@ describe('POST /orders — motor de matching (e2e)', () => {
       .send({ side: 'BUY', playerId: player.id, quantity: 10 });
 
     expect(buyRes.status).toBe(201);
-    expect(buyRes.body.status).toBe('COMPLETED');
+    // La BUY no matchea contra la propia SELL: queda PENDING
+    expect(buyRes.body.status).toBe('PENDING');
 
-    // Credita 10 (comprador) y debita 10 (vendedor) sobre el MISMO holding: saldo neto sin cambio.
+    // El holding no cambia: ninguna transacción fue ejecutada
     const holding = await holdingOf(user.userId, player.id);
     expect(holding!.quantity).toBe(10);
 
     const sellRow = (await ctx.dataSource.query('SELECT * FROM "orders" WHERE id = $1', [sellRes.body.id]))[0];
-    expect(sellRow.status).toBe('COMPLETED');
+    expect(sellRow.status).toBe('PENDING');
   });
 });
