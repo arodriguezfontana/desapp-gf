@@ -151,6 +151,9 @@ export class QuotationService {
       throw new RecalculationInProgressError();
     }
     this.recalculationsInProgress.add(userId);
+    // Drenar la cola de I/O para que cualquier request concurrente que ya
+    // llegó al servidor pueda chequear el lock antes de que empiece el trabajo.
+    await new Promise<void>((resolve) => setImmediate(resolve));
 
     try {
       const strategy = await this.getSelectedStrategyOrThrow(userId);
