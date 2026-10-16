@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { apiKeyStorage } from './apiKeyStorage';
 
 describe('apiKeyStorage', () => {
@@ -19,6 +19,22 @@ describe('apiKeyStorage', () => {
     apiKeyStorage.setApiKey('test-key-123');
     apiKeyStorage.clearApiKey();
     expect(apiKeyStorage.getApiKey()).toBeNull();
+  });
+
+  it('setApiKey emite el evento apiKeySaved en window', () => {
+    const handler = vi.fn();
+    window.addEventListener('apiKeySaved', handler);
+    apiKeyStorage.setApiKey('pmk_abc');
+    window.removeEventListener('apiKeySaved', handler);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearApiKey emite el evento apiKeyCleared en window', () => {
+    const handler = vi.fn();
+    window.addEventListener('apiKeyCleared', handler);
+    apiKeyStorage.clearApiKey();
+    window.removeEventListener('apiKeyCleared', handler);
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 });
 

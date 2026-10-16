@@ -114,6 +114,7 @@ describe('ApiKeyService.issueApiKey (integración contra Postgres real)', () => 
         email: `${userId}@mail.com`,
         passwordHash: 'hash-usuario',
         role: 'user',
+        username: 'test-user',
       });
       const first = await service.issueApiKey(asUser(userId, UserRole.USER));
 

@@ -34,9 +34,10 @@ describe('RegisterPage', () => {
     mockNavigate.mockClear();
   });
 
-  it('renderiza el formulario con campos email y password', () => {
+  it('renderiza el formulario con campos email, username y password', () => {
     renderRegister();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /registr/i })).toBeInTheDocument();
   });
@@ -46,6 +47,7 @@ describe('RegisterPage', () => {
     renderRegister();
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'nuevo@mail.com' } });
+    fireEvent.change(screen.getByLabelText(/usuario/i), { target: { value: 'nuevo-usuario' } });
     fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'Abcd1234!' } });
     fireEvent.click(screen.getByRole('button', { name: /registr/i }));
 
@@ -58,6 +60,7 @@ describe('RegisterPage', () => {
     renderRegister();
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'dup@mail.com' } });
+    fireEvent.change(screen.getByLabelText(/usuario/i), { target: { value: 'dup-usuario' } });
     fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'Abcd1234!' } });
     fireEvent.click(screen.getByRole('button', { name: /registr/i }));
 
@@ -73,6 +76,7 @@ describe('RegisterPage', () => {
     renderRegister();
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@mail.com' } });
+    fireEvent.change(screen.getByLabelText(/usuario/i), { target: { value: 'test-usuario' } });
     fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'Abcd1234!' } });
     fireEvent.click(screen.getByRole('button', { name: /registr/i }));
 
@@ -116,6 +120,7 @@ describe('RegisterPage', () => {
     renderRegister();
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'x@mail.com' } });
+    fireEvent.change(screen.getByLabelText(/usuario/i), { target: { value: 'x-usuario' } });
     fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: 'Abcd1234!' } });
     fireEvent.click(screen.getByRole('button', { name: /registr/i }));
 

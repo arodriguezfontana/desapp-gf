@@ -29,7 +29,7 @@ describe('authService.generateApiKey — integración contra backend real', () =
 
   it('generateApiKey con JWT válido devuelve DTO con apiKey pmk_', async () => {
     // 1. Registro
-    await apiPost('/auth/register', { email: uniqueEmail, password });
+    await apiPost('/auth/register', { email: uniqueEmail, password, username: 'api-key-tester' });
 
     // 2. Login para obtener JWT
     const loginRes = await apiPost('/auth/login', { email: uniqueEmail, password });

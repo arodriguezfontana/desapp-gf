@@ -45,4 +45,8 @@ export class TypeOrmUserRepository implements UserRepository {
     const entity = await this.repo.findOne({ where: { id } });
     return entity ? this.mapper.toDomain(entity) : null;
   }
+
+  async existsByUsername(username: string): Promise<boolean> {
+    return this.repo.existsBy({ username });
+  }
 }

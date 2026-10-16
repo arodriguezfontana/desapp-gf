@@ -2,10 +2,18 @@ import { PortfolioService } from './portfolio.service';
 import { AuthService } from '../auth/auth.service';
 import { User } from '../../domain/auth/user';
 import { Email } from '../../domain/auth/email';
+import type { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
+import type { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
+import type { PlayerRepository } from '../../repositories/player/player.repository';
+import type { QuotationService } from '../quotation/quotation.service';
 
 describe('PortfolioService', () => {
   let service: PortfolioService;
   let authServiceMock: Partial<AuthService>;
+  let holdingRepoMock: Partial<TokenHoldingRepository>;
+  let txRepoMock: Partial<TokenTransactionRepository>;
+  let playerRepoMock: Partial<PlayerRepository>;
+  let quotationMock: Partial<QuotationService>;
 
   beforeEach(() => {
     authServiceMock = {
@@ -13,7 +21,18 @@ describe('PortfolioService', () => {
         User.register('user-1', Email.create('test@mail.com'), 'hash', new Date()),
       ),
     };
-    service = new PortfolioService(authServiceMock as AuthService);
+    holdingRepoMock = { findByUserId: jest.fn().mockResolvedValue([]) };
+    txRepoMock = { findCreditsByUserId: jest.fn().mockResolvedValue([]) };
+    playerRepoMock = { findAllActive: jest.fn().mockResolvedValue([]) };
+    quotationMock = { valuate: jest.fn() };
+
+    service = new PortfolioService(
+      authServiceMock as AuthService,
+      holdingRepoMock as TokenHoldingRepository,
+      txRepoMock as TokenTransactionRepository,
+      playerRepoMock as PlayerRepository,
+      quotationMock as QuotationService,
+    );
   });
 
   it('valida la existencia del usuario y retorna un portfolio vacío si no tiene tenencias', async () => {
@@ -35,4 +54,3 @@ describe('PortfolioService', () => {
     );
   });
 });
-

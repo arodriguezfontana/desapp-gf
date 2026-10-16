@@ -39,14 +39,14 @@ describe('Portfolio personal — integración contra backend real', () => {
 
   beforeAll(async () => {
     // 1. Registrar usuario
-    const regRes = await apiPost('/auth/register', { email: uniqueEmail, password });
+    const regRes = await apiPost('/auth/register', { email: uniqueEmail, password, username: 'portfolio-tester' });
     expect(regRes.status).toBe(201);
     const regBody = (await regRes.json()) as { id?: string };
     userId = regBody.id ?? '';
 
     // 2. Login para obtener JWT
     const loginRes = await apiPost('/auth/login', { email: uniqueEmail, password });
-    expect(loginRes.status).toBe(201);
+    expect(loginRes.status).toBe(200);
     const loginBody = (await loginRes.json()) as { accessToken: string; user?: { id: string } };
     accessToken = loginBody.accessToken;
     if (loginBody.user?.id) {

@@ -10,7 +10,7 @@ describe('Endpoints protegidos con JWT (e2e)', () => {
   const registerAndLogin = async () => {
     await request(server())
       .post('/auth/register')
-      .send({ email: 'ana@mail.com', password: 'Abcd1234!' });
+      .send({ email: 'ana@mail.com', password: 'Abcd1234!', username: 'ana' });
     const res = await request(server())
       .post('/auth/login')
       .send({ email: 'ana@mail.com', password: 'Abcd1234!' });

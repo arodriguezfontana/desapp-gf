@@ -33,6 +33,7 @@ describe('JwtAuthGuard', () => {
       existsByEmail: jest.fn(),
       save: jest.fn(),
       findById: jest.fn(),
+      existsByUsername: jest.fn(),
     };
     guard = new JwtAuthGuard(reflector as unknown as Reflector, tokens, users);
   });

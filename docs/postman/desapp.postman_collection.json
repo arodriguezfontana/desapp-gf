@@ -44,6 +44,10 @@
 		{
 			"key": "myOtherStrategyId",
 			"value": ""
+		},
+		{
+			"key": "orderId",
+			"value": ""
 		}
 	],
 	"item": [
@@ -93,7 +97,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
+							"raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"username\": \"inversor\"\n}"
 						},
 						"description": "201 Created con { id, email, createdAt }. El test-script guarda el email real (devuelto por el server) en userEmail para las siguientes requests."
 					}
@@ -134,7 +138,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
+							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"username\": \"inversor\"\n}"
 						},
 						"description": "Requiere haber corrido antes 'Register — alta válida' (usa userEmail). 409 porque el email ya está registrado."
 					}
@@ -172,7 +176,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"password\"\n}"
+							"raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"password\",\n  \"username\": \"inversor\"\n}"
 						},
 						"description": "'password' no tiene mayúscula, dígito ni carácter especial -> 400 (error de dominio, InvalidPasswordError)."
 					}
@@ -215,7 +219,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"role\": \"admin\"\n}"
+							"raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"username\": \"inversor\",\n  \"role\": \"admin\"\n}"
 						},
 						"description": "`forbidNonWhitelisted` global rechaza cualquier campo no declarado en el DTO. Regresión del mecanismo global de traducción de mensajes."
 					}
@@ -258,7 +262,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"no-es-un-email\",\n  \"password\": \"Abcd1234!\"\n}"
+							"raw": "{\n  \"email\": \"no-es-un-email\",\n  \"password\": \"Abcd1234!\",\n  \"username\": \"inversor\"\n}"
 						},
 						"description": "`@IsEmail()` del DTO, traducido por el mecanismo global (backend/src/shared/validation/)."
 					}
@@ -301,7 +305,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"password\": \"Abcd1234!\"\n}"
+							"raw": "{\n  \"password\": \"Abcd1234!\",\n  \"username\": \"inversor\"\n}"
 						},
 						"description": "Caso simétrico al de login ('falta un campo'), pero para register: falta 'email' por completo. El DTO sólo tiene @IsEmail() en email (sin @IsNotEmpty), así que 'undefined' dispara ese único constraint, traducido por el mecanismo global."
 					}
@@ -2646,6 +2650,260 @@
 							]
 						},
 						"description": "FR-017/FR-018: solo las cotizaciones que generó este usuario con sus propios recálculos, ordenadas de más antigua a más reciente."
+					}
+				}
+			]
+		},
+		{
+			"name": "Feature 20 — Superusuario y órdenes de mercado",
+			"description": "username reservado (\"superuser\") y POST /orders (020-order-matching-engine). Requiere haber corrido antes Feature 1 (Auth, para accessToken) y Feature 3 (Catálogo, para playerId) en esta misma corrida de la colección.",
+			"item": [
+				{
+					"name": "Register — username reservado \"superuser\" (409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('409 Conflict', function () { pm.response.to.have.status(409); });"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"username\": \"superuser\"\n}"
+						},
+						"description": "El valor exacto \"superuser\" está reservado (spec FR-002): el sistema lo rechaza con 409 y no crea ninguna cuenta."
+					}
+				},
+				{
+					"name": "POST /orders — BUY sin contraparte (201, PENDING)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+									"pm.test('precio calculado automáticamente, status PENDING, sin fills', function () {",
+									"  const body = pm.response.json();",
+									"  pm.expect(body.status).to.eql('PENDING');",
+									"  pm.expect(body.fills).to.eql([]);",
+									"  pm.expect(body).to.have.property('price');",
+									"});",
+									"if (pm.response.code === 201) {",
+									"  pm.collectionVariables.set('orderId', pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
+						},
+						"description": "No se envía price: el servidor lo calcula con la estrategia seleccionada del usuario autenticado (spec FR-008/FR-009). Sin ninguna orden SELL compatible en el libro, queda PENDING íntegra."
+					}
+				},
+				{
+					"name": "POST /orders — SELL con holding insuficiente (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"side\": \"SELL\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 999999\n}"
+						},
+						"description": "El usuario autenticado no tiene (todavía) 999999 tokens de este jugador en su holding (spec FR-010): se rechaza sin crear ninguna orden."
+					}
+				},
+				{
+					"name": "POST /orders — jugador inexistente (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"00000000-0000-0000-0000-000000000000\",\n  \"quantity\": 1\n}"
+						},
+						"description": "Id bien formado pero inexistente en el catálogo."
+					}
+				},
+				{
+					"name": "POST /orders — sin JWT (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
+						},
+						"description": "Sin header Authorization: el JwtAuthGuard global rechaza con 401."
+					}
+				},
+				{
+					"name": "POST /orders — intenta enviar price (400, DTO estricto)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1,\n  \"price\": 999\n}"
+						},
+						"description": "`price` no está declarado en CreateOrderRequestDto: `forbidNonWhitelisted` global lo rechaza (spec FR-008: el precio nunca lo indica quien publica la orden)."
 					}
 				}
 			]

@@ -14,6 +14,14 @@ import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 
+/** Username fijo del admin seedeado (020-order-matching-engine): sin esto,
+ *  `User.register` usaría el default `''` y el admin quedaría con un
+ *  username vacío en vez de uno real, inconsistente con cualquier otro
+ *  usuario (incluido el superusuario, que tiene el suyo fijo en
+ *  `SuperuserSeedService`). No es único (spec FR-003), así que un valor
+ *  fijo no colisiona con nada. */
+const ADMIN_USERNAME = 'admin';
+
 /**
  * Crea el primer admin al arrancar, a partir de `ADMIN_EMAIL` y `ADMIN_PASSWORD`
  * (spec 008, US2). Es idempotente y nunca modifica un usuario existente: si el
@@ -70,7 +78,14 @@ export class AdminSeedService {
     }
 
     const passwordHash = await this.hasher.hash(password.value());
-    const admin = User.register(randomUUID(), email, passwordHash, new Date(), UserRole.ADMIN);
+    const admin = User.register(
+      randomUUID(),
+      email,
+      passwordHash,
+      new Date(),
+      UserRole.ADMIN,
+      ADMIN_USERNAME,
+    );
 
     try {
       await this.users.save(admin);

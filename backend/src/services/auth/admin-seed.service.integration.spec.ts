@@ -109,6 +109,7 @@ describe('AdminSeedService.run (integración contra Postgres real)', () => {
       email: EMAIL,
       passwordHash: 'hash-existente',
       role: 'user',
+      username: 'test-user',
     });
 
     await service.run();

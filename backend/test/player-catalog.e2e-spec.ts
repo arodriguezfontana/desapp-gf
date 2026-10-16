@@ -81,7 +81,7 @@ describe('Catálogo de Jugadores (e2e)', () => {
   const registerLoginAndIssueApiKey = async (email: string) => {
     await request(server())
       .post('/auth/register')
-      .send({ email, password: 'Abcd1234!' });
+      .send({ email, password: 'Abcd1234!', username: 'test-user' });
     const login = await request(server())
       .post('/auth/login')
       .send({ email, password: 'Abcd1234!' });
@@ -101,7 +101,10 @@ describe('Catálogo de Jugadores (e2e)', () => {
     // exitosa (research.md §2 de 004-player-catalog ya establecía este
     // criterio para los tests de integración; acá se extiende al e2e).
     await ctx.dataSource.query('DELETE FROM "player_quotes"');
-    await ctx.dataSource.getRepository(PlayerEntity).clear();
+    // DELETE, no .clear() (TRUNCATE): desde 020-order-matching-engine,
+    // "token_holdings"/"orders"/"token_transactions" tienen FK hacia
+    // "players" — mismo motivo documentado en test-app.ts para "users".
+    await ctx.dataSource.query('DELETE FROM "players"');
     await ctx.dataSource.getRepository(PlayerEntity).save(PLAYER_FIXTURES);
   });
 

@@ -1,19 +1,100 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+
+import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
+import { TOKEN_TRANSACTION_REPOSITORY } from '../../modules/orders/orders.constants';
+import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
+
+import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
+import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
+
 import { AuthService } from '../auth/auth.service';
+import { QuotationService } from '../quotation/quotation.service';
+
+import { Holding } from '../../domain/portfolio/holding';
 import { Portfolio } from '../../domain/portfolio/portfolio';
+import { PortfolioSummary } from '../../domain/portfolio/portfolio-summary';
+import { TokenTransaction } from '../../domain/orders/token-transaction';
+import { roundToTwoDecimals } from '../../shared/numbers/round2';
 
 @Injectable()
 export class PortfolioService {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @Inject(TOKEN_HOLDING_REPOSITORY) private readonly holdings: TokenHoldingRepository,
+    @Inject(TOKEN_TRANSACTION_REPOSITORY) private readonly transactions: TokenTransactionRepository,
+    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    private readonly quotation: QuotationService,
+  ) {}
 
-  /**
-   * Recupera el portfolio de inversiones del usuario.
-   * Valida la existencia del usuario y retorna su portfolio.
-   */
   async getPortfolioByUserId(userId: string): Promise<Portfolio> {
     await this.authService.getById(userId);
 
-    return Portfolio.empty(userId);
+    const tokenHoldings = await this.holdings.findByUserId(userId);
+    const activeHoldings = tokenHoldings.filter((h) => h.quantity > 0);
+
+    if (activeHoldings.length === 0) {
+      return Portfolio.empty(userId);
+    }
+
+    const credits = await this.transactions.findCreditsByUserId(userId);
+    const avgBuyPriceMap = this.computeAvgBuyPriceByPlayer(credits);
+
+    const playerIds = activeHoldings.map((h) => h.playerId);
+    const allPlayers = await this.players.findAllActive();
+    const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
+
+    const holdingDtos: Holding[] = [];
+    let totalInvested = 0;
+    let totalCurrentValue = 0;
+
+    for (const h of activeHoldings) {
+      if (!playerIds.includes(h.playerId)) continue;
+
+      const playerName = nameMap.get(h.playerId) ?? h.playerId;
+      const avgBuyPrice = avgBuyPriceMap.get(h.playerId) ?? 0;
+
+      let currentPrice = avgBuyPrice;
+      try {
+        const valuation = await this.quotation.valuate(userId, h.playerId);
+        currentPrice = roundToTwoDecimals(valuation.value);
+      } catch {
+        // Sin cotización previa: usa el precio promedio de compra como proxy.
+      }
+
+      const totalProfitLoss = roundToTwoDecimals((currentPrice - avgBuyPrice) * h.quantity);
+
+      holdingDtos.push(
+        new Holding(h.playerId, playerName, h.quantity, avgBuyPrice, currentPrice, totalProfitLoss),
+      );
+
+      totalInvested += avgBuyPrice * h.quantity;
+      totalCurrentValue += currentPrice * h.quantity;
+    }
+
+    const summary = new PortfolioSummary(
+      roundToTwoDecimals(totalInvested),
+      roundToTwoDecimals(totalCurrentValue),
+      roundToTwoDecimals(totalCurrentValue - totalInvested),
+    );
+
+    return new Portfolio(userId, holdingDtos, summary);
+  }
+
+  private computeAvgBuyPriceByPlayer(credits: TokenTransaction[]): Map<string, number> {
+    const map = new Map<string, { totalCost: number; totalQty: number }>();
+
+    for (const tx of credits) {
+      const entry = map.get(tx.playerId) ?? { totalCost: 0, totalQty: 0 };
+      entry.totalCost += tx.price * tx.quantity;
+      entry.totalQty += tx.quantity;
+      map.set(tx.playerId, entry);
+    }
+
+    const result = new Map<string, number>();
+    for (const [playerId, { totalCost, totalQty }] of map) {
+      result.set(playerId, totalQty > 0 ? roundToTwoDecimals(totalCost / totalQty) : 0);
+    }
+    return result;
   }
 }
-

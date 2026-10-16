@@ -31,7 +31,12 @@ export async function createTestApp(overrides?: ProviderOverride[]): Promise<Tes
 
   const app = moduleRef.createNestApplication();
   app.useGlobalPipes(createGlobalValidationPipe());
-  await app.init();
+  // listen(0) en lugar de init(): el SO asigna un puerto libre y el servidor
+  // queda realmente escuchando antes de que supertest haga requests concurrentes.
+  // Con solo init() el servidor existe pero no escucha; el primer request
+  // concurrente llama a listen() internamente, y si llegan varios a la vez
+  // compiten por ese listen() causando ECONNRESET.
+  await app.listen(0);
 
   // El esquema (incluida `players`) ya está sincronizado por TypeOrmModule al
   // inicializar la app; recién ahí corre la migration de seed del catálogo,
@@ -48,6 +53,11 @@ export async function createTestApp(overrides?: ProviderOverride[]): Promise<Tes
   const clearUsers = async () => {
     await dataSource.query('DELETE FROM "player_quotes"');
     await dataSource.query('DELETE FROM "valuation_strategies"');
+    // 020-order-matching-engine: "token_transactions"/"orders" referencian
+    // "users" sin ON DELETE CASCADE (a diferencia de "token_holdings", que sí
+    // lo tiene) — hay que vaciarlas antes de poder borrar "users".
+    await dataSource.query('DELETE FROM "token_transactions"');
+    await dataSource.query('DELETE FROM "orders"');
     await dataSource.query('DELETE FROM "users"');
   };
 

@@ -31,7 +31,7 @@ describe('Rol de usuario (e2e, spec 008)', () => {
     it('la cuenta nueva tiene rol user en GET /auth/me', async () => {
       await request(server())
         .post('/auth/register')
-        .send({ email: 'ana@mail.com', password: 'Abcd1234!' })
+        .send({ email: 'ana@mail.com', password: 'Abcd1234!', username: 'ana' })
         .expect(201);
 
       const login = await request(server())
@@ -52,7 +52,7 @@ describe('Rol de usuario (e2e, spec 008)', () => {
     const registerAndLogin = async (email: string): Promise<{ token: string; userId: string }> => {
       await request(server())
         .post('/auth/register')
-        .send({ email, password: 'Abcd1234!' })
+        .send({ email, password: 'Abcd1234!', username: 'test-user' })
         .expect(201);
       const login = await request(server())
         .post('/auth/login')

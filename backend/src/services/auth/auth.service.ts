@@ -10,6 +10,7 @@ import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { TokenIssuer } from '../../adapters/auth/token-issuer';
 import { Email } from '../../domain/auth/email';
 import { Password } from '../../domain/auth/password';
+import { Username } from '../../domain/auth/username';
 import { User } from '../../domain/auth/user';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
@@ -29,18 +30,27 @@ export class AuthService {
    * Alta de cuenta. No inicia sesion ni devuelve token (spec FR-006).
    * Al crear el usuario, le provisiona automáticamente sus dos estrategias
    * de valuación propias (019-per-user-valuation-strategies, spec FR-001/FR-002).
-   * @throws InvalidEmailError | InvalidPasswordError | EmailAlreadyInUseError
+   *
+   * `rawUsername` (020-order-matching-engine, spec FR-001/FR-002) es
+   * opcional a nivel de firma de TypeScript solo por compatibilidad con los
+   * call sites existentes que invocan este método directamente sin pasar
+   * por `RegisterRequestDto` (tests de integración de `AuthService` previos
+   * a esta feature); `AuthController.register` SIEMPRE pasa el valor
+   * validado por el DTO (`@IsNotEmpty()`), que es lo que efectivamente
+   * garantiza el requisito a nivel de API.
+   * @throws InvalidEmailError | InvalidPasswordError | EmailAlreadyInUseError | ReservedUsernameError
    */
-  async register(rawEmail: string, rawPassword: string): Promise<User> {
+  async register(rawEmail: string, rawPassword: string, rawUsername = ''): Promise<User> {
     const email = Email.create(rawEmail);
     const password = Password.create(rawPassword);
+    const username = Username.create(rawUsername);
 
     if (await this.users.existsByEmail(email)) {
       throw new EmailAlreadyInUseError();
     }
 
     const passwordHash = await this.hasher.hash(password.value());
-    const user = User.register(randomUUID(), email, passwordHash, new Date());
+    const user = User.register(randomUUID(), email, passwordHash, new Date(), undefined, username.value());
     await this.users.save(user);
     await this.strategyProvisioning.provisionDefaultStrategiesFor(user.id);
     return user;

@@ -5,7 +5,7 @@
  * Ejecutar con: pnpm test:integration
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { authStorage } from '../../src/service/authStorage';
+import { authStorage } from '../src/service/authStorage';
 
 // El httpClient usa import.meta.env.VITE_API_BASE_URL en runtime de Vite,
 // pero en el entorno de node de Vitest debemos parchearlo antes de importar.
@@ -30,14 +30,15 @@ describe('authService.register — integración contra backend real', () => {
     const res = await apiPost('/auth/register', {
       email: unique(),
       password: 'Abcd1234!',
+      username: 'test-user',
     });
     expect(res.status).toBe(201);
   });
 
   it('email duplicado devuelve 409 con message del backend', async () => {
     const email = unique();
-    await apiPost('/auth/register', { email, password: 'Abcd1234!' });
-    const res = await apiPost('/auth/register', { email, password: 'Abcd1234!' });
+    await apiPost('/auth/register', { email, password: 'Abcd1234!', username: 'test-user' });
+    const res = await apiPost('/auth/register', { email, password: 'Abcd1234!', username: 'test-user' });
     expect(res.status).toBe(409);
     const body = await res.json() as { message: string };
     expect(body.message).toBeTruthy();
@@ -47,6 +48,7 @@ describe('authService.register — integración contra backend real', () => {
     const res = await apiPost('/auth/register', {
       email: unique(),
       password: '123',
+      username: 'test-user',
     });
     expect(res.status).toBe(400);
     const body = await res.json() as { message: string };

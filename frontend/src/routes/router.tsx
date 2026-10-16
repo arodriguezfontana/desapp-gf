@@ -12,7 +12,6 @@ import { PlayerDetailPage } from '../pages/PlayerDetailPage';
 import { AdminPage } from '../pages/AdminPage';
 import { PortfolioPage } from '../pages/PortfolioPage';
 import { MyStrategiesPage } from '../pages/MyStrategiesPage';
-
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -30,7 +29,9 @@ export const router = createBrowserRouter([
       },
       {
         element: <AppLayout />,
-        children: [{ path: '/catalog', element: <CatalogPage /> }],
+        children: [
+          { path: '/catalog', element: <CatalogPage /> },
+        ],
       },
       {
         element: <ProtectedRoute />,

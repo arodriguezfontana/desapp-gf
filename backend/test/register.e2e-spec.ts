@@ -20,7 +20,7 @@ describe('POST /auth/register (e2e)', () => {
   it('201 y no devuelve accessToken', async () => {
     const res = await request(server())
       .post('/auth/register')
-      .send({ email: 'ana@mail.com', password: 'Abcd1234!' });
+      .send({ email: 'ana@mail.com', password: 'Abcd1234!', username: 'ana' });
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual(
@@ -36,18 +36,18 @@ describe('POST /auth/register (e2e)', () => {
   it('funciona sin header Authorization', async () => {
     const res = await request(server())
       .post('/auth/register')
-      .send({ email: 'sinauth@mail.com', password: 'Abcd1234!' });
+      .send({ email: 'sinauth@mail.com', password: 'Abcd1234!', username: 'sinauth' });
     expect(res.status).toBe(201);
   });
 
   it('409 si el email ya existe (case-insensitive)', async () => {
     await request(server())
       .post('/auth/register')
-      .send({ email: 'ana@mail.com', password: 'Abcd1234!' });
+      .send({ email: 'ana@mail.com', password: 'Abcd1234!', username: 'ana' });
 
     const res = await request(server())
       .post('/auth/register')
-      .send({ email: 'Ana@Mail.com', password: 'Abcd1234!' });
+      .send({ email: 'Ana@Mail.com', password: 'Abcd1234!', username: 'ana' });
 
     expect(res.status).toBe(409);
     expect(res.body).toMatchObject({
@@ -60,14 +60,14 @@ describe('POST /auth/register (e2e)', () => {
   it('400 si la contraseña incumple la política', async () => {
     const res = await request(server())
       .post('/auth/register')
-      .send({ email: 'bob@mail.com', password: 'password' });
+      .send({ email: 'bob@mail.com', password: 'password', username: 'bob' });
     expect(res.status).toBe(400);
   });
 
   it('400 si el body trae un campo no declarado', async () => {
     const res = await request(server())
       .post('/auth/register')
-      .send({ email: 'c@mail.com', password: 'Abcd1234!', role: 'admin' });
+      .send({ email: 'c@mail.com', password: 'Abcd1234!', username: 'c', role: 'admin' });
     expect(res.status).toBe(400);
     expect(res.body.message).toEqual([
       "La propiedad 'role' no está permitida en la solicitud.",
@@ -77,7 +77,7 @@ describe('POST /auth/register (e2e)', () => {
   it('400 con mensaje en español (no el default de class-validator) si el email tiene formato inválido', async () => {
     const res = await request(server())
       .post('/auth/register')
-      .send({ email: 'no-es-un-email', password: 'Abcd1234!' });
+      .send({ email: 'no-es-un-email', password: 'Abcd1234!', username: 'ana' });
 
     expect(res.status).toBe(400);
     expect(res.body.message).toEqual([
