@@ -156,7 +156,7 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
           {/* Puntos interactivos */}
           {visiblePts.map((p, i) => {
             const isHovered = tooltip?.pt === p;
-            const dotColor = p.tx.type === 'CREDIT' ? '#60a5fa' : '#f59e0b';
+            const dotColor = p.tx.type === 'CREDIT' ? '#a78bfa' : '#f59e0b';
             return (
               <circle
                 key={i}
@@ -185,7 +185,7 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
           const isCredit = tx.type === 'CREDIT';
           const amount = Number(tx.price) * tx.quantity;
           const sign = isCredit ? '+' : '-';
-          const color = isCredit ? '#60a5fa' : '#f59e0b';
+          const color = isCredit ? '#a78bfa' : '#f59e0b';
           // Posiciona a izquierda si el punto está en la mitad derecha
           const alignRight = svgX > 0.55;
           return (
@@ -219,8 +219,8 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
       <div className="flex items-center justify-between mt-1">
         <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">{formatDate(sorted[0].createdAt)}</span>
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider" style={{ color: '#60a5fa' }}>
-            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#60a5fa' }} />
+          <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider" style={{ color: '#a78bfa' }}>
+            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#a78bfa' }} />
             Compra
           </span>
           <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider" style={{ color: '#f59e0b' }}>

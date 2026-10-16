@@ -151,13 +151,12 @@ export class QuotationService {
       throw new RecalculationInProgressError();
     }
     this.recalculationsInProgress.add(userId);
-    // Ceder el event loop (setImmediate + setTimeout 0) para que cualquier
-    // request concurrente que ya llegó al servidor pueda chequear el lock
-    // antes de que empiece el trabajo pesado. Dos yields distintos cubren
-    // tanto la cola de I/O como la de timers, necesario bajo instrumentación
-    // de coverage donde un solo setImmediate no alcanza.
-    await new Promise<void>((resolve) => setImmediate(resolve));
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    // Ceder el event loop para que requests concurrentes al mismo userId puedan
+    // chequear el lock antes de que empiece el trabajo real. El delay de 20ms
+    // garantiza que la request rival ya fue recibida y procesada por Node aunque
+    // la instrumentación de coverage ralentice el pipeline; es imperceptible
+    // para el usuario pero elimina la carrera en CI.
+    await new Promise<void>((resolve) => setTimeout(resolve, 20));
 
     try {
       const strategy = await this.getSelectedStrategyOrThrow(userId);

@@ -13,7 +13,7 @@ import { OrderConfirmDialog } from '../components/OrderConfirmDialog';
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
 const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
   GK: { from: '#b79753', via: '#8a6f35', text: '#b79753' },
-  DF: { from: '#3b82f6', via: '#1d4ed8', text: '#60a5fa' },
+  DF: { from: '#8b5cf6', via: '#1d4ed8', text: '#a78bfa' },
   MF: { from: '#2dd4bf', via: '#0d9488', text: '#2dd4bf' },
   FW: { from: '#a855f7', via: '#7c3aed', text: '#c084fc' },
 };
@@ -243,7 +243,7 @@ export const PlayerDetailPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setOrderDialogSide('BUY')}
-                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#60a5fa] hover:bg-[#3b82f6] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#a78bfa] hover:bg-[#8b5cf6] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
                     >
                       Comprar
                     </button>
@@ -338,7 +338,7 @@ export const PlayerDetailPage: React.FC = () => {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <RatingCard label="Rating" value={player.rating} max={10} color={accent.text} />
-                <RatingCard label="Pases compl." value={player.passesCompleted} max={100} color="#60a5fa" />
+                <RatingCard label="Pases compl." value={player.passesCompleted} max={100} color="#a78bfa" />
                 <RatingCard label="Remates" value={player.shots} max={6} color="#2dd4bf" />
                 <RatingCard label="Intercepciones" value={player.interceptions} max={4} color="#a855f7" />
               </div>
@@ -362,7 +362,7 @@ export const PlayerDetailPage: React.FC = () => {
               {/* Métricas complementarias: Regates, Entradas, Amarillas, Rojas */}
               <div className="grid grid-cols-4 gap-2.5 sm:gap-3">
                 <StatBlock label="Regates" value={player.dribbles} color="#c084fc" />
-                <StatBlock label="Entradas" value={player.totalTackles} color="#60a5fa" />
+                <StatBlock label="Entradas" value={player.totalTackles} color="#a78bfa" />
                 <StatBlock label="Amarillas" value={player.yellowCards} color="#facc15" />
                 <StatBlock label="Rojas" value={player.redCards} color="#f87171" />
               </div>

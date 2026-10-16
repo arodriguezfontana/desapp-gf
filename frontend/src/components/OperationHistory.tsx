@@ -79,7 +79,7 @@ export const OperationHistory: React.FC<OperationHistoryProps> = ({ transactions
               <tbody className="divide-y divide-[#1a6866]/60 text-xs sm:text-sm font-semibold">
                 {transactions.map((tx) => {
                   const isCredit = tx.type === 'CREDIT';
-                  const typeColor = isCredit ? 'text-[#60a5fa]' : 'text-[#f59e0b]';
+                  const typeColor = isCredit ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
                   const typeLabel = isCredit ? 'COMPRA' : 'VENTA';
                   const total = (Number(tx.price) * tx.quantity).toFixed(2);
                   return (
@@ -114,7 +114,7 @@ export const OperationHistory: React.FC<OperationHistoryProps> = ({ transactions
           <div className="grid grid-cols-1 gap-4 md:hidden">
             {transactions.map((tx) => {
               const isCredit = tx.type === 'CREDIT';
-              const typeColor = isCredit ? 'text-[#60a5fa]' : 'text-[#f59e0b]';
+              const typeColor = isCredit ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
               const typeLabel = isCredit ? 'COMPRA' : 'VENTA';
               const total = (Number(tx.price) * tx.quantity).toFixed(2);
               return (

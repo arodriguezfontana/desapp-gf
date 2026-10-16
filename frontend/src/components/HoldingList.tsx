@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import type { Holding } from '../types/portfolio';
 
 interface HoldingListProps {
@@ -55,7 +56,9 @@ export const HoldingList: React.FC<HoldingListProps> = ({ holdings }) => {
               return (
                 <tr key={holding.playerId} className="hover:bg-[#165756]/50 transition-colors">
                   <td className="py-4 px-6 font-black uppercase text-white tracking-wide">
-                    {holding.playerName}
+                    <Link to={`/catalog/${holding.playerId}`} className="hover:text-[#b79753] transition-colors">
+                      {holding.playerName}
+                    </Link>
                   </td>
                   <td className="py-4 px-6 text-right font-bold text-gray-200">
                     {holding.tokenQuantity}
@@ -98,9 +101,9 @@ export const HoldingList: React.FC<HoldingListProps> = ({ holdings }) => {
               className="bg-[#104443] border border-[#1a6866] rounded-xl p-5 shadow-lg space-y-3"
             >
               <div className="flex items-center justify-between border-b border-[#1a6866] pb-2">
-                <span className="font-black uppercase text-white text-base">
+                <Link to={`/catalog/${holding.playerId}`} className="font-black uppercase text-white text-base hover:text-[#b79753] transition-colors">
                   {holding.playerName}
-                </span>
+                </Link>
                 <span className="text-xs font-black uppercase tracking-wider text-[#2dd4bf] bg-[#0b3332] px-2.5 py-1 rounded-md">
                   {holding.tokenQuantity} TOKENS
                 </span>
