@@ -142,6 +142,34 @@ describe('POST /orders — creación con precio automático (e2e)', () => {
     expect(res.status).toBe(400);
   });
 
+  it('400 si SELL con holding suficiente pero ya hay órdenes SELL abiertas que lo agotan (overselling)', async () => {
+    const player = await insertPlayer();
+    const token = await registerAndLogin('oversell@mail.com', 'oversell');
+    const me = await request(server()).get('/auth/me').set('Authorization', `Bearer ${token}`);
+    await creditHolding(me.body.id, player.id, 10);
+
+    // Primera SELL de 7: OK (holding 10 >= 7)
+    const res1 = await request(server())
+      .post('/orders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ side: 'SELL', playerId: player.id, quantity: 7 });
+    expect(res1.status).toBe(201);
+
+    // Segunda SELL de 5: debe fallar (holding 10 < 7 pendiente + 5 nueva = 12)
+    const res2 = await request(server())
+      .post('/orders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ side: 'SELL', playerId: player.id, quantity: 5 });
+    expect(res2.status).toBe(400);
+
+    // Segunda SELL de 3: debe pasar (holding 10 >= 7 pendiente + 3 nueva = 10)
+    const res3 = await request(server())
+      .post('/orders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ side: 'SELL', playerId: player.id, quantity: 3 });
+    expect(res3.status).toBe(201);
+  });
+
   it('dos usuarios con estrategias distintas obtienen precios propios para el mismo jugador/cantidad', async () => {
     const player = await insertPlayer({
       goals: 10,

@@ -17,6 +17,14 @@ export interface OrderRepository {
    */
   findCompatibleCandidates(playerId: string, side: OrderSide, price: number): Promise<Order[]>;
 
+  /**
+   * Suma de `remainingQuantity` de todas las órdenes SELL abiertas
+   * (PENDING + PARTIALLY_FILLED) del usuario para ese jugador. Usado para
+   * detectar overselling: un SELL nuevo solo es válido si
+   * `holding.quantity >= quantity + pendingSellQuantity`.
+   */
+  sumPendingSellQuantity(userId: string, playerId: string): Promise<number>;
+
   /** Insert o update simple, sin transaccion (p. ej. el seed del superusuario). */
   save(order: Order): Promise<Order>;
 

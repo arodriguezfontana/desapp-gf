@@ -72,7 +72,8 @@ export class OrdersService {
 
     if (side === OrderSide.SELL) {
       const holding = await this.holdings.findByUserAndPlayer(userId, playerId);
-      if ((holding?.quantity ?? 0) < quantity) {
+      const pendingSell = await this.orders.sumPendingSellQuantity(userId, playerId);
+      if ((holding?.quantity ?? 0) < quantity + pendingSell) {
         throw new InsufficientHoldingError();
       }
     }

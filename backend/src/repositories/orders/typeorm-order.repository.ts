@@ -36,6 +36,18 @@ export class TypeOrmOrderRepository implements OrderRepository {
     return entities.map((e) => this.mapper.toDomain(e));
   }
 
+  async sumPendingSellQuantity(userId: string, playerId: string): Promise<number> {
+    const result = await this.repo
+      .createQueryBuilder('o')
+      .select('COALESCE(SUM(o.remaining_quantity), 0)', 'total')
+      .where('o.user_id = :userId', { userId })
+      .andWhere('o.player_id = :playerId', { playerId })
+      .andWhere('o.side = :side', { side: OrderSide.SELL })
+      .andWhere('o.status IN (:...statuses)', { statuses: OPEN_STATUSES })
+      .getRawOne<{ total: string }>();
+    return Number(result?.total ?? 0);
+  }
+
   async save(order: Order): Promise<Order> {
     await this.repo.save(this.mapper.toEntity(order));
     return order;
