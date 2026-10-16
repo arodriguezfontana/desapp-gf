@@ -151,9 +151,13 @@ export class QuotationService {
       throw new RecalculationInProgressError();
     }
     this.recalculationsInProgress.add(userId);
-    // Drenar la cola de I/O para que cualquier request concurrente que ya
-    // llegó al servidor pueda chequear el lock antes de que empiece el trabajo.
+    // Ceder el event loop (setImmediate + setTimeout 0) para que cualquier
+    // request concurrente que ya llegó al servidor pueda chequear el lock
+    // antes de que empiece el trabajo pesado. Dos yields distintos cubren
+    // tanto la cola de I/O como la de timers, necesario bajo instrumentación
+    // de coverage donde un solo setImmediate no alcanza.
     await new Promise<void>((resolve) => setImmediate(resolve));
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
     try {
       const strategy = await this.getSelectedStrategyOrThrow(userId);
