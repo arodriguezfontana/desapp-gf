@@ -54,22 +54,24 @@ describe('Catálogo de Jugadores — integración contra backend real', () => {
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as {
-      data: Array<{ id: string; name: string; league: string; team: string; position: string }>;
-      meta: { total: number; page: number; pageSize: number; totalPages: number };
+      items: Array<{ id: string; name: string; league: string; team: string; position: string }>;
+      total: number;
+      page: number;
+      pageSize: number;
     };
 
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.meta).toHaveProperty('total');
-    expect(body.meta).toHaveProperty('page');
-    expect(body.meta).toHaveProperty('pageSize');
+    expect(Array.isArray(body.items)).toBe(true);
+    expect(body).toHaveProperty('total');
+    expect(body).toHaveProperty('page');
+    expect(body).toHaveProperty('pageSize');
   });
 
   it('GET /players con filtro de equipo sin coincidencias devuelve 200 con lista vacía', async () => {
     const res = await apiGet('/players?team=EquipoInexistenteXZY999', apiKey);
     expect(res.status).toBe(200);
 
-    const body = (await res.json()) as { data: unknown[] };
-    expect(body.data).toEqual([]);
+    const body = (await res.json()) as { items: unknown[] };
+    expect(body.items).toEqual([]);
   });
 
   it('GET /players/:id con ID inexistente devuelve 404 y mensaje en el body', async () => {

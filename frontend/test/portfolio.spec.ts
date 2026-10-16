@@ -46,7 +46,7 @@ describe('Portfolio personal — integración contra backend real', () => {
 
     // 2. Login para obtener JWT
     const loginRes = await apiPost('/auth/login', { email: uniqueEmail, password });
-    expect(loginRes.status).toBe(201);
+    expect(loginRes.status).toBe(200);
     const loginBody = (await loginRes.json()) as { accessToken: string; user?: { id: string } };
     accessToken = loginBody.accessToken;
     if (loginBody.user?.id) {

@@ -25,7 +25,7 @@ describe('authService.login — integración contra backend real', () => {
 
     // 2. Login
     const loginRes = await apiPost('/auth/login', { email: uniqueEmail, password });
-    expect(loginRes.status).toBe(201);
+    expect(loginRes.status).toBe(200);
     const body = (await loginRes.json()) as { accessToken: string };
     expect(body.accessToken).toBeTruthy();
   });
