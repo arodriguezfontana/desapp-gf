@@ -75,14 +75,26 @@ describe('matchOrder', () => {
     expect(plan.newOrderFinal.status).toBe(OrderStatus.PENDING);
   });
 
-  it('ignora candidatas de precio distinto aunque esten "cerca" (spec Historia 4, escenario 5)', () => {
-    const wrongPrice = sell('sell-1', 10, t(1), 12.51);
+  it('ignora candidatas cuyo precio_SELL supera el precio_BUY (el comprador no llega al precio del vendedor)', () => {
+    const expensiveSell = sell('sell-1', 10, t(1), 12.51);
     const newOrder = buy('buy-1', 10, t(2), 12.5);
 
-    const plan = matchOrder(newOrder, [wrongPrice]);
+    const plan = matchOrder(newOrder, [expensiveSell]);
 
     expect(plan.fills).toHaveLength(0);
     expect(plan.newOrderFinal.status).toBe(OrderStatus.PENDING);
+  });
+
+  it('fillea cuando precio_BUY > precio_SELL y usa el precio de la SELL como precio de ejecución', () => {
+    const cheapSell = sell('sell-1', 10, t(1), 10.0);
+    const newOrder = buy('buy-1', 10, t(2), 15.0);
+
+    const plan = matchOrder(newOrder, [cheapSell]);
+
+    expect(plan.fills).toHaveLength(1);
+    expect(plan.fills[0].quantity).toBe(10);
+    expect(plan.fills[0].price).toBe(10.0);
+    expect(plan.newOrderFinal.status).toBe(OrderStatus.COMPLETED);
   });
 
   it('ignora candidatas del mismo lado (defensivo, aunque el caller ya deberia filtrarlas)', () => {

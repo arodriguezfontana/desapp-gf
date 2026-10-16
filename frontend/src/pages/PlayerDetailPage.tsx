@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
 import { useCreateOrder } from '../hooks/useCreateOrder';
+import { usePortfolio } from '../hooks/usePortfolio';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
 import type { PlayerValuationResponseDto } from '../types/userStrategy.types';
 import type { OrderSide } from '../types/orders.types';
@@ -91,6 +92,8 @@ export const PlayerDetailPage: React.FC = () => {
   const { hasApiKey } = useApiKey();
   const { getPlayerById, getMyValuationByPlayerId, getQuoteHistoryByPlayerId } = useCatalog();
   const { createOrder, isSubmitting: isSubmittingOrder, error: orderError } = useCreateOrder();
+  const { holdings } = usePortfolio();
+  const ownedQuantity = holdings.find((h) => h.playerId === id)?.tokenQuantity ?? 0;
   const [player, setPlayer] = useState<Player | null>(null);
   const [quote, setQuote] = useState<PlayerValuationResponseDto | null>(null);
   const [quoteHistory, setQuoteHistory] = useState<PlayerQuote[]>([]);
@@ -242,13 +245,15 @@ export const PlayerDetailPage: React.FC = () => {
                     >
                       Comprar
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setOrderDialogSide('SELL')}
-                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#f43f5e] hover:bg-[#e11d48] text-white shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
-                    >
-                      Vender
-                    </button>
+                    {ownedQuantity > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderDialogSide('SELL')}
+                        className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#f43f5e] hover:bg-[#e11d48] text-white shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                      >
+                        Vender
+                      </button>
+                    )}
                   </div>
                 )}
                 {orderSuccessMessage && (

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Order } from '../../domain/orders/order';
 import { OrderSide } from '../../domain/orders/order-side';
 import { OrderStatus } from '../../domain/orders/order-status';
@@ -25,14 +25,13 @@ export class TypeOrmOrderRepository implements OrderRepository {
   }
 
   async findCompatibleCandidates(playerId: string, side: OrderSide, price: number): Promise<Order[]> {
+    const priceFilter = side === OrderSide.SELL
+      ? LessThanOrEqual(price.toFixed(2))
+      : MoreThanOrEqual(price.toFixed(2));
+    const priceOrder = side === OrderSide.SELL ? ('ASC' as const) : ('DESC' as const);
     const entities = await this.repo.find({
-      where: {
-        playerId,
-        side,
-        price: price.toFixed(2),
-        status: In(OPEN_STATUSES),
-      },
-      order: { createdAt: 'ASC', id: 'ASC' },
+      where: { playerId, side, price: priceFilter, status: In(OPEN_STATUSES) },
+      order: { price: priceOrder, createdAt: 'ASC', id: 'ASC' },
     });
     return entities.map((e) => this.mapper.toDomain(e));
   }
@@ -48,15 +47,18 @@ export class TypeOrmOrderRepository implements OrderRepository {
     side: OrderSide,
     price: number,
   ): Promise<Order[]> {
+    const priceOp = side === OrderSide.SELL ? '<=' : '>=';
+    const priceOrder = side === OrderSide.SELL ? ('ASC' as const) : ('DESC' as const);
     const entities = await tx.manager
       .getRepository(OrderEntity)
       .createQueryBuilder('o')
       .setLock('pessimistic_write')
       .where('o.player_id = :playerId', { playerId })
       .andWhere('o.side = :side', { side })
-      .andWhere('o.price = :price', { price: price.toFixed(2) })
+      .andWhere(`o.price ${priceOp} :price`, { price: price.toFixed(2) })
       .andWhere('o.status IN (:...statuses)', { statuses: OPEN_STATUSES })
-      .orderBy('o.created_at', 'ASC')
+      .orderBy('o.price', priceOrder)
+      .addOrderBy('o.created_at', 'ASC')
       .addOrderBy('o.id', 'ASC')
       .getMany();
     return entities.map((e) => this.mapper.toDomain(e));

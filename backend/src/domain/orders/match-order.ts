@@ -59,13 +59,14 @@ export function matchOrder(newOrder: Order, candidates: Order[]): MatchPlan {
     const filledCandidate = candidate.fill(fillQuantity);
     current = current.fill(fillQuantity);
 
+    const sellOrder = isNewOrderBuy ? candidate : current;
     fills.push({
       buyOrderId: isNewOrderBuy ? current.id : candidate.id,
       sellOrderId: isNewOrderBuy ? candidate.id : current.id,
       buyerUserId: isNewOrderBuy ? newOrder.userId : candidate.userId,
       sellerUserId: isNewOrderBuy ? candidate.userId : newOrder.userId,
       quantity: fillQuantity,
-      price: newOrder.price,
+      price: sellOrder.price,
     });
 
     updatedCandidates.push(filledCandidate);

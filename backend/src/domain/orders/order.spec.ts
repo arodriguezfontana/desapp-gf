@@ -80,11 +80,25 @@ describe('Order', () => {
   });
 
   describe('isCompatibleWith', () => {
-    it('true si lado opuesto, mismo jugador y mismo precio exacto', () => {
+    it('true si precio_BUY === precio_SELL', () => {
       const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 12.5 });
       const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p1', price: 12.5 });
       expect(buy.isCompatibleWith(sell)).toBe(true);
       expect(sell.isCompatibleWith(buy)).toBe(true);
+    });
+
+    it('true si precio_BUY > precio_SELL (comprador paga más de lo que pide el vendedor)', () => {
+      const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 15.0 });
+      const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p1', price: 12.5 });
+      expect(buy.isCompatibleWith(sell)).toBe(true);
+      expect(sell.isCompatibleWith(buy)).toBe(true);
+    });
+
+    it('false si precio_BUY < precio_SELL (el comprador no llega al precio del vendedor)', () => {
+      const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 12.5 });
+      const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p1', price: 12.51 });
+      expect(buy.isCompatibleWith(sell)).toBe(false);
+      expect(sell.isCompatibleWith(buy)).toBe(false);
     });
 
     it('false si mismo lado', () => {
@@ -96,12 +110,6 @@ describe('Order', () => {
     it('false si distinto jugador', () => {
       const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 12.5 });
       const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p2', price: 12.5 });
-      expect(buy.isCompatibleWith(sell)).toBe(false);
-    });
-
-    it('false si el precio difiere, aunque sea por un centavo', () => {
-      const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 12.5 });
-      const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p1', price: 12.51 });
       expect(buy.isCompatibleWith(sell)).toBe(false);
     });
 

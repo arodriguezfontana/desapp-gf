@@ -100,23 +100,18 @@ export class Order {
   }
 
   /**
-   * `true` solo si `other` es del lado opuesto, mismo jugador, mismo precio
-   * exacto (ambos ya redondeados a 2 decimales) y todavia tiene cantidad
-   * pendiente (data-model.md). Unico criterio de compatibilidad del motor de
-   * matching (spec DD-001, FR-011).
+   * `true` si `other` es del lado opuesto, mismo jugador, precio cruzado
+   * (precio_BUY >= precio_SELL, ambos en centavos) y todavia tiene cantidad
+   * pendiente. Modelo de libro de órdenes estándar: el comprador acepta pagar
+   * hasta su precio límite y el vendedor acepta cobrar desde el suyo.
    */
   isCompatibleWith(other: Order): boolean {
-    return (
-      other.remainingQuantity > 0 &&
-      this._playerId === other.playerId &&
-      this._side !== other.side &&
-      Order.sameCents(this._price, other.price)
-    );
-  }
-
-  /** Compara precios al centavo para evitar falsos negativos por imprecision de punto flotante. */
-  private static sameCents(a: number, b: number): boolean {
-    return Math.round(a * 100) === Math.round(b * 100);
+    if (other.remainingQuantity <= 0) return false;
+    if (this._playerId !== other.playerId) return false;
+    if (this._side === other.side) return false;
+    const buyPrice = this._side === OrderSide.BUY ? this._price : other.price;
+    const sellPrice = this._side === OrderSide.SELL ? this._price : other.price;
+    return Math.round(buyPrice * 100) >= Math.round(sellPrice * 100);
   }
 
   get id(): string {
