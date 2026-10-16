@@ -43,16 +43,15 @@ export const PortfolioCharts: React.FC<Props> = ({ holdings }) => {
   const totalValue = donutItems.reduce((s, d) => s + d.value, 0);
 
   const CX = 90, CY = 90, OUTER_R = 72, INNER_R = 44;
-  let cumDeg = 0;
   const filteredDonut = donutItems.filter((d) => d.value > 0);
-  const arcs = filteredDonut.map((d, i) => {
-    const start = cumDeg;
+  const arcs = filteredDonut.reduce<Array<typeof filteredDonut[number] & { path: string }>>((acc, d, i) => {
+    const start = acc.length === 0 ? 0 : acc[acc.length - 1].end;
     const sweep = i === filteredDonut.length - 1
-      ? 360 - cumDeg
+      ? 360 - start
       : (d.value / totalValue) * 360;
-    cumDeg += sweep;
-    return { ...d, path: donutPath(CX, CY, OUTER_R, INNER_R, start, cumDeg) };
-  });
+    const end = start + sweep;
+    return [...acc, { ...d, path: donutPath(CX, CY, OUTER_R, INNER_R, start, end), end }];
+  }, []);
 
   // --- Barras: rentabilidad por jugador ---
   const BAR_H = 20;

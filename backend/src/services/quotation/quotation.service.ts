@@ -152,11 +152,12 @@ export class QuotationService {
     }
     this.recalculationsInProgress.add(userId);
     // Ceder el event loop para que requests concurrentes al mismo userId puedan
-    // chequear el lock antes de que empiece el trabajo real. El delay de 20ms
-    // garantiza que la request rival ya fue recibida y procesada por Node aunque
-    // la instrumentación de coverage ralentice el pipeline; es imperceptible
-    // para el usuario pero elimina la carrera en CI.
-    await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    // chequear el lock antes de que empiece el trabajo real. El delay cubre el
+    // tiempo de verificación JWT del request rival (guard → DB lookup): en CI
+    // bajo coverage ese round-trip puede superar los 100ms, por eso se usa
+    // 150ms — suficiente margen sin ser perceptible para el usuario dado que
+    // recalculate es una operación inherentemente pesada.
+    await new Promise<void>((resolve) => setTimeout(resolve, 150));
 
     try {
       const strategy = await this.getSelectedStrategyOrThrow(userId);
