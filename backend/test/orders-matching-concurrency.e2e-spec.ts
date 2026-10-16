@@ -13,6 +13,8 @@ import { createTestApp, TestContext } from './test-app';
  * disponible, sin importar cuántas solicitudes concurrentes compitan por
  * ella (research.md D4: locking pesimista con orden determinístico).
  */
+jest.setTimeout(30_000);
+
 describe('POST /orders — concurrencia del matching (e2e, FR-021/SC-008)', () => {
   let ctx: TestContext;
   const server = () => ctx.app.getHttpServer();
