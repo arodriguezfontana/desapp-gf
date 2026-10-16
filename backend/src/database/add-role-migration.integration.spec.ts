@@ -61,7 +61,7 @@ describe('AddRoleToUsersAndApiKeys (migration, spec 008 US4)', () => {
     const userId = randomUUID();
     const keyId = randomUUID();
     await dataSource.query(
-      `INSERT INTO "users" (id, email, password_hash) VALUES ($1, $2, 'hash-legacy')`,
+      `INSERT INTO "users" (id, email, password_hash, username) VALUES ($1, $2, 'hash-legacy', 'legacy-user')`,
       [userId, `legacy-${userId}@mail.com`],
     );
     await dataSource.query(
@@ -84,7 +84,7 @@ describe('AddRoleToUsersAndApiKeys (migration, spec 008 US4)', () => {
   it('es idempotente: correr up dos veces no falla ni cambia los roles', async () => {
     const userId = randomUUID();
     await dataSource.query(
-      `INSERT INTO "users" (id, email, password_hash, role) VALUES ($1, $2, 'h', 'admin')`,
+      `INSERT INTO "users" (id, email, password_hash, role, username) VALUES ($1, $2, 'h', 'admin', 'idem-user')`,
       [userId, `idem-${userId}@mail.com`],
     );
 

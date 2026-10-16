@@ -25,9 +25,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Alta de cuenta (no inicia sesión, no devuelve token)' })
   @ApiResponse({ status: 201, type: RegisterResponseDto })
   @ApiResponse({ status: 400, description: 'Body inválido o contraseña que incumple la política' })
-  @ApiResponse({ status: 409, description: 'El email ya está registrado' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'El email ya está registrado, o el username es exactamente "superuser" (020-order-matching-engine, reservado)',
+  })
   async register(@Body() dto: RegisterRequestDto): Promise<RegisterResponseDto> {
-    const user = await this.auth.register(dto.email, dto.password);
+    const user = await this.auth.register(dto.email, dto.password, dto.username);
     return RegisterResponseDto.fromDomain(user);
   }
 

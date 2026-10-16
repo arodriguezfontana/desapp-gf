@@ -17,7 +17,7 @@ describe('POST /auth/login (e2e)', () => {
     await ctx.clearUsers();
     await request(server())
       .post('/auth/register')
-      .send({ email: 'ana@mail.com', password: 'Abcd1234!' });
+      .send({ email: 'ana@mail.com', password: 'Abcd1234!', username: 'ana' });
   });
 
   it('200 con accessToken, tokenType y expiresIn = 86400', async () => {

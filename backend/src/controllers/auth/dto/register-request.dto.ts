@@ -15,4 +15,13 @@ export class RegisterRequestDto {
   @IsNotEmpty()
   @MaxLength(72) // guarda anti-DoS de bcrypt, no es la regla de negocio
   password!: string;
+
+  @ApiProperty({
+    example: 'inversor',
+    description:
+      'Requerido. Sin restricción de unicidad, salvo el valor reservado "superuser" (409).',
+  })
+  @IsString()
+  @IsNotEmpty()
+  username!: string;
 }

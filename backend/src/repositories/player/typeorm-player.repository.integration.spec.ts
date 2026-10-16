@@ -214,6 +214,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
         id,
         email: `${id}@test.local`,
         passwordHash: '$2b$10$abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1',
+        username: 'test-user',
       });
       return id;
     };

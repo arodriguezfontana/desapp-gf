@@ -30,6 +30,7 @@ describe('AdminSeedService', () => {
       existsByEmail: jest.fn().mockResolvedValue(false),
       save: jest.fn().mockResolvedValue(undefined),
       findById: jest.fn(),
+      existsByUsername: jest.fn().mockResolvedValue(false),
     };
     hasher = {
       hash: jest.fn().mockResolvedValue('hash-admin'),

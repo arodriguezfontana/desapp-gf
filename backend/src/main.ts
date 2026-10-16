@@ -3,6 +3,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { runPlayerCatalogMigrations } from './database/run-player-catalog-migrations';
 import { AdminSeedService } from './services/auth/admin-seed.service';
+import { SuperuserSeedService } from './services/auth/superuser-seed.service';
 import { createGlobalValidationPipe } from './shared/validation/global-validation-pipe';
 
 async function bootstrap() {
@@ -17,6 +18,10 @@ async function bootstrap() {
   // Seed del primer admin (spec 008, US2). Va después de las migrations, para que
   // la columna `role` exista antes del insert, y antes de listen().
   await app.get(AdminSeedService, { strict: false }).run();
+
+  // Seed del superusuario de mercado (020-order-matching-engine, spec FR-004).
+  // Va despues del admin, mismo patron idempotente.
+  await app.get(SuperuserSeedService, { strict: false }).run();
 
   app.enableCors({
     origin: 'http://localhost:5173',

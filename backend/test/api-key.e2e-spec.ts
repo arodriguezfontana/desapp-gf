@@ -11,7 +11,7 @@ describe('POST /auth/api-key (e2e)', () => {
   const registerAndLogin = async (email: string) => {
     await request(server())
       .post('/auth/register')
-      .send({ email, password: 'Abcd1234!' });
+      .send({ email, password: 'Abcd1234!', username: 'test-user' });
     const res = await request(server())
       .post('/auth/login')
       .send({ email, password: 'Abcd1234!' });

@@ -9,8 +9,8 @@ import type { IssueApiKeyResponseDto, LoginResponseDto } from '../types/auth.typ
  */
 export function useAuthActions() {
   const register = useCallback(
-    (email: string, password: string): Promise<void> =>
-      authService.register(email, password),
+    (email: string, password: string, username: string): Promise<void> =>
+      authService.register(email, password, username),
     [],
   );
 

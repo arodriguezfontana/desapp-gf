@@ -48,6 +48,11 @@ export async function createTestApp(overrides?: ProviderOverride[]): Promise<Tes
   const clearUsers = async () => {
     await dataSource.query('DELETE FROM "player_quotes"');
     await dataSource.query('DELETE FROM "valuation_strategies"');
+    // 020-order-matching-engine: "token_transactions"/"orders" referencian
+    // "users" sin ON DELETE CASCADE (a diferencia de "token_holdings", que sí
+    // lo tiene) — hay que vaciarlas antes de poder borrar "users".
+    await dataSource.query('DELETE FROM "token_transactions"');
+    await dataSource.query('DELETE FROM "orders"');
     await dataSource.query('DELETE FROM "users"');
   };
 

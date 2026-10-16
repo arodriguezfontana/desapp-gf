@@ -44,6 +44,7 @@ describe('TypeOrmValuationStrategyRepository (integración, 019-per-user-valuati
       id,
       email: `${id}@test.local`,
       passwordHash: '$2b$10$abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1',
+      username: 'test-user',
     });
     return id;
   };

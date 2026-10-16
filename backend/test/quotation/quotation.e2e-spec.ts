@@ -8,7 +8,7 @@ describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user
   const server = () => ctx.app.getHttpServer();
 
   const registerAndLogin = async (email: string) => {
-    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!' });
+    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!', username: 'test-user' });
     const login = await request(server()).post('/auth/login').send({ email, password: 'Abcd1234!' });
     return login.body.accessToken as string;
   };

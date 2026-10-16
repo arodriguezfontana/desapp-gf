@@ -8,15 +8,15 @@ describe('useAuthActions', () => {
     vi.restoreAllMocks();
   });
 
-  it('register delega en authService.register con email y password', async () => {
+  it('register delega en authService.register con email, password y username', async () => {
     const spy = vi
       .spyOn(authServiceModule.authService, 'register')
       .mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useAuthActions());
-    await result.current.register('user@mail.com', 'Pass1234!');
+    await result.current.register('user@mail.com', 'Pass1234!', 'un-usuario');
 
-    expect(spy).toHaveBeenCalledWith('user@mail.com', 'Pass1234!');
+    expect(spy).toHaveBeenCalledWith('user@mail.com', 'Pass1234!', 'un-usuario');
   });
 
   it('login delega en authService.login y devuelve el LoginResponseDto', async () => {

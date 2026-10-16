@@ -10,8 +10,8 @@ export const authService = {
    * Registra una cuenta nueva.
    * Lanza ApiError si el backend devuelve un error (email duplicado, contraseña débil, etc.).
    */
-  async register(email: string, password: string): Promise<void> {
-    await httpClient.post<void>('/auth/register', { email, password });
+  async register(email: string, password: string, username: string): Promise<void> {
+    await httpClient.post<void>('/auth/register', { email, password, username });
   },
 
   /**

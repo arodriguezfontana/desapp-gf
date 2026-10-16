@@ -14,4 +14,12 @@ export interface UserRepository {
    */
   save(user: User): Promise<void>;
   findById(id: string): Promise<User | null>;
+
+  /**
+   * Usado por `SuperuserSeedService` para su chequeo de idempotencia
+   * (020-order-matching-engine, research.md D3): como `username` no es
+   * unico, la idempotencia del seed se verifica por este campo, no por
+   * email.
+   */
+  existsByUsername(username: string): Promise<boolean>;
 }
