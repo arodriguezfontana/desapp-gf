@@ -31,7 +31,12 @@ export async function createTestApp(overrides?: ProviderOverride[]): Promise<Tes
 
   const app = moduleRef.createNestApplication();
   app.useGlobalPipes(createGlobalValidationPipe());
-  await app.init();
+  // listen(0) en lugar de init(): el SO asigna un puerto libre y el servidor
+  // queda realmente escuchando antes de que supertest haga requests concurrentes.
+  // Con solo init() el servidor existe pero no escucha; el primer request
+  // concurrente llama a listen() internamente, y si llegan varios a la vez
+  // compiten por ese listen() causando ECONNRESET.
+  await app.listen(0);
 
   // El esquema (incluida `players`) ya está sincronizado por TypeOrmModule al
   // inicializar la app; recién ahí corre la migration de seed del catálogo,
