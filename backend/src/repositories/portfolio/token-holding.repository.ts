@@ -6,6 +6,7 @@ import { Transaction } from '../shared/transaction';
  * (020-order-matching-engine). Token: TOKEN_HOLDING_REPOSITORY.
  */
 export interface TokenHoldingRepository {
+  findByUserId(userId: string): Promise<TokenHolding[]>;
   findByUserAndPlayer(userId: string, playerId: string): Promise<TokenHolding | null>;
 
   /** Insert o update simple, sin transaccion (p. ej. el seed del superusuario). */

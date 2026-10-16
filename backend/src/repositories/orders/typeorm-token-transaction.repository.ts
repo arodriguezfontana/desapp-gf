@@ -32,4 +32,12 @@ export class TypeOrmTokenTransactionRepository implements TokenTransactionReposi
     });
     return entities.map((e) => this.mapper.toDomain(e));
   }
+
+  async findCreditsByUserId(userId: string): Promise<TokenTransaction[]> {
+    const entities = await this.repo.find({
+      where: { userId, type: 'CREDIT' },
+      order: { createdAt: 'ASC' },
+    });
+    return entities.map((e) => this.mapper.toDomain(e));
+  }
 }

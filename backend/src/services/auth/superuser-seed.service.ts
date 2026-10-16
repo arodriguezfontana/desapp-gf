@@ -71,11 +71,6 @@ export class SuperuserSeedService {
       return;
     }
 
-    if (await this.users.existsByUsername(SUPERUSER_USERNAME)) {
-      this.logger.log('Superusuario ya existe: sin cambios.');
-      return;
-    }
-
     let email: Email;
     try {
       email = Email.create(rawEmail);
@@ -87,64 +82,96 @@ export class SuperuserSeedService {
       throw error;
     }
 
-    let password: Password;
-    try {
-      password = Password.create(rawPassword);
-    } catch (error) {
-      if (error instanceof InvalidPasswordError) {
-        this.logger.warn('Seed de superusuario omitido: SUPERUSER_PASSWORD no cumple la política de contraseña.');
-        return;
+    let superuser = await this.users.findByEmail(email);
+
+    if (!superuser) {
+      let password: Password;
+      try {
+        password = Password.create(rawPassword);
+      } catch (error) {
+        if (error instanceof InvalidPasswordError) {
+          this.logger.warn('Seed de superusuario omitido: SUPERUSER_PASSWORD no cumple la política de contraseña.');
+          return;
+        }
+        throw error;
       }
-      throw error;
-    }
 
-    const passwordHash = await this.hasher.hash(password.value());
-    const superuser = User.register(
-      randomUUID(),
-      email,
-      passwordHash,
-      new Date(),
-      UserRole.USER,
-      SUPERUSER_USERNAME,
-    );
-
-    try {
-      await this.users.save(superuser);
-    } catch (error) {
-      // Arranque concurrente: otra instancia ganó la carrera por el email.
-      if (error instanceof EmailAlreadyInUseError) {
-        this.logger.log('Superusuario ya existe: sin cambios.');
-        return;
-      }
-      throw error;
-    }
-
-    await this.strategyProvisioning.provisionDefaultStrategiesFor(superuser.id);
-
-    const catalogPlayers = await this.players.findAllActive();
-    for (const player of catalogPlayers) {
-      const holding = TokenHolding.createEmpty(superuser.id, player.id).credit(
-        INITIAL_HOLDING_QUANTITY,
+      const passwordHash = await this.hasher.hash(password.value());
+      superuser = User.register(
+        randomUUID(),
+        email,
+        passwordHash,
+        new Date(),
+        UserRole.USER,
+        SUPERUSER_USERNAME,
       );
-      await this.holdings.save(holding);
 
-      const valuation = await this.quotation.valuate(superuser.id, player.id);
-      const price = roundToTwoDecimals(valuation.value);
+      try {
+        await this.users.save(superuser);
+      } catch (error) {
+        if (error instanceof EmailAlreadyInUseError) {
+          // Carrera concurrente: re-leer el usuario creado por la otra instancia.
+          superuser = await this.users.findByEmail(email);
+          if (!superuser) throw error;
+        } else {
+          throw error;
+        }
+      }
 
-      const order = Order.create({
-        id: randomUUID(),
-        userId: superuser.id,
-        playerId: player.id,
-        side: OrderSide.SELL,
-        quantity: INITIAL_HOLDING_QUANTITY,
-        price,
-        createdAt: new Date(),
-      });
-      await this.orders.save(order);
+      await this.strategyProvisioning.provisionDefaultStrategiesFor(superuser.id);
+      this.logger.log('Superusuario creado.');
+    } else {
+      this.logger.log('Superusuario ya existe: verificando liquidez inicial.');
     }
 
-    this.logger.log(
-      `Superusuario creado con liquidez inicial en ${catalogPlayers.length} jugador(es) del catálogo.`,
-    );
+    await this.ensureLiquidity(superuser.id);
+  }
+
+  private async ensureLiquidity(userId: string): Promise<void> {
+    const catalogPlayers = await this.players.findAllActive();
+    if (catalogPlayers.length === 0) return;
+
+    // Si ya tiene holding para el primer jugador, asumimos que la liquidez ya fue provisionada.
+    const firstHolding = await this.holdings.findByUserAndPlayer(userId, catalogPlayers[0].id);
+    if (firstHolding && firstHolding.quantity > 0) {
+      this.logger.log('Liquidez inicial ya provisionada: sin cambios.');
+      return;
+    }
+
+    let provisioned = 0;
+    for (const player of catalogPlayers) {
+      try {
+        const existing = await this.holdings.findByUserAndPlayer(userId, player.id);
+        if (existing && existing.quantity > 0) continue;
+
+        const holding = TokenHolding.createEmpty(userId, player.id).credit(INITIAL_HOLDING_QUANTITY);
+        await this.holdings.save(holding);
+
+        let price: number;
+        try {
+          const valuation = await this.quotation.valuate(userId, player.id);
+          price = roundToTwoDecimals(valuation.value);
+        } catch {
+          price = 1;
+          this.logger.warn(`Sin cotización para jugador ${player.id}; se usa precio de fallback 1.`);
+        }
+
+        const order = Order.create({
+          id: randomUUID(),
+          userId,
+          playerId: player.id,
+          side: OrderSide.SELL,
+          quantity: INITIAL_HOLDING_QUANTITY,
+          price,
+          createdAt: new Date(),
+        });
+        await this.orders.save(order);
+        provisioned++;
+      } catch (err) {
+        this.logger.warn(`Error provisionando liquidez para jugador ${player.id}: ${String(err)}`);
+      }
+    }
+
+    this.logger.log(`Liquidez inicial provisionada en ${provisioned} jugador(es).`);
   }
 }

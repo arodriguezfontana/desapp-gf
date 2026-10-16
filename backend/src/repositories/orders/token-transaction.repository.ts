@@ -16,4 +16,7 @@ export interface TokenTransactionRepository {
 
   /** Historial de transacciones de un usuario, ordenado por fecha descendente. */
   findByUserId(userId: string): Promise<TokenTransaction[]>;
+
+  /** Solo las transacciones CREDIT del usuario, para calcular precio promedio de compra. */
+  findCreditsByUserId(userId: string): Promise<TokenTransaction[]>;
 }

@@ -16,6 +16,11 @@ export class TypeOrmTokenHoldingRepository implements TokenHoldingRepository {
     private readonly mapper: TokenHoldingMapper,
   ) {}
 
+  async findByUserId(userId: string): Promise<TokenHolding[]> {
+    const entities = await this.repo.find({ where: { userId } });
+    return entities.map((e) => this.mapper.toDomain(e));
+  }
+
   async findByUserAndPlayer(userId: string, playerId: string): Promise<TokenHolding | null> {
     const entity = await this.repo.findOne({ where: { userId, playerId } });
     return entity ? this.mapper.toDomain(entity) : null;
