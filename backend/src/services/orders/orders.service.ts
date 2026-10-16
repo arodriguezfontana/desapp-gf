@@ -97,6 +97,7 @@ export class OrdersService {
         playerId,
         oppositeSide(side),
         price,
+        userId,
       );
 
       const matchPlan = matchOrder(newOrder, candidates);

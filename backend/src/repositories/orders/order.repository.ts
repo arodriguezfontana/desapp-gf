@@ -15,7 +15,7 @@ export interface OrderRepository {
    * precio exacto, ordenadas FIFO por `(createdAt, id)` ascendente. Lectura
    * simple sin lock (usada fuera del flujo de matching transaccional).
    */
-  findCompatibleCandidates(playerId: string, side: OrderSide, price: number): Promise<Order[]>;
+  findCompatibleCandidates(playerId: string, side: OrderSide, price: number, excludeUserId: string): Promise<Order[]>;
 
   /**
    * Suma de `remainingQuantity` de todas las órdenes SELL abiertas
@@ -40,6 +40,7 @@ export interface OrderRepository {
     playerId: string,
     side: OrderSide,
     price: number,
+    excludeUserId: string,
   ): Promise<Order[]>;
 
   /** Persiste (insert o update) dentro de una `Transaction` ya abierta. */

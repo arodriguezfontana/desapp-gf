@@ -24,7 +24,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
     return entity ? this.mapper.toDomain(entity) : null;
   }
 
-  async findCompatibleCandidates(playerId: string, side: OrderSide, price: number): Promise<Order[]> {
+  async findCompatibleCandidates(playerId: string, side: OrderSide, price: number, excludeUserId: string): Promise<Order[]> {
     const priceFilter = side === OrderSide.SELL
       ? LessThanOrEqual(price.toFixed(2))
       : MoreThanOrEqual(price.toFixed(2));
@@ -33,7 +33,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
       where: { playerId, side, price: priceFilter, status: In(OPEN_STATUSES) },
       order: { price: priceOrder, createdAt: 'ASC', id: 'ASC' },
     });
-    return entities.map((e) => this.mapper.toDomain(e));
+    return entities.filter((e) => e.userId !== excludeUserId).map((e) => this.mapper.toDomain(e));
   }
 
   async sumPendingSellQuantity(userId: string, playerId: string): Promise<number> {
@@ -58,6 +58,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
     playerId: string,
     side: OrderSide,
     price: number,
+    excludeUserId: string,
   ): Promise<Order[]> {
     const priceOp = side === OrderSide.SELL ? '<=' : '>=';
     const priceOrder = side === OrderSide.SELL ? ('ASC' as const) : ('DESC' as const);
@@ -69,6 +70,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
       .andWhere('o.side = :side', { side })
       .andWhere(`o.price ${priceOp} :price`, { price: price.toFixed(2) })
       .andWhere('o.status IN (:...statuses)', { statuses: OPEN_STATUSES })
+      .andWhere('o.user_id != :excludeUserId', { excludeUserId })
       .orderBy('o.price', priceOrder)
       .addOrderBy('o.created_at', 'ASC')
       .addOrderBy('o.id', 'ASC')
