@@ -28,7 +28,7 @@ export class UserEntity {
    * unico valor reservado ("superuser") se garantiza por aplicacion, no por
    * constraint de esquema (research.md D2).
    */
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, default: '' })
   username!: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

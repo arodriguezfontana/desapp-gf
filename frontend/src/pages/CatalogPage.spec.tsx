@@ -5,6 +5,18 @@ import { CatalogPage } from './CatalogPage';
 import { apiKeyStorage } from '../service/apiKeyStorage';
 import { catalogService } from '../service/catalogService';
 import { httpEvents } from '../service/httpClient';
+import { AuthContext, type AuthContextValue } from '../contexts/auth-context';
+
+function renderCatalog(isAuthenticated = false) {
+  const authValue: AuthContextValue = { isAuthenticated, login: vi.fn(), logout: vi.fn() };
+  return render(
+    <AuthContext.Provider value={authValue}>
+      <MemoryRouter>
+        <CatalogPage />
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+}
 
 describe('CatalogPage', () => {
   beforeEach(() => {
@@ -14,11 +26,7 @@ describe('CatalogPage', () => {
   });
 
   it('muestra el aviso y el enlace a /account si no hay ApiKey guardada', () => {
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     expect(
       screen.getByText('Necesitás generar una ApiKey para ver el catálogo.'),
@@ -46,11 +54,7 @@ describe('CatalogPage', () => {
       meta: { total: 1, page: 1, pageSize: 10, totalPages: 1 },
     });
 
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     await waitFor(() => {
       expect(screen.getByText('Lionel Messi')).toBeInTheDocument();
@@ -68,11 +72,7 @@ describe('CatalogPage', () => {
       meta: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
     });
 
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     await waitFor(() => {
       expect(
@@ -97,11 +97,7 @@ describe('CatalogPage', () => {
       meta: { total: 1, page: 1, pageSize: 10, totalPages: 1 },
     });
 
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     await waitFor(() => {
       expect(screen.getByText('Jugador 1')).toBeInTheDocument();
@@ -124,11 +120,7 @@ describe('CatalogPage', () => {
 
     vi.spyOn(catalogService, 'getPlayers').mockRejectedValueOnce(new Error('Network Error'));
 
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     await waitFor(() => {
       expect(
@@ -145,11 +137,7 @@ describe('CatalogPage', () => {
       meta: { total: 0, page: 1, pageSize: 12, totalPages: 1 },
     });
 
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     await waitFor(() => expect(getPlayersSpy).toHaveBeenCalled());
 
@@ -182,11 +170,7 @@ describe('CatalogPage', () => {
       meta: { total: 0, page: 1, pageSize: 12, totalPages: 1 },
     });
 
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     await waitFor(() => expect(getPlayersSpy).toHaveBeenCalled());
 
@@ -220,11 +204,7 @@ describe('CatalogPage', () => {
       meta: { total: 30, page: 1, pageSize: 12, totalPages: 3 },
     });
 
-    render(
-      <MemoryRouter>
-        <CatalogPage />
-      </MemoryRouter>,
-    );
+    renderCatalog();
 
     await waitFor(() => {
       expect(screen.getByText('Jugador Paginado')).toBeInTheDocument();
