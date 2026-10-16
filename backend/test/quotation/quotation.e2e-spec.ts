@@ -1,7 +1,4 @@
 import * as request from 'supertest';
-import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
-import { ApiKeyEntity } from '../../src/repositories/api-key/entities/api-key.entity';
-import { ValuationStrategyEntity } from '../../src/repositories/quotation/entities/valuation-strategy.entity';
 import { PlayerQuoteEntity } from '../../src/repositories/quotation/entities/player-quote.entity';
 import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
 import { createTestApp, TestContext } from '../test-app';
@@ -25,10 +22,14 @@ describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user
   });
 
   beforeEach(async () => {
-    await ctx.dataSource.getRepository(PlayerQuoteEntity).clear();
-    await ctx.dataSource.getRepository(ValuationStrategyEntity).clear();
-    await ctx.dataSource.getRepository(ApiKeyEntity).clear();
-    await ctx.dataSource.getRepository(UserEntity).clear();
+    // DELETE, no .clear() (TRUNCATE): player_quotes y valuation_strategies
+    // tienen FK hacia users (019-per-user-valuation-strategies), y TRUNCATE
+    // rechaza una tabla referenciada por FK sin CASCADE. El orden respeta las
+    // dependencias (hijos antes que padres).
+    await ctx.dataSource.query('DELETE FROM "player_quotes"');
+    await ctx.dataSource.query('DELETE FROM "valuation_strategies"');
+    await ctx.dataSource.query('DELETE FROM "api_keys"');
+    await ctx.dataSource.query('DELETE FROM "users"');
   });
 
   // ---- Historia 1: provisioning automático al alta --------------------------
@@ -251,6 +252,25 @@ describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user
 
     it('un segundo recálculo del mismo usuario mientras el primero está en curso → 409', async () => {
       const token = await registerAndLogin('recalc-conflict@mail.com');
+
+      // Un catálogo vacío hace que el recálculo masivo termine casi
+      // instantáneamente, sin ventana real para que el segundo request
+      // alcance a chocar con el lock (el guard JWT del segundo ya tardó más
+      // que todo el recálculo del primero). Se siembra un lote de jugadores
+      // para que el recálculo tome tiempo real y la carrera sea genuina.
+      const { randomUUID } = await import('node:crypto');
+      const playerRepo = ctx.dataSource.getRepository(PlayerEntity);
+      await playerRepo.insert(
+        Array.from({ length: 300 }, (_, i) => ({
+          id: randomUUID(),
+          externalId: `ext-conflict-${i}`,
+          name: `Jugador Conflicto ${i}`,
+          league: 'La Liga',
+          team: 'Equipo Conflicto',
+          position: 'MF',
+          rating: 7,
+        })),
+      );
 
       const [first, second] = await Promise.all([
         request(server()).post('/users/me/quotes/recalculate').set('Authorization', `Bearer ${token}`).send({}),

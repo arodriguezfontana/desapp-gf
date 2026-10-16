@@ -79,6 +79,10 @@ describe('GET /players/ranking (e2e, spec 016 + 019-per-user-valuation-strategie
     userId = auth.userId;
 
     const stratRepo = ctx.dataSource.getRepository(ValuationStrategyEntity);
+    // El alta ya provisionó automáticamente las dos estrategias default del
+    // usuario (019-per-user-valuation-strategies, FR-001); se reemplazan por
+    // las de este fixture para controlar exactamente los pesos del test.
+    await stratRepo.delete({ userId });
     strategyA = await stratRepo.save({
       id: randomUUID(),
       userId,

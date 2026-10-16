@@ -13,6 +13,17 @@ export class SeedValuationStrategies1791590400000 implements MigrationInterface 
   name = 'SeedValuationStrategies1791590400000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Guard: en una base fresca (Testcontainers/CI), `synchronize: true` ya creó
+    // la tabla con el esquema actual (`user_id` NOT NULL, sin `is_active`,
+    // 019-per-user-valuation-strategies) antes de que corran las migraciones.
+    // Este seed de estrategias de sistema ya no aplica a ese esquema (y las
+    // mismas dos filas se borran igual más adelante por
+    // DropLegacyGlobalStrategiesAndQuotes), así que se saltea.
+    const hasIsActive = await queryRunner.hasColumn('valuation_strategies', 'is_active');
+    if (!hasIsActive) {
+      return;
+    }
+
     await queryRunner.query(`
       INSERT INTO "valuation_strategies" ("id", "name", "weights", "factor_escala", "is_active") VALUES
         (

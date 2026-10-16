@@ -7,7 +7,19 @@ import { CONTAINER_GLOBAL_KEY, PG_URI_FILE } from './testcontainers';
  * Levanta UN único Postgres efímero con Testcontainers para toda la corrida de
  * tests (integración + e2e). Si Docker no está corriendo, realiza fallback a
  * la base de datos local definida en DATABASE_URL.
+ *
+ * Ryuk (el reaper que Testcontainers usa para garantizar la limpieza de
+ * contenedores huérfanos) queda deshabilitado: en Docker Desktop + Windows su
+ * socket de control se cuelga de forma intermitente entre corridas sucesivas
+ * (sesiones de Ryuk huérfanas que nunca liberan la conexión), dejando el
+ * `.start()` de abajo colgado para siempre sin levantar ningún contenedor.
+ * El costo es que, si el proceso de test muere a mitad de corrida, el
+ * contenedor Postgres puede quedar huérfano (hay que limpiarlo a mano con
+ * `docker rm -f`); en CI cada job corre en una VM descartable, así que ese
+ * caso no aplica.
  */
+process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
+
 export default async function globalSetup(): Promise<void> {
   let uri: string | undefined;
 
