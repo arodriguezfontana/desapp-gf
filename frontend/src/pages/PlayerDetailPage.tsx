@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
 import { useCreateOrder } from '../hooks/useCreateOrder';
@@ -89,6 +89,7 @@ const RatingCard: React.FC<{ label: string; value: number | null; max?: number; 
 // ── Página ───────────────────────────────────────────────────────────────────
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { hasApiKey } = useApiKey();
   const { getPlayerById, getMyValuationByPlayerId, getQuoteHistoryByPlayerId } = useCatalog();
   const { createOrder, isSubmitting: isSubmittingOrder, error: orderError } = useCreateOrder();
@@ -194,12 +195,13 @@ export const PlayerDetailPage: React.FC = () => {
       <title>{`${player.name} — FútVal`}</title>
 
       {/* Volver */}
-      <Link
-        to="/catalog"
-        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/40 hover:text-[#b79753] mb-4 transition-colors"
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/40 hover:text-[#b79753] mb-4 transition-colors cursor-pointer"
       >
         ← Volver al catálogo
-      </Link>
+      </button>
 
       {/* ── Card FIFA expandida (Dashboard a pantalla completa) ── */}
       <div

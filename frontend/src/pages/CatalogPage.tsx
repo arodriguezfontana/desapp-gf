@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useCatalog } from '../hooks/useCatalog';
 import { useRanking } from '../hooks/useRanking';
 import { useApiKey } from '../hooks/useApiKey';
@@ -27,12 +27,36 @@ export const CatalogPage: React.FC = () => {
   const { getPlayers, getMyValuationByPlayerId } = useCatalog();
   const { getRanking } = useRanking();
 
-  const [activeTab, setActiveTab] = useState<CatalogTab>('catalog');
-  const [selectedLeague, setSelectedLeague] = useState('');
-  const [selectedPosition, setSelectedPosition] = useState('');
-  const [teamInput, setTeamInput] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') ?? 'catalog') as CatalogTab;
+  const selectedLeague = searchParams.get('league') ?? '';
+  const selectedPosition = searchParams.get('position') ?? '';
+  const currentPage = Number(searchParams.get('page') ?? '1');
+  const urlTeam = searchParams.get('team') ?? '';
+
+  // Local state for the text input only (keeps typing responsive)
+  const [teamInput, setTeamInput] = useState(urlTeam);
   const debouncedTeam = useDebounce(teamInput, 400);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Sync debounced team value to URL (skip when already in sync to avoid loops)
+  useEffect(() => {
+    if (debouncedTeam === urlTeam) return;
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (debouncedTeam) next.set('team', debouncedTeam);
+      else next.delete('team');
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  }, [debouncedTeam, urlTeam, setSearchParams]);
+
+  const setPage = useCallback((p: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(p));
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   // --- Catalog state ---
   const [players, setPlayers] = useState<Player[]>([]);
@@ -107,12 +131,43 @@ export const CatalogPage: React.FC = () => {
     return () => { cancelled = true; };
   }, [activeTab, isAuthenticated, currentPage, selectedLeague, selectedPosition, debouncedTeam, getRanking]);
 
-  const handleLeagueChange = (v: string) => { setSelectedLeague(v); setCurrentPage(1); };
-  const handlePositionChange = (v: string) => { setSelectedPosition(v); setCurrentPage(1); };
-  const handleTeamInputChange = (v: string) => { setTeamInput(v); setCurrentPage(1); };
-  const handleClearFilters = () => { setSelectedLeague(''); setSelectedPosition(''); setTeamInput(''); setCurrentPage(1); };
+  const handleLeagueChange = (v: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (v) next.set('league', v); else next.delete('league');
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  };
+  const handlePositionChange = (v: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (v) next.set('position', v); else next.delete('position');
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  };
+  const handleTeamInputChange = (v: string) => { setTeamInput(v); };
+  const handleClearFilters = () => {
+    setTeamInput('');
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('league');
+      next.delete('position');
+      next.delete('team');
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  };
 
-  const handleTabChange = (tab: CatalogTab) => { setActiveTab(tab); setCurrentPage(1); };
+  const handleTabChange = (tab: CatalogTab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', tab);
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  };
 
   // --- No ApiKey guard (full page) ---
   if (!hasApiKey) {
@@ -168,7 +223,7 @@ export const CatalogPage: React.FC = () => {
             <PlayerCard key={player.id} player={player} quote={quotes.get(player.id) ?? null} />
           ))}
         </div>
-        <PaginationControls currentPage={currentPage} totalPages={meta.totalPages} totalItems={meta.total} pageSize={meta.pageSize} isLoading={catalogLoading} onPageChange={setCurrentPage} />
+        <PaginationControls currentPage={currentPage} totalPages={meta.totalPages} totalItems={meta.total} pageSize={meta.pageSize} isLoading={catalogLoading} onPageChange={setPage} />
       </>
     );
   }
@@ -245,7 +300,7 @@ export const CatalogPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-        <PaginationControls currentPage={currentPage} totalPages={rankingTotalPages} totalItems={rankingTotal} pageSize={10} isLoading={rankingLoading} onPageChange={setCurrentPage} />
+        <PaginationControls currentPage={currentPage} totalPages={rankingTotalPages} totalItems={rankingTotal} pageSize={10} isLoading={rankingLoading} onPageChange={setPage} />
       </>
     );
   }
