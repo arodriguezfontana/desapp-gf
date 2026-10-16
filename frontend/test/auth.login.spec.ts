@@ -20,7 +20,7 @@ describe('authService.login — integración contra backend real', () => {
 
   it('login con credenciales válidas devuelve accessToken', async () => {
     // 1. Crear usuario primero
-    const regRes = await apiPost('/auth/register', { email: uniqueEmail, password });
+    const regRes = await apiPost('/auth/register', { email: uniqueEmail, password, username: 'login-tester' });
     expect(regRes.status).toBe(201);
 
     // 2. Login

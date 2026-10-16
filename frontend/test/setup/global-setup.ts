@@ -7,7 +7,7 @@ declare global {
   var __BACKEND_PROCESS__: ChildProcess | undefined;
 }
 
-const BACKEND_DIST = join(__dirname, '../../../backend/dist/main.js');
+const BACKEND_DIST = join(__dirname, '../../../backend/dist/src/main.js');
 const HEALTH_URL_BASE = 'http://localhost';
 const BACKEND_PORT = 3001; // puerto alternativo para no chocar con el dev server
 
@@ -32,6 +32,12 @@ export async function setup(): Promise<void> {
 
   const databaseUrl = container.getConnectionUri();
   console.log('[global-setup] PostgreSQL listo:', databaseUrl);
+  // `globalThis.__PG_CONTAINER__` NO cruza el proceso separado donde corren
+  // los archivos de test (Vitest ejecuta `globalSetup` en su propio proceso);
+  // una env var sí se propaga (igual que VITE_TEST_API_URL mas abajo), así
+  // que es la via que usan los tests que necesitan una conexión Postgres
+  // directa (020-order-matching-engine, fixtures que no tienen endpoint propio).
+  process.env.TEST_DATABASE_URL = databaseUrl;
 
   console.log('[global-setup] Arrancando backend NestJS...');
   const backend = spawn('node', [BACKEND_DIST], {
@@ -51,5 +57,11 @@ export async function setup(): Promise<void> {
   console.log('[global-setup] Backend listo en', healthUrl);
 
   process.env.VITE_TEST_API_URL = `${HEALTH_URL_BASE}:${BACKEND_PORT}`;
+  // 020-order-matching-engine: a diferencia de los specs existentes (que
+  // llaman a `fetch` crudo), un test que renderiza un componente real usa
+  // `ordersService`/`httpClient`, que leen `import.meta.env.VITE_API_BASE_URL`
+  // (no `VITE_TEST_API_URL`). Vite expone cualquier var de entorno con
+  // prefijo VITE_ ya presente en `process.env` dentro de `import.meta.env`.
+  process.env.VITE_API_BASE_URL = `${HEALTH_URL_BASE}:${BACKEND_PORT}`;
 }
 

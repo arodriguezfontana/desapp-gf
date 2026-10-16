@@ -39,7 +39,7 @@ describe('Portfolio personal — integración contra backend real', () => {
 
   beforeAll(async () => {
     // 1. Registrar usuario
-    const regRes = await apiPost('/auth/register', { email: uniqueEmail, password });
+    const regRes = await apiPost('/auth/register', { email: uniqueEmail, password, username: 'portfolio-tester' });
     expect(regRes.status).toBe(201);
     const regBody = (await regRes.json()) as { id?: string };
     userId = regBody.id ?? '';

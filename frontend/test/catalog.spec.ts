@@ -35,7 +35,7 @@ describe('Catálogo de Jugadores — integración contra backend real', () => {
 
   beforeAll(async () => {
     // Generar ApiKey para las pruebas
-    await apiPost('/auth/register', { email: uniqueEmail, password });
+    await apiPost('/auth/register', { email: uniqueEmail, password, username: 'catalog-tester' });
     const loginRes = await apiPost('/auth/login', { email: uniqueEmail, password });
     const { accessToken } = (await loginRes.json()) as { accessToken: string };
 

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
+import { useCreateOrder } from '../hooks/useCreateOrder';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
 import type { PlayerValuationResponseDto } from '../types/userStrategy.types';
+import type { OrderSide } from '../types/orders.types';
 import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
+import { OrderConfirmDialog } from '../components/OrderConfirmDialog';
 
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
 const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
@@ -87,11 +90,30 @@ export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { hasApiKey } = useApiKey();
   const { getPlayerById, getMyValuationByPlayerId, getQuoteHistoryByPlayerId } = useCatalog();
+  const { createOrder, isSubmitting: isSubmittingOrder, error: orderError } = useCreateOrder();
   const [player, setPlayer] = useState<Player | null>(null);
   const [quote, setQuote] = useState<PlayerValuationResponseDto | null>(null);
   const [quoteHistory, setQuoteHistory] = useState<PlayerQuote[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [orderDialogSide, setOrderDialogSide] = useState<OrderSide | null>(null);
+  const [orderSuccessMessage, setOrderSuccessMessage] = useState<string | null>(null);
+
+  const handleConfirmOrder = async (quantity: number) => {
+    if (!id || !orderDialogSide) return;
+    const order = await createOrder(orderDialogSide, id, quantity);
+    if (order) {
+      setOrderDialogSide(null);
+      const sideLabel = orderDialogSide === 'BUY' ? 'Compra' : 'Venta';
+      setOrderSuccessMessage(
+        order.status === 'COMPLETED'
+          ? `${sideLabel} ejecutada por completo (${quantity} tokens a ${order.price}).`
+          : order.status === 'PARTIALLY_FILLED'
+            ? `${sideLabel} ejecutada parcialmente; el resto queda pendiente en el libro.`
+            : `${sideLabel} publicada; queda pendiente hasta encontrar una contraparte al mismo precio.`,
+      );
+    }
+  };
 
   useEffect(() => {
     if (!hasApiKey || !id) return;
@@ -210,6 +232,29 @@ export const PlayerDetailPage: React.FC = () => {
                       ? `Perfil de posición (${getPositionLabel(quote.appliedPosition)})`
                       : 'Pesos generales de la estrategia'}
                   </span>
+                )}
+                {quote != null && (
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setOrderDialogSide('BUY')}
+                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#2dd4bf] hover:bg-[#14b8a6] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                    >
+                      Comprar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrderDialogSide('SELL')}
+                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#f43f5e] hover:bg-[#e11d48] text-white shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                    >
+                      Vender
+                    </button>
+                  </div>
+                )}
+                {orderSuccessMessage && (
+                  <p className="text-[10px] font-bold text-[#2dd4bf] mt-2 max-w-[260px] leading-tight">
+                    {orderSuccessMessage}
+                  </p>
                 )}
               </div>
 
@@ -334,6 +379,18 @@ export const PlayerDetailPage: React.FC = () => {
         {/* Franja de posición inferior */}
         <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent.via}, ${accent.from})` }} />
       </div>
+
+      {orderDialogSide != null && quote != null && (
+        <OrderConfirmDialog
+          side={orderDialogSide}
+          playerName={player.name}
+          price={quote.value}
+          isSubmitting={isSubmittingOrder}
+          error={orderError}
+          onConfirm={(quantity) => void handleConfirmOrder(quantity)}
+          onCancel={() => setOrderDialogSide(null)}
+        />
+      )}
     </div>
   );
 };
