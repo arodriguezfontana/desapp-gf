@@ -243,7 +243,7 @@ export const PlayerDetailPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setOrderDialogSide('BUY')}
-                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#2dd4bf] hover:bg-[#14b8a6] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#60a5fa] hover:bg-[#3b82f6] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
                     >
                       Comprar
                     </button>
@@ -251,7 +251,7 @@ export const PlayerDetailPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setOrderDialogSide('SELL')}
-                        className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#f43f5e] hover:bg-[#e11d48] text-white shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                        className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#f59e0b] hover:bg-[#d97706] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
                       >
                         Vender
                       </button>

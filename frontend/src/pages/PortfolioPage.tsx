@@ -5,6 +5,8 @@ import { useOrderHistory } from '../hooks/useOrderHistory';
 import { PortfolioSummary } from '../components/PortfolioSummary';
 import { HoldingList } from '../components/HoldingList';
 import { OperationHistory } from '../components/OperationHistory';
+import { PortfolioMetrics } from '../components/PortfolioMetrics';
+import { PortfolioEvolutionChart } from '../components/PortfolioEvolutionChart';
 
 export const PortfolioPage: React.FC = () => {
   const { summary, holdings, isEmpty, isLoading, error, refetch } = usePortfolio();
@@ -64,6 +66,8 @@ export const PortfolioPage: React.FC = () => {
     content = (
       <div className="space-y-8">
         <PortfolioSummary summary={summary} />
+        <PortfolioMetrics holdings={holdings} />
+        <PortfolioEvolutionChart transactions={transactions} />
         <HoldingList holdings={holdings} />
         <OperationHistory
           transactions={transactions}
