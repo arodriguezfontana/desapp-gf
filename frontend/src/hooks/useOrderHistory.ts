@@ -23,7 +23,10 @@ export function useOrderHistory() {
   }, []);
 
   useEffect(() => {
-    void fetch();
+    const load = async () => {
+      await fetch();
+    };
+    void load();
   }, [fetch]);
 
   return { transactions, isLoading, error, refetch: fetch };
