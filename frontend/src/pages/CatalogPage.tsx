@@ -48,9 +48,6 @@ export const CatalogPage: React.FC = () => {
   const [rankingLoading, setRankingLoading] = useState(false);
   const [rankingError, setRankingError] = useState<string | null>(null);
 
-  // Reset page when filters or tab change
-  useEffect(() => { setCurrentPage(1); }, [selectedLeague, selectedPosition, debouncedTeam, activeTab]);
-
   // Catalog fetch
   useEffect(() => {
     if (activeTab !== 'catalog' || !hasApiKey) return;
@@ -110,12 +107,12 @@ export const CatalogPage: React.FC = () => {
     return () => { cancelled = true; };
   }, [activeTab, isAuthenticated, currentPage, selectedLeague, selectedPosition, debouncedTeam, getRanking]);
 
-  const handleLeagueChange = (v: string) => { setSelectedLeague(v); };
-  const handlePositionChange = (v: string) => { setSelectedPosition(v); };
-  const handleTeamInputChange = (v: string) => { setTeamInput(v); };
-  const handleClearFilters = () => { setSelectedLeague(''); setSelectedPosition(''); setTeamInput(''); };
+  const handleLeagueChange = (v: string) => { setSelectedLeague(v); setCurrentPage(1); };
+  const handlePositionChange = (v: string) => { setSelectedPosition(v); setCurrentPage(1); };
+  const handleTeamInputChange = (v: string) => { setTeamInput(v); setCurrentPage(1); };
+  const handleClearFilters = () => { setSelectedLeague(''); setSelectedPosition(''); setTeamInput(''); setCurrentPage(1); };
 
-  const handleTabChange = (tab: CatalogTab) => { setActiveTab(tab); };
+  const handleTabChange = (tab: CatalogTab) => { setActiveTab(tab); setCurrentPage(1); };
 
   // --- No ApiKey guard (full page) ---
   if (!hasApiKey) {
