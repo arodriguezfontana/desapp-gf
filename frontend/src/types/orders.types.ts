@@ -1,4 +1,17 @@
 export type OrderSide = 'BUY' | 'SELL';
+export type TokenTransactionType = 'CREDIT' | 'DEBIT';
+
+export interface TokenTransactionDto {
+  id: string;
+  type: TokenTransactionType;
+  playerId: string;
+  playerName: string;
+  quantity: number;
+  price: string;
+  orderId: string;
+  counterpartOrderId: string;
+  createdAt: string;
+}
 export type OrderStatus = 'PENDING' | 'PARTIALLY_FILLED' | 'COMPLETED';
 
 export interface CreateOrderRequest {

@@ -186,4 +186,14 @@ export class OrdersService {
 
     return { order: plan.newOrderFinal, fills };
   }
+
+  async getHistory(userId: string): Promise<Array<TokenTransaction & { playerName: string }>> {
+    const transactions = await this.tokenTransactions.findByUserId(userId);
+    if (transactions.length === 0) return [];
+
+    const allPlayers = await this.players.findAllActive();
+    const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
+
+    return transactions.map((tx) => Object.assign(tx, { playerName: nameMap.get(tx.playerId) ?? tx.playerId }));
+  }
 }

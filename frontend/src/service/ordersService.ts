@@ -1,5 +1,5 @@
 import { httpClient } from './httpClient';
-import type { CreateOrderRequest, OrderResponseDto, OrderSide } from '../types/orders.types';
+import type { CreateOrderRequest, OrderResponseDto, OrderSide, TokenTransactionDto } from '../types/orders.types';
 
 /**
  * Cliente de API para órdenes (020-order-matching-engine). Única capa que
@@ -11,5 +11,9 @@ export const ordersService = {
   async createOrder(side: OrderSide, playerId: string, quantity: number): Promise<OrderResponseDto> {
     const body: CreateOrderRequest = { side, playerId, quantity };
     return httpClient.post<OrderResponseDto>('/orders', body);
+  },
+
+  async getHistory(): Promise<TokenTransactionDto[]> {
+    return httpClient.get<TokenTransactionDto[]>('/orders/history');
   },
 };

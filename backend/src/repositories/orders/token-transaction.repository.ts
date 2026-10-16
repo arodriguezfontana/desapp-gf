@@ -13,4 +13,7 @@ export interface TokenTransactionRepository {
 
   /** Insert dentro de una `Transaction` ya abierta (usado por el matching). */
   saveInTransaction(tx: Transaction, transaction: TokenTransaction): Promise<TokenTransaction>;
+
+  /** Historial de transacciones de un usuario, ordenado por fecha descendente. */
+  findByUserId(userId: string): Promise<TokenTransaction[]>;
 }

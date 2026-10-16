@@ -1,11 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePortfolio } from '../hooks/usePortfolio';
+import { useOrderHistory } from '../hooks/useOrderHistory';
 import { PortfolioSummary } from '../components/PortfolioSummary';
 import { HoldingList } from '../components/HoldingList';
+import { OperationHistory } from '../components/OperationHistory';
 
 export const PortfolioPage: React.FC = () => {
   const { summary, holdings, isEmpty, isLoading, error, refetch } = usePortfolio();
+  const { transactions, isLoading: isHistoryLoading, error: historyError } = useOrderHistory();
 
   let content: React.ReactNode;
 
@@ -62,6 +65,11 @@ export const PortfolioPage: React.FC = () => {
       <div className="space-y-8">
         <PortfolioSummary summary={summary} />
         <HoldingList holdings={holdings} />
+        <OperationHistory
+          transactions={transactions}
+          isLoading={isHistoryLoading}
+          error={historyError}
+        />
       </div>
     );
   }

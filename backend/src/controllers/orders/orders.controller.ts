@@ -1,10 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { OrdersService } from '../../services/orders/orders.service';
 import { CreateOrderRequestDto } from './dto/create-order-request.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
+import { TokenTransactionResponseDto } from './dto/token-transaction-response.dto';
 
 /**
  * POST /orders (020-order-matching-engine, contracts/orders-api.md).
@@ -33,5 +34,14 @@ export class OrdersController {
   ): Promise<OrderResponseDto> {
     const result = await this.ordersService.createOrder(userId, dto.playerId, dto.side, dto.quantity);
     return OrderResponseDto.fromDomain(result.order, result.fills);
+  }
+
+  @Get('history')
+  @ApiOperation({ summary: 'Devuelve el historial de transacciones de tokens del usuario autenticado, ordenado por fecha descendente.' })
+  @ApiResponse({ status: 200, type: [TokenTransactionResponseDto] })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async getHistory(@CurrentUser() userId: string): Promise<TokenTransactionResponseDto[]> {
+    const transactions = await this.ordersService.getHistory(userId);
+    return transactions.map((tx) => TokenTransactionResponseDto.fromDomain(tx));
   }
 }

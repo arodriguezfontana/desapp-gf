@@ -24,4 +24,12 @@ export class TypeOrmTokenTransactionRepository implements TokenTransactionReposi
     await tx.manager.getRepository(TokenTransactionEntity).insert(this.mapper.toEntity(transaction));
     return transaction;
   }
+
+  async findByUserId(userId: string): Promise<TokenTransaction[]> {
+    const entities = await this.repo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+    return entities.map((e) => this.mapper.toDomain(e));
+  }
 }
