@@ -1,5 +1,3 @@
-import type { Position } from './catalog.types';
-
 export interface SyncAcceptedDto {
   runId: string;
   status: 'running' | 'completed' | 'failed';
@@ -37,18 +35,4 @@ export interface SyncSummaryDto {
   failedLeagues: string[];
 }
 
-export interface RecalculateResponseDto {
-  processedPlayers: number;
-  errors: number;
-  durationMs: number;
-}
-
-export interface StrategyResponseDto {
-  id: string;
-  name: string;
-  weights: Record<string, number>;
-  factorEscala: number;
-  isActive: boolean;
-  positionWeights: Partial<Record<Position, Record<string, number>>>;
-}
 

@@ -1,79 +1,40 @@
-import { Controller, Get, HttpCode, NotFoundException, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
-import { Public } from '../../guards/public.decorator';
-import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
-import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { QuotationService } from '../../services/quotation/quotation.service';
-import { PlayerQuoteResponseDto } from './dto/player-quote-response.dto';
+import { RecalculateRequestDto } from './dto/recalculate-request.dto';
 import { RecalculateResponseDto } from './dto/recalculate-response.dto';
-import { StrategyResponseDto } from './dto/strategy-response.dto';
 
+/**
+ * Recálculo manual de cotizaciones, por usuario (019-per-user-valuation-strategies,
+ * reemplaza el job semanal global y el endpoint admin de
+ * 012-valuation-strategies). Bajo JwtAuthGuard (global): es una operación
+ * ligada a un usuario individual, no una operación de sistema (constitución,
+ * Principio IV).
+ */
 @ApiTags('quotes')
-@Public()
-@Controller('quotes')
+@ApiBearerAuth()
+@Controller('users/me/quotes')
 export class QuotationController {
   constructor(private readonly quotationService: QuotationService) {}
 
-  @Get('player/:playerId')
-  @Public()
-  @UseGuards(ApiKeyGuard)
-  @ApiSecurity('ApiKeyAuth')
-  @ApiOperation({
-    summary: 'Última cotización calculada para un jugador',
-    description: 'Devuelve el valor del token y el score del último recálculo para el jugador. 404 si el jugador no tiene cotizaciones todavía.',
-  })
-  @ApiResponse({ status: 200, type: PlayerQuoteResponseDto })
-  @ApiResponse({ status: 404, description: 'No hay cotización para este jugador' })
-  @ApiResponse({ status: 401, description: 'No autenticado' })
-  async getLatestQuote(@Param('playerId') playerId: string): Promise<PlayerQuoteResponseDto> {
-    const quote = await this.quotationService.getLatestQuoteByPlayerId(playerId);
-    if (!quote) {
-      throw new NotFoundException(`No hay cotización disponible para el jugador '${playerId}'.`);
-    }
-    return PlayerQuoteResponseDto.fromDomain(quote);
-  }
-
-  @Get('strategies')
-  @UseGuards(AdminApiKeyGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Listar estrategias de valuación',
-    description: 'Requiere ApiKey de admin. Devuelve todas las estrategias configuradas, indicando cuál está activa.',
-  })
-  @ApiResponse({ status: 200, type: [StrategyResponseDto] })
-  async listStrategies(): Promise<StrategyResponseDto[]> {
-    const strategies = await this.quotationService.listStrategies();
-    return strategies.map((strategy) => StrategyResponseDto.fromDomain(strategy));
-  }
-
-  @Patch('strategies/:id/activate')
-  @UseGuards(AdminApiKeyGuard)
-  @HttpCode(200)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Activar una estrategia de valuación',
-    description: 'Requiere ApiKey de admin. Desactiva la estrategia activa actual y activa la indicada. El próximo recálculo usará esta estrategia.',
-  })
-  @ApiResponse({ status: 200, type: StrategyResponseDto })
-  @ApiResponse({ status: 404, description: 'Estrategia no encontrada' })
-  async activateStrategy(@Param('id') id: string): Promise<StrategyResponseDto> {
-    const strategy = await this.quotationService.activateStrategy(id);
-    return StrategyResponseDto.fromDomain(strategy);
-  }
-
   @Post('recalculate')
-  @UseGuards(AdminApiKeyGuard)
   @HttpCode(200)
-  @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Recalcular cotizaciones de todos los jugadores activos',
+    summary: 'Recalcular mis cotizaciones',
     description:
-      'Requiere ApiKey de admin. Calcula y persiste una PlayerQuote por cada jugador activo usando la estrategia activa. Devuelve 409 si ya hay un recálculo en curso.',
+      'Recalcula y persiste cotizaciones usando mi estrategia seleccionada en este momento. Sin playerId, procesa todo el catálogo (salteando jugadores cuyo cálculo falle); con playerId, procesa solo ese jugador (rechaza todo si falla). Síncrono: la respuesta llega después de terminar.',
   })
   @ApiResponse({ status: 200, type: RecalculateResponseDto })
-  @ApiResponse({ status: 409, description: 'Recálculo ya en curso' })
-  @ApiResponse({ status: 422, description: 'No hay estrategia activa' })
-  async recalculate(): Promise<RecalculateResponseDto> {
-    return this.quotationService.recalculateAll();
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 404, description: 'playerId indicado no existe' })
+  @ApiResponse({ status: 409, description: 'Ya hay un recálculo propio en curso' })
+  @ApiResponse({ status: 422, description: 'Falló el cálculo del playerId puntual indicado' })
+  async recalculate(
+    @CurrentUser() userId: string,
+    @Body() body: RecalculateRequestDto,
+  ): Promise<RecalculateResponseDto> {
+    const result = await this.quotationService.recalculate(userId, body.playerId);
+    return RecalculateResponseDto.fromDomain(result);
   }
 }

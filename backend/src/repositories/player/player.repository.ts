@@ -24,10 +24,15 @@ export interface PlayerRepository {
   findById(id: string): Promise<Player | null>;
 
   /**
-   * Consulta el ranking de jugadores ordenados descendentemente por su última cotización
-   * (valor DESC, score DESC, id ASC) aplicando filtros opcionales y paginación en base de datos.
+   * Consulta el ranking de jugadores ordenados descendentemente por la
+   * última cotización propia de `userId` (valor DESC, score DESC, id ASC),
+   * aplicando filtros opcionales y paginación en base de datos.
+   * Acotado por usuario desde 019-per-user-valuation-strategies: el
+   * historial de cotizaciones es por usuario (DD-002), así que el ranking
+   * ya no puede mezclar cotizaciones de usuarios distintos.
    */
   findRanking(
+    userId: string,
     filters: PlayerFilters,
     pagination: PlayerPagination,
   ): Promise<PlayerRankingPage>;

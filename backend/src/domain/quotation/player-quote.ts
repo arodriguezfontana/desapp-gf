@@ -1,7 +1,9 @@
 import { Position } from '../player/enums/position';
 
 /**
- * Cotización calculada de un jugador en un momento dado.
+ * Cotización calculada de un jugador en un momento dado, generada por el
+ * recálculo manual de un usuario puntual (019-per-user-valuation-strategies,
+ * spec FR-015: queda asociada de forma inmutable al usuario que la disparó).
  *
  * Registra un snapshot completo de los parámetros de cálculo para garantizar
  * reproducibilidad histórica aunque la estrategia cambie después
@@ -14,6 +16,7 @@ import { Position } from '../player/enums/position';
 export class PlayerQuote {
   private constructor(
     private readonly _id: string,
+    private readonly _userId: string,
     private readonly _playerId: string,
     private readonly _strategyId: string,
     private readonly _weightSnapshot: Record<string, number>,
@@ -26,6 +29,7 @@ export class PlayerQuote {
 
   static create(props: {
     id: string;
+    userId: string;
     playerId: string;
     strategyId: string;
     weightSnapshot: Record<string, number>;
@@ -40,6 +44,7 @@ export class PlayerQuote {
 
   static restore(props: {
     id: string;
+    userId: string;
     playerId: string;
     strategyId: string;
     weightSnapshot: Record<string, number>;
@@ -51,6 +56,7 @@ export class PlayerQuote {
   }): PlayerQuote {
     return new PlayerQuote(
       props.id,
+      props.userId,
       props.playerId,
       props.strategyId,
       props.weightSnapshot,
@@ -63,6 +69,7 @@ export class PlayerQuote {
   }
 
   get id(): string { return this._id; }
+  get userId(): string { return this._userId; }
   get playerId(): string { return this._playerId; }
   get strategyId(): string { return this._strategyId; }
   get weightSnapshot(): Record<string, number> { return this._weightSnapshot; }

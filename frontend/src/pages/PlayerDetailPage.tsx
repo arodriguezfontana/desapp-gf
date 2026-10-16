@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
+import type { PlayerValuationResponseDto } from '../types/userStrategy.types';
 import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
 
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
@@ -85,9 +86,9 @@ const RatingCard: React.FC<{ label: string; value: number | null; max?: number; 
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { hasApiKey } = useApiKey();
-  const { getPlayerById, getLatestQuoteByPlayerId, getQuoteHistoryByPlayerId } = useCatalog();
+  const { getPlayerById, getMyValuationByPlayerId, getQuoteHistoryByPlayerId } = useCatalog();
   const [player, setPlayer] = useState<Player | null>(null);
-  const [quote, setQuote] = useState<PlayerQuote | null>(null);
+  const [quote, setQuote] = useState<PlayerValuationResponseDto | null>(null);
   const [quoteHistory, setQuoteHistory] = useState<PlayerQuote[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -100,12 +101,12 @@ export const PlayerDetailPage: React.FC = () => {
       setIsLoading(true);
       setErrorMessage(null);
       try {
-        const [data, latestQuote, history] = await Promise.all([
+        const [data, myValuation, history] = await Promise.all([
           getPlayerById(id),
-          getLatestQuoteByPlayerId(id),
+          getMyValuationByPlayerId(id),
           getQuoteHistoryByPlayerId(id),
         ]);
-        if (isMounted) { setPlayer(data); setQuote(latestQuote); setQuoteHistory(history); }
+        if (isMounted) { setPlayer(data); setQuote(myValuation); setQuoteHistory(history); }
       } catch (err: unknown) {
         if (!isMounted) return;
         if (err instanceof ApiError) setErrorMessage(err.message);
@@ -119,7 +120,7 @@ export const PlayerDetailPage: React.FC = () => {
 
     void fetchDetail();
     return () => { isMounted = false; };
-  }, [hasApiKey, id, getPlayerById, getLatestQuoteByPlayerId, getQuoteHistoryByPlayerId]);
+  }, [hasApiKey, id, getPlayerById, getMyValuationByPlayerId, getQuoteHistoryByPlayerId]);
 
   if (!hasApiKey) {
     return (
@@ -320,7 +321,7 @@ export const PlayerDetailPage: React.FC = () => {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white/40">
                   <span className="w-4 h-px bg-white/20" />
-                  Evolución del valor
+                  <span>Tu valuación de este jugador en el tiempo</span>
                   <span className="flex-1 h-px bg-white/10" />
                 </h2>
               </div>

@@ -16,16 +16,17 @@ describe('ValuationStrategy', () => {
     it('crea correctamente una estrategia válida', () => {
       const strategy = ValuationStrategy.create({
         id: 'id-1',
+        userId: 'user-1',
         name: 'Performance general',
         weights: VALID_WEIGHTS,
         factorEscala: 99,
-        isActive: true,
+        isSelected: true,
       });
 
       expect(strategy.id).toBe('id-1');
       expect(strategy.name).toBe('Performance general');
       expect(strategy.factorEscala).toBe(99);
-      expect(strategy.isActive).toBe(true);
+      expect(strategy.isSelected).toBe(true);
     });
 
     it('acepta pesos negativos si la suma algebraica es 1.0', () => {
@@ -43,10 +44,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-2',
+          userId: 'user-1',
           name: 'Impacto táctico',
           weights: weightsWithNegative,
           factorEscala: 99,
-          isActive: false,
+          isSelected: false,
         }),
       ).not.toThrow();
     });
@@ -57,10 +59,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-3',
+          userId: 'user-1',
           name: 'Bad',
           weights: badWeights,
           factorEscala: 99,
-          isActive: false,
+          isSelected: false,
         }),
       ).toThrow(InvalidStrategyWeightsError);
     });
@@ -71,10 +74,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-4',
+          userId: 'user-1',
           name: 'Bad',
           weights: badWeights,
           factorEscala: 99,
-          isActive: false,
+          isSelected: false,
         }),
       ).toThrow(InvalidStrategyWeightsError);
     });
@@ -84,10 +88,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-5',
+          userId: 'user-1',
           name: 'Edge',
           weights: { goals: 0.5, assists: 0.499 },
           factorEscala: 1,
-          isActive: false,
+          isSelected: false,
         }),
       ).not.toThrow();
     });
@@ -96,10 +101,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-6',
+          userId: 'user-1',
           name: 'Zero factor',
           weights: VALID_WEIGHTS,
           factorEscala: 0,
-          isActive: false,
+          isSelected: false,
         }),
       ).toThrow(InvalidStrategyWeightsError);
     });
@@ -108,10 +114,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-7',
+          userId: 'user-1',
           name: 'Negative factor',
           weights: VALID_WEIGHTS,
           factorEscala: -5,
-          isActive: false,
+          isSelected: false,
         }),
       ).toThrow(InvalidStrategyWeightsError);
     });
@@ -122,10 +129,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-8',
+          userId: 'user-1',
           name: 'Bad keys',
           weights: badWeights,
           factorEscala: 99,
-          isActive: false,
+          isSelected: false,
         }),
       ).toThrow(InvalidStrategyWeightsError);
     });
@@ -135,10 +143,11 @@ describe('ValuationStrategy', () => {
     it('acepta un perfil de posición cuyo subconjunto de métricas suma 1.0', () => {
       const strategy = ValuationStrategy.create({
         id: 'id-9',
+        userId: 'user-1',
         name: 'Con perfil',
         weights: VALID_WEIGHTS,
         factorEscala: 99,
-        isActive: true,
+        isSelected: true,
         positionWeights: {
           FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 },
         },
@@ -152,10 +161,11 @@ describe('ValuationStrategy', () => {
     it('acepta positionWeights ausente (estrategia sin ningún perfil)', () => {
       const strategy = ValuationStrategy.create({
         id: 'id-10',
+        userId: 'user-1',
         name: 'Sin perfil',
         weights: VALID_WEIGHTS,
         factorEscala: 99,
-        isActive: true,
+        isSelected: true,
       });
 
       expect(strategy.positionWeights).toEqual({});
@@ -165,10 +175,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-11',
+          userId: 'user-1',
           name: 'Perfil con negativos',
           weights: VALID_WEIGHTS,
           factorEscala: 99,
-          isActive: true,
+          isSelected: true,
           positionWeights: {
             FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.20, yellowCards: -0.05 },
           },
@@ -180,10 +191,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-12',
+          userId: 'user-1',
           name: 'Perfil inválido',
           weights: VALID_WEIGHTS,
           factorEscala: 99,
-          isActive: true,
+          isSelected: true,
           positionWeights: {
             FW: { goals: 0.5, shots: 0.3 }, // suma 0.8
           },
@@ -195,10 +207,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-13',
+          userId: 'user-1',
           name: 'Perfil con métrica inválida',
           weights: VALID_WEIGHTS,
           factorEscala: 99,
-          isActive: true,
+          isSelected: true,
           positionWeights: {
             GK: { saves: 1.0 },
           },
@@ -210,10 +223,11 @@ describe('ValuationStrategy', () => {
       expect(() =>
         ValuationStrategy.create({
           id: 'id-14',
+          userId: 'user-1',
           name: 'Mix',
           weights: VALID_WEIGHTS,
           factorEscala: 99,
-          isActive: true,
+          isSelected: true,
           positionWeights: {
             FW: { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 },
             MF: { assists: 0.9 }, // suma 0.9, fuera de tolerancia
@@ -228,46 +242,49 @@ describe('ValuationStrategy', () => {
       // Pesos inválidos no lanzan error en restore()
       const strategy = ValuationStrategy.restore({
         id: 'id-restore',
+        userId: 'user-1',
         name: 'Restored',
         weights: { goals: 999 },
         factorEscala: 99,
-        isActive: true,
+        isSelected: true,
       });
 
       expect(strategy.id).toBe('id-restore');
     });
   });
 
-  describe('activate() / deactivate()', () => {
-    it('activate() retorna una nueva instancia con isActive = true', () => {
+  describe('select() / deselect()', () => {
+    it('select() retorna una nueva instancia con isActive = true', () => {
       const strategy = ValuationStrategy.restore({
         id: 'id-activate',
+        userId: 'user-1',
         name: 'Test',
         weights: VALID_WEIGHTS,
         factorEscala: 99,
-        isActive: false,
+        isSelected: false,
       });
 
-      const activated = strategy.activate();
+      const selected = strategy.select();
 
-      expect(activated.isActive).toBe(true);
-      expect(strategy.isActive).toBe(false); // original no mutado
-      expect(activated).not.toBe(strategy);
+      expect(selected.isSelected).toBe(true);
+      expect(strategy.isSelected).toBe(false); // original no mutado
+      expect(selected).not.toBe(strategy);
     });
 
-    it('deactivate() retorna una nueva instancia con isActive = false', () => {
+    it('deselect() retorna una nueva instancia con isActive = false', () => {
       const strategy = ValuationStrategy.restore({
         id: 'id-deactivate',
+        userId: 'user-1',
         name: 'Test',
         weights: VALID_WEIGHTS,
         factorEscala: 99,
-        isActive: true,
+        isSelected: true,
       });
 
-      const deactivated = strategy.deactivate();
+      const deselected = strategy.deselect();
 
-      expect(deactivated.isActive).toBe(false);
-      expect(strategy.isActive).toBe(true); // original no mutado
+      expect(deselected.isSelected).toBe(false);
+      expect(strategy.isSelected).toBe(true); // original no mutado
     });
   });
 
@@ -275,10 +292,11 @@ describe('ValuationStrategy', () => {
     it('retorna una copia superficial para no exponer el estado interno', () => {
       const strategy = ValuationStrategy.restore({
         id: 'id-immutable',
+        userId: 'user-1',
         name: 'Test',
         weights: { goals: 1.0 },
         factorEscala: 99,
-        isActive: true,
+        isSelected: true,
       });
 
       const weights = strategy.weights;

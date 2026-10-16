@@ -5,21 +5,19 @@ import { ValuationStrategyEntity } from '../../src/repositories/quotation/entiti
 import { PlayerQuoteEntity } from '../../src/repositories/quotation/entities/player-quote.entity';
 import { createTestApp, TestContext } from '../test-app';
 
-describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
+describe('GET /players/ranking (e2e, spec 016 + 019-per-user-valuation-strategies)', () => {
   let ctx: TestContext;
   const server = () => ctx.app.getHttpServer();
 
-  let testApiKey: string;
   let userToken: string;
+  let userId: string;
   let strategyA: ValuationStrategyEntity;
   let strategyB: ValuationStrategyEntity;
 
-  const registerLoginAndIssueApiKey = async (email: string) => {
-    await request(server()).post('/auth/register').send({ email, password: 'Password123!' });
+  const registerAndLogin = async (email: string) => {
+    const register = await request(server()).post('/auth/register').send({ email, password: 'Password123!' });
     const login = await request(server()).post('/auth/login').send({ email, password: 'Password123!' });
-    const token = login.body.accessToken as string;
-    const issued = await request(server()).post('/auth/api-key').set('Authorization', `Bearer ${token}`);
-    return { token, apiKey: issued.body.apiKey as string };
+    return { token: login.body.accessToken as string, userId: register.body.id as string };
   };
 
   const createPlayer = async (props: {
@@ -62,6 +60,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
   }): Promise<PlayerQuoteEntity> => {
     return ctx.dataSource.getRepository(PlayerQuoteEntity).save({
       id: randomUUID(),
+      userId,
       playerId: props.playerId,
       strategyId: props.strategyId,
       weightSnapshot: { rating: 1 },
@@ -75,26 +74,32 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
   beforeAll(async () => {
     ctx = await createTestApp();
-    const auth = await registerLoginAndIssueApiKey('ranking-e2e@mail.com');
-    testApiKey = auth.apiKey;
+    const auth = await registerAndLogin('ranking-e2e@mail.com');
     userToken = auth.token;
+    userId = auth.userId;
 
     const stratRepo = ctx.dataSource.getRepository(ValuationStrategyEntity);
+    // El alta ya provisionó automáticamente las dos estrategias default del
+    // usuario (019-per-user-valuation-strategies, FR-001); se reemplazan por
+    // las de este fixture para controlar exactamente los pesos del test.
+    await stratRepo.delete({ userId });
     strategyA = await stratRepo.save({
       id: randomUUID(),
+      userId,
       name: 'Estrategia Clásica',
       weights: { rating: 1 },
       factorEscala: '99.0000',
-      isActive: true,
+      isSelected: true,
       positionWeights: null,
     });
 
     strategyB = await stratRepo.save({
       id: randomUUID(),
+      userId,
       name: 'Estrategia Moderna',
       weights: { goals: 1 },
       factorEscala: '99.0000',
-      isActive: false,
+      isSelected: false,
       positionWeights: null,
     });
   });
@@ -116,7 +121,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
     await ctx.dataSource.getRepository(PlayerEntity).clear();
   });
 
-  describe('US1: Consultar ranking general ordenado por valor (MVP)', () => {
+  describe('US1: Consultar mi ranking general ordenado por valor (MVP)', () => {
     it('devuelve jugadores ordenados descendentemente por valor, con rank correlativo y campos de cotización', async () => {
       const p1 = await createPlayer({ name: 'Lionel Messi', league: 'La Liga', team: 'FC Barcelona', position: 'FW' });
       const p2 = await createPlayer({ name: 'Cristiano Ronaldo', league: 'La Liga', team: 'Real Madrid', position: 'FW' });
@@ -129,7 +134,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       const res = await request(server())
         .get('/players/ranking')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body.total).toBe(3);
@@ -176,7 +181,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       const res = await request(server())
         .get('/players/ranking')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body.items).toHaveLength(2);
@@ -198,7 +203,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
       // Página 1 (pageSize 2) -> Jugador 5 (500) y Jugador 4 (400) -> ranks 1 y 2
       const page1 = await request(server())
         .get('/players/ranking?page=1&pageSize=2')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(page1.body.total).toBe(5);
@@ -211,7 +216,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
       // Página 2 (pageSize 2) -> Jugador 3 (300) y Jugador 2 (200) -> ranks 3 y 4
       const page2 = await request(server())
         .get('/players/ranking?page=2&pageSize=2')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(page2.body.total).toBe(5);
@@ -228,7 +233,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       const res = await request(server())
         .get('/players/ranking?page=99&pageSize=10')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body.total).toBe(1);
@@ -240,17 +245,17 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
     it('rechaza con 400 Bad Request ante parámetros de paginación inválidos', async () => {
       await request(server())
         .get('/players/ranking?page=0')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(400);
 
       await request(server())
         .get('/players/ranking?pageSize=0')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(400);
 
       await request(server())
         .get('/players/ranking?pageSize=100')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(400);
     });
   });
@@ -270,7 +275,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       const res = await request(server())
         .get('/players/ranking?league=La%20Liga&position=MF')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body.total).toBe(2);
@@ -291,7 +296,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       const res = await request(server())
         .get('/players/ranking?team=barcelona')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body.total).toBe(1);
@@ -304,7 +309,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       const res = await request(server())
         .get('/players/ranking?team=EquipoFantasma')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body).toEqual({
@@ -318,12 +323,12 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
     it('rechaza con 400 Bad Request si la liga o posición son inválidas', async () => {
       await request(server())
         .get('/players/ranking?league=LigaInvalida')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(400);
 
       await request(server())
         .get('/players/ranking?position=ARQUERO')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(400);
     });
   });
@@ -340,7 +345,7 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       const res = await request(server())
         .get('/players/ranking')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body.total).toBe(1);
@@ -355,12 +360,12 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
 
       // Cotización antigua con estrategia A
       await createQuote({ playerId: player.id, strategyId: strategyA.id, value: 200.0, score: 0.75, calculatedAt: oldDate });
-      // Cotización reciente con estrategia B (incluso si estrategia B no está activa hoy)
+      // Cotización reciente con estrategia B (incluso si estrategia B no está seleccionada hoy)
       await createQuote({ playerId: player.id, strategyId: strategyB.id, value: 450.0, score: 0.91, calculatedAt: latestDate });
 
       const res = await request(server())
         .get('/players/ranking')
-        .set('x-api-key', testApiKey)
+        .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
       expect(res.body.total).toBe(1);
@@ -371,26 +376,33 @@ describe('GET /players/ranking (e2e, spec 016 - Ranking de Jugadores)', () => {
     });
   });
 
-  describe('US5: Protección de acceso mediante ApiKey', () => {
-    it('responde 401 Unauthorized si se omite el header x-api-key', async () => {
+  describe('US5: El ranking es propio de cada usuario (019-per-user-valuation-strategies)', () => {
+    it('responde 401 Unauthorized si se omite el JWT', async () => {
       await request(server())
         .get('/players/ranking')
         .expect(401);
     });
 
-    it('responde 401 Unauthorized si se provee una x-api-key inválida', async () => {
+    it('responde 401 Unauthorized si el JWT es inválido', async () => {
       await request(server())
         .get('/players/ranking')
-        .set('x-api-key', 'clave-totalmente-invalida')
+        .set('Authorization', 'Bearer token-invalido')
         .expect(401);
     });
 
-    it('responde 401 Unauthorized si se envía un token JWT en lugar de x-api-key', async () => {
-      await request(server())
+    it('un usuario que nunca recalculó ve su ranking vacío, aunque otro usuario sí tenga cotizaciones', async () => {
+      const p = await createPlayer({ name: 'Solo de A', league: 'La Liga', team: 'Sevilla', position: 'FW' });
+      await createQuote({ playerId: p.id, strategyId: strategyA.id, value: 300.0, score: 0.8, calculatedAt: new Date() });
+
+      const other = await registerAndLogin('ranking-e2e-other@mail.com');
+
+      const res = await request(server())
         .get('/players/ranking')
-        .set('Authorization', `Bearer ${userToken}`)
-        .expect(401);
+        .set('Authorization', `Bearer ${other.token}`)
+        .expect(200);
+
+      expect(res.body.total).toBe(0);
+      expect(res.body.items).toEqual([]);
     });
   });
 });
-

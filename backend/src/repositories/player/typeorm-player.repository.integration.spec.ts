@@ -10,6 +10,7 @@ import { Position } from '../../domain/player/enums/position';
 import { PlayerSyncInput } from '../../domain/player/player-sync-input';
 import { PlayerQuoteEntity } from '../quotation/entities/player-quote.entity';
 import { ValuationStrategyEntity } from '../quotation/entities/valuation-strategy.entity';
+import { UserEntity } from '../auth/entities/user.entity';
 import { PlayerEntity } from './entities/player.entity';
 import { PlayerMapper } from './mappers/player.mapper';
 import { TypeOrmPlayerRepository } from './typeorm-player.repository';
@@ -24,7 +25,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         DatabaseModule,
-        TypeOrmModule.forFeature([PlayerEntity, PlayerQuoteEntity, ValuationStrategyEntity]),
+        TypeOrmModule.forFeature([PlayerEntity, PlayerQuoteEntity, ValuationStrategyEntity, UserEntity]),
       ],
       providers: [PlayerMapper, TypeOrmPlayerRepository],
     }).compile();
@@ -205,13 +206,24 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
   describe('findRanking', () => {
     let strategyId: string;
     let otherStrategyId: string;
+    let userId: string;
 
-    const createStrategy = async (name: string, isActive = true): Promise<string> => {
+    const createUser = async (): Promise<string> => {
+      const id = randomUUID();
+      await dataSource.getRepository(UserEntity).insert({
+        id,
+        email: `${id}@test.local`,
+        passwordHash: '$2b$10$abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1',
+      });
+      return id;
+    };
+
+    const createStrategy = async (name: string, isSelected = true): Promise<string> => {
       const id = randomUUID();
       await dataSource.query(
-        `INSERT INTO "valuation_strategies" ("id", "name", "weights", "factor_escala", "is_active")
-         VALUES ($1, $2, $3, $4, $5)`,
-        [id, name, JSON.stringify({ rating: 1 }), '99.0000', isActive],
+        `INSERT INTO "valuation_strategies" ("id", "user_id", "name", "weights", "factor_escala", "is_selected")
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [id, userId, name, JSON.stringify({ rating: 1 }), '99.0000', isSelected],
       );
       return id;
     };
@@ -249,10 +261,11 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
     }): Promise<string> => {
       const id = randomUUID();
       await dataSource.query(
-        `INSERT INTO "player_quotes" ("id", "player_id", "strategy_id", "weight_snapshot", "factor_escala_snapshot", "score", "value", "calculated_at")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO "player_quotes" ("id", "user_id", "player_id", "strategy_id", "weight_snapshot", "factor_escala_snapshot", "score", "value", "calculated_at")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           id,
+          userId,
           props.playerId,
           props.strategyId,
           JSON.stringify({ rating: 1 }),
@@ -266,6 +279,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
     };
 
     beforeEach(async () => {
+      userId = await createUser();
       strategyId = await createStrategy('Estrategia Principal', true);
       otherStrategyId = await createStrategy('Estrategia Histórica', false);
     });
@@ -277,6 +291,9 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
           strategyId,
           otherStrategyId,
         ]);
+      }
+      if (userId) {
+        await dataSource.query('DELETE FROM "users" WHERE id = $1', [userId]);
       }
       await dataSource.getRepository(PlayerEntity).clear();
     });
@@ -294,7 +311,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       await createQuote({ playerId: p3.id, strategyId, value: 50000000, score: 7.5, calculatedAt: now });
       await createQuote({ playerId: p4.id, strategyId, value: 50000000, score: 8.0, calculatedAt: now });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(4);
       expect(result.items.map((i) => i.player.name)).toEqual([
@@ -314,7 +331,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
 
       await createQuote({ playerId: pWithQuote.id, strategyId, value: 35000000, score: 7.2, calculatedAt: new Date() });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(1);
       expect(result.items[0].player.name).toBe('Con Cotización');
@@ -328,7 +345,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       await createQuote({ playerId: activePlayer.id, strategyId, value: 40000000, score: 8.0, calculatedAt: now });
       await createQuote({ playerId: removedPlayer.id, strategyId, value: 60000000, score: 8.9, calculatedAt: now });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(1);
       expect(result.items[0].player.name).toBe('Activo');
@@ -345,7 +362,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       // Cotización reciente con estrategia principal
       await createQuote({ playerId: player.id, strategyId, value: 75000000, score: 8.7, calculatedAt: latestDate });
 
-      const result = await repository.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
 
       expect(result.total).toBe(1);
       expect(result.items[0].valor).toBe(75000000);
@@ -369,7 +386,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       await createQuote({ playerId: p5.id, strategyId, value: 85000000, score: 8.8, calculatedAt: now });
 
       // Filtro por league y position
-      const mfLaLiga = await repository.findRanking(
+      const mfLaLiga = await repository.findRanking(userId, 
         { league: League.LA_LIGA, position: Position.MF },
         { page: 1, pageSize: 10 },
       );
@@ -377,7 +394,7 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       expect(mfLaLiga.items.map((i) => i.player.name)).toEqual(['Bellingham', 'Pedri', 'Gavi']);
 
       // Filtro por team (parcial e insensible a mayúsculas)
-      const barcaMF = await repository.findRanking(
+      const barcaMF = await repository.findRanking(userId, 
         { team: 'barcelona', position: Position.MF },
         { page: 1, pageSize: 10 },
       );
@@ -393,27 +410,27 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
       }
 
       // Página 1 (pageSize 2) -> Jugador 5 (50M) y Jugador 4 (40M)
-      const page1 = await repository.findRanking({}, { page: 1, pageSize: 2 });
+      const page1 = await repository.findRanking(userId, {}, { page: 1, pageSize: 2 });
       expect(page1.total).toBe(5);
       expect(page1.items).toHaveLength(2);
       expect(page1.items[0].player.name).toBe('Jugador 5');
       expect(page1.items[1].player.name).toBe('Jugador 4');
 
       // Página 2 (pageSize 2) -> Jugador 3 (30M) y Jugador 2 (20M)
-      const page2 = await repository.findRanking({}, { page: 2, pageSize: 2 });
+      const page2 = await repository.findRanking(userId, {}, { page: 2, pageSize: 2 });
       expect(page2.total).toBe(5);
       expect(page2.items).toHaveLength(2);
       expect(page2.items[0].player.name).toBe('Jugador 3');
       expect(page2.items[1].player.name).toBe('Jugador 2');
 
       // Página 99 (fuera de rango) -> items vacíos, total 5
-      const page99 = await repository.findRanking({}, { page: 99, pageSize: 2 });
+      const page99 = await repository.findRanking(userId, {}, { page: 99, pageSize: 2 });
       expect(page99.total).toBe(5);
       expect(page99.items).toEqual([]);
     });
 
     it('devuelve items vacíos y total 0 ante filtros sin coincidencias o sin cotizaciones', async () => {
-      const result = await repository.findRanking(
+      const result = await repository.findRanking(userId, 
         { team: 'Equipo Inexistente' },
         { page: 1, pageSize: 10 },
       );

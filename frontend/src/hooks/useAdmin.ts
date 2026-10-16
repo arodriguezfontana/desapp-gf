@@ -1,12 +1,6 @@
 import { useCallback } from 'react';
 import { adminService } from '../service/adminService';
-import type {
-  SyncAcceptedDto,
-  SyncRunStatusDto,
-  SyncSummaryDto,
-  RecalculateResponseDto,
-  StrategyResponseDto,
-} from '../types/admin.types';
+import type { SyncAcceptedDto, SyncRunStatusDto, SyncSummaryDto } from '../types/admin.types';
 
 /**
  * Hook para encapsular las llamadas de administración (`service/adminService`)
@@ -29,28 +23,9 @@ export function useAdmin() {
     return adminService.triggerFootballDataSync();
   }, []);
 
-  const recalculateQuotes = useCallback((): Promise<RecalculateResponseDto> => {
-    return adminService.recalculateQuotes();
-  }, []);
-
-  const listStrategies = useCallback((): Promise<StrategyResponseDto[]> => {
-    return adminService.listStrategies();
-  }, []);
-
-  const activateStrategy = useCallback(
-    (strategyId: string): Promise<StrategyResponseDto> => {
-      return adminService.activateStrategy(strategyId);
-    },
-    [],
-  );
-
   return {
     triggerWhoScoredSync,
     getWhoScoredRunStatus,
     triggerFootballDataSync,
-    recalculateQuotes,
-    listStrategies,
-    activateStrategy,
   };
 }
-

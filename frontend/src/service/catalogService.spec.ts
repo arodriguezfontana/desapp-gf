@@ -107,30 +107,37 @@ describe('catalogService', () => {
     expect(getSpy).toHaveBeenCalledWith('/players/player-1', { useApiKey: true });
   });
 
-  it('getLatestQuoteByPlayerId llama a /quotes/player/:id con useApiKey: true y retorna la cotización', async () => {
-    const quoteMock = {
-      id: 'q-1',
+  it('getMyValuationByPlayerId llama a /players/:id/valuation (JWT, sin useApiKey) y retorna la valuación', async () => {
+    const valuationMock = {
       playerId: 'player-1',
       strategyId: 's-1',
       score: 0.75,
       value: 75.25,
-      calculatedAt: '2026-10-08T00:00:00.000Z',
+      appliedPosition: null,
     };
 
-    const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValueOnce(quoteMock);
+    const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValueOnce(valuationMock);
 
-    const result = await catalogService.getLatestQuoteByPlayerId('player-1');
+    const result = await catalogService.getMyValuationByPlayerId('player-1');
 
-    expect(result).toEqual(quoteMock);
-    expect(getSpy).toHaveBeenCalledWith('/quotes/player/player-1', { useApiKey: true });
+    expect(result).toEqual(valuationMock);
+    expect(getSpy).toHaveBeenCalledWith('/players/player-1/valuation');
   });
 
-  it('getLatestQuoteByPlayerId retorna null cuando httpClient lanza cualquier error (incluido 404)', async () => {
+  it('getMyValuationByPlayerId retorna null cuando httpClient lanza cualquier error (incluido 401/404)', async () => {
     vi.spyOn(httpClient, 'get').mockRejectedValueOnce(new Error('Not Found'));
 
-    const result = await catalogService.getLatestQuoteByPlayerId('player-999');
+    const result = await catalogService.getMyValuationByPlayerId('player-999');
 
     expect(result).toBeNull();
+  });
+
+  it('getQuoteHistoryByPlayerId llama a /players/:id/quotes sin useApiKey (JWT)', async () => {
+    const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValueOnce([]);
+
+    await catalogService.getQuoteHistoryByPlayerId('player-1');
+
+    expect(getSpy).toHaveBeenCalledWith('/players/player-1/quotes');
   });
 });
 

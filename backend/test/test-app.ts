@@ -2,7 +2,6 @@ import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
-import { UserEntity } from '../src/repositories/auth/entities/user.entity';
 import { runPlayerCatalogMigrations } from '../src/database/run-player-catalog-migrations';
 import { createGlobalValidationPipe } from '../src/shared/validation/global-validation-pipe';
 
@@ -40,7 +39,17 @@ export async function createTestApp(overrides?: ProviderOverride[]): Promise<Tes
   await runPlayerCatalogMigrations();
 
   const dataSource = app.get<DataSource>(DataSource);
-  const clearUsers = () => dataSource.getRepository(UserEntity).clear();
+  // DELETE, no .clear() (TRUNCATE): valuation_strategies y player_quotes
+  // tienen FK hacia users (019-per-user-valuation-strategies, cada alta
+  // provisiona dos estrategias propias). TRUNCATE rechaza CUALQUIER tabla
+  // referenciada por una FK aunque esa tabla ya esté vacía — no alcanza con
+  // vaciar las tablas hijas antes, también hay que usar DELETE (no .clear())
+  // sobre "users" mismo.
+  const clearUsers = async () => {
+    await dataSource.query('DELETE FROM "player_quotes"');
+    await dataSource.query('DELETE FROM "valuation_strategies"');
+    await dataSource.query('DELETE FROM "users"');
+  };
 
   return {
     app,

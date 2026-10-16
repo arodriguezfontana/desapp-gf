@@ -9,6 +9,7 @@ export class PlayerQuoteMapper {
   toDomain(entity: PlayerQuoteEntity): PlayerQuote {
     return PlayerQuote.restore({
       id: entity.id,
+      userId: entity.userId,
       playerId: entity.playerId,
       strategyId: entity.strategyId,
       weightSnapshot: entity.weightSnapshot,
@@ -23,6 +24,7 @@ export class PlayerQuoteMapper {
   toPersistence(domain: PlayerQuote): Partial<PlayerQuoteEntity> {
     return {
       id: domain.id,
+      userId: domain.userId,
       playerId: domain.playerId,
       strategyId: domain.strategyId,
       weightSnapshot: domain.weightSnapshot,

@@ -19,28 +19,9 @@ export class TypeOrmPlayerQuoteRepository implements PlayerQuoteRepository {
     await this.repo.insert(quotes.map((q) => this.mapper.toPersistence(q)));
   }
 
-  async findLatestByPlayerId(playerId: string): Promise<PlayerQuote | null> {
-    const entity = await this.repo.findOne({
-      where: { playerId },
-      order: { calculatedAt: 'DESC' },
-    });
-    return entity ? this.mapper.toDomain(entity) : null;
-  }
-
-  async findLatestAtDate(playerId: string, date: Date): Promise<PlayerQuote | null> {
-    const entity = await this.repo
-      .createQueryBuilder('quote')
-      .where('quote.playerId = :playerId', { playerId })
-      .andWhere('quote.calculatedAt <= :date', { date })
-      .orderBy('quote.calculatedAt', 'DESC')
-      .limit(1)
-      .getOne();
-    return entity ? this.mapper.toDomain(entity) : null;
-  }
-
-  async findAllByPlayerId(playerId: string): Promise<PlayerQuote[]> {
+  async findAllByPlayerIdAndUserId(playerId: string, userId: string): Promise<PlayerQuote[]> {
     const entities = await this.repo.find({
-      where: { playerId },
+      where: { playerId, userId },
       order: { calculatedAt: 'ASC' },
     });
     return entities.map((entity) => this.mapper.toDomain(entity));

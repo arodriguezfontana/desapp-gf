@@ -24,10 +24,11 @@ function makeStrategy(
 ): ValuationStrategy {
   return ValuationStrategy.restore({
     id: 'strategy-1',
+    userId: 'user-1',
     name: 'Test',
     weights,
     factorEscala,
-    isActive: true,
+    isSelected: true,
     positionWeights,
   });
 }

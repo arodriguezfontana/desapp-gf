@@ -22,10 +22,23 @@ export class CreateQuotationTables1791504000000 implements MigrationInterface {
       )
     `);
 
+    // Guard: en una base fresca (Testcontainers/CI), `synchronize: true` ya crea
+    // la tabla con el esquema actual (`is_selected`, 019-per-user-valuation-strategies)
+    // antes de que corran las migraciones; ahí "is_active" nunca existió y este
+    // índice histórico no aplica. En un entorno real con `synchronize: false`
+    // donde esta migración corre contra el esquema de 012 tal cual era, la
+    // columna sí existe y el índice se crea igual que siempre.
     await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "idx_valuation_strategies_active"
-        ON "valuation_strategies" ("is_active")
-        WHERE "is_active" = true
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'valuation_strategies' AND column_name = 'is_active'
+        ) THEN
+          CREATE INDEX IF NOT EXISTS "idx_valuation_strategies_active"
+            ON "valuation_strategies" ("is_active")
+            WHERE "is_active" = true;
+        END IF;
+      END $$;
     `);
 
     await queryRunner.query(`

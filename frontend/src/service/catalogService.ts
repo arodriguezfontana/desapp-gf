@@ -1,5 +1,6 @@
 import { httpClient } from './httpClient';
 import type { Player, PlayerListResponseDto, PlayerQuote } from '../types/catalog.types';
+import type { PlayerValuationResponseDto as PlayerValuation } from '../types/userStrategy.types';
 
 export interface GetPlayersParams {
   page?: number;
@@ -64,15 +65,21 @@ export const catalogService = {
     return httpClient.get<Player>(`/players/${id}`, { useApiKey: true });
   },
 
-  async getLatestQuoteByPlayerId(playerId: string): Promise<PlayerQuote | null> {
+  /**
+   * Valuación al vuelo del jugador según mi estrategia seleccionada
+   * (019-per-user-valuation-strategies, JWT — reemplaza el extinto
+   * GET /quotes/player/:playerId de 012, que era global y sin dueño).
+   */
+  async getMyValuationByPlayerId(playerId: string): Promise<PlayerValuation | null> {
     try {
-      return await httpClient.get<PlayerQuote>(`/quotes/player/${playerId}`, { useApiKey: true });
+      return await httpClient.get<PlayerValuation>(`/players/${playerId}/valuation`);
     } catch {
       return null;
     }
   },
 
+  /** Mi propio historial de cotizaciones de este jugador (JWT, acotado por usuario). */
   async getQuoteHistoryByPlayerId(playerId: string): Promise<PlayerQuote[]> {
-    return httpClient.get<PlayerQuote[]>(`/players/${playerId}/quotes`, { useApiKey: true });
+    return httpClient.get<PlayerQuote[]>(`/players/${playerId}/quotes`);
   },
 };

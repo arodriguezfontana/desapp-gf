@@ -1,9 +1,9 @@
-import { Controller, Get, HttpStatus, Param, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 import { Public } from '../../guards/public.decorator';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
+import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { parseLeague } from '../../domain/player/enums/league';
 import { parsePosition } from '../../domain/player/enums/position';
 import { PlayerFilters } from '../../domain/player/player-filters';
@@ -13,20 +13,22 @@ import { ListPlayersQueryDto } from './dto/list-players-query.dto';
 import { PlayerListResponseDto } from './dto/player-list-response.dto';
 import { PlayerRankingListResponseDto } from './dto/player-ranking-list-response.dto';
 import { PlayerResponseDto } from './dto/player-response.dto';
-import { PlayerQuoteDetailResponseDto } from './dto/player-quote-detail-response.dto';
+import { PlayerValuationQueryDto } from './dto/player-valuation-query.dto';
+import { PlayerValuationResponseDto } from './dto/player-valuation-response.dto';
 import { PlayerQuoteResponseDto } from '../quotation/dto/player-quote-response.dto';
-import { ParseDatePipe } from './pipes/parse-date.pipe';
 
 /**
- * Catálogo de jugadores (datos de prueba). Protegido con ApiKey, no con JWT
- * (constitución, Principio IV — ver spec § Design Decisions y plan.md § Constitution
- * Check): `@Public()` lo exime del `JwtAuthGuard` global, `ApiKeyGuard` es el único
- * mecanismo de autenticación que exige.
+ * Catálogo de jugadores (datos de prueba). El listado, el ranking y el
+ * detalle quedan protegidos con ApiKey, no con JWT (constitución, Principio
+ * IV — ver spec 012 § Design Decisions): `@Public()` + `ApiKeyGuard` a nivel
+ * de método exime esos endpoints del `JwtAuthGuard` global.
+ *
+ * `:id/valuation` y `:id/quotes` son operaciones ligadas a un usuario
+ * individual (019-per-user-valuation-strategies, spec Assumptions): exigen
+ * JWT, por eso NO llevan `@Public()`/`ApiKeyGuard` y quedan bajo el
+ * `JwtAuthGuard` global por defecto.
  */
 @ApiTags('players')
-@ApiSecurity('ApiKeyAuth')
-@Public()
-@UseGuards(ApiKeyGuard)
 @Controller('players')
 export class PlayerController {
   constructor(
@@ -35,6 +37,9 @@ export class PlayerController {
   ) {}
 
   @Get()
+  @Public()
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('ApiKeyAuth')
   @ApiOperation({
     summary:
       'Lista el catálogo de jugadores de prueba, con filtros y paginación',
@@ -67,11 +72,12 @@ export class PlayerController {
   }
 
   @Get('ranking')
+  @ApiBearerAuth()
   @ApiOperation({
     summary:
-      'Ranking de jugadores ordenados descendentemente por su cotización vigente',
+      'Mi ranking de jugadores ordenados descendentemente por mi cotización vigente',
     description:
-      'Retorna el listado de jugadores ordenados por valor desc, score desc, id asc bajo la estrategia activa o más reciente. Solo incluye jugadores con cotizaciones calculadas.',
+      'Retorna el listado de jugadores ordenados por valor desc, score desc, id asc, según las cotizaciones que yo mismo generé con mis propios recálculos (019-per-user-valuation-strategies). Solo incluye jugadores con al menos una cotización propia.',
   })
   @ApiQuery({
     name: 'league',
@@ -105,9 +111,10 @@ export class PlayerController {
   })
   @ApiResponse({ status: 200, type: PlayerRankingListResponseDto })
   @ApiResponse({ status: 400, description: 'Filtro o paginación inválidos.' })
-  @ApiResponse({ status: 401, description: 'API key inválida o ausente.' })
+  @ApiResponse({ status: 401, description: 'No autenticado.' })
   async ranking(
     @Query() query: ListPlayersQueryDto,
+    @CurrentUser() userId: string,
   ): Promise<PlayerRankingListResponseDto> {
     const filters: PlayerFilters = {
       league: query.league ? parseLeague(query.league) : undefined,
@@ -115,7 +122,7 @@ export class PlayerController {
       position: query.position ? parsePosition(query.position) : undefined,
     };
 
-    const result = await this.players.getRankingWithCrests(filters, {
+    const result = await this.players.getRankingWithCrests(userId, filters, {
       page: query.page,
       pageSize: query.pageSize,
     });
@@ -127,6 +134,9 @@ export class PlayerController {
   }
 
   @Get(':id')
+  @Public()
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('ApiKeyAuth')
   @ApiOperation({ summary: 'Detalle de un jugador puntual del catálogo de prueba' })
   @ApiResponse({ status: 200, type: PlayerResponseDto })
   @ApiResponse({ status: 401, description: 'No autenticado.' })
@@ -136,47 +146,47 @@ export class PlayerController {
     return PlayerResponseDto.fromDomain(player, crestUrl);
   }
 
-  @Get(':id/quote')
+  @Get(':id/valuation')
+  @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Cotización vigente o histórica de un jugador',
+    summary: 'Cuánto valdría este jugador según mi estrategia',
     description:
-      'Devuelve el valor del token, score normalizado, snapshot de pesos y estrategia aplicada. Si "at" está presente, devuelve la cotización vigente al final de ese día UTC (23:59:59.999Z). Si "at" está ausente, devuelve la última cotización sin restricción de fecha. Retorna 204 si el jugador existe pero no tiene cotizaciones para esa fecha.',
+      'Calcula al vuelo el valor del jugador con mi estrategia seleccionada, o con la indicada por query si es una de mis dos estrategias propias. No persiste ningún registro (019-per-user-valuation-strategies, spec FR-010/FR-011).',
   })
   @ApiQuery({
-    name: 'at',
+    name: 'strategyId',
     required: false,
-    description: 'Fecha en formato ISO 8601 (ej. 2026-09-15)',
+    description: 'Id de una de mis dos estrategias propias, para usar en este cálculo puntual en lugar de la seleccionada',
     type: String,
   })
-  @ApiResponse({ status: 200, type: PlayerQuoteDetailResponseDto })
-  @ApiResponse({ status: 204, description: 'El jugador no posee cotización calculada para esa fecha.' })
-  @ApiResponse({ status: 400, description: 'Formato de fecha "at" inválido.' })
+  @ApiResponse({ status: 200, type: PlayerValuationResponseDto })
+  @ApiResponse({ status: 403, description: 'strategyId indicado no pertenece al usuario autenticado.' })
   @ApiResponse({ status: 401, description: 'No autenticado.' })
-  @ApiResponse({ status: 404, description: 'No existe un jugador con ese id (PLAYER_NOT_FOUND).' })
-  async quote(
+  @ApiResponse({ status: 404, description: 'No existe un jugador con ese id.' })
+  async valuation(
     @Param('id') id: string,
-    @Res({ passthrough: true }) res: Response,
-    @Query('at', ParseDatePipe) at?: Date,
-  ): Promise<PlayerQuoteDetailResponseDto | void> {
-    const result = await this.quotationService.getQuoteAtDate(id, at);
-    if (!result) {
-      res.status(HttpStatus.NO_CONTENT);
-      return;
-    }
-    return PlayerQuoteDetailResponseDto.fromDomain(result.quote, result.strategyName);
+    @CurrentUser() userId: string,
+    @Query() query: PlayerValuationQueryDto,
+  ): Promise<PlayerValuationResponseDto> {
+    const result = await this.quotationService.valuate(userId, id, query.strategyId);
+    return PlayerValuationResponseDto.fromResult(result);
   }
 
   @Get(':id/quotes')
+  @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Historial completo de cotizaciones de un jugador',
+    summary: 'Mi historial de cotizaciones de un jugador',
     description:
-      'Devuelve todas las cotizaciones calculadas para el jugador, ordenadas de la más antigua a la más reciente. Si el jugador existe pero no tiene cotizaciones todavía, devuelve un array vacío (200), no 404.',
+      'Devuelve las cotizaciones que yo mismo generé con mis recálculos para este jugador, ordenadas de la más antigua a la más reciente. Nunca incluye cotizaciones de otro usuario. Si todavía no recalculé este jugador, devuelve un array vacío (200), no 404 (019-per-user-valuation-strategies, spec FR-017/FR-018/FR-019).',
   })
   @ApiResponse({ status: 200, type: [PlayerQuoteResponseDto] })
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 404, description: 'No existe un jugador con ese id (PLAYER_NOT_FOUND).' })
-  async quotes(@Param('id') id: string): Promise<PlayerQuoteResponseDto[]> {
-    const history = await this.quotationService.getQuoteHistory(id);
+  async quotes(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+  ): Promise<PlayerQuoteResponseDto[]> {
+    const history = await this.quotationService.getQuoteHistory(userId, id);
     return history.map((quote) => PlayerQuoteResponseDto.fromDomain(quote));
   }
 }

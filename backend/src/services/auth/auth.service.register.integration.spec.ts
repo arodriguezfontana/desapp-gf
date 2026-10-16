@@ -5,11 +5,16 @@ import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
 import { PASSWORD_HASHER, TOKEN_ISSUER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
+import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
 import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
+import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
+import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
+import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
+import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService.register (integración contra Postgres real)', () => {
@@ -22,13 +27,16 @@ describe('AuthService.register (integración contra Postgres real)', () => {
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         DatabaseModule,
-        TypeOrmModule.forFeature([UserEntity]),
+        TypeOrmModule.forFeature([UserEntity, ValuationStrategyEntity]),
       ],
       providers: [
         AuthService,
         UserMapper,
+        ValuationStrategyMapper,
+        UserStrategyProvisioningService,
         { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
         { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
+        { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
         {
           provide: TOKEN_ISSUER,
           useValue: { issue: () => 'x', verify: () => ({ userId: 'x' }) },
@@ -45,6 +53,7 @@ describe('AuthService.register (integración contra Postgres real)', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.getRepository(ValuationStrategyEntity).clear();
     await dataSource.getRepository(UserEntity).clear();
   });
 
@@ -57,6 +66,18 @@ describe('AuthService.register (integración contra Postgres real)', () => {
     expect(row.email).toBe('nueva@mail.com');
     expect(row.passwordHash).toMatch(/^\$2[aby]\$/);
     expect(row.passwordHash).not.toContain('Abcd1234!');
+  });
+
+  it('crea las dos estrategias propias del usuario, una seleccionada (019-per-user-valuation-strategies)', async () => {
+    const user = await service.register('con-estrategias@mail.com', 'Abcd1234!');
+
+    const strategies = await dataSource
+      .getRepository(ValuationStrategyEntity)
+      .find({ where: { userId: user.id } });
+
+    expect(strategies).toHaveLength(2);
+    expect(strategies.map((s) => s.name).sort()).toEqual(['Impacto táctico', 'Performance general']);
+    expect(strategies.filter((s) => s.isSelected)).toHaveLength(1);
   });
 
   it('rechaza el alta si el email ya existe', async () => {

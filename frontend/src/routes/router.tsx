@@ -11,6 +11,7 @@ import { CatalogPage } from '../pages/CatalogPage';
 import { PlayerDetailPage } from '../pages/PlayerDetailPage';
 import { AdminPage } from '../pages/AdminPage';
 import { PortfolioPage } from '../pages/PortfolioPage';
+import { MyStrategiesPage } from '../pages/MyStrategiesPage';
 
 export const router = createBrowserRouter([
   {
@@ -29,10 +30,7 @@ export const router = createBrowserRouter([
       },
       {
         element: <AppLayout />,
-        children: [
-          { path: '/catalog', element: <CatalogPage /> },
-          { path: '/catalog/:id', element: <PlayerDetailPage /> },
-        ],
+        children: [{ path: '/catalog', element: <CatalogPage /> }],
       },
       {
         element: <ProtectedRoute />,
@@ -44,6 +42,8 @@ export const router = createBrowserRouter([
               { path: '/account', element: <AccountPage /> },
               { path: '/admin', element: <AdminPage /> },
               { path: '/portfolio', element: <PortfolioPage /> },
+              { path: '/catalog/:id', element: <PlayerDetailPage /> },
+              { path: '/my-strategies', element: <MyStrategiesPage /> },
             ],
           },
         ],

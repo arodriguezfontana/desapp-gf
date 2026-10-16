@@ -74,18 +74,18 @@ describe('PlayerService', () => {
 
       const filters = { league: League.PREMIER_LEAGUE };
       const pagination = { page: 1, pageSize: 10 };
-      const result = await service.findRanking(filters, pagination);
+      const result = await service.findRanking('user-1', filters, pagination);
 
-      expect(players.findRanking).toHaveBeenCalledWith(filters, pagination);
+      expect(players.findRanking).toHaveBeenCalledWith('user-1', filters, pagination);
       expect(result).toBe(rankingPage);
     });
 
     it('devuelve lista vacía sin error cuando no hay coincidencias', async () => {
       players.findRanking.mockResolvedValue({ items: [], total: 0 });
 
-      const result = await service.findRanking({}, { page: 1, pageSize: 10 });
+      const result = await service.findRanking('user-1', {}, { page: 1, pageSize: 10 });
 
-      expect(players.findRanking).toHaveBeenCalledWith({}, { page: 1, pageSize: 10 });
+      expect(players.findRanking).toHaveBeenCalledWith('user-1', {}, { page: 1, pageSize: 10 });
       expect(result).toEqual({ items: [], total: 0 });
     });
   });

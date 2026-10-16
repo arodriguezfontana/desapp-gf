@@ -98,12 +98,13 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
   }
 
   async findRanking(
+    userId: string,
     filters: PlayerFilters,
     pagination: PlayerPagination,
   ): Promise<PlayerRankingPage> {
     const conditions: string[] = ['lq.rn = 1', 'p."removedAt" IS NULL'];
-    const countParams: Array<string | number> = [];
-    let paramIndex = 1;
+    const countParams: Array<string | number> = [userId];
+    let paramIndex = 2;
 
     if (filters.league) {
       conditions.push(`p."league" = $${paramIndex++}`);
@@ -129,6 +130,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
             ORDER BY pq.calculated_at DESC
           ) AS rn
         FROM player_quotes pq
+        WHERE pq.user_id = $1
       )
       SELECT COUNT(*)::int AS total
       FROM latest_quotes lq
@@ -163,6 +165,7 @@ export class TypeOrmPlayerRepository implements PlayerRepository {
           ) AS rn
         FROM player_quotes pq
         INNER JOIN valuation_strategies vs ON vs.id = pq.strategy_id
+        WHERE pq.user_id = $1
       )
       SELECT
         p.*,

@@ -21,10 +21,11 @@ export class PlayerService {
   }
 
   async findRanking(
+    userId: string,
     filters: PlayerFilters,
     pagination: PlayerPagination,
   ): Promise<PlayerRankingPage> {
-    return this.players.findRanking(filters, pagination);
+    return this.players.findRanking(userId, filters, pagination);
   }
 
   /** @throws PlayerNotFoundError si no existe ningún jugador con ese id (FR-010) */

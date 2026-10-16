@@ -1,5 +1,4 @@
 import * as request from 'supertest';
-import { ApiKeyEntity } from '../src/repositories/api-key/entities/api-key.entity';
 import { UserEntity } from '../src/repositories/auth/entities/user.entity';
 import { createTestApp, TestContext } from './test-app';
 import { WHOSCORED_ADAPTER } from '../src/modules/player-sync/player-sync.constants';
@@ -69,8 +68,14 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
   });
 
   beforeEach(async () => {
-    await ctx.dataSource.getRepository(ApiKeyEntity).clear();
-    await ctx.dataSource.getRepository(UserEntity).clear();
+    // DELETE, no .clear() (TRUNCATE): valuation_strategies y player_quotes
+    // tienen FK hacia users (019-per-user-valuation-strategies, cada alta
+    // provisiona dos estrategias propias), y TRUNCATE rechaza una tabla
+    // referenciada por FK sin CASCADE.
+    await ctx.dataSource.query('DELETE FROM "player_quotes"');
+    await ctx.dataSource.query('DELETE FROM "valuation_strategies"');
+    await ctx.dataSource.query('DELETE FROM "api_keys"');
+    await ctx.dataSource.query('DELETE FROM "users"');
   });
 
   // ---- US3: autenticación --------------------------------------------------

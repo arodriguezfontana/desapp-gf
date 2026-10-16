@@ -1,11 +1,5 @@
 import { httpClient } from './httpClient';
-import type {
-  SyncAcceptedDto,
-  SyncRunStatusDto,
-  SyncSummaryDto,
-  RecalculateResponseDto,
-  StrategyResponseDto,
-} from '../types/admin.types';
+import type { SyncAcceptedDto, SyncRunStatusDto, SyncSummaryDto } from '../types/admin.types';
 
 /**
  * Operaciones del panel de administración.
@@ -39,32 +33,4 @@ export const adminService = {
     });
   },
 
-  /**
-   * Recalcula y persiste cotizaciones para todos los jugadores activos.
-   */
-  async recalculateQuotes(): Promise<RecalculateResponseDto> {
-    return httpClient.post<RecalculateResponseDto>('/quotes/recalculate', undefined, {
-      useApiKey: true,
-    });
-  },
-
-  /**
-   * Lista todas las estrategias de valuación configuradas.
-   */
-  async listStrategies(): Promise<StrategyResponseDto[]> {
-    return httpClient.get<StrategyResponseDto[]>('/quotes/strategies', {
-      useApiKey: true,
-    });
-  },
-
-  /**
-   * Activa una estrategia de valuación por ID.
-   */
-  async activateStrategy(strategyId: string): Promise<StrategyResponseDto> {
-    return httpClient.patch<StrategyResponseDto>(
-      `/quotes/strategies/${encodeURIComponent(strategyId)}/activate`,
-      undefined,
-      { useApiKey: true },
-    );
-  },
 };

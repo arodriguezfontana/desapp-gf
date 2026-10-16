@@ -6,11 +6,12 @@ import { useDebounce } from '../hooks/useDebounce';
 import { CatalogFilters } from '../components/CatalogFilters';
 import { PaginationControls } from '../components/PaginationControls';
 import { PlayerCard } from '../components/PlayerCard';
-import type { Player, PlayerListResponseDto, PlayerQuote } from '../types/catalog.types';
+import type { Player, PlayerListResponseDto } from '../types/catalog.types';
+import type { PlayerValuationResponseDto } from '../types/userStrategy.types';
 
 export const CatalogPage: React.FC = () => {
   const { hasApiKey } = useApiKey();
-  const { getPlayers, getLatestQuoteByPlayerId } = useCatalog();
+  const { getPlayers, getMyValuationByPlayerId } = useCatalog();
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [selectedPosition, setSelectedPosition] = useState<string>('');
   const [teamInput, setTeamInput] = useState<string>('');
@@ -18,7 +19,7 @@ export const CatalogPage: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [quotes, setQuotes] = useState<Map<string, PlayerQuote>>(new Map());
+  const [quotes, setQuotes] = useState<Map<string, PlayerValuationResponseDto>>(new Map());
   const [meta, setMeta] = useState<PlayerListResponseDto['meta']>({
     total: 0,
     page: 1,
@@ -55,10 +56,10 @@ export const CatalogPage: React.FC = () => {
           }
 
           void Promise.all(
-            loadedPlayers.map((p) => getLatestQuoteByPlayerId(p.id)),
+            loadedPlayers.map((p) => getMyValuationByPlayerId(p.id)),
           ).then((results) => {
             if (isCancelled) return;
-            const map = new Map<string, PlayerQuote>();
+            const map = new Map<string, PlayerValuationResponseDto>();
             loadedPlayers.forEach((p, i) => {
               const q = results[i];
               if (q) map.set(p.id, q);
@@ -86,7 +87,7 @@ export const CatalogPage: React.FC = () => {
     return () => {
       isCancelled = true;
     };
-  }, [hasApiKey, currentPage, selectedLeague, selectedPosition, debouncedTeam, getPlayers, getLatestQuoteByPlayerId]);
+  }, [hasApiKey, currentPage, selectedLeague, selectedPosition, debouncedTeam, getPlayers, getMyValuationByPlayerId]);
 
   const handleLeagueChange = (league: string) => {
     setSelectedLeague(league);
