@@ -45,13 +45,50 @@ jobs:
         run: pnpm build
 
   backend-heavy:
-    name: Backend + Frontend (integración y e2e — solo PR a main)
+    name: Backend (integración y e2e — solo PR a main)
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
 
     # Los tests de integración/e2e levantan su propio Postgres efímero con
     # Testcontainers (constitución, Principio IX). Los runners hosteados de GitHub
     # ya traen Docker corriendo, así que no hace falta un `services:` ni DinD.
+    env:
+      NODE_ENV: test
+      JWT_SECRET: ci-test-secret-not-a-real-secret
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pnpm install
+
+      - name: Test (integration)
+        working-directory: backend
+        run: pnpm test:integration
+
+      - name: Test (e2e)
+        working-directory: backend
+        run: pnpm test:e2e
+
+  frontend-heavy:
+    name: Frontend (integración — solo PR a main)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+
     env:
       NODE_ENV: test
       JWT_SECRET: ci-test-secret-not-a-real-secret
@@ -78,23 +115,15 @@ jobs:
         working-directory: backend
         run: pnpm install
 
+      - name: Build backend
+        working-directory: backend
+        run: pnpm build
+
       - name: Install dependencies (frontend)
         working-directory: frontend
         run: pnpm install
 
-      - name: Build backend (requerido por test:integration del frontend)
-        working-directory: backend
-        run: pnpm build
-
-      - name: Test (integration) — backend
-        working-directory: backend
-        run: pnpm test:integration
-
-      - name: Test (e2e) — backend
-        working-directory: backend
-        run: pnpm test:e2e
-
-      - name: Test (integration) — frontend
+      - name: Test (integration)
         working-directory: frontend
         run: pnpm test:integration
 
