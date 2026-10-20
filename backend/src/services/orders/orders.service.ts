@@ -112,7 +112,7 @@ export class OrdersService {
         involvedUserIdSet.add(fill.buyerUserId);
         involvedUserIdSet.add(fill.sellerUserId);
       }
-      const involvedUserIds = Array.from(involvedUserIdSet).sort();
+      const involvedUserIds = Array.from(involvedUserIdSet).sort((a, b) => a.localeCompare(b));
 
       const lockedHoldings = new Map<string, Awaited<ReturnType<typeof this.holdings.lockForUpdate>>>();
       for (const uid of involvedUserIds) {

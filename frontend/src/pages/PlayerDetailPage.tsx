@@ -319,6 +319,7 @@ export const PlayerDetailPage: React.FC = () => {
                 {player.matchesPlayed != null && (
                   <div className="flex items-center gap-1.5 text-xs text-white/50 shrink-0 ml-3">
                     <span>Partidos jugados:</span>
+                    {' '}
                     <span className="font-black text-sm" style={{ color: accent.text }}>{player.matchesPlayed}</span>
                   </div>
                 )}

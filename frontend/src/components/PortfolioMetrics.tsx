@@ -13,10 +13,11 @@ function fmt(n: number) {
 export const PortfolioMetrics: React.FC<Props> = ({ holdings }) => {
   if (holdings.length === 0) return null;
 
-  const best = holdings.reduce((a, b) => (b.totalProfitLoss > a.totalProfitLoss ? b : a));
-  const worst = holdings.reduce((a, b) => (b.totalProfitLoss < a.totalProfitLoss ? b : a));
-  const biggestPosition = holdings.reduce((a, b) =>
-    b.currentPrice * b.tokenQuantity > a.currentPrice * a.tokenQuantity ? b : a,
+  const best = holdings.reduce((a, b) => (b.totalProfitLoss > a.totalProfitLoss ? b : a), holdings[0]);
+  const worst = holdings.reduce((a, b) => (b.totalProfitLoss < a.totalProfitLoss ? b : a), holdings[0]);
+  const biggestPosition = holdings.reduce(
+    (a, b) => (b.currentPrice * b.tokenQuantity > a.currentPrice * a.tokenQuantity ? b : a),
+    holdings[0],
   );
   const inGain = holdings.filter((h) => h.totalProfitLoss > 0).length;
 

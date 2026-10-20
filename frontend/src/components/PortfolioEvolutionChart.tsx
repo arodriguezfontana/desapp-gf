@@ -220,11 +220,11 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
         <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">{formatDate(sorted[0].createdAt)}</span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider" style={{ color: '#a78bfa' }}>
-            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#a78bfa' }} />
+            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#a78bfa' }} />{' '}
             Compra
           </span>
           <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider" style={{ color: '#f59e0b' }}>
-            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#f59e0b' }} />
+            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: '#f59e0b' }} />{' '}
             Venta
           </span>
         </div>

@@ -127,6 +127,37 @@ export class SuperuserSeedService {
     await this.ensureLiquidity(superuser.id);
   }
 
+  private async resolvePrice(userId: string, playerId: string): Promise<number> {
+    try {
+      const valuation = await this.quotation.valuate(userId, playerId);
+      return roundToTwoDecimals(valuation.value);
+    } catch {
+      this.logger.warn(`Sin cotización para jugador ${playerId}; se usa precio de fallback 1.`);
+      return 1;
+    }
+  }
+
+  private async provisionPlayer(userId: string, playerId: string): Promise<boolean> {
+    const existing = await this.holdings.findByUserAndPlayer(userId, playerId);
+    if (existing && existing.quantity > 0) return false;
+
+    const holding = TokenHolding.createEmpty(userId, playerId).credit(INITIAL_HOLDING_QUANTITY);
+    await this.holdings.save(holding);
+
+    const price = await this.resolvePrice(userId, playerId);
+    const order = Order.create({
+      id: randomUUID(),
+      userId,
+      playerId,
+      side: OrderSide.SELL,
+      quantity: INITIAL_HOLDING_QUANTITY,
+      price,
+      createdAt: new Date(),
+    });
+    await this.orders.save(order);
+    return true;
+  }
+
   private async ensureLiquidity(userId: string): Promise<void> {
     const catalogPlayers = await this.players.findAllActive();
     if (catalogPlayers.length === 0) return;
@@ -141,32 +172,8 @@ export class SuperuserSeedService {
     let provisioned = 0;
     for (const player of catalogPlayers) {
       try {
-        const existing = await this.holdings.findByUserAndPlayer(userId, player.id);
-        if (existing && existing.quantity > 0) continue;
-
-        const holding = TokenHolding.createEmpty(userId, player.id).credit(INITIAL_HOLDING_QUANTITY);
-        await this.holdings.save(holding);
-
-        let price: number;
-        try {
-          const valuation = await this.quotation.valuate(userId, player.id);
-          price = roundToTwoDecimals(valuation.value);
-        } catch {
-          price = 1;
-          this.logger.warn(`Sin cotización para jugador ${player.id}; se usa precio de fallback 1.`);
-        }
-
-        const order = Order.create({
-          id: randomUUID(),
-          userId,
-          playerId: player.id,
-          side: OrderSide.SELL,
-          quantity: INITIAL_HOLDING_QUANTITY,
-          price,
-          createdAt: new Date(),
-        });
-        await this.orders.save(order);
-        provisioned++;
+        const added = await this.provisionPlayer(userId, player.id);
+        if (added) provisioned++;
       } catch (err) {
         this.logger.warn(`Error provisionando liquidez para jugador ${player.id}: ${String(err)}`);
       }

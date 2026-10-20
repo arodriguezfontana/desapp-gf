@@ -77,7 +77,7 @@ export const PortfolioCharts: React.FC<Props> = ({ holdings }) => {
           </p>
         ) : (
           <div className="flex flex-col sm:flex-row items-center gap-5">
-            <svg viewBox={`0 0 ${CX * 2} ${CY * 2}`} className="w-44 h-44 shrink-0">
+            <svg viewBox={`0 0 ${CX * 2} ${CY * 2}`} className="w-44 h-44 shrink-0" aria-label="Gráfico de composición del portfolio">
               {arcs.map((arc) => (
                 <path key={arc.fullName} d={arc.path} fill={arc.color} />
               ))}
@@ -110,7 +110,7 @@ export const PortfolioCharts: React.FC<Props> = ({ holdings }) => {
           Rentabilidad por Jugador
         </h3>
 
-        <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full">
+        <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full" aria-label="Gráfico de rentabilidad por jugador">
           {items.map((h, i) => {
             const name = h.playerName.length > 17 ? `${h.playerName.slice(0, 16)}…` : h.playerName;
             const isPos = h.totalProfitLoss >= 0;

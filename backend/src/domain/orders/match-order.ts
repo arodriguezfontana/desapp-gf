@@ -37,11 +37,24 @@ export interface MatchPlan {
  * lockea y filtra); `isCompatibleWith` se usa aca solo como red de
  * seguridad defensiva, no como el filtro primario.
  */
+function buildFill(newOrder: Order, filledNew: Order, candidate: Order, fillQuantity: number): Fill {
+  const isNewOrderBuy = newOrder.side === OrderSide.BUY;
+  const buyOrder = isNewOrderBuy ? filledNew : candidate;
+  const sellOrder = isNewOrderBuy ? candidate : filledNew;
+  return {
+    buyOrderId: buyOrder.id,
+    sellOrderId: sellOrder.id,
+    buyerUserId: buyOrder.userId,
+    sellerUserId: sellOrder.userId,
+    quantity: fillQuantity,
+    price: sellOrder.price,
+  };
+}
+
 export function matchOrder(newOrder: Order, candidates: Order[]): MatchPlan {
   const updatedCandidates: Order[] = [];
   const fills: Fill[] = [];
   let current = newOrder;
-  const isNewOrderBuy = newOrder.side === OrderSide.BUY;
 
   for (const candidate of candidates) {
     if (current.remainingQuantity <= 0) {
@@ -59,16 +72,7 @@ export function matchOrder(newOrder: Order, candidates: Order[]): MatchPlan {
     const filledCandidate = candidate.fill(fillQuantity);
     current = current.fill(fillQuantity);
 
-    const sellOrder = isNewOrderBuy ? candidate : current;
-    fills.push({
-      buyOrderId: isNewOrderBuy ? current.id : candidate.id,
-      sellOrderId: isNewOrderBuy ? candidate.id : current.id,
-      buyerUserId: isNewOrderBuy ? newOrder.userId : candidate.userId,
-      sellerUserId: isNewOrderBuy ? candidate.userId : newOrder.userId,
-      quantity: fillQuantity,
-      price: sellOrder.price,
-    });
-
+    fills.push(buildFill(newOrder, current, candidate, fillQuantity));
     updatedCandidates.push(filledCandidate);
   }
 
