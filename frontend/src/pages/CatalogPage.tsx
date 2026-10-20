@@ -14,7 +14,157 @@ import { getPositionLabel } from '../types/catalog.types';
 
 type CatalogTab = 'catalog' | 'ranking';
 
-function MedalIcon({ rank }: { rank: number }) {
+interface CatalogContentProps {
+  readonly catalogLoading: boolean;
+  readonly catalogError: string | null;
+  readonly players: Player[];
+  readonly quotes: Map<string, PlayerValuationResponseDto>;
+  readonly meta: PlayerListResponseDto['meta'];
+  readonly currentPage: number;
+  readonly selectedLeague: string;
+  readonly selectedPosition: string;
+  readonly teamInput: string;
+  readonly handleClearFilters: () => void;
+  readonly setPage: (p: number) => void;
+}
+
+function renderCatalogContent({ catalogLoading, catalogError, players, quotes, meta, currentPage, selectedLeague, selectedPosition, teamInput, handleClearFilters, setPage }: CatalogContentProps): React.ReactNode {
+  if (catalogLoading) {
+    return (
+      <div className="text-center py-20 bg-[#104443] rounded-2xl border border-[#1a6866] shadow-xl">
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4" />
+        <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando futbolistas del catálogo...</p>
+      </div>
+    );
+  }
+  if (catalogError) {
+    return (
+      <div className="bg-[#f43f5e]/10 border border-[#f43f5e] text-white p-6 rounded-2xl text-center shadow-xl">
+        <p className="text-xs font-bold uppercase tracking-wider">{catalogError}</p>
+      </div>
+    );
+  }
+  if (players.length === 0) {
+    return (
+      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-12 text-center shadow-xl">
+        <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🔍</div>
+        <h3 className="text-lg font-black uppercase tracking-wider text-white mb-1">Sin resultados</h3>
+        <p className="text-base font-semibold text-gray-300">No se encontraron jugadores con estos filtros.</p>
+        {(selectedLeague || selectedPosition || teamInput) && (
+          <button type="button" onClick={handleClearFilters} className="mt-5 text-xs font-black uppercase tracking-wider text-[#b79753] hover:text-white bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#b79753]/40 transition-colors cursor-pointer">
+            Restablecer filtros de búsqueda
+          </button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {players.map((player) => (
+          <PlayerCard key={player.id} player={player} quote={quotes.get(player.id) ?? null} />
+        ))}
+      </div>
+      <PaginationControls currentPage={currentPage} totalPages={meta.totalPages} totalItems={meta.total} pageSize={meta.pageSize} isLoading={catalogLoading} onPageChange={setPage} />
+    </>
+  );
+}
+
+interface RankingContentProps {
+  readonly isAuthenticated: boolean;
+  readonly rankingLoading: boolean;
+  readonly rankingError: string | null;
+  readonly rankedPlayers: RankedPlayer[];
+  readonly rankingTotal: number;
+  readonly rankingTotalPages: number;
+  readonly currentPage: number;
+  readonly selectedLeague: string;
+  readonly selectedPosition: string;
+  readonly teamInput: string;
+  readonly handleClearFilters: () => void;
+  readonly setPage: (p: number) => void;
+}
+
+function renderRankingContent({ isAuthenticated, rankingLoading, rankingError, rankedPlayers, rankingTotal, rankingTotalPages, currentPage, selectedLeague, selectedPosition, teamInput, handleClearFilters, setPage }: RankingContentProps): React.ReactNode {
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-[#104443] border border-[#b79753]/40 rounded-2xl p-10 text-center shadow-xl">
+        <div className="w-14 h-14 bg-[#0b3332] border border-[#b79753] text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🔒</div>
+        <h3 className="text-lg font-black uppercase tracking-wider text-white mb-2">Sesión Requerida</h3>
+        <p className="text-sm text-gray-300 font-medium mb-6">Iniciá sesión para ver el ranking según tus estrategias de valuación.</p>
+        <Link to="/login" className="inline-flex items-center gap-2 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl cursor-pointer text-xs">
+          Iniciar sesión &rarr;
+        </Link>
+      </div>
+    );
+  }
+  if (rankingLoading) {
+    return (
+      <div className="text-center py-20 bg-[#104443] rounded-2xl border border-[#1a6866] shadow-xl">
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4" />
+        <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando ranking...</p>
+      </div>
+    );
+  }
+  if (rankingError) {
+    return (
+      <div className="bg-[#f43f5e]/10 border border-[#f43f5e] text-white p-6 rounded-2xl text-center shadow-xl">
+        <p className="text-xs font-bold uppercase tracking-wider">{rankingError}</p>
+      </div>
+    );
+  }
+  if (rankedPlayers.length === 0) {
+    return (
+      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-12 text-center shadow-xl">
+        <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🔍</div>
+        <h3 className="text-lg font-black uppercase tracking-wider text-white mb-1">Sin resultados</h3>
+        <p className="text-base font-semibold text-gray-300">No hay jugadores cotizados con estos filtros.</p>
+        {(selectedLeague || selectedPosition || teamInput) && (
+          <button type="button" onClick={handleClearFilters} className="mt-5 text-xs font-black uppercase tracking-wider text-[#b79753] hover:text-white bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#b79753]/40 transition-colors cursor-pointer">
+            Restablecer filtros
+          </button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className="overflow-x-auto rounded-2xl border border-[#1a6866] shadow-xl">
+        <table className="w-full text-sm text-white">
+          <thead className="bg-[#104443] border-b border-[#1a6866]">
+            <tr>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753]">Pos.</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753]">Jugador</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden sm:table-cell">Posición</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden md:table-cell">Liga</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden md:table-cell">Equipo</th>
+              <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-[#b79753]">Valor</th>
+              <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden sm:table-cell">Score</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden lg:table-cell">Estrategia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rankedPlayers.map((p, i) => (
+              <tr key={p.id} className={`border-b border-[#1a6866]/60 transition-colors hover:bg-[#1a6866]/30 ${i % 2 === 0 ? 'bg-[#0b3332]' : 'bg-[#104443]/50'}`}>
+                <td className="px-4 py-3 text-center w-12"><MedalIcon rank={p.rank} /></td>
+                <td className="px-4 py-3"><Link to={`/catalog/${p.id}`} className="font-bold text-white hover:text-[#b79753] transition-colors">{p.name}</Link></td>
+                <td className="px-4 py-3 text-gray-300 hidden sm:table-cell">{getPositionLabel(p.position)}</td>
+                <td className="px-4 py-3 text-gray-300 hidden md:table-cell">{p.league}</td>
+                <td className="px-4 py-3 text-gray-300 hidden md:table-cell">{p.team}</td>
+                <td className="px-4 py-3 text-right font-black text-[#b79753]">${p.valor.toFixed(2)}</td>
+                <td className="px-4 py-3 text-right text-gray-300 hidden sm:table-cell">{p.score.toFixed(2)}</td>
+                <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">{p.strategyName}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <PaginationControls currentPage={currentPage} totalPages={rankingTotalPages} totalItems={rankingTotal} pageSize={10} isLoading={rankingLoading} onPageChange={setPage} />
+    </>
+  );
+}
+
+function MedalIcon({ rank }: { readonly rank: number }) {
   if (rank === 1) return <span className="text-yellow-400 font-black">🥇</span>;
   if (rank === 2) return <span className="text-gray-300 font-black">🥈</span>;
   if (rank === 3) return <span className="text-amber-600 font-black">🥉</span>;
@@ -187,123 +337,13 @@ export const CatalogPage: React.FC = () => {
     );
   }
 
-  // --- Catalog content ---
-  let catalogContent: React.ReactNode;
-  if (catalogLoading) {
-    catalogContent = (
-      <div className="text-center py-20 bg-[#104443] rounded-2xl border border-[#1a6866] shadow-xl">
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4" />
-        <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando futbolistas del catálogo...</p>
-      </div>
-    );
-  } else if (catalogError) {
-    catalogContent = (
-      <div className="bg-[#f43f5e]/10 border border-[#f43f5e] text-white p-6 rounded-2xl text-center shadow-xl">
-        <p className="text-xs font-bold uppercase tracking-wider">{catalogError}</p>
-      </div>
-    );
-  } else if (players.length === 0) {
-    catalogContent = (
-      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-12 text-center shadow-xl">
-        <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🔍</div>
-        <h3 className="text-lg font-black uppercase tracking-wider text-white mb-1">Sin resultados</h3>
-        <p className="text-base font-semibold text-gray-300">No se encontraron jugadores con estos filtros.</p>
-        {(selectedLeague || selectedPosition || teamInput) && (
-          <button type="button" onClick={handleClearFilters} className="mt-5 text-xs font-black uppercase tracking-wider text-[#b79753] hover:text-white bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#b79753]/40 transition-colors cursor-pointer">
-            Restablecer filtros de búsqueda
-          </button>
-        )}
-      </div>
-    );
-  } else {
-    catalogContent = (
-      <>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {players.map((player) => (
-            <PlayerCard key={player.id} player={player} quote={quotes.get(player.id) ?? null} />
-          ))}
-        </div>
-        <PaginationControls currentPage={currentPage} totalPages={meta.totalPages} totalItems={meta.total} pageSize={meta.pageSize} isLoading={catalogLoading} onPageChange={setPage} />
-      </>
-    );
-  }
+  const catalogContent = renderCatalogContent({
+    catalogLoading, catalogError, players, quotes, meta, currentPage, selectedLeague, selectedPosition, teamInput, handleClearFilters, setPage,
+  });
 
-  // --- Ranking content ---
-  let rankingContent: React.ReactNode;
-  if (!isAuthenticated) {
-    rankingContent = (
-      <div className="bg-[#104443] border border-[#b79753]/40 rounded-2xl p-10 text-center shadow-xl">
-        <div className="w-14 h-14 bg-[#0b3332] border border-[#b79753] text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🔒</div>
-        <h3 className="text-lg font-black uppercase tracking-wider text-white mb-2">Sesión Requerida</h3>
-        <p className="text-sm text-gray-300 font-medium mb-6">Iniciá sesión para ver el ranking según tus estrategias de valuación.</p>
-        <Link to="/login" className="inline-flex items-center gap-2 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl cursor-pointer text-xs">
-          Iniciar sesión &rarr;
-        </Link>
-      </div>
-    );
-  } else if (rankingLoading) {
-    rankingContent = (
-      <div className="text-center py-20 bg-[#104443] rounded-2xl border border-[#1a6866] shadow-xl">
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4" />
-        <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando ranking...</p>
-      </div>
-    );
-  } else if (rankingError) {
-    rankingContent = (
-      <div className="bg-[#f43f5e]/10 border border-[#f43f5e] text-white p-6 rounded-2xl text-center shadow-xl">
-        <p className="text-xs font-bold uppercase tracking-wider">{rankingError}</p>
-      </div>
-    );
-  } else if (rankedPlayers.length === 0) {
-    rankingContent = (
-      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-12 text-center shadow-xl">
-        <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🔍</div>
-        <h3 className="text-lg font-black uppercase tracking-wider text-white mb-1">Sin resultados</h3>
-        <p className="text-base font-semibold text-gray-300">No hay jugadores cotizados con estos filtros.</p>
-        {(selectedLeague || selectedPosition || teamInput) && (
-          <button type="button" onClick={handleClearFilters} className="mt-5 text-xs font-black uppercase tracking-wider text-[#b79753] hover:text-white bg-[#0b3332] px-4 py-2.5 rounded-xl border border-[#b79753]/40 transition-colors cursor-pointer">
-            Restablecer filtros
-          </button>
-        )}
-      </div>
-    );
-  } else {
-    rankingContent = (
-      <>
-        <div className="overflow-x-auto rounded-2xl border border-[#1a6866] shadow-xl">
-          <table className="w-full text-sm text-white">
-            <thead className="bg-[#104443] border-b border-[#1a6866]">
-              <tr>
-                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753]">Pos.</th>
-                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753]">Jugador</th>
-                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden sm:table-cell">Posición</th>
-                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden md:table-cell">Liga</th>
-                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden md:table-cell">Equipo</th>
-                <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-[#b79753]">Valor</th>
-                <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden sm:table-cell">Score</th>
-                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-[#b79753] hidden lg:table-cell">Estrategia</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rankedPlayers.map((p, i) => (
-                <tr key={p.id} className={`border-b border-[#1a6866]/60 transition-colors hover:bg-[#1a6866]/30 ${i % 2 === 0 ? 'bg-[#0b3332]' : 'bg-[#104443]/50'}`}>
-                  <td className="px-4 py-3 text-center w-12"><MedalIcon rank={p.rank} /></td>
-                  <td className="px-4 py-3"><Link to={`/catalog/${p.id}`} className="font-bold text-white hover:text-[#b79753] transition-colors">{p.name}</Link></td>
-                  <td className="px-4 py-3 text-gray-300 hidden sm:table-cell">{getPositionLabel(p.position)}</td>
-                  <td className="px-4 py-3 text-gray-300 hidden md:table-cell">{p.league}</td>
-                  <td className="px-4 py-3 text-gray-300 hidden md:table-cell">{p.team}</td>
-                  <td className="px-4 py-3 text-right font-black text-[#b79753]">${p.valor.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-gray-300 hidden sm:table-cell">{p.score.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">{p.strategyName}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <PaginationControls currentPage={currentPage} totalPages={rankingTotalPages} totalItems={rankingTotal} pageSize={10} isLoading={rankingLoading} onPageChange={setPage} />
-      </>
-    );
-  }
+  const rankingContent = renderRankingContent({
+    isAuthenticated, rankingLoading, rankingError, rankedPlayers, rankingTotal, rankingTotalPages, currentPage, selectedLeague, selectedPosition, teamInput, handleClearFilters, setPage,
+  });
 
   return (
     <div className="w-full animate-fade-in space-y-8 pb-12">

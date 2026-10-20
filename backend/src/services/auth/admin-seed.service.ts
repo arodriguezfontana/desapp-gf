@@ -6,10 +6,9 @@ import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.consta
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
-import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
-import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { Password } from '../../domain/auth/password';
 import { User } from '../../domain/auth/user';
+import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
@@ -50,15 +49,10 @@ export class AdminSeedService {
       return;
     }
 
-    let email: Email;
-    try {
-      email = Email.create(rawEmail);
-    } catch (error) {
-      if (error instanceof InvalidEmailError) {
-        this.logger.warn('Seed de admin omitido: ADMIN_EMAIL no tiene un formato válido.');
-        return;
-      }
-      throw error;
+    const email = parseSeedEmail(rawEmail);
+    if (!email) {
+      this.logger.warn('Seed de admin omitido: ADMIN_EMAIL no tiene un formato válido.');
+      return;
     }
 
     if (await this.users.existsByEmail(email)) {
@@ -66,15 +60,10 @@ export class AdminSeedService {
       return;
     }
 
-    let password: Password;
-    try {
-      password = Password.create(rawPassword);
-    } catch (error) {
-      if (error instanceof InvalidPasswordError) {
-        this.logger.warn('Seed de admin omitido: ADMIN_PASSWORD no cumple la política de contraseña.');
-        return;
-      }
-      throw error;
+    const password = parseSeedPassword(rawPassword);
+    if (!password) {
+      this.logger.warn('Seed de admin omitido: ADMIN_PASSWORD no cumple la política de contraseña.');
+      return;
     }
 
     const passwordHash = await this.hasher.hash(password.value());

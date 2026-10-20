@@ -10,10 +10,9 @@ import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.cons
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
-import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
-import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { Password } from '../../domain/auth/password';
 import { User } from '../../domain/auth/user';
+import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';
 import { Order } from '../../domain/orders/order';
 import { OrderSide } from '../../domain/orders/order-side';
@@ -71,60 +70,51 @@ export class SuperuserSeedService {
       return;
     }
 
-    let email: Email;
-    try {
-      email = Email.create(rawEmail);
-    } catch (error) {
-      if (error instanceof InvalidEmailError) {
-        this.logger.warn('Seed de superusuario omitido: SUPERUSER_EMAIL no tiene un formato válido.');
-        return;
-      }
-      throw error;
-    }
+    const email = this.parseEmail(rawEmail);
+    if (!email) return;
 
-    let superuser = await this.users.findByEmail(email);
-
-    if (!superuser) {
-      let password: Password;
-      try {
-        password = Password.create(rawPassword);
-      } catch (error) {
-        if (error instanceof InvalidPasswordError) {
-          this.logger.warn('Seed de superusuario omitido: SUPERUSER_PASSWORD no cumple la política de contraseña.');
-          return;
-        }
-        throw error;
-      }
-
-      const passwordHash = await this.hasher.hash(password.value());
-      superuser = User.register(
-        randomUUID(),
-        email,
-        passwordHash,
-        new Date(),
-        UserRole.USER,
-        SUPERUSER_USERNAME,
-      );
-
-      try {
-        await this.users.save(superuser);
-      } catch (error) {
-        if (error instanceof EmailAlreadyInUseError) {
-          // Carrera concurrente: re-leer el usuario creado por la otra instancia.
-          superuser = await this.users.findByEmail(email);
-          if (!superuser) throw error;
-        } else {
-          throw error;
-        }
-      }
-
-      await this.strategyProvisioning.provisionDefaultStrategiesFor(superuser.id);
-      this.logger.log('Superusuario creado.');
-    } else {
-      this.logger.log('Superusuario ya existe: verificando liquidez inicial.');
-    }
+    const superuser = await this.findOrCreateSuperuser(email, rawPassword);
+    if (!superuser) return;
 
     await this.ensureLiquidity(superuser.id);
+  }
+
+  private parseEmail(rawEmail: string): Email | null {
+    const email = parseSeedEmail(rawEmail);
+    if (!email) this.logger.warn('Seed de superusuario omitido: SUPERUSER_EMAIL no tiene un formato válido.');
+    return email;
+  }
+
+  private async findOrCreateSuperuser(email: Email, rawPassword: string): Promise<User | null> {
+    const existing = await this.users.findByEmail(email);
+    if (existing) {
+      this.logger.log('Superusuario ya existe: verificando liquidez inicial.');
+      return existing;
+    }
+
+    const password = parseSeedPassword(rawPassword);
+    if (!password) {
+      this.logger.warn('Seed de superusuario omitido: SUPERUSER_PASSWORD no cumple la política de contraseña.');
+      return null;
+    }
+
+    const passwordHash = await this.hasher.hash(password.value());
+    let superuser = User.register(randomUUID(), email, passwordHash, new Date(), UserRole.USER, SUPERUSER_USERNAME);
+
+    try {
+      await this.users.save(superuser);
+    } catch (error) {
+      if (error instanceof EmailAlreadyInUseError) {
+        superuser = await this.users.findByEmail(email);
+        if (!superuser) throw error;
+      } else {
+        throw error;
+      }
+    }
+
+    await this.strategyProvisioning.provisionDefaultStrategiesFor(superuser.id);
+    this.logger.log('Superusuario creado.');
+    return superuser;
   }
 
   private async resolvePrice(userId: string, playerId: string): Promise<number> {

@@ -154,12 +154,12 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
           )}
 
           {/* Puntos interactivos */}
-          {visiblePts.map((p, i) => {
+          {visiblePts.map((p) => {
             const isHovered = tooltip?.pt === p;
             const dotColor = p.tx.type === 'CREDIT' ? '#a78bfa' : '#f59e0b';
             return (
               <circle
-                key={i}
+                key={p.tx.id}
                 cx={p.x}
                 cy={p.y}
                 r={isHovered ? 6 : 4}

@@ -109,13 +109,15 @@ export const PlayerDetailPage: React.FC = () => {
     if (order) {
       setOrderDialogSide(null);
       const sideLabel = orderDialogSide === 'BUY' ? 'Compra' : 'Venta';
-      setOrderSuccessMessage(
-        order.status === 'COMPLETED'
-          ? `${sideLabel} ejecutada por completo (${quantity} tokens a ${order.price}).`
-          : order.status === 'PARTIALLY_FILLED'
-            ? `${sideLabel} ejecutada parcialmente; el resto queda pendiente en el libro.`
-            : `${sideLabel} publicada; queda pendiente hasta encontrar una contraparte al mismo precio.`,
-      );
+      let statusMsg: string;
+      if (order.status === 'COMPLETED') {
+        statusMsg = `${sideLabel} ejecutada por completo (${quantity} tokens a ${order.price}).`;
+      } else if (order.status === 'PARTIALLY_FILLED') {
+        statusMsg = `${sideLabel} ejecutada parcialmente; el resto queda pendiente en el libro.`;
+      } else {
+        statusMsg = `${sideLabel} publicada; queda pendiente hasta encontrar una contraparte al mismo precio.`;
+      }
+      setOrderSuccessMessage(statusMsg);
     }
   };
 
@@ -373,9 +375,9 @@ export const PlayerDetailPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white/40">
-                  <span className="w-4 h-px bg-white/20" />
+                  <span className="w-4 h-px bg-white/20" />{' '}
                   <span>Tu valuación de este jugador en el tiempo</span>
-                  <span className="flex-1 h-px bg-white/10" />
+                  {' '}<span className="flex-1 h-px bg-white/10" />
                 </h2>
               </div>
               <QuoteHistoryChart quotes={quoteHistory} color={accent.text} />

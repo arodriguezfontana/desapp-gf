@@ -114,10 +114,10 @@ export class OrdersService {
       }
       const involvedUserIds = Array.from(involvedUserIdSet).sort((a, b) => a.localeCompare(b));
 
-      const lockedHoldings = new Map<string, Awaited<ReturnType<typeof this.holdings.lockForUpdate>>>();
-      for (const uid of involvedUserIds) {
-        lockedHoldings.set(uid, await this.holdings.lockForUpdate(tx, uid, playerId));
-      }
+      const lockedEntries = await Promise.all(
+        involvedUserIds.map(async (uid) => [uid, await this.holdings.lockForUpdate(tx, uid, playerId)] as const),
+      );
+      const lockedHoldings = new Map<string, Awaited<ReturnType<typeof this.holdings.lockForUpdate>>>(lockedEntries);
 
       // Nota: si `buyerUserId === sellerUserId` (auto-match, spec Edge Cases —
       // "no se distingue si ambas puntas pertenecen al mismo usuario"), el
@@ -133,49 +133,53 @@ export class OrdersService {
         lockedHoldings.set(fill.sellerUserId, sellerHolding.debit(fill.quantity));
       }
 
-      for (const holding of lockedHoldings.values()) {
-        await this.holdings.saveInTransaction(tx, holding);
-      }
+      await Promise.all(
+        Array.from(lockedHoldings.values()).map((h) => this.holdings.saveInTransaction(tx, h)),
+      );
 
-      for (const candidate of matchPlan.updatedCandidates) {
-        await this.orders.saveInTransaction(tx, candidate);
-      }
-      await this.orders.saveInTransaction(tx, matchPlan.newOrderFinal);
+      await Promise.all([
+        ...matchPlan.updatedCandidates.map((c) => this.orders.saveInTransaction(tx, c)),
+        this.orders.saveInTransaction(tx, matchPlan.newOrderFinal),
+      ]);
 
-      for (const fill of matchPlan.fills) {
-        const executedAt = new Date();
-        await this.tokenTransactions.saveInTransaction(
-          tx,
-          TokenTransaction.create({
-            id: randomUUID(),
-            userId: fill.buyerUserId,
-            type: TokenTransactionType.CREDIT,
-            playerId,
-            quantity: fill.quantity,
-            price: fill.price,
-            orderId: fill.buyOrderId,
-            counterpartOrderId: fill.sellOrderId,
-            createdAt: executedAt,
-          }),
-        );
-        await this.tokenTransactions.saveInTransaction(
-          tx,
-          TokenTransaction.create({
-            id: randomUUID(),
-            userId: fill.sellerUserId,
-            type: TokenTransactionType.DEBIT,
-            playerId,
-            quantity: fill.quantity,
-            price: fill.price,
-            orderId: fill.sellOrderId,
-            counterpartOrderId: fill.buyOrderId,
-            createdAt: executedAt,
-          }),
-        );
-        this.logger.log(
-          `Fill ejecutado: BUY ${fill.buyOrderId} x SELL ${fill.sellOrderId}, cantidad ${fill.quantity}, precio ${fill.price}`,
-        );
-      }
+      const executedAt = new Date();
+      await Promise.all(
+        matchPlan.fills.flatMap((fill) => {
+          this.logger.log(
+            `Fill ejecutado: BUY ${fill.buyOrderId} x SELL ${fill.sellOrderId}, cantidad ${fill.quantity}, precio ${fill.price}`,
+          );
+          return [
+            this.tokenTransactions.saveInTransaction(
+              tx,
+              TokenTransaction.create({
+                id: randomUUID(),
+                userId: fill.buyerUserId,
+                type: TokenTransactionType.CREDIT,
+                playerId,
+                quantity: fill.quantity,
+                price: fill.price,
+                orderId: fill.buyOrderId,
+                counterpartOrderId: fill.sellOrderId,
+                createdAt: executedAt,
+              }),
+            ),
+            this.tokenTransactions.saveInTransaction(
+              tx,
+              TokenTransaction.create({
+                id: randomUUID(),
+                userId: fill.sellerUserId,
+                type: TokenTransactionType.DEBIT,
+                playerId,
+                quantity: fill.quantity,
+                price: fill.price,
+                orderId: fill.sellOrderId,
+                counterpartOrderId: fill.buyOrderId,
+                createdAt: executedAt,
+              }),
+            ),
+          ];
+        }),
+      );
 
       return matchPlan;
     });

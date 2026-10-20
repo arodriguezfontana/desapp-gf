@@ -40,27 +40,31 @@ export class PortfolioService {
     const credits = await this.transactions.findCreditsByUserId(userId);
     const avgBuyPriceMap = this.computeAvgBuyPriceByPlayer(credits);
 
-    const playerIds = activeHoldings.map((h) => h.playerId);
+    const playerIds = new Set(activeHoldings.map((h) => h.playerId));
     const allPlayers = await this.players.findAllActive();
     const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
+
+    const valuationResults = await Promise.allSettled(
+      activeHoldings.map((h) => this.quotation.valuate(userId, h.playerId)),
+    );
+    const valuationMap = new Map(
+      activeHoldings.map((h, i) => {
+        const r = valuationResults[i];
+        return [h.playerId, r.status === 'fulfilled' ? roundToTwoDecimals(r.value.value) : null];
+      }),
+    );
 
     const holdingDtos: Holding[] = [];
     let totalInvested = 0;
     let totalCurrentValue = 0;
 
     for (const h of activeHoldings) {
-      if (!playerIds.includes(h.playerId)) continue;
+      if (!playerIds.has(h.playerId)) continue;
 
       const playerName = nameMap.get(h.playerId) ?? h.playerId;
       const avgBuyPrice = avgBuyPriceMap.get(h.playerId) ?? 0;
 
-      let currentPrice = avgBuyPrice;
-      try {
-        const valuation = await this.quotation.valuate(userId, h.playerId);
-        currentPrice = roundToTwoDecimals(valuation.value);
-      } catch {
-        // Sin cotización previa: usa el precio promedio de compra como proxy.
-      }
+      const currentPrice = valuationMap.get(h.playerId) ?? avgBuyPrice;
 
       const totalProfitLoss = roundToTwoDecimals((currentPrice - avgBuyPrice) * h.quantity);
 
