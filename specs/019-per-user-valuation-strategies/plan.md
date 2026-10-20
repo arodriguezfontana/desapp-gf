@@ -86,6 +86,12 @@ recálculo masivo. Se eliminan los tres endpoints admin de `quotation.controller
 
 Sin violaciones. No se requiere `Complexity Tracking`.
 
+## Backend (ajustado)
+
+- **QuotesController.recalculate**: `POST /quotes/recalculate`, protegido por `AdminApiKeyGuard`.
+- **Lock a nivel sistema** (no por usuario): si ya hay un recálculo global en curso, rechaza con 409.
+- **QuotesService.recalculateAll()**: itera sobre todos los usuarios y, para cada uno, sobre todos los jugadores, calculando con la estrategia seleccionada de ese usuario; inserta `PlayerQuote` por cada combinación exitosa, saltea y registra las que fallan.
+
 ## Project Structure
 
 ### Documentation (this feature)

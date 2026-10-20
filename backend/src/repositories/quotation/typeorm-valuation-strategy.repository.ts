@@ -66,6 +66,14 @@ export class TypeOrmValuationStrategyRepository implements ValuationStrategyRepo
    * research.md D1 — mismo patrón que el `activateStrategy` global anterior,
    * ahora `WHERE user_id = :userId`).
    */
+  async findAllUserIds(): Promise<string[]> {
+    const rows = await this.repo
+      .createQueryBuilder('s')
+      .select('DISTINCT s.userId', 'userId')
+      .getRawMany<{ userId: string }>();
+    return rows.map((r) => r.userId);
+  }
+
   async selectStrategy(userId: string, id: string): Promise<ValuationStrategy> {
     const qr = this.dataSource.createQueryRunner();
     await qr.connect();

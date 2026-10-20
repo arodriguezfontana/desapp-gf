@@ -6,7 +6,6 @@ import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { Position } from '../../domain/player/enums/position';
 import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
-import { PlayerQuoteCalculationFailedError } from '../../domain/quotation/errors/player-quote-calculation-failed.error';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
@@ -18,8 +17,8 @@ import {
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 
 export interface RecalculateResult {
-  recalculated: Array<{ playerId: string; value: number; score: number }>;
-  skipped: Array<{ playerId: string; reason: string }>;
+  recalculated: Array<{ userId: string; playerId: string; value: number; score: number }>;
+  skipped: Array<{ userId: string; playerId: string; reason: string }>;
 }
 
 export interface ValuationResult {
@@ -32,17 +31,17 @@ export interface ValuationResult {
 
 /**
  * Orquesta las operaciones sobre las estrategias propias de cada usuario y el
- * recálculo manual de sus cotizaciones (019-per-user-valuation-strategies,
+ * recálculo manual de cotizaciones (019-per-user-valuation-strategies,
  * reemplaza el modelo de estrategia única de sistema de
  * 012-valuation-strategies).
  *
- * El lock de recálculo es en memoria, con una entrada por `userId` (spec
- * FR-016a, research.md D4): nunca bloquea el recálculo de un usuario distinto.
+ * El lock de recálculo es en memoria a nivel sistema: solo puede haber un
+ * recálculo global corriendo a la vez (409 si ya hay uno en curso).
  */
 @Injectable()
 export class QuotationService {
   private readonly logger = new Logger(QuotationService.name);
-  private readonly recalculationsInProgress = new Set<string>();
+  private recalculationInProgress = false;
 
   constructor(
     @Inject(VALUATION_STRATEGY_REPOSITORY)
@@ -139,91 +138,83 @@ export class QuotationService {
   }
 
   /**
-   * Recalcula y persiste cotizaciones para el usuario, de forma síncrona
-   * (spec FR-013/FR-014/FR-014a). Lock en memoria por `userId` (409 si ya hay
-   * uno en curso para el mismo usuario, spec FR-016a). En modo masivo
-   * (`playerId` ausente), un jugador que falla se saltea y se continúa con el
-   * resto (spec FR-014b); en modo puntual, si falla, se rechaza toda la
-   * operación sin persistir nada (spec Edge Cases, contracts 422).
+   * Recalcula y persiste cotizaciones para cada combinación (usuario, jugador)
+   * del sistema, usando la estrategia seleccionada de cada usuario en ese
+   * momento. Solo el admin puede dispararlo (AdminApiKeyGuard en el controller).
+   * Lock a nivel sistema (409 si ya hay un recálculo global en curso). Las
+   * combinaciones que fallan se saltean; la respuesta indica qué se procesó y
+   * qué se salteó.
    */
-  async recalculate(userId: string, playerId?: string): Promise<RecalculateResult> {
-    if (this.recalculationsInProgress.has(userId)) {
+  async recalculateAll(): Promise<RecalculateResult> {
+    if (this.recalculationInProgress) {
       throw new RecalculationInProgressError();
     }
-    this.recalculationsInProgress.add(userId);
-    // Ceder el event loop para que requests concurrentes al mismo userId puedan
-    // chequear el lock antes de que empiece el trabajo real. El delay cubre el
-    // tiempo de verificación JWT del request rival (guard → DB lookup): en CI
-    // bajo coverage ese round-trip puede superar los 100ms, por eso se usa
-    // 150ms — suficiente margen sin ser perceptible para el usuario dado que
-    // recalculate es una operación inherentemente pesada.
-    await new Promise<void>((resolve) => setTimeout(resolve, 150));
+    this.recalculationInProgress = true;
 
     try {
-      const strategy = await this.getSelectedStrategyOrThrow(userId);
-
-      const players = playerId
-        ? [await this.getPlayerOrThrow(playerId)]
-        : await this.playerRepository.findAllActive();
+      const userIds = await this.strategyRepository.findAllUserIds();
+      const players = await this.playerRepository.findAllActive();
 
       const quotes: PlayerQuote[] = [];
       const recalculated: RecalculateResult['recalculated'] = [];
       const skipped: RecalculateResult['skipped'] = [];
 
-      for (const player of players) {
-        try {
-          const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(
-            player,
-            strategy,
-          );
-          quotes.push(
-            PlayerQuote.create({
-              id: randomUUID(),
+      for (const userId of userIds) {
+        const strategies = await this.strategyRepository.findByUserId(userId);
+        const strategy = strategies.find((s) => s.isSelected);
+        if (!strategy) {
+          skipped.push(...players.map((p) => ({
+            userId,
+            playerId: p.id,
+            reason: 'Sin estrategia seleccionada',
+          })));
+          continue;
+        }
+
+        for (const player of players) {
+          try {
+            const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(
+              player,
+              strategy,
+            );
+            quotes.push(
+              PlayerQuote.create({
+                id: randomUUID(),
+                userId,
+                playerId: player.id,
+                strategyId: strategy.id,
+                weightSnapshot: weightsUsed,
+                factorEscalaSnapshot: strategy.factorEscala,
+                score,
+                value,
+                calculatedAt: new Date(),
+                appliedPosition,
+              }),
+            );
+            recalculated.push({ userId, playerId: player.id, value, score });
+          } catch (err) {
+            this.logger.error(
+              `Error calculando cotización para jugador ${player.id} (usuario ${userId})`,
+              err instanceof Error ? err.stack : String(err),
+            );
+            skipped.push({
               userId,
               playerId: player.id,
-              strategyId: strategy.id,
-              weightSnapshot: weightsUsed,
-              factorEscalaSnapshot: strategy.factorEscala,
-              score,
-              value,
-              calculatedAt: new Date(),
-              appliedPosition,
-            }),
-          );
-          recalculated.push({ playerId: player.id, value, score });
-        } catch (err) {
-          if (playerId) {
-            // Modo puntual: no hay "resto del catálogo" al que continuar, se rechaza todo.
-            throw new PlayerQuoteCalculationFailedError(playerId, err);
+              reason: err instanceof Error ? err.message : String(err),
+            });
           }
-          this.logger.error(
-            `Error calculando cotización para jugador ${player.id} (usuario ${userId})`,
-            err instanceof Error ? err.stack : String(err),
-          );
-          skipped.push({
-            playerId: player.id,
-            reason: err instanceof Error ? err.message : String(err),
-          });
         }
       }
 
       await this.quoteRepository.saveMany(quotes);
 
       this.logger.log(
-        `Recálculo completado (usuario ${userId}): ${recalculated.length} procesados, ${skipped.length} salteados`,
+        `Recálculo global completado: ${recalculated.length} procesados, ${skipped.length} salteados`,
       );
 
       return { recalculated, skipped };
     } finally {
-      this.recalculationsInProgress.delete(userId);
+      this.recalculationInProgress = false;
     }
-  }
-
-  private async getPlayerOrThrow(playerId: string) {
-    const player = await this.playerRepository.findById(playerId);
-    if (!player) {
-      throw new PlayerNotFoundError();
-    }
-    return player;
   }
 }

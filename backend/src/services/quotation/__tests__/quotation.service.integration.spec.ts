@@ -167,8 +167,8 @@ describe('QuotationService (integración contra Postgres real)', () => {
     });
   });
 
-  describe('recalculate()', () => {
-    it('calcula y persiste una PlayerQuote real por cada jugador activo, usando la estrategia seleccionada del usuario', async () => {
+  describe('recalculateAll()', () => {
+    it('calcula y persiste una PlayerQuote por cada combinación usuario × jugador activo', async () => {
       const strategyId = await insertStrategy({
         userId: userIdA,
         name: 'Test seleccionada',
@@ -179,7 +179,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertPlayer({ goals: 20 });
       await insertPlayer({ goals: 40 });
 
-      const result = await service.recalculate(userIdA);
+      const result = await service.recalculateAll();
 
       expect(result.recalculated).toHaveLength(2);
       expect(result.skipped).toHaveLength(0);
@@ -193,7 +193,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertStrategy({ userId: userIdA, name: 'Test seleccionada', weights: WEIGHTS_GOALS_ONLY, factorEscala: 10, isSelected: true });
       await insertPlayer({ removedAt: new Date() });
 
-      const result = await service.recalculate(userIdA);
+      const result = await service.recalculateAll();
 
       expect(result.recalculated).toHaveLength(0);
       const quotes = await dataSource.getRepository(PlayerQuoteEntity).find();
@@ -212,20 +212,19 @@ describe('QuotationService (integración contra Postgres real)', () => {
       });
       await insertPlayer({ position: 'FW', goals: 20 });
 
-      await service.recalculate(userIdA);
+      await service.recalculateAll();
 
       const [quote] = await dataSource.getRepository(PlayerQuoteEntity).find();
       expect(quote.appliedPosition).toBe('FW');
       expect(quote.weightSnapshot).toEqual(fwProfile);
     });
 
-    it('un recálculo de un usuario no incluye ni afecta las cotizaciones de otro usuario', async () => {
+    it('procesa todos los usuarios en una sola llamada, generando cotizaciones independientes por usuario', async () => {
       await insertStrategy({ userId: userIdA, name: 'A', weights: WEIGHTS_GOALS_ONLY, factorEscala: 10, isSelected: true });
       await insertStrategy({ userId: userIdB, name: 'B', weights: WEIGHTS_GOALS_ONLY, factorEscala: 20, isSelected: true });
       await insertPlayer({ goals: 20 });
 
-      await service.recalculate(userIdA);
-      await service.recalculate(userIdB);
+      await service.recalculateAll();
 
       const quotesA = await dataSource.getRepository(PlayerQuoteEntity).find({ where: { userId: userIdA } });
       const quotesB = await dataSource.getRepository(PlayerQuoteEntity).find({ where: { userId: userIdB } });
@@ -253,8 +252,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertStrategy({ userId: userIdB, name: 'B', weights: WEIGHTS_GOALS_ONLY, factorEscala: 20, isSelected: true });
       const playerId = await insertPlayer({ goals: 20 });
 
-      await service.recalculate(userIdA, playerId);
-      await service.recalculate(userIdB, playerId);
+      await service.recalculateAll();
 
       const historyA = await service.getQuoteHistory(userIdA, playerId);
       const historyB = await service.getQuoteHistory(userIdB, playerId);

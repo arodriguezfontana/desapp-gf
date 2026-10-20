@@ -22,7 +22,6 @@ import { NoActiveStrategyError } from '../../domain/quotation/errors/no-active-s
 import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
 import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 import { StrategyOwnershipError } from '../../domain/quotation/errors/strategy-ownership.error';
-import { PlayerQuoteCalculationFailedError } from '../../domain/quotation/errors/player-quote-calculation-failed.error';
 
 interface ErrorBody {
   statusCode: number;
@@ -139,9 +138,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return { status: HttpStatus.FORBIDDEN, message: exception.message };
     }
 
-    if (exception instanceof PlayerQuoteCalculationFailedError) {
-      return { status: HttpStatus.UNPROCESSABLE_ENTITY, message: exception.message };
-    }
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
