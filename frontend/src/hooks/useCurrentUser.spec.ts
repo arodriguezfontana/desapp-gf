@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { createContext } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useCurrentUser } from './useCurrentUser';
 import { authService } from '../service/authService';
 import type { MeResponseDto } from '../types/auth.types';
 
 vi.mock('../contexts/auth-context', () => ({
-  AuthContext: null,
+  AuthContext: createContext(null),
 }));
 
 vi.mock('../service/authStorage', () => ({
