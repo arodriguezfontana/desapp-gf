@@ -4,9 +4,7 @@ import { randomUUID } from 'node:crypto';
 
 import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
-import { Email } from '../../domain/auth/email';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
-import { Password } from '../../domain/auth/password';
 import { User } from '../../domain/auth/user';
 import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';

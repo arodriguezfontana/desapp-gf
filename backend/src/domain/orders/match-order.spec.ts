@@ -106,6 +106,34 @@ describe('matchOrder', () => {
     expect(plan.fills).toHaveLength(0);
   });
 
+  it('cuando la nueva orden es SELL matchea contra candidatas BUY y asigna buyOrderId/sellOrderId correctamente', () => {
+    const buyCandidate = buy('buy-cand', 10, t(1));
+    const newSell = sell('sell-new', 10, t(2));
+
+    const plan = matchOrder(newSell, [buyCandidate]);
+
+    expect(plan.fills).toHaveLength(1);
+    expect(plan.fills[0].buyOrderId).toBe('buy-cand');
+    expect(plan.fills[0].sellOrderId).toBe('sell-new');
+    expect(plan.fills[0].buyerUserId).toBe('buyer-buy-cand');
+    expect(plan.fills[0].sellerUserId).toBe('seller-sell-new');
+    expect(plan.fills[0].price).toBe(12.5);
+    expect(plan.newOrderFinal.status).toBe(OrderStatus.COMPLETED);
+  });
+
+  it('cuando la nueva SELL supera la cantidad de la candidata BUY, filea parcialmente y deja remanente', () => {
+    const smallBuy = buy('buy-small', 4, t(1));
+    const newSell = sell('sell-big', 10, t(2));
+
+    const plan = matchOrder(newSell, [smallBuy]);
+
+    expect(plan.fills).toHaveLength(1);
+    expect(plan.fills[0].quantity).toBe(4);
+    expect(plan.newOrderFinal.remainingQuantity).toBe(6);
+    expect(plan.newOrderFinal.status).toBe(OrderStatus.PARTIALLY_FILLED);
+    expect(plan.updatedCandidates[0].status).toBe(OrderStatus.COMPLETED);
+  });
+
   it('matchea entre si una orden de un usuario cualquiera y una del superusuario sin tratamiento especial (spec DD-004)', () => {
     const superuserSell = Order.create({
       id: 'sell-super',
