@@ -6,6 +6,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuthActions();
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await register(email, password);
+      await register(email, password, username);
       navigate('/login');
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -103,6 +104,24 @@ export function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-[#0b3332] border border-[#1a6866] text-white placeholder-gray-500 text-sm font-medium focus:border-[#b79753] focus:outline-none focus:ring-2 focus:ring-[#b79753]/20 transition-all rounded-xl shadow-inner"
                 placeholder="tu@email.com"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-[11px] font-black uppercase tracking-widest text-[#b79753] mb-1.5"
+              >
+                Nombre de usuario
+              </label>
+              <input
+                id="username"
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 bg-[#0b3332] border border-[#1a6866] text-white placeholder-gray-500 text-sm font-medium focus:border-[#b79753] focus:outline-none focus:ring-2 focus:ring-[#b79753]/20 transition-all rounded-xl shadow-inner"
+                placeholder="tu_usuario"
               />
             </div>
 

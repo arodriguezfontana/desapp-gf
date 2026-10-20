@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { HoldingList } from './HoldingList';
 import type { Holding } from '../types/portfolio';
 
@@ -24,7 +25,7 @@ describe('HoldingList', () => {
   ];
 
   it('renderiza correctamente las posiciones de los futbolistas y sus métricas', () => {
-    render(<HoldingList holdings={mockHoldings} />);
+    render(<MemoryRouter><HoldingList holdings={mockHoldings} /></MemoryRouter>);
 
     expect(screen.getByText('Mis Posiciones (2)')).toBeInTheDocument();
     expect(screen.getAllByText('Kylian Mbappé')).toHaveLength(2); // desktop table + mobile card
@@ -35,7 +36,7 @@ describe('HoldingList', () => {
   });
 
   it('muestra la cantidad de tokens, precio medio y cotización actual', () => {
-    render(<HoldingList holdings={[mockHoldings[0]]} />);
+    render(<MemoryRouter><HoldingList holdings={[mockHoldings[0]]} /></MemoryRouter>);
 
     // Table elements
     expect(screen.getByText('15')).toBeInTheDocument();

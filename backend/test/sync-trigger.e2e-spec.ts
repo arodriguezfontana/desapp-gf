@@ -38,7 +38,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
   const server = () => ctx.app.getHttpServer();
 
   const registerLoginAndIssueApiKey = async (email: string) => {
-    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!' });
+    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!', username: 'test-user' });
     const login = await request(server()).post('/auth/login').send({ email, password: 'Abcd1234!' });
     const token = login.body.accessToken as string;
     const issued = await request(server()).post('/auth/api-key').set('Authorization', `Bearer ${token}`);
@@ -46,7 +46,7 @@ describe('Disparo manual de sincronización (e2e, spec 009)', () => {
   };
 
   const registerLoginAndIssueAdminApiKey = async (email: string) => {
-    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!' });
+    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!', username: 'test-admin' });
     await ctx.dataSource.getRepository(UserEntity).update({ email }, { role: 'admin' });
     const login = await request(server()).post('/auth/login').send({ email, password: 'Abcd1234!' });
     const token = login.body.accessToken as string;

@@ -68,6 +68,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       id,
       email: `${id}@test.local`,
       passwordHash: '$2b$10$abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1',
+      username: 'test-user',
     });
     return id;
   };

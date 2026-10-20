@@ -14,6 +14,7 @@ export class UserMapper {
       entity.passwordHash,
       entity.createdAt,
       parseUserRole(entity.role),
+      entity.username,
     );
   }
 
@@ -24,6 +25,7 @@ export class UserMapper {
     entity.passwordHash = user.passwordHash;
     entity.createdAt = user.createdAt;
     entity.role = user.role;
+    entity.username = user.username;
     return entity;
   }
 }

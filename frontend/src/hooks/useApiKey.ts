@@ -16,9 +16,17 @@ export function useApiKey() {
 
   useEffect(() => {
     const handleUnauthorized = () => setHasApiKey(false);
+    const handleSaved = () => setHasApiKey(true);
+    const handleCleared = () => setHasApiKey(false);
+
     httpEvents.addEventListener('apiKeyUnauthorized', handleUnauthorized);
+    window.addEventListener('apiKeySaved', handleSaved);
+    window.addEventListener('apiKeyCleared', handleCleared);
+
     return () => {
       httpEvents.removeEventListener('apiKeyUnauthorized', handleUnauthorized);
+      window.removeEventListener('apiKeySaved', handleSaved);
+      window.removeEventListener('apiKeyCleared', handleCleared);
     };
   }, []);
 

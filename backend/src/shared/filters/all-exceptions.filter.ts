@@ -13,6 +13,8 @@ import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-creden
 import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { ApiKeyAlreadyRevokedError } from '../../domain/api-key/errors/api-key-already-revoked.error';
+import { ReservedUsernameError } from '../../domain/auth/errors/reserved-username.error';
+import { InsufficientHoldingError } from '../../domain/portfolio/errors/insufficient-holding.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
 import { InvalidStrategyWeightsError } from '../../domain/quotation/errors/invalid-strategy-weights.error';
@@ -100,9 +102,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (
       exception instanceof EmailAlreadyInUseError ||
-      exception instanceof ApiKeyAlreadyRevokedError
+      exception instanceof ApiKeyAlreadyRevokedError ||
+      exception instanceof ReservedUsernameError
     ) {
       return { status: HttpStatus.CONFLICT, message: exception.message };
+    }
+
+    if (exception instanceof InsufficientHoldingError) {
+      return { status: HttpStatus.BAD_REQUEST, message: exception.message };
     }
 
     if (exception instanceof SyncInProgressError) {

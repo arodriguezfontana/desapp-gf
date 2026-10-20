@@ -42,6 +42,28 @@ export interface PlayerQuote {
   appliedPosition: Position | null;
 }
 
+export interface RankedPlayer extends Player {
+  rank: number;
+  valor: number;
+  score: number;
+  strategyName: string;
+}
+
+export interface RankingResponseDto {
+  items: RankedPlayer[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface GetRankingParams {
+  page?: number;
+  pageSize?: number;
+  league?: string;
+  team?: string;
+  position?: string;
+}
+
 export interface CatalogFilters {
   league?: string;
   team?: string;

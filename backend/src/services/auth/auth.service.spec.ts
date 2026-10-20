@@ -31,6 +31,7 @@ describe('AuthService', () => {
       existsByEmail: jest.fn(),
       save: jest.fn(),
       findById: jest.fn(),
+      existsByUsername: jest.fn(),
     };
     hasher = { hash: jest.fn(), compare: jest.fn(), timingSafeDummyHash: 'dummy-hash-para-test' };
     tokens = { issue: jest.fn(), verify: jest.fn() };

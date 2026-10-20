@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
+import { useCreateOrder } from '../hooks/useCreateOrder';
+import { usePortfolio } from '../hooks/usePortfolio';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
 import type { PlayerValuationResponseDto } from '../types/userStrategy.types';
+import type { OrderSide } from '../types/orders.types';
 import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
+import { OrderConfirmDialog } from '../components/OrderConfirmDialog';
 
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
 const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
   GK: { from: '#b79753', via: '#8a6f35', text: '#b79753' },
-  DF: { from: '#3b82f6', via: '#1d4ed8', text: '#60a5fa' },
+  DF: { from: '#8b5cf6', via: '#1d4ed8', text: '#a78bfa' },
   MF: { from: '#2dd4bf', via: '#0d9488', text: '#2dd4bf' },
   FW: { from: '#a855f7', via: '#7c3aed', text: '#c084fc' },
 };
@@ -85,13 +89,35 @@ const RatingCard: React.FC<{ label: string; value: number | null; max?: number; 
 // ── Página ───────────────────────────────────────────────────────────────────
 export const PlayerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { hasApiKey } = useApiKey();
   const { getPlayerById, getMyValuationByPlayerId, getQuoteHistoryByPlayerId } = useCatalog();
+  const { createOrder, isSubmitting: isSubmittingOrder, error: orderError } = useCreateOrder();
+  const { holdings } = usePortfolio();
+  const ownedQuantity = holdings.find((h) => h.playerId === id)?.tokenQuantity ?? 0;
   const [player, setPlayer] = useState<Player | null>(null);
   const [quote, setQuote] = useState<PlayerValuationResponseDto | null>(null);
   const [quoteHistory, setQuoteHistory] = useState<PlayerQuote[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [orderDialogSide, setOrderDialogSide] = useState<OrderSide | null>(null);
+  const [orderSuccessMessage, setOrderSuccessMessage] = useState<string | null>(null);
+
+  const handleConfirmOrder = async (quantity: number) => {
+    if (!id || !orderDialogSide) return;
+    const order = await createOrder(orderDialogSide, id, quantity);
+    if (order) {
+      setOrderDialogSide(null);
+      const sideLabel = orderDialogSide === 'BUY' ? 'Compra' : 'Venta';
+      setOrderSuccessMessage(
+        order.status === 'COMPLETED'
+          ? `${sideLabel} ejecutada por completo (${quantity} tokens a ${order.price}).`
+          : order.status === 'PARTIALLY_FILLED'
+            ? `${sideLabel} ejecutada parcialmente; el resto queda pendiente en el libro.`
+            : `${sideLabel} publicada; queda pendiente hasta encontrar una contraparte al mismo precio.`,
+      );
+    }
+  };
 
   useEffect(() => {
     if (!hasApiKey || !id) return;
@@ -169,12 +195,13 @@ export const PlayerDetailPage: React.FC = () => {
       <title>{`${player.name} — FútVal`}</title>
 
       {/* Volver */}
-      <Link
-        to="/catalog"
-        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/40 hover:text-[#b79753] mb-4 transition-colors"
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/40 hover:text-[#b79753] mb-4 transition-colors cursor-pointer"
       >
         ← Volver al catálogo
-      </Link>
+      </button>
 
       {/* ── Card FIFA expandida (Dashboard a pantalla completa) ── */}
       <div
@@ -210,6 +237,31 @@ export const PlayerDetailPage: React.FC = () => {
                       ? `Perfil de posición (${getPositionLabel(quote.appliedPosition)})`
                       : 'Pesos generales de la estrategia'}
                   </span>
+                )}
+                {quote != null && (
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setOrderDialogSide('BUY')}
+                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#a78bfa] hover:bg-[#8b5cf6] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                    >
+                      Comprar
+                    </button>
+                    {ownedQuantity > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderDialogSide('SELL')}
+                        className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#f59e0b] hover:bg-[#d97706] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                      >
+                        Vender
+                      </button>
+                    )}
+                  </div>
+                )}
+                {orderSuccessMessage && (
+                  <p className="text-[10px] font-bold text-[#2dd4bf] mt-2 max-w-[260px] leading-tight">
+                    {orderSuccessMessage}
+                  </p>
                 )}
               </div>
 
@@ -286,7 +338,7 @@ export const PlayerDetailPage: React.FC = () => {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <RatingCard label="Rating" value={player.rating} max={10} color={accent.text} />
-                <RatingCard label="Pases compl." value={player.passesCompleted} max={100} color="#60a5fa" />
+                <RatingCard label="Pases compl." value={player.passesCompleted} max={100} color="#a78bfa" />
                 <RatingCard label="Remates" value={player.shots} max={6} color="#2dd4bf" />
                 <RatingCard label="Intercepciones" value={player.interceptions} max={4} color="#a855f7" />
               </div>
@@ -310,7 +362,7 @@ export const PlayerDetailPage: React.FC = () => {
               {/* Métricas complementarias: Regates, Entradas, Amarillas, Rojas */}
               <div className="grid grid-cols-4 gap-2.5 sm:gap-3">
                 <StatBlock label="Regates" value={player.dribbles} color="#c084fc" />
-                <StatBlock label="Entradas" value={player.totalTackles} color="#60a5fa" />
+                <StatBlock label="Entradas" value={player.totalTackles} color="#a78bfa" />
                 <StatBlock label="Amarillas" value={player.yellowCards} color="#facc15" />
                 <StatBlock label="Rojas" value={player.redCards} color="#f87171" />
               </div>
@@ -334,6 +386,18 @@ export const PlayerDetailPage: React.FC = () => {
         {/* Franja de posición inferior */}
         <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent.via}, ${accent.from})` }} />
       </div>
+
+      {orderDialogSide != null && quote != null && (
+        <OrderConfirmDialog
+          side={orderDialogSide}
+          playerName={player.name}
+          price={quote.value}
+          isSubmitting={isSubmittingOrder}
+          error={orderError}
+          onConfirm={(quantity) => void handleConfirmOrder(quantity)}
+          onCancel={() => setOrderDialogSide(null)}
+        />
+      )}
     </div>
   );
 };

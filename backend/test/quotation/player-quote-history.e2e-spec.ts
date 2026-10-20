@@ -19,7 +19,7 @@ describe('GET /players/:id/quotes (e2e, spec 015 + 019 - Historial completo por 
   let testPlayer: PlayerEntity;
 
   const registerAndLogin = async (email: string) => {
-    const register = await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!' });
+    const register = await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!', username: 'test-user' });
     const login = await request(server()).post('/auth/login').send({ email, password: 'Abcd1234!' });
     return { token: login.body.accessToken as string, userId: register.body.id as string };
   };

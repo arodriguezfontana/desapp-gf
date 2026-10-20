@@ -7,14 +7,15 @@ vi.mock('./httpClient', () => ({
 }));
 
 describe('authService', () => {
-  it('register llama a POST /auth/register con email y password', async () => {
+  it('register llama a POST /auth/register con email, password y username', async () => {
     vi.mocked(httpClient.post).mockResolvedValueOnce(undefined);
 
-    await authService.register('nuevo@mail.com', 'Abcd1234!');
+    await authService.register('nuevo@mail.com', 'Abcd1234!', 'nuevo-usuario');
 
     expect(httpClient.post).toHaveBeenCalledWith('/auth/register', {
       email: 'nuevo@mail.com',
       password: 'Abcd1234!',
+      username: 'nuevo-usuario',
     });
   });
 

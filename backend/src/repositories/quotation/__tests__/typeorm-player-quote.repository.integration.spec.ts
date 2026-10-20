@@ -45,6 +45,7 @@ describe('TypeOrmPlayerQuoteRepository (integración, 019-per-user-valuation-str
       id,
       email: `${id}@test.local`,
       passwordHash: '$2b$10$abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1',
+      username: 'test-user',
     });
     return id;
   };
