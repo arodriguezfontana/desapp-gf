@@ -115,6 +115,46 @@ export class QuotationService {
     return { playerId, strategyId: strategy.id, score, value, appliedPosition };
   }
 
+  private processUserPlayers(
+    userId: string,
+    strategy: ValuationStrategy,
+    players: Awaited<ReturnType<PlayerRepository['findAllActive']>>,
+    quotes: PlayerQuote[],
+    recalculated: RecalculateResult['recalculated'],
+    skipped: RecalculateResult['skipped'],
+  ): void {
+    for (const player of players) {
+      try {
+        const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(player, strategy);
+        quotes.push(
+          PlayerQuote.create({
+            id: randomUUID(),
+            userId,
+            playerId: player.id,
+            strategyId: strategy.id,
+            weightSnapshot: weightsUsed,
+            factorEscalaSnapshot: strategy.factorEscala,
+            score,
+            value,
+            calculatedAt: new Date(),
+            appliedPosition,
+          }),
+        );
+        recalculated.push({ userId, playerId: player.id, value, score });
+      } catch (err) {
+        this.logger.error(
+          `Error calculando cotización para jugador ${player.id} (usuario ${userId})`,
+          err instanceof Error ? err.stack : String(err),
+        );
+        skipped.push({
+          userId,
+          playerId: player.id,
+          reason: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  }
+
   private async getSelectedStrategyOrThrow(userId: string): Promise<ValuationStrategy> {
     const strategies = await this.strategyRepository.findByUserId(userId);
     const selected = strategies.find((s) => s.isSelected);
@@ -170,40 +210,7 @@ export class QuotationService {
           })));
           continue;
         }
-
-        for (const player of players) {
-          try {
-            const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(
-              player,
-              strategy,
-            );
-            quotes.push(
-              PlayerQuote.create({
-                id: randomUUID(),
-                userId,
-                playerId: player.id,
-                strategyId: strategy.id,
-                weightSnapshot: weightsUsed,
-                factorEscalaSnapshot: strategy.factorEscala,
-                score,
-                value,
-                calculatedAt: new Date(),
-                appliedPosition,
-              }),
-            );
-            recalculated.push({ userId, playerId: player.id, value, score });
-          } catch (err) {
-            this.logger.error(
-              `Error calculando cotización para jugador ${player.id} (usuario ${userId})`,
-              err instanceof Error ? err.stack : String(err),
-            );
-            skipped.push({
-              userId,
-              playerId: player.id,
-              reason: err instanceof Error ? err.message : String(err),
-            });
-          }
-        }
+        this.processUserPlayers(userId, strategy, players, quotes, recalculated, skipped);
       }
 
       await this.quoteRepository.saveMany(quotes);
