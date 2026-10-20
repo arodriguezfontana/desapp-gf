@@ -10,7 +10,6 @@ import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.cons
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
-import { Password } from '../../domain/auth/password';
 import { User } from '../../domain/auth/user';
 import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';
@@ -105,8 +104,9 @@ export class SuperuserSeedService {
       await this.users.save(superuser);
     } catch (error) {
       if (error instanceof EmailAlreadyInUseError) {
-        superuser = await this.users.findByEmail(email);
-        if (!superuser) throw error;
+        const found = await this.users.findByEmail(email);
+        if (!found) throw error;
+        superuser = found;
       } else {
         throw error;
       }
