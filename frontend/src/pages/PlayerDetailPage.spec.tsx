@@ -12,6 +12,7 @@ describe('PlayerDetailPage', () => {
     vi.restoreAllMocks();
     vi.spyOn(catalogService, 'getMyValuationByPlayerId').mockResolvedValue(null);
     vi.spyOn(catalogService, 'getQuoteHistoryByPlayerId').mockResolvedValue([]);
+    vi.spyOn(catalogService, 'getOrderBook').mockResolvedValue({ playerId: 'p-1', bids: [], asks: [] });
   });
 
   it('muestra aviso si no existe ApiKey guardada', () => {
@@ -368,5 +369,34 @@ describe('PlayerDetailPage', () => {
       ).toBeInTheDocument();
     });
   });
-});
 
+  it('renderiza la sección de profundidad de mercado con el libro de órdenes (024-player-order-book)', async () => {
+    apiKeyStorage.setApiKey('valid-key');
+    vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+      id: 'p-1',
+      name: 'Kylian Mbappé',
+      league: 'Ligue 1',
+      team: 'PSG',
+      position: 'FW',
+    });
+    vi.spyOn(catalogService, 'getOrderBook').mockResolvedValueOnce({
+      playerId: 'p-1',
+      bids: [{ price: '24.50', totalQuantity: 10 }],
+      asks: [{ price: '25.00', totalQuantity: 15 }],
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/catalog/p-1']}>
+        <Routes>
+          <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Profundidad de Mercado')).toBeInTheDocument();
+      expect(screen.getByText('$24.50')).toBeInTheDocument();
+      expect(screen.getByText('$25.00')).toBeInTheDocument();
+    });
+  });
+});

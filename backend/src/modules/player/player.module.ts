@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiKeyModule } from '../api-key/api-key.module';
 import { TeamCrosswalkModule } from '../competition/team-crosswalk.module';
 import { QuotationModule } from '../quotation/quotation.module';
+import { OrdersModule } from '../orders/orders.module';
 import { PLAYER_REPOSITORY } from './player.constants';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
 import { PlayerController } from '../../controllers/player/player.controller';
@@ -20,6 +21,7 @@ import { ParseDatePipe } from '../../controllers/player/pipes/parse-date.pipe';
     TypeOrmModule.forFeature([PlayerEntity]),
     TeamCrosswalkModule,
     forwardRef(() => QuotationModule),
+    forwardRef(() => OrdersModule),
   ],
   controllers: [PlayerController],
   providers: [

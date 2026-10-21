@@ -1,14 +1,21 @@
 import { Order } from '../../domain/orders/order';
+import { OrderBook } from '../../domain/orders/order-book';
 import { OrderSide } from '../../domain/orders/order-side';
 import { Transaction } from '../shared/transaction';
 
 /**
- * Puerto de dominio para la persistencia de Order (020-order-matching-engine).
+ * Puerto de dominio para la persistencia de Order (020-order-matching-engine, 023-cancel-order).
  * Recibe y devuelve objetos de dominio; el Service nunca ve la entidad de
  * TypeORM. Token: ORDER_REPOSITORY.
  */
 export interface OrderRepository {
   findById(id: string): Promise<Order | null>;
+
+  /**
+   * Busca todas las órdenes emitidas por un usuario ordenadas cronológicamente
+   * en forma descendente (createdAt DESC).
+   */
+  findByUserId(userId: string): Promise<Order[]>;
 
   /**
    * Ordenes PENDING/PARTIALLY_FILLED del lado opuesto, mismo jugador, mismo
@@ -30,6 +37,12 @@ export interface OrderRepository {
 
   /**
    * Dentro de una `Transaction` ya abierta: lockea (`pessimistic_write`) y
+   * devuelve la orden por id para garantizar exclusión mutua contra matching (023-cancel-order).
+   */
+  findByIdWithLock(tx: Transaction, id: string): Promise<Order | null>;
+
+  /**
+   * Dentro de una `Transaction` ya abierta: lockea (`pessimistic_write`) y
    * devuelve las ordenes PENDING/PARTIALLY_FILLED candidatas (lado opuesto,
    * mismo jugador, mismo precio exacto), ordenadas FIFO por
    * `(createdAt, id)` ascendente (research.md D4; spec FR-011, FR-012,
@@ -45,4 +58,10 @@ export interface OrderRepository {
 
   /** Persiste (insert o update) dentro de una `Transaction` ya abierta. */
   saveInTransaction(tx: Transaction, order: Order): Promise<Order>;
+
+  /**
+   * Obtiene la instantánea agregada del libro de órdenes activas (PENDING y
+   * PARTIALLY_FILLED) para un jugador, agrupadas por lado y precio (024-player-order-book).
+   */
+  getOrderBook(playerId: string): Promise<OrderBook>;
 }

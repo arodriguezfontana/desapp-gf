@@ -59,6 +59,7 @@ describe('AdminPage', () => {
     expect(screen.getByText('FOOTBALL DATA')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Actualizar Datos de Jugadores/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Actualizar Clubes y Escudos/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Simulación de Mercado y Actividad Interactiva/i })).toBeInTheDocument();
   });
 
   it('dispara la actualización de datos de WhoScored al hacer click en el botón', async () => {
@@ -122,6 +123,44 @@ describe('AdminPage', () => {
       expect(apiKeySpy).toHaveBeenCalledTimes(1);
       expect(apiKeyStorage.getApiKey()).toBe('pmk_admin_secret_key');
       expect(screen.getByText(/Clave de administrador emitida y vinculada correctamente/i)).toBeInTheDocument();
+    });
+  });
+
+  it('dispara la simulación de mercado y muestra el resumen de resultados', async () => {
+    vi.spyOn(authServiceModule.authService, 'me').mockResolvedValueOnce({
+      id: 'u-admin',
+      email: 'admin@mail.com',
+      role: 'admin',
+    });
+
+    const simSpy = vi.spyOn(adminServiceModule.adminService, 'simulateMarket').mockResolvedValueOnce({
+      success: true,
+      message: 'Simulación completada con éxito.',
+      adminEmail: 'admin@mail.com',
+      holdingsCreated: 6,
+      transactionsCreated: 12,
+      ordersCreated: 4,
+      marketOrdersCreated: 36,
+      quotesCreated: 30,
+      playersInvolved: ['Emiliano Martínez', 'Wesley Fofana'],
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Ejecutar Simulación Completa/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Ejecutar Simulación Completa/i }));
+
+    await waitFor(() => {
+      expect(simSpy).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/Simulación ejecutada con éxito para admin@mail\.com/i)).toBeInTheDocument();
+      expect(screen.getByText('⚽ Emiliano Martínez')).toBeInTheDocument();
     });
   });
 });

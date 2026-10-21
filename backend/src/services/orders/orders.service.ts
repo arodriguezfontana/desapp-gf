@@ -6,12 +6,16 @@ import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.cons
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 
 import { Order } from '../../domain/orders/order';
+import { OrderBook } from '../../domain/orders/order-book';
 import { oppositeSide, OrderSide } from '../../domain/orders/order-side';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
 import { matchOrder } from '../../domain/orders/match-order';
 import { InsufficientHoldingError } from '../../domain/portfolio/errors/insufficient-holding.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
+import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
+import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
+import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
 
 import { OrderRepository } from '../../repositories/orders/order.repository';
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
@@ -28,16 +32,14 @@ export interface OrderCreationResult {
 }
 
 /**
- * Orquesta la creacion de ordenes y el motor de matching
- * (020-order-matching-engine). El algoritmo de matching en si (FIFO, fills
+ * Orquesta la creacion y cancelacion de ordenes y el motor de matching
+ * (020-order-matching-engine, 023-cancel-order). El algoritmo de matching en si (FIFO, fills
  * parciales, remanente) vive en el dominio puro (`matchOrder`); este
  * Service decide CUANDO invocarlo y es responsable de la mecanica de
  * persistencia transaccional (abrir la transaccion, pedir los locks en el
  * orden deterministico de research.md D4) a traves de los puertos de
  * Repository — nunca ve una entidad de TypeORM ni un mapper directamente
- * (constitucion, Principio I; la transaccion/lock en si es el limite
- * documentado en plan.md Complexity Tracking: primer precedente de
- * transaccion explicita de TypeORM en el codebase).
+ * (constitucion, Principio I).
  */
 @Injectable()
 export class OrdersService {
@@ -193,6 +195,41 @@ export class OrdersService {
     return { order: plan.newOrderFinal, fills };
   }
 
+  /**
+   * Cancela una orden propia en estado PENDING o PARTIALLY_FILLED.
+   * Ejecuta la operación dentro de una transacción con lock pesimista
+   * para prevenir condiciones de carrera contra el motor de matching (023-cancel-order).
+   * @throws OrderNotFoundError si `orderId` no existe.
+   * @throws OrderForbiddenError si la orden pertenece a otro usuario.
+   * @throws OrderNotCancellableError si ya está COMPLETED o CANCELLED.
+   */
+  async cancelOrder(orderId: string, requesterId: string): Promise<Order> {
+    return this.transactionManager.run(async (tx) => {
+      const order = await this.orders.findByIdWithLock(tx, orderId);
+      if (!order) {
+        throw new OrderNotFoundError(orderId);
+      }
+      if (order.userId !== requesterId) {
+        throw new OrderForbiddenError();
+      }
+      if (!order.isCancellable) {
+        throw new OrderNotCancellableError(order.status);
+      }
+
+      const cancelledOrder = order.cancel();
+      await this.orders.saveInTransaction(tx, cancelledOrder);
+      this.logger.log(`Orden cancelada con éxito: ${orderId} por usuario ${requesterId}`);
+      return cancelledOrder;
+    });
+  }
+
+  /**
+   * Obtiene todas las órdenes emitidas por un usuario ordenadas por fecha descendente.
+   */
+  async getUserOrders(userId: string): Promise<Order[]> {
+    return this.orders.findByUserId(userId);
+  }
+
   async getHistory(userId: string): Promise<Array<TokenTransaction & { playerName: string }>> {
     const transactions = await this.tokenTransactions.findByUserId(userId);
     if (transactions.length === 0) return [];
@@ -201,5 +238,17 @@ export class OrdersService {
     const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
 
     return transactions.map((tx) => Object.assign(tx, { playerName: nameMap.get(tx.playerId) ?? tx.playerId }));
+  }
+
+  /**
+   * Obtiene la profundidad de mercado agregada para un jugador (024-player-order-book).
+   * @throws PlayerNotFoundError si el jugador no existe.
+   */
+  async getOrderBook(playerId: string): Promise<OrderBook> {
+    const player = await this.players.findById(playerId);
+    if (!player) {
+      throw new PlayerNotFoundError();
+    }
+    return this.orders.getOrderBook(playerId);
   }
 }

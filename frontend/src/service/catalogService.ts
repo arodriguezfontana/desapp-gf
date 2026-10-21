@@ -2,6 +2,7 @@ import { httpClient } from './httpClient';
 import { buildPlayerQuery } from './buildPlayerQuery';
 import type { Player, PlayerListResponseDto, PlayerQuote } from '../types/catalog.types';
 import type { PlayerValuationResponseDto as PlayerValuation } from '../types/userStrategy.types';
+import type { OrderBookResponseDto } from '../types/orders.types';
 
 export interface GetPlayersParams {
   page?: number;
@@ -60,5 +61,9 @@ export const catalogService = {
   /** Mi propio historial de cotizaciones de este jugador (JWT, acotado por usuario). */
   async getQuoteHistoryByPlayerId(playerId: string): Promise<PlayerQuote[]> {
     return httpClient.get<PlayerQuote[]>(`/players/${playerId}/quotes`);
+  },
+  /** Libro de órdenes activas (compras y ventas) del jugador (024-player-order-book, JWT). */
+  async getOrderBook(playerId: string): Promise<OrderBookResponseDto> {
+    return httpClient.get<OrderBookResponseDto>(`/players/${playerId}/order-book`);
   },
 };

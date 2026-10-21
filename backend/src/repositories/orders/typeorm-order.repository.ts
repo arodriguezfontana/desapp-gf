@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Order } from '../../domain/orders/order';
+import { OrderBook, PriceLevel } from '../../domain/orders/order-book';
 import { OrderSide } from '../../domain/orders/order-side';
 import { OrderStatus } from '../../domain/orders/order-status';
 import { Transaction } from '../shared/transaction';
@@ -22,6 +23,14 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async findById(id: string): Promise<Order | null> {
     const entity = await this.repo.findOne({ where: { id } });
     return entity ? this.mapper.toDomain(entity) : null;
+  }
+
+  async findByUserId(userId: string): Promise<Order[]> {
+    const entities = await this.repo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+    return entities.map((e) => this.mapper.toDomain(e));
   }
 
   async findCompatibleCandidates(playerId: string, side: OrderSide, price: number, excludeUserId: string): Promise<Order[]> {
@@ -53,6 +62,16 @@ export class TypeOrmOrderRepository implements OrderRepository {
     return order;
   }
 
+  async findByIdWithLock(tx: Transaction, id: string): Promise<Order | null> {
+    const entity = await tx.manager
+      .getRepository(OrderEntity)
+      .createQueryBuilder('o')
+      .setLock('pessimistic_write')
+      .where('o.id = :id', { id })
+      .getOne();
+    return entity ? this.mapper.toDomain(entity) : null;
+  }
+
   async lockCompatibleCandidates(
     tx: Transaction,
     playerId: string,
@@ -81,5 +100,35 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async saveInTransaction(tx: Transaction, order: Order): Promise<Order> {
     await tx.manager.getRepository(OrderEntity).save(this.mapper.toEntity(order));
     return order;
+  }
+
+  async getOrderBook(playerId: string): Promise<OrderBook> {
+    const rawRows = await this.repo
+      .createQueryBuilder('o')
+      .select('o.side', 'side')
+      .addSelect('o.price', 'price')
+      .addSelect('COALESCE(SUM(o.remaining_quantity), 0)', 'totalQuantity')
+      .where('o.player_id = :playerId', { playerId })
+      .andWhere('o.status IN (:...statuses)', { statuses: OPEN_STATUSES })
+      .groupBy('o.side')
+      .addGroupBy('o.price')
+      .getRawMany<{ side: OrderSide; price: string | number; totalQuantity: string | number }>();
+
+    const bids: PriceLevel[] = [];
+    const asks: PriceLevel[] = [];
+
+    for (const row of rawRows) {
+      const level: PriceLevel = {
+        price: Number(Number(row.price).toFixed(2)),
+        totalQuantity: Number(row.totalQuantity),
+      };
+      if (row.side === OrderSide.BUY) {
+        bids.push(level);
+      } else if (row.side === OrderSide.SELL) {
+        asks.push(level);
+      }
+    }
+
+    return OrderBook.create(playerId, bids, asks);
   }
 }

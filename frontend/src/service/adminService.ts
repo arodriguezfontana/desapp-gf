@@ -1,9 +1,15 @@
 import { httpClient } from './httpClient';
-import type { SyncAcceptedDto, SyncRunStatusDto, SyncSummaryDto } from '../types/admin.types';
+import { apiKeyStorage } from './apiKeyStorage';
+import type {
+  SimulationResultDto,
+  SyncAcceptedDto,
+  SyncRunStatusDto,
+  SyncSummaryDto,
+} from '../types/admin.types';
 
 /**
  * Operaciones del panel de administración.
- * Todas requieren ApiKey con rol admin (AdminApiKeyGuard en el backend).
+ * Todas requieren autenticación de administrador (ApiKey con rol admin o Bearer JWT admin).
  */
 export const adminService = {
   /**
@@ -33,4 +39,13 @@ export const adminService = {
     });
   },
 
+  /**
+   * Ejecuta la simulación interactiva de mercado de alto volumen.
+   */
+  async simulateMarket(): Promise<SimulationResultDto> {
+    const hasKey = Boolean(apiKeyStorage.getApiKey());
+    return httpClient.post<SimulationResultDto>('/admin/simulate-market', undefined, {
+      useApiKey: hasKey,
+    });
+  },
 };

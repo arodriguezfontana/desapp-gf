@@ -3,6 +3,7 @@ import { OrderSide } from './order-side';
 import { OrderStatus } from './order-status';
 import { OrderOverfillError } from './errors/order-overfill.error';
 import { InvalidOrderQuantityError } from './errors/invalid-order-quantity.error';
+import { OrderNotCancellableError } from './errors/order-not-cancellable.error';
 
 describe('Order', () => {
   const createdAt = new Date('2026-10-16T12:00:00.000Z');
@@ -24,6 +25,7 @@ describe('Order', () => {
       const order = build();
       expect(order.remainingQuantity).toBe(10);
       expect(order.status).toBe(OrderStatus.PENDING);
+      expect(order.isCancellable).toBe(true);
     });
 
     it('rechaza cantidad no entera', () => {
@@ -49,12 +51,14 @@ describe('Order', () => {
     it('status pasa a PARTIALLY_FILLED con un fill parcial', () => {
       const order = build({ quantity: 10 }).fill(3);
       expect(order.status).toBe(OrderStatus.PARTIALLY_FILLED);
+      expect(order.isCancellable).toBe(true);
     });
 
     it('status pasa a COMPLETED cuando remainingQuantity llega a 0', () => {
       const order = build({ quantity: 10 }).fill(10);
       expect(order.status).toBe(OrderStatus.COMPLETED);
       expect(order.remainingQuantity).toBe(0);
+      expect(order.isCancellable).toBe(false);
     });
 
     it('status pasa a COMPLETED acumulando varios fills parciales', () => {
@@ -76,6 +80,43 @@ describe('Order', () => {
       const order = build({ quantity: 10 });
       expect(() => order.fill(0)).toThrow(OrderOverfillError);
       expect(() => order.fill(-1)).toThrow(OrderOverfillError);
+    });
+
+    it('rechaza fillear una orden cancelada (OrderNotCancellableError)', () => {
+      const order = build({ quantity: 10 }).cancel();
+      expect(() => order.fill(2)).toThrow(OrderNotCancellableError);
+    });
+  });
+
+  describe('cancel', () => {
+    it('cancela una orden en estado PENDING y pasa a CANCELLED conservando remainingQuantity', () => {
+      const order = build({ quantity: 10 });
+      const cancelled = order.cancel();
+      expect(cancelled.id).toBe(order.id);
+      expect(cancelled.status).toBe(OrderStatus.CANCELLED);
+      expect(cancelled.remainingQuantity).toBe(10);
+      expect(cancelled.isCancellable).toBe(false);
+    });
+
+    it('cancela una orden en estado PARTIALLY_FILLED y pasa a CANCELLED conservando remainingQuantity', () => {
+      const order = build({ quantity: 10 }).fill(4);
+      expect(order.status).toBe(OrderStatus.PARTIALLY_FILLED);
+      const cancelled = order.cancel();
+      expect(cancelled.status).toBe(OrderStatus.CANCELLED);
+      expect(cancelled.remainingQuantity).toBe(6);
+      expect(cancelled.isCancellable).toBe(false);
+    });
+
+    it('falla con OrderNotCancellableError si ya está COMPLETED', () => {
+      const order = build({ quantity: 10 }).fill(10);
+      expect(order.status).toBe(OrderStatus.COMPLETED);
+      expect(() => order.cancel()).toThrow(OrderNotCancellableError);
+    });
+
+    it('falla con OrderNotCancellableError si ya está CANCELLED', () => {
+      const order = build({ quantity: 10 }).cancel();
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(() => order.cancel()).toThrow(OrderNotCancellableError);
     });
   });
 
@@ -124,6 +165,18 @@ describe('Order', () => {
       }).fill(5);
       expect(buy.isCompatibleWith(sell)).toBe(false);
     });
+
+    it('false si la orden origen está cancelada', () => {
+      const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 15.0 }).cancel();
+      const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p1', price: 12.5 });
+      expect(buy.isCompatibleWith(sell)).toBe(false);
+    });
+
+    it('false si la orden destino (contraparte) está cancelada', () => {
+      const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 15.0 });
+      const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p1', price: 12.5 }).cancel();
+      expect(buy.isCompatibleWith(sell)).toBe(false);
+    });
   });
 
   describe('restore', () => {
@@ -139,6 +192,22 @@ describe('Order', () => {
         createdAt,
       });
       expect(order.status).toBe(OrderStatus.PARTIALLY_FILLED);
+    });
+
+    it('reconstruye una orden persistida con status CANCELLED explícito', () => {
+      const order = Order.restore({
+        id: 'order-1',
+        userId: 'user-1',
+        playerId: 'player-1',
+        side: OrderSide.SELL,
+        quantity: 10,
+        remainingQuantity: 4,
+        price: 12.5,
+        createdAt,
+        status: OrderStatus.CANCELLED,
+      });
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.isCancellable).toBe(false);
     });
 
     it('rechaza remainingQuantity fuera de rango', () => {

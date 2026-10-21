@@ -4,11 +4,13 @@ import { useCatalog, ApiError } from '../hooks/useCatalog';
 import { useApiKey } from '../hooks/useApiKey';
 import { useCreateOrder } from '../hooks/useCreateOrder';
 import { usePortfolio } from '../hooks/usePortfolio';
+import { useOrderBook } from '../hooks/useOrderBook';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
 import type { PlayerValuationResponseDto } from '../types/userStrategy.types';
 import type { OrderSide } from '../types/orders.types';
 import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
 import { OrderConfirmDialog } from '../components/OrderConfirmDialog';
+import { OrderBookView } from '../components/OrderBookView';
 
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
 const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
@@ -95,6 +97,12 @@ export const PlayerDetailPage: React.FC = () => {
   const { createOrder, isSubmitting: isSubmittingOrder, error: orderError } = useCreateOrder();
   const { holdings } = usePortfolio();
   const ownedQuantity = holdings.find((h) => h.playerId === id)?.tokenQuantity ?? 0;
+  const {
+    orderBook,
+    isLoading: isLoadingOrderBook,
+    error: orderBookError,
+    reload: reloadOrderBook,
+  } = useOrderBook(id);
   const [player, setPlayer] = useState<Player | null>(null);
   const [quote, setQuote] = useState<PlayerValuationResponseDto | null>(null);
   const [quoteHistory, setQuoteHistory] = useState<PlayerQuote[]>([]);
@@ -118,6 +126,7 @@ export const PlayerDetailPage: React.FC = () => {
         statusMsg = `${sideLabel} publicada; queda pendiente hasta encontrar una contraparte al mismo precio.`;
       }
       setOrderSuccessMessage(statusMsg);
+      void reloadOrderBook();
     }
   };
 
@@ -388,6 +397,16 @@ export const PlayerDetailPage: React.FC = () => {
 
         {/* Franja de posición inferior */}
         <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent.via}, ${accent.from})` }} />
+      </div>
+
+      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
+      <div className="mb-8 sm:mb-12">
+        <OrderBookView
+          orderBook={orderBook}
+          isLoading={isLoadingOrderBook}
+          error={orderBookError}
+          onReload={reloadOrderBook}
+        />
       </div>
 
       {orderDialogSide != null && quote != null && (

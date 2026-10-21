@@ -38,6 +38,11 @@ import {
     { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
     { provide: PLAYER_QUOTE_REPOSITORY, useClass: TypeOrmPlayerQuoteRepository },
   ],
-  exports: [QuotationService, UserStrategyProvisioningService, PLAYER_QUOTE_REPOSITORY],
+  exports: [
+    QuotationService,
+    UserStrategyProvisioningService,
+    PLAYER_QUOTE_REPOSITORY,
+    VALUATION_STRATEGY_REPOSITORY,
+  ],
 })
 export class QuotationModule {}

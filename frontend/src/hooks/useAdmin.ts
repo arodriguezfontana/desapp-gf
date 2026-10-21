@@ -1,6 +1,11 @@
 import { useCallback } from 'react';
 import { adminService } from '../service/adminService';
-import type { SyncAcceptedDto, SyncRunStatusDto, SyncSummaryDto } from '../types/admin.types';
+import type {
+  SimulationResultDto,
+  SyncAcceptedDto,
+  SyncRunStatusDto,
+  SyncSummaryDto,
+} from '../types/admin.types';
 
 /**
  * Hook para encapsular las llamadas de administración (`service/adminService`)
@@ -23,9 +28,14 @@ export function useAdmin() {
     return adminService.triggerFootballDataSync();
   }, []);
 
+  const simulateMarket = useCallback((): Promise<SimulationResultDto> => {
+    return adminService.simulateMarket();
+  }, []);
+
   return {
     triggerWhoScoredSync,
     getWhoScoredRunStatus,
     triggerFootballDataSync,
+    simulateMarket,
   };
 }

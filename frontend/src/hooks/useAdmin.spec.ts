@@ -50,4 +50,25 @@ describe('useAdmin', () => {
     expect(spy).toHaveBeenCalled();
     expect(summary.leagues).toEqual([]);
   });
+
+  it('simulateMarket delega en adminService.simulateMarket', async () => {
+    const spy = vi.spyOn(adminService, 'simulateMarket').mockResolvedValueOnce({
+      success: true,
+      message: 'Simulación completada con éxito.',
+      adminEmail: 'abi_admin@ejemplo.com',
+      holdingsCreated: 4,
+      transactionsCreated: 9,
+      ordersCreated: 4,
+      marketOrdersCreated: 24,
+      quotesCreated: 20,
+      playersInvolved: ['Player One'],
+    });
+
+    const { result } = renderHook(() => useAdmin());
+    const simResult = await result.current.simulateMarket();
+
+    expect(spy).toHaveBeenCalled();
+    expect(simResult.success).toBe(true);
+    expect(simResult.holdingsCreated).toBe(4);
+  });
 });

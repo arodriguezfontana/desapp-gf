@@ -108,6 +108,10 @@ export const httpClient = {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   },
+
+  delete<T>(url: string, options?: HttpRequestOptions): Promise<T> {
+    return request<T>(url, { ...options, method: 'DELETE' });
+  },
 };
 
 export { ApiError };

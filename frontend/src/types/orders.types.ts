@@ -12,7 +12,7 @@ export interface TokenTransactionDto {
   counterpartOrderId: string;
   createdAt: string;
 }
-export type OrderStatus = 'PENDING' | 'PARTIALLY_FILLED' | 'COMPLETED';
+export type OrderStatus = 'PENDING' | 'PARTIALLY_FILLED' | 'COMPLETED' | 'CANCELLED';
 
 export interface CreateOrderRequest {
   side: OrderSide;
@@ -37,3 +37,15 @@ export interface OrderResponseDto {
   createdAt: string;
   fills: OrderFillDto[];
 }
+
+export interface PriceLevelDto {
+  price: string;
+  totalQuantity: number;
+}
+
+export interface OrderBookResponseDto {
+  playerId: string;
+  bids: PriceLevelDto[];
+  asks: PriceLevelDto[];
+}
+

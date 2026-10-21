@@ -57,6 +57,6 @@ import { PortfolioModule } from '../portfolio/portfolio.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   // AuthService se exporta para que ApiKeyModule resuelva el User emisor (spec 008, R2).
-  exports: [AuthService],
+  exports: [AuthService, USER_REPOSITORY, PASSWORD_HASHER, TOKEN_ISSUER],
 })
 export class AuthModule {}

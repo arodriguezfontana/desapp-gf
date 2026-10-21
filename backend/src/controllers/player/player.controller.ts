@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 import { Public } from '../../guards/public.decorator';
@@ -9,6 +9,7 @@ import { parsePosition } from '../../domain/player/enums/position';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerEnrichmentService } from '../../services/player/player-enrichment.service';
 import { QuotationService } from '../../services/quotation/quotation.service';
+import { OrdersService } from '../../services/orders/orders.service';
 import { ListPlayersQueryDto } from './dto/list-players-query.dto';
 import { PlayerListResponseDto } from './dto/player-list-response.dto';
 import { PlayerRankingListResponseDto } from './dto/player-ranking-list-response.dto';
@@ -16,6 +17,7 @@ import { PlayerResponseDto } from './dto/player-response.dto';
 import { PlayerValuationQueryDto } from './dto/player-valuation-query.dto';
 import { PlayerValuationResponseDto } from './dto/player-valuation-response.dto';
 import { PlayerQuoteResponseDto } from '../quotation/dto/player-quote-response.dto';
+import { OrderBookResponseDto } from './dto/order-book-response.dto';
 
 /**
  * Catálogo de jugadores (datos de prueba). El listado, el ranking y el
@@ -34,6 +36,7 @@ export class PlayerController {
   constructor(
     private readonly players: PlayerEnrichmentService,
     private readonly quotationService: QuotationService,
+    private readonly ordersService: OrdersService,
   ) {}
 
   @Get()
@@ -188,5 +191,23 @@ export class PlayerController {
   ): Promise<PlayerQuoteResponseDto[]> {
     const history = await this.quotationService.getQuoteHistory(userId, id);
     return history.map((quote) => PlayerQuoteResponseDto.fromDomain(quote));
+  }
+
+  @Get(':id/order-book')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Libro de órdenes y profundidad de mercado de un jugador',
+    description:
+      'Devuelve las posturas activas de compra (bids) y venta (asks) agregadas por nivel de precio y ordenadas canónicamente, sin exponer identidades de usuarios ni órdenes individuales (024-player-order-book).',
+  })
+  @ApiResponse({ status: 200, type: OrderBookResponseDto })
+  @ApiResponse({ status: 400, description: 'ID de jugador inválido (se espera UUID).' })
+  @ApiResponse({ status: 401, description: 'No autenticado.' })
+  @ApiResponse({ status: 404, description: 'No existe un jugador con ese id (PLAYER_NOT_FOUND).' })
+  async getOrderBook(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<OrderBookResponseDto> {
+    const orderBook = await this.ordersService.getOrderBook(id);
+    return OrderBookResponseDto.fromDomain(orderBook);
   }
 }

@@ -13,6 +13,7 @@ import { TeamCrosswalkModule } from './modules/competition/team-crosswalk.module
 import { QuotationModule } from './modules/quotation/quotation.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -28,9 +29,9 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     QuotationModule,
     PortfolioModule,
     OrdersModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
 export class AppModule {}
-

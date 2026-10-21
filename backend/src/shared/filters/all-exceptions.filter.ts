@@ -22,6 +22,9 @@ import { NoActiveStrategyError } from '../../domain/quotation/errors/no-active-s
 import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
 import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 import { StrategyOwnershipError } from '../../domain/quotation/errors/strategy-ownership.error';
+import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
+import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
+import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
 
 interface ErrorBody {
   statusCode: number;
@@ -95,14 +98,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return { status: HttpStatus.UNAUTHORIZED, message: exception.message };
     }
 
-    if (exception instanceof PlayerNotFoundError) {
+    if (
+      exception instanceof PlayerNotFoundError ||
+      exception instanceof OrderNotFoundError
+    ) {
       return { status: HttpStatus.NOT_FOUND, message: exception.message };
     }
 
     if (
       exception instanceof EmailAlreadyInUseError ||
       exception instanceof ApiKeyAlreadyRevokedError ||
-      exception instanceof ReservedUsernameError
+      exception instanceof ReservedUsernameError ||
+      exception instanceof OrderNotCancellableError
     ) {
       return { status: HttpStatus.CONFLICT, message: exception.message };
     }
@@ -134,10 +141,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return { status: HttpStatus.NOT_FOUND, message: exception.message };
     }
 
-    if (exception instanceof StrategyOwnershipError) {
+    if (
+      exception instanceof StrategyOwnershipError ||
+      exception instanceof OrderForbiddenError
+    ) {
       return { status: HttpStatus.FORBIDDEN, message: exception.message };
     }
-
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
