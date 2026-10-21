@@ -41,6 +41,6 @@ import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } f
     { provide: TOKEN_TRANSACTION_REPOSITORY, useClass: TypeOrmTokenTransactionRepository },
     { provide: TRANSACTION_MANAGER, useClass: TypeOrmTransactionManager },
   ],
-  exports: [ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY],
+  exports: [OrdersService, ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY],
 })
 export class OrdersModule {}

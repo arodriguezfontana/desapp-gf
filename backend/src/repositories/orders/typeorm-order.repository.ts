@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Order } from '../../domain/orders/order';
+import { OrderBook, PriceLevel } from '../../domain/orders/order-book';
 import { OrderSide } from '../../domain/orders/order-side';
 import { OrderStatus } from '../../domain/orders/order-status';
 import { Transaction } from '../shared/transaction';
@@ -99,5 +100,35 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async saveInTransaction(tx: Transaction, order: Order): Promise<Order> {
     await tx.manager.getRepository(OrderEntity).save(this.mapper.toEntity(order));
     return order;
+  }
+
+  async getOrderBook(playerId: string): Promise<OrderBook> {
+    const rawRows = await this.repo
+      .createQueryBuilder('o')
+      .select('o.side', 'side')
+      .addSelect('o.price', 'price')
+      .addSelect('COALESCE(SUM(o.remaining_quantity), 0)', 'totalQuantity')
+      .where('o.player_id = :playerId', { playerId })
+      .andWhere('o.status IN (:...statuses)', { statuses: OPEN_STATUSES })
+      .groupBy('o.side')
+      .addGroupBy('o.price')
+      .getRawMany<{ side: OrderSide; price: string | number; totalQuantity: string | number }>();
+
+    const bids: PriceLevel[] = [];
+    const asks: PriceLevel[] = [];
+
+    for (const row of rawRows) {
+      const level: PriceLevel = {
+        price: Number(Number(row.price).toFixed(2)),
+        totalQuantity: Number(row.totalQuantity),
+      };
+      if (row.side === OrderSide.BUY) {
+        bids.push(level);
+      } else if (row.side === OrderSide.SELL) {
+        asks.push(level);
+      }
+    }
+
+    return OrderBook.create(playerId, bids, asks);
   }
 }

@@ -1,4 +1,5 @@
 import { Order } from '../../domain/orders/order';
+import { OrderBook } from '../../domain/orders/order-book';
 import { OrderSide } from '../../domain/orders/order-side';
 import { Transaction } from '../shared/transaction';
 
@@ -57,4 +58,10 @@ export interface OrderRepository {
 
   /** Persiste (insert o update) dentro de una `Transaction` ya abierta. */
   saveInTransaction(tx: Transaction, order: Order): Promise<Order>;
+
+  /**
+   * Obtiene la instantánea agregada del libro de órdenes activas (PENDING y
+   * PARTIALLY_FILLED) para un jugador, agrupadas por lado y precio (024-player-order-book).
+   */
+  getOrderBook(playerId: string): Promise<OrderBook>;
 }
