@@ -90,7 +90,7 @@ Un usuario autenticado puede consultar, en cualquier momento y sin generar ning�
 
 ### User Story 5 - Disparar manualmente el recálculo de mis cotizaciones (Priority: P2)
 
-Un usuario autenticado puede pedir que el sistema recalcule y deje registrada, de forma inmutable, una nueva cotización para todos los jugadores del catálogo (o para uno puntual), usando la estrategia que tiene seleccionada en ese momento, para actualizar su propio historial de valor con las métricas más recientes.
+POST /quotes/recalculate es un job manual disponible únicamente para el admin (protegido por AdminApiKeyGuard, no por JWT de usuario). Al dispararlo, recalcula y persiste una nueva cotización para cada combinación de usuario y jugador existente en el sistema, usando en cada caso la estrategia seleccionada de ese usuario en ese momento. A diferencia de GET /players/:id/valuation (que calcula al vuelo y no guarda nada), este sí genera un registro inmutable por cada combinación procesada, que pasa a formar parte del historial de cada usuario para cada jugador. Si el admin ya disparó un recálculo que todavía está en curso, un segundo intento se rechaza con 409 — el lock acá es a nivel sistema, no por usuario, porque solo puede haber un recálculo global corriendo a la vez. Si falla el cálculo de una combinación puntual (por ejemplo, por métricas faltantes), esa combinación se saltea y el resto sigue procesándose; la respuesta indica qué combinaciones se recalcularon y cuáles se saltearon, y por qué.
 
 **Why this priority**: Es lo que efectivamente alimenta el historial por usuario (Historia 6); depende de que existan estrategias propias y selección (Historias 1 y 2), pero no bloquea la consulta exploratoria de valuación (Historia 4).
 

@@ -1,40 +1,36 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from '../../guards/auth/current-user.decorator';
+import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
+import { Public } from '../../guards/public.decorator';
 import { QuotationService } from '../../services/quotation/quotation.service';
-import { RecalculateRequestDto } from './dto/recalculate-request.dto';
 import { RecalculateResponseDto } from './dto/recalculate-response.dto';
 
 /**
- * Recálculo manual de cotizaciones, por usuario (019-per-user-valuation-strategies,
- * reemplaza el job semanal global y el endpoint admin de
- * 012-valuation-strategies). Bajo JwtAuthGuard (global): es una operación
- * ligada a un usuario individual, no una operación de sistema (constitución,
- * Principio IV).
+ * Recálculo global de cotizaciones, disparado manualmente por el admin
+ * (019-per-user-valuation-strategies, spec plan.md Backend ajustado).
+ * Protegido por AdminApiKeyGuard; @Public() omite el JwtAuthGuard global.
  */
 @ApiTags('quotes')
-@ApiBearerAuth()
-@Controller('users/me/quotes')
+@ApiSecurity('api-key')
+@Public()
+@UseGuards(AdminApiKeyGuard)
+@Controller('quotes')
 export class QuotationController {
   constructor(private readonly quotationService: QuotationService) {}
 
   @Post('recalculate')
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Recalcular mis cotizaciones',
+    summary: 'Recálculo global de cotizaciones (admin)',
     description:
-      'Recalcula y persiste cotizaciones usando mi estrategia seleccionada en este momento. Sin playerId, procesa todo el catálogo (salteando jugadores cuyo cálculo falle); con playerId, procesa solo ese jugador (rechaza todo si falla). Síncrono: la respuesta llega después de terminar.',
+      'Recalcula y persiste una cotización por cada combinación usuario × jugador del sistema, usando la estrategia seleccionada de cada usuario. Lock a nivel sistema: 409 si ya hay un recálculo en curso. Las combinaciones que fallan se saltean; la respuesta indica cuáles se procesaron y cuáles no.',
   })
   @ApiResponse({ status: 200, type: RecalculateResponseDto })
-  @ApiResponse({ status: 401, description: 'No autenticado' })
-  @ApiResponse({ status: 404, description: 'playerId indicado no existe' })
-  @ApiResponse({ status: 409, description: 'Ya hay un recálculo propio en curso' })
-  @ApiResponse({ status: 422, description: 'Falló el cálculo del playerId puntual indicado' })
-  async recalculate(
-    @CurrentUser() userId: string,
-    @Body() body: RecalculateRequestDto,
-  ): Promise<RecalculateResponseDto> {
-    const result = await this.quotationService.recalculate(userId, body.playerId);
+  @ApiResponse({ status: 401, description: 'API key ausente o inválida' })
+  @ApiResponse({ status: 403, description: 'La API key no es de admin' })
+  @ApiResponse({ status: 409, description: 'Ya hay un recálculo global en curso' })
+  async recalculate(): Promise<RecalculateResponseDto> {
+    const result = await this.quotationService.recalculateAll();
     return RecalculateResponseDto.fromDomain(result);
   }
 }

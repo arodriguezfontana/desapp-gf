@@ -1,6 +1,7 @@
 import * as request from 'supertest';
 import { PlayerQuoteEntity } from '../../src/repositories/quotation/entities/player-quote.entity';
 import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
 import { createTestApp, TestContext } from '../test-app';
 
 describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user-valuation-strategies)', () => {
@@ -11,6 +12,15 @@ describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user
     await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!', username: 'test-user' });
     const login = await request(server()).post('/auth/login').send({ email, password: 'Abcd1234!' });
     return login.body.accessToken as string;
+  };
+
+  const registerAdminAndIssueApiKey = async (email: string) => {
+    await request(server()).post('/auth/register').send({ email, password: 'Abcd1234!', username: 'test-admin' });
+    await ctx.dataSource.getRepository(UserEntity).update({ email }, { role: 'admin' });
+    const login = await request(server()).post('/auth/login').send({ email, password: 'Abcd1234!' });
+    const token = login.body.accessToken as string;
+    const issued = await request(server()).post('/auth/api-key').set('Authorization', `Bearer ${token}`);
+    return issued.body.apiKey as string;
   };
 
   beforeAll(async () => {
@@ -230,34 +240,37 @@ describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user
     });
   });
 
-  // ---- Historia 5: recálculo manual ------------------------------------------
+  // ---- Historia 5: recálculo global (admin) ------------------------------------------
 
-  describe('POST /users/me/quotes/recalculate', () => {
-    it('sin JWT → 401', async () => {
-      const res = await request(server()).post('/users/me/quotes/recalculate');
+  describe('POST /quotes/recalculate', () => {
+    it('sin API key → 401', async () => {
+      const res = await request(server()).post('/quotes/recalculate');
       expect(res.status).toBe(401);
     });
 
-    it('sin playerId → 200, persiste una cotización por jugador del usuario', async () => {
-      const token = await registerAndLogin('recalc-bulk@mail.com');
+    it('con API key de usuario común → 403', async () => {
+      const token = await registerAndLogin('recalc-forbidden@mail.com');
+      const issued = await request(server()).post('/auth/api-key').set('Authorization', `Bearer ${token}`);
+      const apiKey = issued.body.apiKey as string;
 
-      const res = await request(server())
-        .post('/users/me/quotes/recalculate')
-        .set('Authorization', `Bearer ${token}`)
-        .send({});
+      const res = await request(server()).post('/quotes/recalculate').set('X-Api-Key', apiKey);
+      expect(res.status).toBe(403);
+    });
+
+    it('con API key de admin → 200 y devuelve recalculated/skipped', async () => {
+      const adminApiKey = await registerAdminAndIssueApiKey('recalc-admin@mail.com');
+
+      const res = await request(server()).post('/quotes/recalculate').set('X-Api-Key', adminApiKey);
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.recalculated)).toBe(true);
+      expect(Array.isArray(res.body.skipped)).toBe(true);
     });
 
-    it('un segundo recálculo del mismo usuario mientras el primero está en curso → 409', async () => {
-      const token = await registerAndLogin('recalc-conflict@mail.com');
+    it('segundo recálculo mientras el primero está en curso → 409 (lock a nivel sistema)', async () => {
+      const adminApiKey = await registerAdminAndIssueApiKey('recalc-conflict-admin@mail.com');
+      await registerAndLogin('recalc-conflict-user@mail.com');
 
-      // Un catálogo vacío hace que el recálculo masivo termine casi
-      // instantáneamente, sin ventana real para que el segundo request
-      // alcance a chocar con el lock (el guard JWT del segundo ya tardó más
-      // que todo el recálculo del primero). Se siembra un lote de jugadores
-      // para que el recálculo tome tiempo real y la carrera sea genuina.
       const { randomUUID } = await import('node:crypto');
       const playerRepo = ctx.dataSource.getRepository(PlayerEntity);
       await playerRepo.insert(
@@ -273,23 +286,12 @@ describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user
       );
 
       const [first, second] = await Promise.all([
-        request(server()).post('/users/me/quotes/recalculate').set('Authorization', `Bearer ${token}`).send({}),
-        request(server()).post('/users/me/quotes/recalculate').set('Authorization', `Bearer ${token}`).send({}),
+        request(server()).post('/quotes/recalculate').set('X-Api-Key', adminApiKey),
+        request(server()).post('/quotes/recalculate').set('X-Api-Key', adminApiKey),
       ]);
 
       const statuses = [first.status, second.status].sort();
       expect(statuses).toEqual([200, 409]);
-    });
-
-    it('playerId inexistente → 404', async () => {
-      const token = await registerAndLogin('recalc-404@mail.com');
-
-      const res = await request(server())
-        .post('/users/me/quotes/recalculate')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ playerId: '00000000-0000-0000-0000-000000000000' });
-
-      expect(res.status).toBe(404);
     });
   });
 
@@ -309,20 +311,14 @@ describe('Estrategias propias por usuario y recálculo manual (e2e, 019-per-user
       expect(res.body).toEqual([]);
     });
 
-    it('cada usuario ve únicamente las cotizaciones que él mismo generó', async () => {
+    it('cada usuario ve únicamente las cotizaciones que el recálculo global generó para él', async () => {
+      const adminApiKey = await registerAdminAndIssueApiKey('history-admin@mail.com');
       const tokenA = await registerAndLogin('history-a@mail.com');
       const tokenB = await registerAndLogin('history-b@mail.com');
       const player = await ctx.dataSource.getRepository(PlayerEntity).findOne({ where: {} });
       if (!player) return;
 
-      await request(server())
-        .post('/users/me/quotes/recalculate')
-        .set('Authorization', `Bearer ${tokenA}`)
-        .send({ playerId: player.id });
-      await request(server())
-        .post('/users/me/quotes/recalculate')
-        .set('Authorization', `Bearer ${tokenB}`)
-        .send({ playerId: player.id });
+      await request(server()).post('/quotes/recalculate').set('X-Api-Key', adminApiKey);
 
       const historyA = await request(server()).get(`/players/${player.id}/quotes`).set('Authorization', `Bearer ${tokenA}`);
       const historyB = await request(server()).get(`/players/${player.id}/quotes`).set('Authorization', `Bearer ${tokenB}`);

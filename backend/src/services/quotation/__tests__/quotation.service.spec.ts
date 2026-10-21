@@ -6,7 +6,7 @@ import { ValuationStrategy } from '../../../domain/quotation/valuation-strategy'
 import { RecalculationInProgressError } from '../../../domain/quotation/errors/recalculation-in-progress.error';
 import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy-not-found.error';
 import { StrategyOwnershipError } from '../../../domain/quotation/errors/strategy-ownership.error';
-import { PlayerQuoteCalculationFailedError } from '../../../domain/quotation/errors/player-quote-calculation-failed.error';
+
 import { League } from '../../../domain/player/enums/league';
 import { Position } from '../../../domain/player/enums/position';
 import { Player } from '../../../domain/player/player';
@@ -50,6 +50,7 @@ describe('QuotationService', () => {
       save: jest.fn(),
       saveMany: jest.fn(),
       selectStrategy: jest.fn(),
+      findAllUserIds: jest.fn(),
     };
     quoteRepo = {
       saveMany: jest.fn().mockResolvedValue(undefined),
@@ -194,103 +195,85 @@ describe('QuotationService', () => {
     });
   });
 
-  // ---- recalculate -----------------------------------------------------------------
+  // ---- recalculateAll --------------------------------------------------------------
 
-  describe('recalculate()', () => {
-    it('lanza RecalculationInProgressError si el mismo usuario ya tiene uno en curso', async () => {
+  describe('recalculateAll()', () => {
+    it('lanza RecalculationInProgressError si ya hay un recálculo global en curso', async () => {
+      strategyRepo.findAllUserIds.mockResolvedValue([USER_ID]);
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([]);
 
-      const first = service.recalculate(USER_ID);
-      await expect(service.recalculate(USER_ID)).rejects.toBeInstanceOf(RecalculationInProgressError);
+      const first = service.recalculateAll();
+      await expect(service.recalculateAll()).rejects.toBeInstanceOf(RecalculationInProgressError);
       await first;
     });
 
-    it('no bloquea el recálculo de un usuario distinto', async () => {
-      strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
-      playerRepo.findAllActive.mockResolvedValue([]);
-
-      const first = service.recalculate(USER_ID);
-      await expect(service.recalculate(OTHER_USER_ID)).resolves.toBeDefined();
-      await first;
-    });
-
-    it('recalcula todo el catálogo y persiste una cotización por jugador', async () => {
+    it('procesa todos los usuarios y jugadores y persiste una cotización por combinación', async () => {
       const player = makePlayer();
+      strategyRepo.findAllUserIds.mockResolvedValue([USER_ID]);
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([player]);
 
-      const result = await service.recalculate(USER_ID);
+      const result = await service.recalculateAll();
 
       expect(result.recalculated).toHaveLength(1);
+      expect(result.recalculated[0]).toMatchObject({ userId: USER_ID, playerId: 'p-1' });
       expect(result.skipped).toHaveLength(0);
       expect(quoteRepo.saveMany).toHaveBeenCalledTimes(1);
       const [savedQuotes] = quoteRepo.saveMany.mock.calls[0] as [PlayerQuote[]];
       expect(savedQuotes[0].userId).toBe(USER_ID);
     });
 
-    it('recalcula solo el jugador puntual cuando se indica playerId', async () => {
+    it('procesa múltiples usuarios en la misma llamada', async () => {
       const player = makePlayer();
-      strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
-      playerRepo.findById.mockResolvedValue(player);
+      strategyRepo.findAllUserIds.mockResolvedValue([USER_ID, OTHER_USER_ID]);
+      strategyRepo.findByUserId
+        .mockResolvedValueOnce([makeStrategy({ userId: USER_ID, isSelected: true })])
+        .mockResolvedValueOnce([makeStrategy({ id: 's-2', userId: OTHER_USER_ID, isSelected: true })]);
+      playerRepo.findAllActive.mockResolvedValue([player]);
 
-      const result = await service.recalculate(USER_ID, 'p-1');
+      const result = await service.recalculateAll();
+
+      expect(result.recalculated).toHaveLength(2);
+      expect(result.recalculated.map((r) => r.userId)).toEqual([USER_ID, OTHER_USER_ID]);
+    });
+
+    it('saltea un usuario sin estrategia seleccionada y continúa con el resto', async () => {
+      const player = makePlayer();
+      strategyRepo.findAllUserIds.mockResolvedValue([USER_ID, OTHER_USER_ID]);
+      strategyRepo.findByUserId
+        .mockResolvedValueOnce([makeStrategy({ isSelected: false })])
+        .mockResolvedValueOnce([makeStrategy({ id: 's-2', userId: OTHER_USER_ID, isSelected: true })]);
+      playerRepo.findAllActive.mockResolvedValue([player]);
+
+      const result = await service.recalculateAll();
 
       expect(result.recalculated).toHaveLength(1);
-      expect(playerRepo.findAllActive).not.toHaveBeenCalled();
+      expect(result.recalculated[0].userId).toBe(OTHER_USER_ID);
+      expect(result.skipped.some((s) => s.userId === USER_ID)).toBe(true);
     });
 
-    it('lanza PlayerNotFoundError si el playerId puntual no existe', async () => {
-      strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
-      playerRepo.findById.mockResolvedValue(null);
-
-      await expect(service.recalculate(USER_ID, 'p-999')).rejects.toBeInstanceOf(PlayerNotFoundError);
-    });
-
-    it('en modo masivo, saltea un jugador que falla y persiste el resto (FR-014b)', async () => {
+    it('saltea la combinación que falla y persiste el resto', async () => {
       const okPlayer = makePlayer('p-1');
       const brokenPlayer = makePlayer('p-2');
+      strategyRepo.findAllUserIds.mockResolvedValue([USER_ID]);
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([okPlayer, brokenPlayer]);
 
       const calc = jest.spyOn(calculatePlayerValueModule, 'calculatePlayerValue');
       calc.mockImplementation((player) => {
-        if (player.id === 'p-2') {
-          throw new Error('fallo simulado de cálculo');
-        }
+        if (player.id === 'p-2') throw new Error('fallo simulado de cálculo');
         return { score: 0.5, value: 50.5, appliedPosition: null, weightsUsed: WEIGHTS };
       });
 
-      const result = await service.recalculate(USER_ID);
+      const result = await service.recalculateAll();
 
-      expect(result.recalculated).toEqual([{ playerId: 'p-1', value: 50.5, score: 0.5 }]);
-      expect(result.skipped).toEqual([{ playerId: 'p-2', reason: 'fallo simulado de cálculo' }]);
-      expect(quoteRepo.saveMany).toHaveBeenCalledTimes(1);
+      expect(result.recalculated).toEqual([{ userId: USER_ID, playerId: 'p-1', value: 50.5, score: 0.5 }]);
+      expect(result.skipped).toEqual([{ userId: USER_ID, playerId: 'p-2', reason: 'fallo simulado de cálculo' }]);
       const [savedQuotes] = quoteRepo.saveMany.mock.calls[0] as [PlayerQuote[]];
       expect(savedQuotes).toHaveLength(1);
 
       calc.mockRestore();
-    });
-
-    it('en modo puntual, rechaza toda la operación si falla el cálculo (422, sin persistir)', async () => {
-      strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
-      const player = makePlayer();
-      playerRepo.findById.mockResolvedValue(player);
-      quoteRepo.saveMany.mockImplementation(() => {
-        throw new Error('no debería llamarse');
-      });
-      jest
-        .spyOn(calculatePlayerValueModule, 'calculatePlayerValue')
-        .mockImplementation(() => {
-          throw new Error('fallo simulado de cálculo');
-        });
-
-      await expect(service.recalculate(USER_ID, 'p-1')).rejects.toBeInstanceOf(
-        PlayerQuoteCalculationFailedError,
-      );
-      expect(quoteRepo.saveMany).not.toHaveBeenCalled();
-
-      jest.restoreAllMocks();
     });
   });
 

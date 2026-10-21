@@ -23,4 +23,6 @@ export interface ValuationStrategyRepository {
    * no pertenece a `userId`.
    */
   selectStrategy(userId: string, id: string): Promise<ValuationStrategy>;
+  /** Todos los userIds distintos que tienen al menos una estrategia registrada. */
+  findAllUserIds(): Promise<string[]>;
 }

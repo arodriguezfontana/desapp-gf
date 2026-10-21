@@ -48,15 +48,16 @@ ser una de las dos propias del usuario).
 - **400**: `strategyId` indicado no pertenece al usuario autenticado (mismo criterio que 403 de edición, pero expresado como rechazo de la consulta — ver spec.md Edge Cases).
 - **404**: jugador inexistente.
 
-## POST /users/me/quotes/recalculate
+## POST /quotes/recalculate
 
-Body opcional: `{ playerId?: string }`. Ejecuta **síncronamente**; la respuesta HTTP no
-se emite hasta terminar todo el cálculo solicitado.
+Protegido por `AdminApiKeyGuard` (`X-Api-Key` header). Sin body. Ejecuta **síncronamente**
+el recálculo de todos los usuarios × todos los jugadores activos; la respuesta HTTP no se
+emite hasta terminar todo el cálculo.
 
-- **200**: `{ recalculated: [{ playerId, value, score }], skipped: [{ playerId, reason }] }`. `skipped` solo puede ser no vacío cuando no se indicó `playerId` (recálculo masivo); si se indicó `playerId` y falla, ver 422.
-- **409**: el usuario autenticado ya tiene un recálculo propio en curso. No afecta a otros usuarios.
-- **422**: se indicó `playerId` puntual y su cálculo falló (p. ej. métricas faltantes) — a diferencia del modo masivo, no hay "resto del catálogo" al que continuar, así que se rechaza la operación completa sin persistir nada.
-- **404**: `playerId` indicado no existe en el catálogo.
+- **200**: `{ recalculated: [{ userId, playerId, value, score }], skipped: [{ userId, playerId, reason }] }`. Las combinaciones que fallen individualmente se incluyen en `skipped` y no interrumpen el resto.
+- **401**: API key ausente o inválida.
+- **403**: la API key no pertenece a un usuario con rol `admin`.
+- **409**: ya hay un recálculo global en curso (lock a nivel sistema).
 
 ## GET /players/:id/quotes
 
@@ -70,4 +71,4 @@ autenticado, nunca de otro usuario. Sin paginación (ver spec.md Clarifications)
 
 - `GET quotes/strategies` (`AdminApiKeyGuard`) — ya no existe una lista global de estrategias que un admin pueda consultar.
 - `PATCH quotes/strategies/:id/activate` (`AdminApiKeyGuard`) — ya no existe el concepto de activar una estrategia para todo el sistema.
-- `POST quotes/recalculate` (`AdminApiKeyGuard`) — reemplazado por `POST /users/me/quotes/recalculate` (JWT, user-scoped).
+- `POST /users/me/quotes/recalculate` (JWT, user-scoped) — reemplazado por `POST /quotes/recalculate` (`AdminApiKeyGuard`, system-wide).

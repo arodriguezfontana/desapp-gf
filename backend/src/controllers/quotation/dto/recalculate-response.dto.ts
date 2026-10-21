@@ -2,23 +2,25 @@ import { ApiProperty } from '@nestjs/swagger';
 import { RecalculateResult } from '../../../services/quotation/quotation.service';
 
 class RecalculatedEntryDto {
+  @ApiProperty() userId!: string;
   @ApiProperty() playerId!: string;
   @ApiProperty() value!: number;
   @ApiProperty() score!: number;
 }
 
 class SkippedEntryDto {
+  @ApiProperty() userId!: string;
   @ApiProperty() playerId!: string;
   @ApiProperty() reason!: string;
 }
 
 export class RecalculateResponseDto {
-  @ApiProperty({ type: [RecalculatedEntryDto], description: 'Jugadores recalculados y persistidos' })
+  @ApiProperty({ type: [RecalculatedEntryDto], description: 'Combinaciones recalculadas y persistidas' })
   recalculated!: RecalculatedEntryDto[];
 
   @ApiProperty({
     type: [SkippedEntryDto],
-    description: 'Jugadores salteados durante un recálculo masivo por fallar su cálculo',
+    description: 'Combinaciones salteadas por fallo en el cálculo',
   })
   skipped!: SkippedEntryDto[];
 
