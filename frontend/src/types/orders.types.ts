@@ -37,3 +37,15 @@ export interface OrderResponseDto {
   createdAt: string;
   fills: OrderFillDto[];
 }
+
+export interface PriceLevelDto {
+  price: string;
+  totalQuantity: number;
+}
+
+export interface OrderBookResponseDto {
+  playerId: string;
+  bids: PriceLevelDto[];
+  asks: PriceLevelDto[];
+}
+

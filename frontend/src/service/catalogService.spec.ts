@@ -139,5 +139,18 @@ describe('catalogService', () => {
 
     expect(getSpy).toHaveBeenCalledWith('/players/player-1/quotes');
   });
-});
 
+  it('getOrderBook llama a /players/:id/order-book sin useApiKey (JWT) y retorna el libro de órdenes', async () => {
+    const bookMock = {
+      playerId: 'player-1',
+      bids: [{ price: '24.50', totalQuantity: 15 }],
+      asks: [{ price: '25.00', totalQuantity: 10 }],
+    };
+    const getSpy = vi.spyOn(httpClient, 'get').mockResolvedValueOnce(bookMock);
+
+    const result = await catalogService.getOrderBook('player-1');
+
+    expect(result).toEqual(bookMock);
+    expect(getSpy).toHaveBeenCalledWith('/players/player-1/order-book');
+  });
+});
