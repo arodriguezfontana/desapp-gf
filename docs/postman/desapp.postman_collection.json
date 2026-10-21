@@ -3081,6 +3081,158 @@
           }
         }
       ]
+    },
+    {
+      "name": "Feature 24 - Libro de órdenes por jugador",
+      "description": "GET /players/:id/order-book (024-player-order-book). Devuelve las órdenes activas (PENDING y PARTIALLY_FILLED) de un jugador separadas en bids y asks, agrupadas por nivel de precio con orden canónico y estricto anonimato de mercado.",
+      "item": [
+        {
+          "name": "GET /players/:id/order-book - Consulta de profundidad de mercado (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Estructura de libro válida\", function () {",
+                  "  pm.expect(json).to.have.property(\"playerId\");",
+                  "  pm.expect(json).to.have.property(\"bids\");",
+                  "  pm.expect(json).to.have.property(\"asks\");",
+                  "  pm.expect(Array.isArray(json.bids)).to.be.true;",
+                  "  pm.expect(Array.isArray(json.asks)).to.be.true;",
+                  "});",
+                  "pm.test(\"Anonimato estricto\", function () {",
+                  "  pm.expect(json.userId).to.be.undefined;",
+                  "  pm.expect(json.orderId).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/order-book",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "order-book"
+              ]
+            },
+            "description": "Consulta el libro de órdenes consolidadas de un jugador con JWT válido."
+          }
+        },
+        {
+          "name": "GET /players/:id/order-book - Jugador inexistente (404 Not Found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 Not Found\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/00000000-0000-0000-0000-000000000000/order-book",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "00000000-0000-0000-0000-000000000000",
+                "order-book"
+              ]
+            },
+            "description": "Intento de consultar el libro de un jugador inexistente."
+          }
+        },
+        {
+          "name": "GET /players/:id/order-book - ID inválido no UUID (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 Bad Request\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/not-a-valid-uuid/order-book",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "not-a-valid-uuid",
+                "order-book"
+              ]
+            },
+            "description": "Formato de ID inválido rechazado por ParseUUIDPipe con 400."
+          }
+        },
+        {
+          "name": "GET /players/:id/order-book - Sin JWT (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 Unauthorized\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/order-book",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "order-book"
+              ]
+            },
+            "description": "Petición rechazada con 401 por falta de token JWT de usuario."
+          }
+        }
+      ]
     }
   ]
 }
