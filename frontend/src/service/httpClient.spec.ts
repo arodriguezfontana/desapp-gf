@@ -52,6 +52,21 @@ describe('httpClient', () => {
     expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer jwt-abc');
   });
 
+  it('DELETE envía método DELETE con headers correspondientes', async () => {
+    authStorage.setToken('jwt-abc');
+    vi.mocked(fetch).mockResolvedValueOnce(
+      fakeResponse({ status: 200, ok: true, json: () => Promise.resolve({ id: 'order-1', status: 'CANCELLED' }) }),
+    );
+
+    const result = await httpClient.delete<{ id: string; status: string }>('/orders/order-1');
+
+    expect(result).toEqual({ id: 'order-1', status: 'CANCELLED' });
+    const [url, init] = vi.mocked(fetch).mock.calls[0];
+    expect(String(url)).toContain('/orders/order-1');
+    expect(init?.method).toBe('DELETE');
+    expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer jwt-abc');
+  });
+
   it('GET con useApiKey: true usa el header X-Api-Key de apiKeyStorage', async () => {
     apiKeyStorage.setApiKey('test-api-key-xyz');
     vi.mocked(fetch).mockResolvedValueOnce(

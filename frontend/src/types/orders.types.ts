@@ -12,7 +12,7 @@ export interface TokenTransactionDto {
   counterpartOrderId: string;
   createdAt: string;
 }
-export type OrderStatus = 'PENDING' | 'PARTIALLY_FILLED' | 'COMPLETED';
+export type OrderStatus = 'PENDING' | 'PARTIALLY_FILLED' | 'COMPLETED' | 'CANCELLED';
 
 export interface CreateOrderRequest {
   side: OrderSide;
