@@ -35,3 +35,4 @@ describe('AdminSimulationController', () => {
     expect(service.simulate).toHaveBeenCalledTimes(1);
   });
 });
+

@@ -42,3 +42,4 @@ export class AdminSimulationController {
     return this.simulationService.simulate();
   }
 }
+

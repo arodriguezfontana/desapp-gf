@@ -31,3 +31,4 @@ export class SimulationResultDto {
   @ApiProperty({ example: ['Emiliano Martínez', 'Wesley Fofana', 'Moisés Caicedo'] })
   playersInvolved!: string[];
 }
+
