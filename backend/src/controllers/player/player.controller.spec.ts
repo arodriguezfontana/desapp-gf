@@ -231,15 +231,15 @@ describe('PlayerController', () => {
       });
 
       // Verificación de anonimato estricto (US2): ningún campo de usuario o id de orden
-      expect((response as any).userId).toBeUndefined();
-      expect((response as any).orderId).toBeUndefined();
-      response.bids.forEach((bid: any) => {
-        expect(bid.userId).toBeUndefined();
-        expect(bid.orderId).toBeUndefined();
+      expect('userId' in response).toBe(false);
+      expect('orderId' in response).toBe(false);
+      response.bids.forEach((bid) => {
+        expect('userId' in bid).toBe(false);
+        expect('orderId' in bid).toBe(false);
       });
-      response.asks.forEach((ask: any) => {
-        expect(ask.userId).toBeUndefined();
-        expect(ask.orderId).toBeUndefined();
+      response.asks.forEach((ask) => {
+        expect('userId' in ask).toBe(false);
+        expect('orderId' in ask).toBe(false);
       });
     });
 

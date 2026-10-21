@@ -7,6 +7,7 @@ import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.e
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
+import type { Player } from '../../domain/player/player';
 import type { OrderRepository } from '../../repositories/orders/order.repository';
 import type { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
 import type { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
@@ -183,7 +184,7 @@ describe('OrdersService', () => {
 
   describe('getOrderBook', () => {
     it('obtiene el order book delegando en orders.getOrderBook cuando el jugador existe', async () => {
-      const fakePlayer = { id: 'player-1', name: 'Lionel Messi' } as any;
+      const fakePlayer = { id: 'player-1', name: 'Lionel Messi' } as unknown as Player;
       const expectedBook = OrderBook.create(
         'player-1',
         [{ price: 25.0, totalQuantity: 10 }],

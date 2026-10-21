@@ -165,11 +165,11 @@ describe('MarketSimulationService', () => {
     } as unknown as jest.Mocked<ValuationStrategyRepository>;
 
     quotation = {
-      valuate: jest.fn().mockResolvedValue({ value: 25.0 } as any),
+      valuate: jest.fn().mockResolvedValue({ playerId: 'p1', strategyId: 's1', score: 10, value: 25.0, appliedPosition: null }),
     } as unknown as jest.Mocked<QuotationService>;
 
     strategyProvisioning = {
-      provisionDefaultStrategiesFor: jest.fn().mockResolvedValue(undefined as any),
+      provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
     } as unknown as jest.Mocked<UserStrategyProvisioningService>;
 
     config = {

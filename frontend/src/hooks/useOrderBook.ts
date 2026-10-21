@@ -31,7 +31,10 @@ export function useOrderBook(playerId: string | undefined) {
   }, [playerId]);
 
   useEffect(() => {
-    fetchOrderBook();
+    const load = async () => {
+      await fetchOrderBook();
+    };
+    void load();
   }, [fetchOrderBook]);
 
   return {
