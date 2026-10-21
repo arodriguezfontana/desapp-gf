@@ -1,6 +1,9 @@
 import { PlayerController } from './player.controller';
 import { PlayerEnrichmentService } from '../../services/player/player-enrichment.service';
 import { QuotationService } from '../../services/quotation/quotation.service';
+import { OrdersService } from '../../services/orders/orders.service';
+import { OrderBook } from '../../domain/orders/order-book';
+import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { Player } from '../../domain/player/player';
 import { League } from '../../domain/player/enums/league';
 import { Position } from '../../domain/player/enums/position';
@@ -11,6 +14,7 @@ describe('PlayerController', () => {
   let controller: PlayerController;
   let enrichmentService: jest.Mocked<PlayerEnrichmentService>;
   let quotationService: jest.Mocked<QuotationService>;
+  let ordersService: jest.Mocked<OrdersService>;
 
   const somePlayer = Player.restore({
     id: 'id-1',
@@ -44,7 +48,11 @@ describe('PlayerController', () => {
       getQuoteHistory: jest.fn(),
     } as unknown as jest.Mocked<QuotationService>;
 
-    controller = new PlayerController(enrichmentService, quotationService);
+    ordersService = {
+      getOrderBook: jest.fn(),
+    } as unknown as jest.Mocked<OrdersService>;
+
+    controller = new PlayerController(enrichmentService, quotationService, ordersService);
   });
 
   describe('ranking', () => {
@@ -191,5 +199,56 @@ describe('PlayerController', () => {
       expect(response.crestUrl).toBe('https://crests.football-data.org/86.png');
     });
   });
-});
 
+  describe('getOrderBook', () => {
+    it('delega en OrdersService.getOrderBook y devuelve el DTO formateado con anonimato estricto', async () => {
+      const orderBook = OrderBook.create(
+        '1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d',
+        [
+          { price: 24.5, totalQuantity: 15 },
+          { price: 23.0, totalQuantity: 30 },
+        ],
+        [
+          { price: 25.0, totalQuantity: 10 },
+          { price: 26.5, totalQuantity: 25 },
+        ],
+      );
+      ordersService.getOrderBook.mockResolvedValue(orderBook);
+
+      const response = await controller.getOrderBook('1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d');
+
+      expect(ordersService.getOrderBook).toHaveBeenCalledWith('1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d');
+      expect(response).toEqual({
+        playerId: '1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d',
+        bids: [
+          { price: '24.50', totalQuantity: 15 },
+          { price: '23.00', totalQuantity: 30 },
+        ],
+        asks: [
+          { price: '25.00', totalQuantity: 10 },
+          { price: '26.50', totalQuantity: 25 },
+        ],
+      });
+
+      // Verificación de anonimato estricto (US2): ningún campo de usuario o id de orden
+      expect((response as any).userId).toBeUndefined();
+      expect((response as any).orderId).toBeUndefined();
+      response.bids.forEach((bid: any) => {
+        expect(bid.userId).toBeUndefined();
+        expect(bid.orderId).toBeUndefined();
+      });
+      response.asks.forEach((ask: any) => {
+        expect(ask.userId).toBeUndefined();
+        expect(ask.orderId).toBeUndefined();
+      });
+    });
+
+    it('propaga PlayerNotFoundError cuando el jugador no existe', async () => {
+      ordersService.getOrderBook.mockRejectedValue(new PlayerNotFoundError());
+
+      await expect(controller.getOrderBook('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
+        PlayerNotFoundError,
+      );
+    });
+  });
+});

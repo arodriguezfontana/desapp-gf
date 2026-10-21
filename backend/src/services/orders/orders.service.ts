@@ -6,6 +6,7 @@ import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.cons
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 
 import { Order } from '../../domain/orders/order';
+import { OrderBook } from '../../domain/orders/order-book';
 import { oppositeSide, OrderSide } from '../../domain/orders/order-side';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
@@ -237,5 +238,17 @@ export class OrdersService {
     const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
 
     return transactions.map((tx) => Object.assign(tx, { playerName: nameMap.get(tx.playerId) ?? tx.playerId }));
+  }
+
+  /**
+   * Obtiene la profundidad de mercado agregada para un jugador (024-player-order-book).
+   * @throws PlayerNotFoundError si el jugador no existe.
+   */
+  async getOrderBook(playerId: string): Promise<OrderBook> {
+    const player = await this.players.findById(playerId);
+    if (!player) {
+      throw new PlayerNotFoundError();
+    }
+    return this.orders.getOrderBook(playerId);
   }
 }

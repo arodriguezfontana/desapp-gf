@@ -1,10 +1,12 @@
 import { OrdersService } from './orders.service';
 import { Order } from '../../domain/orders/order';
+import { OrderBook } from '../../domain/orders/order-book';
 import { OrderSide } from '../../domain/orders/order-side';
 import { OrderStatus } from '../../domain/orders/order-status';
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
+import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import type { OrderRepository } from '../../repositories/orders/order.repository';
 import type { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
 import type { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
@@ -62,6 +64,7 @@ describe('OrdersService', () => {
       save: jest.fn(),
       saveInTransaction: jest.fn().mockImplementation((_tx, order) => Promise.resolve(order)),
       lockCompatibleCandidates: jest.fn(),
+      getOrderBook: jest.fn(),
     };
     tokenTxRepoMock = {
       saveInTransaction: jest.fn(),
@@ -177,5 +180,32 @@ describe('OrdersService', () => {
       expect(result).toEqual(orders);
     });
   });
+
+  describe('getOrderBook', () => {
+    it('obtiene el order book delegando en orders.getOrderBook cuando el jugador existe', async () => {
+      const fakePlayer = { id: 'player-1', name: 'Lionel Messi' } as any;
+      const expectedBook = OrderBook.create(
+        'player-1',
+        [{ price: 25.0, totalQuantity: 10 }],
+        [{ price: 26.0, totalQuantity: 15 }],
+      );
+      (playerRepoMock.findById as jest.Mock).mockResolvedValue(fakePlayer);
+      (orderRepoMock.getOrderBook as jest.Mock).mockResolvedValue(expectedBook);
+
+      const result = await service.getOrderBook('player-1');
+
+      expect(playerRepoMock.findById).toHaveBeenCalledWith('player-1');
+      expect(orderRepoMock.getOrderBook).toHaveBeenCalledWith('player-1');
+      expect(result).toBe(expectedBook);
+    });
+
+    it('lanza PlayerNotFoundError si el jugador no existe', async () => {
+      (playerRepoMock.findById as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.getOrderBook('player-non-existent')).rejects.toThrow(PlayerNotFoundError);
+      expect(orderRepoMock.getOrderBook).not.toHaveBeenCalled();
+    });
+  });
 });
+
 
