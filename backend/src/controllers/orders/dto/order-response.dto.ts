@@ -20,7 +20,7 @@ export class OrderFillDto {
   }
 }
 
-/** Respuesta de POST /orders (020-order-matching-engine, contracts/orders-api.md). */
+/** Respuesta de POST /orders, DELETE /orders/:id y GET /orders (020-order-matching-engine, 023-cancel-order). */
 export class OrderResponseDto {
   @ApiProperty({ example: 'b3f1c2a4-1234-4a4a-8a8a-abcdef123456' })
   id: string;
@@ -63,7 +63,7 @@ export class OrderResponseDto {
 
   static fromDomain(
     order: Order,
-    fills: Array<{ counterpartOrderId: string; quantity: number; price: number }>,
+    fills: Array<{ counterpartOrderId: string; quantity: number; price: number }> = [],
   ): OrderResponseDto {
     return new OrderResponseDto(
       order,
