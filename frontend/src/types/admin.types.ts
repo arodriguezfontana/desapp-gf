@@ -35,4 +35,14 @@ export interface SyncSummaryDto {
   failedLeagues: string[];
 }
 
-
+export interface SimulationResultDto {
+  success: boolean;
+  message: string;
+  adminEmail: string;
+  holdingsCreated: number;
+  transactionsCreated: number;
+  ordersCreated: number;
+  marketOrdersCreated: number;
+  quotesCreated: number;
+  playersInvolved: string[];
+}

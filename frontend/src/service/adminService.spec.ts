@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { adminService } from './adminService';
 import { httpClient } from './httpClient';
+import { apiKeyStorage } from './apiKeyStorage';
 
 describe('adminService', () => {
   beforeEach(() => {
@@ -58,5 +59,26 @@ describe('adminService', () => {
 
     expect(postSpy).toHaveBeenCalledWith('/sync/football-data', undefined, { useApiKey: true });
     expect(result.leagues).toEqual([]);
+  });
+
+  it('simulateMarket llama a POST /admin/simulate-market con useApiKey según almacenamiento', async () => {
+    vi.spyOn(apiKeyStorage, 'getApiKey').mockReturnValue('fval_testkey');
+    const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValueOnce({
+      success: true,
+      message: 'Simulación completada con éxito.',
+      adminEmail: 'abi_admin@ejemplo.com',
+      holdingsCreated: 5,
+      transactionsCreated: 12,
+      ordersCreated: 4,
+      marketOrdersCreated: 36,
+      quotesCreated: 30,
+      playersInvolved: ['Emiliano Martínez'],
+    });
+
+    const result = await adminService.simulateMarket();
+
+    expect(postSpy).toHaveBeenCalledWith('/admin/simulate-market', undefined, { useApiKey: true });
+    expect(result.success).toBe(true);
+    expect(result.holdingsCreated).toBe(5);
   });
 });
