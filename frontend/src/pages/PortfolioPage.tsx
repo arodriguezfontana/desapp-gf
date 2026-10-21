@@ -2,15 +2,32 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { useOrderHistory } from '../hooks/useOrderHistory';
+import { useUserOrders } from '../hooks/useUserOrders';
 import { PortfolioSummary } from '../components/PortfolioSummary';
 import { HoldingList } from '../components/HoldingList';
 import { OperationHistory } from '../components/OperationHistory';
+import { MyOrders } from '../components/MyOrders';
 import { PortfolioMetrics } from '../components/PortfolioMetrics';
 import { PortfolioEvolutionChart } from '../components/PortfolioEvolutionChart';
 
 export const PortfolioPage: React.FC = () => {
   const { summary, holdings, isEmpty, isLoading, error, refetch } = usePortfolio();
   const { transactions, isLoading: isHistoryLoading, error: historyError } = useOrderHistory();
+  const {
+    orders,
+    isLoading: isOrdersLoading,
+    cancellingOrderId,
+    error: ordersError,
+    cancelOrder,
+  } = useUserOrders();
+
+  const handleCancelOrder = async (orderId: string): Promise<boolean> => {
+    const success = await cancelOrder(orderId);
+    if (success) {
+      void refetch();
+    }
+    return success;
+  };
 
   let content: React.ReactNode;
 
@@ -39,27 +56,41 @@ export const PortfolioPage: React.FC = () => {
     );
   } else if (isEmpty) {
     content = (
-      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-10 sm:p-14 text-center shadow-xl space-y-5">
-        <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
-          💼
+      <div className="space-y-8">
+        <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-10 sm:p-14 text-center shadow-xl space-y-5">
+          <div className="w-16 h-16 bg-[#0b3332] border border-[#b79753]/40 text-[#b79753] rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+            💼
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white mb-2">
+              Aún no tienes tokens en tu portfolio
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium max-w-md mx-auto leading-relaxed">
+              Explorá nuestro catálogo de jugadores para descubrir talentos y adquirir tus primeros tokens de futbolistas.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              to="/catalog"
+              className="inline-flex items-center gap-2 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest text-xs sm:text-sm px-8 py-3.5 rounded-xl shadow-xl hover:shadow-[#b79753]/40 transition-all active:scale-95 cursor-pointer border border-white/20"
+            >
+              <span>Explorar Catálogo de Jugadores</span>
+              <span className="text-base">&rarr;</span>
+            </Link>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white mb-2">
-            Aún no tienes tokens en tu portfolio
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-300 font-medium max-w-md mx-auto leading-relaxed">
-            Explorá nuestro catálogo de jugadores para descubrir talentos y adquirir tus primeros tokens de futbolistas.
-          </p>
-        </div>
-        <div className="pt-2">
-          <Link
-            to="/catalog"
-            className="inline-flex items-center gap-2 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest text-xs sm:text-sm px-8 py-3.5 rounded-xl shadow-xl hover:shadow-[#b79753]/40 transition-all active:scale-95 cursor-pointer border border-white/20"
-          >
-            <span>Explorar Catálogo de Jugadores</span>
-            <span className="text-base">&rarr;</span>
-          </Link>
-        </div>
+        <MyOrders
+          orders={orders}
+          isLoading={isOrdersLoading}
+          cancellingOrderId={cancellingOrderId}
+          error={ordersError}
+          onCancelOrder={handleCancelOrder}
+        />
+        <OperationHistory
+          transactions={transactions}
+          isLoading={isHistoryLoading}
+          error={historyError}
+        />
       </div>
     );
   } else {
@@ -69,6 +100,13 @@ export const PortfolioPage: React.FC = () => {
         <PortfolioMetrics holdings={holdings} />
         <PortfolioEvolutionChart transactions={transactions} />
         <HoldingList holdings={holdings} />
+        <MyOrders
+          orders={orders}
+          isLoading={isOrdersLoading}
+          cancellingOrderId={cancellingOrderId}
+          error={ordersError}
+          onCancelOrder={handleCancelOrder}
+        />
         <OperationHistory
           transactions={transactions}
           isLoading={isHistoryLoading}
@@ -126,4 +164,3 @@ export const PortfolioPage: React.FC = () => {
     </div>
   );
 };
-
