@@ -4,6 +4,9 @@ import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-i
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
+import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
+import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
+import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
 
 describe('AllExceptionsFilter', () => {
   const filter = new AllExceptionsFilter();
@@ -57,6 +60,36 @@ describe('AllExceptionsFilter', () => {
       statusCode: 401,
       error: 'Unauthorized',
       message: 'Credenciales inválidas.',
+    });
+  });
+
+  it('mapea OrderNotFoundError a 404', () => {
+    filter.catch(new OrderNotFoundError(), host);
+    expect(statusMock).toHaveBeenCalledWith(404);
+    expect(lastBody()).toMatchObject({
+      statusCode: 404,
+      error: 'Not Found',
+      message: 'La orden solicitada no existe.',
+    });
+  });
+
+  it('mapea OrderForbiddenError a 403', () => {
+    filter.catch(new OrderForbiddenError(), host);
+    expect(statusMock).toHaveBeenCalledWith(403);
+    expect(lastBody()).toMatchObject({
+      statusCode: 403,
+      error: 'Forbidden',
+      message: 'No tienes permisos para operar sobre esta orden.',
+    });
+  });
+
+  it('mapea OrderNotCancellableError a 409', () => {
+    filter.catch(new OrderNotCancellableError(), host);
+    expect(statusMock).toHaveBeenCalledWith(409);
+    expect(lastBody()).toMatchObject({
+      statusCode: 409,
+      error: 'Conflict',
+      message: 'La orden no se puede cancelar porque ya fue completada o cancelada previamente.',
     });
   });
 
