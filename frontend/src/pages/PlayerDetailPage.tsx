@@ -78,30 +78,10 @@ const RatingCard: React.FC<{ label: string; value: number | null; max?: number; 
           {value != null ? value.toFixed(1) : '—'}
         </span>
       </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
       <div className="h-2 bg-white/8 rounded-full overflow-hidden w-full">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}aa)` }}
-        />
-      </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
         />
       </div>
     </div>
@@ -190,26 +170,6 @@ export const PlayerDetailPage: React.FC = () => {
             Ir a Mi Cuenta para generar ApiKey &rarr;
           </Link>
         </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
-      </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
       </div>
     );
   }
@@ -221,26 +181,6 @@ export const PlayerDetailPage: React.FC = () => {
           <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1a6866] border-t-[#b79753] mb-4" />
           <p className="text-xs font-black uppercase tracking-wider text-[#b79753]">Cargando ficha del jugador...</p>
         </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
-      </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
       </div>
     );
   }
@@ -253,26 +193,6 @@ export const PlayerDetailPage: React.FC = () => {
           <h2 className="text-xl font-black uppercase tracking-wider text-white mb-2">Información de Jugador</h2>
           <p className="text-sm font-bold text-gray-200">{errorMessage}</p>
         </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
-      </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
       </div>
     );
   }
@@ -348,16 +268,6 @@ export const PlayerDetailPage: React.FC = () => {
                       </button>
                     )}
                   </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
                 )}
                 {orderSuccessMessage && (
                   <p className="text-[10px] font-bold text-[#2dd4bf] mt-2 max-w-[260px] leading-tight">
@@ -365,16 +275,6 @@ export const PlayerDetailPage: React.FC = () => {
                   </p>
                 )}
               </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
               {/* Escudo del club */}
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#0b3332]/80 border border-[#b79753]/40 flex items-center justify-center p-2.5 shadow-inner shrink-0 overflow-hidden">
@@ -392,27 +292,7 @@ export const PlayerDetailPage: React.FC = () => {
                   <span className="text-3xl select-none">⚽</span>
                 )}
               </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
             </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
             {/* Silueta central del jugador */}
             <div className="relative z-0 flex justify-center items-center my-4 select-none pointer-events-none">
@@ -423,16 +303,6 @@ export const PlayerDetailPage: React.FC = () => {
                 draggable={false}
               />
             </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
             {/* Pie de la columna izquierda: Badges, Nombre y Equipo */}
             <div className="relative z-10">
@@ -447,16 +317,6 @@ export const PlayerDetailPage: React.FC = () => {
                   {player.league}
                 </span>
               </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
               <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white leading-tight line-clamp-1">
                 {player.name}
@@ -473,50 +333,10 @@ export const PlayerDetailPage: React.FC = () => {
                     {' '}
                     <span className="font-black text-sm" style={{ color: accent.text }}>{player.matchesPlayed}</span>
                   </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
                 )}
               </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
             </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
           </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
           {/* ════════ COLUMNA DERECHA: DASHBOARD DE ESTADÍSTICAS & EVOLUCIÓN ════════ */}
           <div className="lg:col-span-7 flex flex-col justify-between p-6 sm:p-8 space-y-6 sm:space-y-8" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
@@ -534,27 +354,7 @@ export const PlayerDetailPage: React.FC = () => {
                 <RatingCard label="Remates" value={player.shots} max={6} color="#2dd4bf" />
                 <RatingCard label="Intercepciones" value={player.interceptions} max={4} color="#a855f7" />
               </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
             </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
             {/* 2. Estadísticas de Temporada */}
             <div className="space-y-3">
@@ -571,16 +371,6 @@ export const PlayerDetailPage: React.FC = () => {
                 <StatBlock label="Pases clave" value={player.keyPasses} color={accent.text} highlight size="lg" />
               </div>
 
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
-
               {/* Métricas complementarias: Regates, Entradas, Amarillas, Rojas */}
               <div className="grid grid-cols-4 gap-2.5 sm:gap-3">
                 <StatBlock label="Regates" value={player.dribbles} color="#c084fc" />
@@ -588,27 +378,7 @@ export const PlayerDetailPage: React.FC = () => {
                 <StatBlock label="Amarillas" value={player.yellowCards} color="#facc15" />
                 <StatBlock label="Rojas" value={player.redCards} color="#f87171" />
               </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
             </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
             {/* 3. Evolución del Valor */}
             <div>
@@ -619,63 +389,14 @@ export const PlayerDetailPage: React.FC = () => {
                   {' '}<span className="flex-1 h-px bg-white/10" />
                 </h2>
               </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
               <QuoteHistoryChart quotes={quoteHistory} color={accent.text} />
             </div>
 
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
-
           </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
         </div>
-
-      {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
-      </div>
 
         {/* Franja de posición inferior */}
         <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent.via}, ${accent.from})` }} />
-      </div>
-
-      <div className="mb-8 sm:mb-12">
-        <OrderBookView
-          orderBook={orderBook}
-          isLoading={isLoadingOrderBook}
-          error={orderBookError}
-          onReload={reloadOrderBook}
-        />
       </div>
 
       {/* ── Libro de Órdenes (Profundidad de Mercado) ── */}

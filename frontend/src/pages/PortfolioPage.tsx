@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { useOrderHistory } from '../hooks/useOrderHistory';
 import { useUserOrders } from '../hooks/useUserOrders';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useAdmin } from '../hooks/useAdmin';
 import { PortfolioSummary } from '../components/PortfolioSummary';
 import { HoldingList } from '../components/HoldingList';
 import { OperationHistory } from '../components/OperationHistory';
@@ -11,22 +13,48 @@ import { PortfolioMetrics } from '../components/PortfolioMetrics';
 import { PortfolioEvolutionChart } from '../components/PortfolioEvolutionChart';
 
 export const PortfolioPage: React.FC = () => {
-  const { summary, holdings, isEmpty, isLoading, error, refetch } = usePortfolio();
-  const { transactions, isLoading: isHistoryLoading, error: historyError } = useOrderHistory();
+  const { summary, holdings, isEmpty, isLoading, error, refetch: refetchPortfolio } = usePortfolio();
+  const { transactions, isLoading: isHistoryLoading, error: historyError, refetch: refetchHistory } = useOrderHistory();
   const {
     orders,
     isLoading: isOrdersLoading,
     cancellingOrderId,
     error: ordersError,
     cancelOrder,
+    refetch: refetchOrders,
   } = useUserOrders();
+  const { isAdmin } = useCurrentUser();
+  const { simulateMarket } = useAdmin();
+
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [simulationMsg, setSimulationMsg] = useState<string | null>(null);
+  const [simulationError, setSimulationError] = useState<string | null>(null);
 
   const handleCancelOrder = async (orderId: string): Promise<boolean> => {
     const success = await cancelOrder(orderId);
     if (success) {
-      void refetch();
+      void refetchPortfolio();
     }
     return success;
+  };
+
+  const handleSimulate = async () => {
+    setIsSimulating(true);
+    setSimulationError(null);
+    setSimulationMsg(null);
+    try {
+      const res = await simulateMarket();
+      setSimulationMsg(res.message);
+      await Promise.all([refetchPortfolio(), refetchOrders(), refetchHistory()]);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setSimulationError(err.message);
+      } else {
+        setSimulationError('No se pudo ejecutar la simulación de mercado.');
+      }
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
   let content: React.ReactNode;
@@ -47,7 +75,7 @@ export const PortfolioPage: React.FC = () => {
         <p className="text-sm font-bold uppercase tracking-wider">{error}</p>
         <button
           type="button"
-          onClick={() => void refetch()}
+          onClick={() => void refetchPortfolio()}
           className="inline-flex items-center gap-2 bg-[#0b3332] hover:bg-[#072221] text-white font-black uppercase tracking-widest text-xs px-6 py-3 rounded-xl border border-white/20 transition-all cursor-pointer shadow-md"
         >
           Reintentar consulta
@@ -66,10 +94,12 @@ export const PortfolioPage: React.FC = () => {
               Aún no tienes tokens en tu portfolio
             </h2>
             <p className="text-xs sm:text-sm text-gray-300 font-medium max-w-md mx-auto leading-relaxed">
-              Explorá nuestro catálogo de jugadores para descubrir talentos y adquirir tus primeros tokens de futbolistas.
+              Explorá nuestro catálogo de jugadores para adquirir tokens o utilizá el botón de simulación rápida si eres
+              administrador para poblar inmediatamente la plataforma.
             </p>
           </div>
-          <div className="pt-2">
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/catalog"
               className="inline-flex items-center gap-2 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest text-xs sm:text-sm px-8 py-3.5 rounded-xl shadow-xl hover:shadow-[#b79753]/40 transition-all active:scale-95 cursor-pointer border border-white/20"
@@ -77,8 +107,20 @@ export const PortfolioPage: React.FC = () => {
               <span>Explorar Catálogo de Jugadores</span>
               <span className="text-base">&rarr;</span>
             </Link>
+
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleSimulate}
+                disabled={isSimulating}
+                className="inline-flex items-center gap-2 bg-[#0e3b3a] hover:bg-[#165756] border-2 border-[#2dd4bf] text-[#2dd4bf] hover:text-white font-black uppercase tracking-widest text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <span>{isSimulating ? '⚙️ Simulando...' : '⚡ Simular Actividad de Mercado'}</span>
+              </button>
+            )}
           </div>
         </div>
+
         <MyOrders
           orders={orders}
           isLoading={isOrdersLoading}
@@ -145,15 +187,42 @@ export const PortfolioPage: React.FC = () => {
                 Consultá el estado y rendimiento de tus tokens de futbolistas en base a las últimas cotizaciones oficiales.
               </p>
             </div>
-            {!isLoading && !error && !isEmpty && (
-              <div className="flex items-center gap-3 bg-[#0b3332]/90 backdrop-blur-md px-4 py-2 rounded-xl border border-[#b79753]/30 shadow-lg self-start md:self-auto">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-wider text-white">
-                  Snapshot de Cartera
-                </span>
-              </div>
-            )}
+
+            <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleSimulate}
+                  disabled={isSimulating}
+                  aria-label="Simular actividad de mercado"
+                  className="inline-flex items-center gap-2 bg-[#0b3332]/95 hover:bg-[#165756] backdrop-blur-md px-4 py-2.5 rounded-xl border border-[#2dd4bf]/50 text-[#2dd4bf] hover:text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <span>{isSimulating ? '⚙️ Simulando...' : '⚡ Simular Mercado'}</span>
+                </button>
+              )}
+
+              {!isLoading && !error && !isEmpty && (
+                <div className="flex items-center gap-3 bg-[#0b3332]/90 backdrop-blur-md px-4 py-2 rounded-xl border border-[#b79753]/30 shadow-lg">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf] animate-pulse" />
+                  <span className="text-xs font-black uppercase tracking-wider text-white">
+                    Snapshot de Cartera
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
+
+          {simulationError && (
+            <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-3 rounded-xl font-bold">
+              {simulationError}
+            </div>
+          )}
+
+          {simulationMsg && (
+            <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs p-3 rounded-xl font-bold">
+              {simulationMsg}
+            </div>
+          )}
         </div>
       </section>
 

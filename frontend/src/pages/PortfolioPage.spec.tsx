@@ -1,23 +1,43 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PortfolioPage } from './PortfolioPage';
 import * as usePortfolioModule from '../hooks/usePortfolio';
 import * as useUserOrdersModule from '../hooks/useUserOrders';
 import * as useOrderHistoryModule from '../hooks/useOrderHistory';
+import * as useCurrentUserModule from '../hooks/useCurrentUser';
+import * as useAdminModule from '../hooks/useAdmin';
 
 vi.mock('../hooks/usePortfolio');
 vi.mock('../hooks/useUserOrders');
 vi.mock('../hooks/useOrderHistory');
+vi.mock('../hooks/useCurrentUser');
+vi.mock('../hooks/useAdmin');
 
 describe('PortfolioPage', () => {
   const mockRefetch = vi.fn();
   const mockCancelOrder = vi.fn();
+  const mockSimulateMarket = vi.fn();
 
   beforeEach(() => {
     vi.restoreAllMocks();
     mockRefetch.mockReset();
     mockCancelOrder.mockReset();
+    mockSimulateMarket.mockReset();
+
+    vi.spyOn(useCurrentUserModule, 'useCurrentUser').mockReturnValue({
+      user: { id: 'admin-id', email: 'abi_admin@ejemplo.com', role: 'admin' },
+      isAdmin: true,
+      isLoading: false,
+      isAuthenticated: true,
+    });
+
+    vi.spyOn(useAdminModule, 'useAdmin').mockReturnValue({
+      triggerWhoScoredSync: vi.fn(),
+      getWhoScoredRunStatus: vi.fn(),
+      triggerFootballDataSync: vi.fn(),
+      simulateMarket: mockSimulateMarket,
+    });
 
     vi.spyOn(useOrderHistoryModule, 'useOrderHistory').mockReturnValue({
       transactions: [],
@@ -228,5 +248,44 @@ describe('PortfolioPage', () => {
     fireEvent.click(cancelButtons[0]);
 
     expect(mockCancelOrder).toHaveBeenCalledWith('order-1');
+  });
+
+  it('permite al administrador disparar la simulación de mercado y refresca los datos', async () => {
+    mockSimulateMarket.mockResolvedValueOnce({
+      success: true,
+      message: 'Simulación completada con éxito.',
+      adminEmail: 'abi_admin@ejemplo.com',
+      holdingsCreated: 6,
+      transactionsCreated: 12,
+      ordersCreated: 4,
+      marketOrdersCreated: 36,
+      quotesCreated: 30,
+      playersInvolved: [],
+    });
+
+    vi.spyOn(usePortfolioModule, 'usePortfolio').mockReturnValue({
+      data: null,
+      holdings: [],
+      summary: { totalInvested: 0, totalCurrentValue: 0, netProfitLoss: 0 },
+      isEmpty: true,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    render(
+      <MemoryRouter>
+        <PortfolioPage />
+      </MemoryRouter>,
+    );
+
+    const simButtons = screen.getAllByRole('button', { name: /simular/i });
+    expect(simButtons.length).toBeGreaterThan(0);
+    fireEvent.click(simButtons[0]);
+
+    await waitFor(() => {
+      expect(mockSimulateMarket).toHaveBeenCalledTimes(1);
+      expect(mockRefetch).toHaveBeenCalled();
+    });
   });
 });

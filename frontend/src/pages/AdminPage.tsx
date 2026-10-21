@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useAdmin } from '../hooks/useAdmin';
 import { useApiKey } from '../hooks/useApiKey';
 import { useAuthActions } from '../hooks/useAuthActions';
-import type { SyncRunStatusDto, SyncSummaryDto } from '../types/admin.types';
+import type {
+  SimulationResultDto,
+  SyncRunStatusDto,
+  SyncSummaryDto,
+} from '../types/admin.types';
 
 function getWhoScoredBadgeClassName(status: SyncRunStatusDto['status'] | undefined): string {
   if (status === 'running') {
@@ -18,7 +22,12 @@ function getWhoScoredBadgeClassName(status: SyncRunStatusDto['status'] | undefin
 
 export const AdminPage: React.FC = () => {
   const { user, isAdmin, isLoading: isUserLoading } = useCurrentUser();
-  const { triggerWhoScoredSync, getWhoScoredRunStatus, triggerFootballDataSync } = useAdmin();
+  const {
+    triggerWhoScoredSync,
+    getWhoScoredRunStatus,
+    triggerFootballDataSync,
+    simulateMarket,
+  } = useAdmin();
   const { hasApiKey, saveApiKey } = useApiKey();
   const { generateApiKey } = useAuthActions();
 
@@ -32,6 +41,11 @@ export const AdminPage: React.FC = () => {
   const [isFootballDataSyncing, setIsFootballDataSyncing] = useState<boolean>(false);
   const [footballDataResult, setFootballDataResult] = useState<SyncSummaryDto | null>(null);
   const [footballDataError, setFootballDataError] = useState<string | null>(null);
+
+  // Estados de Simulación de Mercado
+  const [isSimulatingMarket, setIsSimulatingMarket] = useState<boolean>(false);
+  const [simulationResult, setSimulationResult] = useState<SimulationResultDto | null>(null);
+  const [simulationError, setSimulationError] = useState<string | null>(null);
 
   // Generación de clave de acceso
   const [isGeneratingKey, setIsGeneratingKey] = useState<boolean>(false);
@@ -106,6 +120,23 @@ export const AdminPage: React.FC = () => {
     }
   };
 
+  const handleSimulateMarket = async () => {
+    setIsSimulatingMarket(true);
+    setSimulationError(null);
+    try {
+      const result = await simulateMarket();
+      setSimulationResult(result);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setSimulationError(err.message);
+      } else {
+        setSimulationError('No se pudo ejecutar la simulación de mercado.');
+      }
+    } finally {
+      setIsSimulatingMarket(false);
+    }
+  };
+
   const handleQuickApiKeyGen = async () => {
     setIsGeneratingKey(true);
     setKeySuccessMsg(null);
@@ -156,8 +187,8 @@ export const AdminPage: React.FC = () => {
             Panel de Administración
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 font-medium mt-2 max-w-2xl">
-            Centro de control de FútVal para mantener al día el catálogo de futbolistas, la información de clubes europeos
-            y los precios de mercado en tu sitio.
+            Centro de control de FútVal para mantener al día el catálogo de futbolistas, la información de clubes europeos,
+            los precios de mercado y la simulación interactiva completa de la plataforma.
           </p>
         </div>
 
@@ -179,7 +210,7 @@ export const AdminPage: React.FC = () => {
             <button
               onClick={handleQuickApiKeyGen}
               disabled={isGeneratingKey}
-              className="w-full py-1.5 px-3 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest text-[10px] rounded-lg transition-all"
+              className="w-full py-1.5 px-3 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase tracking-widest text-[10px] rounded-lg transition-all cursor-pointer"
             >
               {isGeneratingKey ? 'Generando...' : 'Vincular Clave Admin'}
             </button>
@@ -188,7 +219,7 @@ export const AdminPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Aviso destacado si no tiene clave generada */}
+      {/* Aviso si no tiene clave generada */}
       {!hasApiKey && (
         <div className="bg-[#b79753]/15 border-2 border-[#b79753] p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
           <div>
@@ -210,7 +241,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Grid de 2 Módulos con Imágenes */}
+      {/* Grid de Módulos 1 y 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
         {/* Módulo 1: WHOSCORED */}
         <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753]/50 rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden transition-all group">
@@ -343,7 +374,151 @@ export const AdminPage: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
 
+      {/* MÓDULO 3: SIMULACIÓN DE MERCADO Y ACTIVIDAD INTERACTIVA */}
+      <div className="bg-[#104443] border-2 border-[#b79753]/60 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-[#1a6866] pb-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#0b3332] bg-[#b79753] px-3 py-1 rounded-md font-mono">
+                MÓDULO 3 · SIMULACIÓN INTERACTIVA
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332] px-2.5 py-0.5 rounded border border-[#2dd4bf]/40">
+                DATOS DE ALTO VOLUMEN
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white">
+              Simulación de Mercado y Actividad Interactiva
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-300 max-w-3xl leading-relaxed">
+              Genera instantáneamente un entorno de mercado vivo con transacciones de compra/venta históricas, tokens en tu
+              portfolio personal, órdenes activas e históricas (con cancelación operativa) y profundidad en el libro de
+              órdenes para los futbolistas del catálogo.
+            </p>
+          </div>
+
+          <button
+            onClick={handleSimulateMarket}
+            disabled={isSimulatingMarket}
+            className="px-8 py-4 bg-gradient-to-r from-[#b79753] to-[#d4af37] hover:from-[#9e8144] hover:to-[#b79753] disabled:opacity-50 text-[#0b3332] font-black uppercase text-sm tracking-widest rounded-xl shadow-xl transition-all active:scale-95 cursor-pointer shrink-0 border border-white/30 flex items-center justify-center gap-3"
+          >
+            {isSimulatingMarket ? (
+              <>
+                <span className="animate-spin text-lg">⚙️</span>
+                <span>Simulando Mercado...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-base">⚡</span>
+                <span>Ejecutar Simulación Completa</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] space-y-1.5">
+            <div className="text-xl">💼</div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">Portfolio & Rendimientos</h3>
+            <p className="text-[11px] text-gray-300 leading-snug">
+              Carga tokens de múltiples futbolistas con P&L, cálculo de ROI e inversión neta acumulada.
+            </p>
+          </div>
+
+          <div className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] space-y-1.5">
+            <div className="text-xl">📈</div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">Gráfico de Evolución</h3>
+            <p className="text-[11px] text-gray-300 leading-snug">
+              12 transacciones cronológicas de compra (violeta) y venta (ámbar) en los últimos 14 días.
+            </p>
+          </div>
+
+          <div className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] space-y-1.5">
+            <div className="text-xl">📋</div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">Órdenes en 4 Estados</h3>
+            <p className="text-[11px] text-gray-300 leading-snug">
+              Órdenes Pendiente, Parcial, Completada y Cancelada. Cancelación interactiva en vivo disponible.
+            </p>
+          </div>
+
+          <div className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] space-y-1.5">
+            <div className="text-xl">📊</div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">Profundidad de Mercado L2</h3>
+            <p className="text-[11px] text-gray-300 leading-snug">
+              Libro de órdenes activo con niveles de Bids y Asks para los futbolistas en el catálogo.
+            </p>
+          </div>
+        </div>
+
+        {/* Mensaje de Error */}
+        {simulationError && (
+          <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-4 rounded-xl font-bold flex items-center gap-3">
+            <span>⚠️</span>
+            <span>{simulationError}</span>
+          </div>
+        )}
+
+        {/* Resultados de la Simulación */}
+        {simulationResult && (
+          <div className="bg-[#0b3332] border border-[#2dd4bf]/40 rounded-xl p-5 sm:p-6 space-y-4 animate-fade-in shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1a6866] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400 text-base">✅</span>
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  Simulación ejecutada con éxito para {simulationResult.adminEmail}
+                </span>
+              </div>
+              <Link
+                to="/portfolio"
+                className="inline-flex items-center gap-2 bg-[#2dd4bf] hover:bg-[#20b8a5] text-[#0b3332] font-black uppercase tracking-widest text-[11px] px-4 py-2 rounded-lg shadow-md transition-all self-start sm:self-auto cursor-pointer"
+              >
+                <span>Ver Mi Portfolio Ahora</span>
+                <span>&rarr;</span>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Holdings</span>
+                <span className="text-lg font-black text-[#b79753]">{simulationResult.holdingsCreated}</span>
+              </div>
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Transacciones</span>
+                <span className="text-lg font-black text-white">{simulationResult.transactionsCreated}</span>
+              </div>
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Órdenes Propias</span>
+                <span className="text-lg font-black text-emerald-400">{simulationResult.ordersCreated}</span>
+              </div>
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Libro L2</span>
+                <span className="text-lg font-black text-[#2dd4bf]">{simulationResult.marketOrdersCreated}</span>
+              </div>
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866] col-span-2 sm:col-span-1">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Cotizaciones</span>
+                <span className="text-lg font-black text-purple-300">{simulationResult.quotesCreated}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                Futbolistas involucrados en la simulación:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {simulationResult.playersInvolved.map((pName) => (
+                  <span
+                    key={pName}
+                    className="text-[10px] font-bold px-2.5 py-1 bg-[#104443] text-gray-200 rounded-md border border-[#1a6866]"
+                  >
+                    ⚽ {pName}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
