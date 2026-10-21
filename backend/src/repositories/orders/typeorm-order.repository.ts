@@ -24,6 +24,14 @@ export class TypeOrmOrderRepository implements OrderRepository {
     return entity ? this.mapper.toDomain(entity) : null;
   }
 
+  async findByUserId(userId: string): Promise<Order[]> {
+    const entities = await this.repo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+    return entities.map((e) => this.mapper.toDomain(e));
+  }
+
   async findCompatibleCandidates(playerId: string, side: OrderSide, price: number, excludeUserId: string): Promise<Order[]> {
     const priceFilter = side === OrderSide.SELL
       ? LessThanOrEqual(price.toFixed(2))
@@ -51,6 +59,16 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async save(order: Order): Promise<Order> {
     await this.repo.save(this.mapper.toEntity(order));
     return order;
+  }
+
+  async findByIdWithLock(tx: Transaction, id: string): Promise<Order | null> {
+    const entity = await tx.manager
+      .getRepository(OrderEntity)
+      .createQueryBuilder('o')
+      .setLock('pessimistic_write')
+      .where('o.id = :id', { id })
+      .getOne();
+    return entity ? this.mapper.toDomain(entity) : null;
   }
 
   async lockCompatibleCandidates(

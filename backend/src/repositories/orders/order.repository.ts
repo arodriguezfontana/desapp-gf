@@ -3,12 +3,18 @@ import { OrderSide } from '../../domain/orders/order-side';
 import { Transaction } from '../shared/transaction';
 
 /**
- * Puerto de dominio para la persistencia de Order (020-order-matching-engine).
+ * Puerto de dominio para la persistencia de Order (020-order-matching-engine, 023-cancel-order).
  * Recibe y devuelve objetos de dominio; el Service nunca ve la entidad de
  * TypeORM. Token: ORDER_REPOSITORY.
  */
 export interface OrderRepository {
   findById(id: string): Promise<Order | null>;
+
+  /**
+   * Busca todas las órdenes emitidas por un usuario ordenadas cronológicamente
+   * en forma descendente (createdAt DESC).
+   */
+  findByUserId(userId: string): Promise<Order[]>;
 
   /**
    * Ordenes PENDING/PARTIALLY_FILLED del lado opuesto, mismo jugador, mismo
@@ -27,6 +33,12 @@ export interface OrderRepository {
 
   /** Insert o update simple, sin transaccion (p. ej. el seed del superusuario). */
   save(order: Order): Promise<Order>;
+
+  /**
+   * Dentro de una `Transaction` ya abierta: lockea (`pessimistic_write`) y
+   * devuelve la orden por id para garantizar exclusión mutua contra matching (023-cancel-order).
+   */
+  findByIdWithLock(tx: Transaction, id: string): Promise<Order | null>;
 
   /**
    * Dentro de una `Transaction` ya abierta: lockea (`pessimistic_write`) y
