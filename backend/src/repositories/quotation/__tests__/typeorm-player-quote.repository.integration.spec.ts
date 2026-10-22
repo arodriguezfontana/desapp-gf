@@ -97,6 +97,21 @@ describe('TypeOrmPlayerQuoteRepository (integración, 019-per-user-valuation-str
       expect(Number.parseFloat(entity!.score)).toBeCloseTo(0.712345, 5);
       expect(Number.parseFloat(entity!.value)).toBeCloseTo(71.52, 2);
     });
+
+    it('persiste correctamente más filas que el tamaño de lote del insert batcheado, sin exceder el límite de parámetros de Postgres', async () => {
+      // PlayerQuoteEntity tiene 10 columnas; un insert sin batchear de 1200
+      // filas usaría 12000 parámetros (no supera el límite por sí solo, pero
+      // reproduce que el batching no pierde ni duplica filas al cruzar el
+      // límite interno de lote del repositorio).
+      const quotes = Array.from({ length: 1200 }, (_, i) =>
+        makeQuote({ calculatedAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)) }),
+      );
+
+      await repo.saveMany(quotes);
+
+      const count = await dataSource.getRepository(PlayerQuoteEntity).count();
+      expect(count).toBe(1200);
+    }, 30000);
   });
 
   describe('findAllByPlayerIdAndUserId (019-per-user-valuation-strategies)', () => {

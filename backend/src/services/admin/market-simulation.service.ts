@@ -8,6 +8,7 @@ import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY } from '../../modules/orders/orders.constants';
 import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
 import { PLAYER_QUOTE_REPOSITORY, VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
+import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
 
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
@@ -17,6 +18,7 @@ import { TokenHoldingRepository } from '../../repositories/portfolio/token-holdi
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 
 import { Email } from '../../domain/auth/email';
 import { User } from '../../domain/auth/user';
@@ -29,6 +31,8 @@ import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
+import { PriceAlert } from '../../domain/alerts/price-alert';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
 import { QuotationService } from '../quotation/quotation.service';
 import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
@@ -58,6 +62,7 @@ export class MarketSimulationService {
     @Inject(TOKEN_TRANSACTION_REPOSITORY) private readonly tokenTransactions: TokenTransactionRepository,
     @Inject(PLAYER_QUOTE_REPOSITORY) private readonly playerQuotes: PlayerQuoteRepository,
     @Inject(VALUATION_STRATEGY_REPOSITORY) private readonly strategies: ValuationStrategyRepository,
+    @Inject(PRICE_ALERT_REPOSITORY) private readonly priceAlerts: PriceAlertRepository,
     private readonly quotation: QuotationService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
     private readonly config: ConfigService,
