@@ -13,7 +13,7 @@ const CONDITION_LABEL: Record<PriceAlertResponseDto['condition'], string> = {
   PRICE_ABOVE: 'sube de',
 };
 
-/** Lista de alertas propias con acción de cancelar (025-player-price-alerts, FR-005, FR-006). */
+/** Lista de alertas propias como chips, con acción de cancelar (025-player-price-alerts, FR-005, FR-006). */
 export const PlayerAlertsList: React.FC<PlayerAlertsListProps> = ({ alerts, isLoading, error, onCancel }) => {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
@@ -34,32 +34,31 @@ export const PlayerAlertsList: React.FC<PlayerAlertsListProps> = ({ alerts, isLo
     return <p className="text-sm font-bold text-[#f43f5e]">{error}</p>;
   }
 
-  if (alerts.length === 0) {
-    return <p className="text-sm text-gray-300">Todavía no tenés alertas de precio.</p>;
+  const activeAlerts = alerts.filter((a) => a.status === 'ACTIVE');
+
+  if (activeAlerts.length === 0) {
+    return <p className="text-xs text-gray-400">Todavía no tenés alertas de precio para este jugador.</p>;
   }
 
   return (
-    <ul aria-label="Mis alertas de precio" className="space-y-2">
-      {alerts.map((alert) => (
-        <li
+    <div aria-label="Mis alertas de precio" className="flex flex-wrap items-center gap-2">
+      {activeAlerts.map((alert) => (
+        <span
           key={alert.id}
-          className="flex items-center justify-between bg-[#104443] border border-[#1a6866] rounded-xl px-4 py-3"
+          className="inline-flex items-center gap-1.5 bg-[#0b3332] border border-[#2dd4bf]/40 text-[#2dd4bf] text-xs font-bold px-3 py-1.5 rounded-full"
         >
-          <span className="text-sm text-white">
-            {CONDITION_LABEL[alert.condition]} {alert.targetValue}{' '}
-            <span className="text-xs text-gray-400">({alert.status})</span>
-          </span>
-          {alert.status === 'ACTIVE' && (
-            <button
-              onClick={() => handleCancel(alert.id)}
-              disabled={cancellingId === alert.id}
-              className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white bg-[#f43f5e] hover:bg-[#e11d48] rounded-lg disabled:opacity-50"
-            >
-              {cancellingId === alert.id ? 'Cancelando...' : 'Cancelar'}
-            </button>
-          )}
-        </li>
+          {CONDITION_LABEL[alert.condition]} {alert.targetValue}
+          <button
+            type="button"
+            onClick={() => handleCancel(alert.id)}
+            disabled={cancellingId === alert.id}
+            aria-label={`Cancelar alerta ${CONDITION_LABEL[alert.condition]} ${alert.targetValue}`}
+            className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full text-[#2dd4bf]/70 hover:text-[#f43f5e] hover:bg-[#f43f5e]/10 disabled:opacity-40 cursor-pointer transition-colors"
+          >
+            {cancellingId === alert.id ? '…' : '✕'}
+          </button>
+        </span>
       ))}
-    </ul>
+    </div>
   );
 };

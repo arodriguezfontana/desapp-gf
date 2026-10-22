@@ -38,18 +38,31 @@ describe('PlayerAlertsList', () => {
     expect(screen.getByText(/Todavía no tenés alertas/i)).toBeInTheDocument();
   });
 
-  it('lista las alertas y solo muestra "Cancelar" para las ACTIVE', () => {
-    render(<PlayerAlertsList alerts={mockAlerts} isLoading={false} error={null} onCancel={vi.fn()} />);
-
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: /Cancelar/i })).toHaveLength(1);
+  it('muestra un mensaje de vacío cuando todas las alertas están CANCELLED', () => {
+    render(
+      <PlayerAlertsList
+        alerts={[mockAlerts[1]]}
+        isLoading={false}
+        error={null}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Todavía no tenés alertas/i)).toBeInTheDocument();
   });
 
-  it('llama a onCancel con el id de la alerta al tocar Cancelar', async () => {
+  it('solo muestra las alertas ACTIVE como chips, con botón de cancelar', () => {
+    render(<PlayerAlertsList alerts={mockAlerts} isLoading={false} error={null} onCancel={vi.fn()} />);
+
+    expect(screen.getByText(/baja de 10/i)).toBeInTheDocument();
+    expect(screen.queryByText(/sube de 20/i)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('llama a onCancel con el id de la alerta al tocar la X', async () => {
     const onCancel = vi.fn().mockResolvedValue(undefined);
     render(<PlayerAlertsList alerts={mockAlerts} isLoading={false} error={null} onCancel={onCancel} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }));
+    fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => expect(onCancel).toHaveBeenCalledWith('alert-1'));
   });

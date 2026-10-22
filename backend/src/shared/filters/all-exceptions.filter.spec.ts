@@ -7,6 +7,7 @@ import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
+import { DuplicateAlertError } from '../../domain/alerts/errors/duplicate-alert.error';
 
 describe('AllExceptionsFilter', () => {
   const filter = new AllExceptionsFilter();
@@ -90,6 +91,16 @@ describe('AllExceptionsFilter', () => {
       statusCode: 409,
       error: 'Conflict',
       message: 'La orden no se puede cancelar porque ya fue completada o cancelada previamente.',
+    });
+  });
+
+  it('mapea DuplicateAlertError a 409', () => {
+    filter.catch(new DuplicateAlertError(), host);
+    expect(statusMock).toHaveBeenCalledWith(409);
+    expect(lastBody()).toMatchObject({
+      statusCode: 409,
+      error: 'Conflict',
+      message: 'Ya tenés una alerta activa idéntica (mismo jugador, condición y valor umbral).',
     });
   });
 

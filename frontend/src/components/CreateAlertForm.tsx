@@ -6,6 +6,11 @@ interface CreateAlertFormProps {
   onCreate: (playerId: string, condition: AlertCondition, targetValue: number) => Promise<unknown>;
 }
 
+const CONDITION_OPTIONS: { value: AlertCondition; label: string }[] = [
+  { value: 'PRICE_BELOW', label: 'Baja de' },
+  { value: 'PRICE_ABOVE', label: 'Sube de' },
+];
+
 /** Formulario de creación de alerta sobre un jugador puntual (025-player-price-alerts, FR-001). */
 export const CreateAlertForm: React.FC<CreateAlertFormProps> = ({ playerId, onCreate }) => {
   const [condition, setCondition] = useState<AlertCondition>('PRICE_BELOW');
@@ -38,53 +43,52 @@ export const CreateAlertForm: React.FC<CreateAlertFormProps> = ({ playerId, onCr
   };
 
   return (
-    <form
-      aria-label="Crear alerta de precio"
-      onSubmit={handleSubmit}
-      className="bg-[#104443] border border-[#1a6866] rounded-2xl p-6 space-y-4"
-    >
-      <h3 className="text-sm font-black uppercase tracking-wider text-white">Crear alerta de precio</h3>
+    <form aria-label="Crear alerta de precio" onSubmit={handleSubmit} className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-xl border border-[#1a6866] overflow-hidden shrink-0" role="radiogroup" aria-label="Condición">
+          {CONDITION_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={condition === opt.value}
+              onClick={() => setCondition(opt.value)}
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                condition === opt.value
+                  ? 'bg-[#b79753] text-[#0b3332]'
+                  : 'bg-[#0b3332] text-gray-300 hover:text-white'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="alert-condition" className="text-xs font-bold uppercase tracking-wider text-gray-300">
-          Condición
-        </label>
-        <select
-          id="alert-condition"
-          value={condition}
-          onChange={(e) => setCondition(e.target.value as AlertCondition)}
-          className="bg-[#0b3332] text-white border border-[#1a6866] rounded-xl px-3 py-2 text-sm"
-        >
-          <option value="PRICE_BELOW">El precio baja de</option>
-          <option value="PRICE_ABOVE">El precio sube de</option>
-        </select>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label htmlFor="alert-target-value" className="text-xs font-bold uppercase tracking-wider text-gray-300">
+        <label htmlFor="alert-target-value" className="sr-only">
           Valor umbral
         </label>
         <input
           id="alert-target-value"
           type="number"
           step="0.01"
+          placeholder="Valor"
           value={targetValue}
           onChange={(e) => setTargetValue(e.target.value)}
           required
-          className="bg-[#0b3332] text-white border border-[#1a6866] rounded-xl px-3 py-2 text-sm"
+          className="w-28 bg-[#0b3332] text-white border border-[#1a6866] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#b79753]"
         />
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-4 py-2 text-xs font-black uppercase tracking-widest text-[#0b3332] bg-[#2dd4bf] hover:bg-[#20b8a5] rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer"
+        >
+          {isSubmitting ? 'Creando...' : '+ Crear alerta'}
+        </button>
       </div>
 
       {error && <p className="text-xs font-bold text-[#f43f5e]">{error}</p>}
       {success && <p className="text-xs font-bold text-[#2dd4bf]">Alerta creada.</p>}
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0b3332] bg-[#b79753] hover:bg-[#9e8144] rounded-xl shadow-lg transition-all disabled:opacity-50"
-      >
-        {isSubmitting ? 'Creando...' : 'Crear alerta'}
-      </button>
     </form>
   );
 };

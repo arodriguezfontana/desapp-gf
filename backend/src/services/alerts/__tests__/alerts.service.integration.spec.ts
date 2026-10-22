@@ -23,6 +23,7 @@ import { AlertStatus } from '../../../domain/alerts/price-alert';
 import { InvalidAlertThresholdError } from '../../../domain/alerts/errors/invalid-alert-threshold.error';
 import { InvalidAlertConditionError } from '../../../domain/alerts/errors/invalid-alert-condition.error';
 import { AlertNotFoundError } from '../../../domain/alerts/errors/alert-not-found.error';
+import { DuplicateAlertError } from '../../../domain/alerts/errors/duplicate-alert.error';
 import { PlayerNotFoundError } from '../../../domain/player/errors/player-not-found.error';
 
 import { AlertsService } from '../alerts.service';
@@ -121,12 +122,37 @@ describe('AlertsService (integración contra Postgres real)', () => {
       ).rejects.toBeInstanceOf(InvalidAlertConditionError);
     });
 
-    it('permite múltiples alertas activas del mismo usuario sobre el mismo jugador (spec FR-003)', async () => {
+    it('permite múltiples alertas activas del mismo usuario sobre el mismo jugador con condición o umbral distintos (spec FR-003)', async () => {
       await service.create(userIdA, playerId, AlertCondition.PRICE_BELOW, 10);
       await service.create(userIdA, playerId, AlertCondition.PRICE_ABOVE, 20);
 
       const alerts = await service.listOwn(userIdA);
       expect(alerts).toHaveLength(2);
+    });
+
+    it('lanza DuplicateAlertError si ya existe una alerta activa idéntica (mismo jugador, condición y umbral)', async () => {
+      await service.create(userIdA, playerId, AlertCondition.PRICE_BELOW, 10);
+
+      await expect(
+        service.create(userIdA, playerId, AlertCondition.PRICE_BELOW, 10),
+      ).rejects.toBeInstanceOf(DuplicateAlertError);
+    });
+
+    it('permite recrear la misma alerta si la anterior ya fue cancelada', async () => {
+      const first = await service.create(userIdA, playerId, AlertCondition.PRICE_BELOW, 10);
+      await service.cancel(userIdA, first.id);
+
+      const second = await service.create(userIdA, playerId, AlertCondition.PRICE_BELOW, 10);
+
+      expect(second.status).toBe(AlertStatus.ACTIVE);
+    });
+
+    it('permite que dos usuarios distintos tengan la misma alerta sobre el mismo jugador', async () => {
+      await service.create(userIdA, playerId, AlertCondition.PRICE_BELOW, 10);
+
+      await expect(
+        service.create(userIdB, playerId, AlertCondition.PRICE_BELOW, 10),
+      ).resolves.toBeDefined();
     });
   });
 

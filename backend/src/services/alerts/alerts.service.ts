@@ -5,6 +5,7 @@ import { PlayerRepository } from '../../repositories/player/player.repository';
 import { AlertCondition } from '../../domain/alerts/alert-condition';
 import { PriceAlert } from '../../domain/alerts/price-alert';
 import { AlertNotFoundError } from '../../domain/alerts/errors/alert-not-found.error';
+import { DuplicateAlertError } from '../../domain/alerts/errors/duplicate-alert.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
@@ -31,6 +32,14 @@ export class AlertsService {
     const player = await this.players.findById(playerId);
     if (!player) {
       throw new PlayerNotFoundError();
+    }
+
+    const activeAlerts = await this.alerts.findActiveByUserIdAndPlayerId(userId, playerId);
+    const isDuplicate = activeAlerts.some(
+      (existing) => existing.condition === condition && existing.targetValue === targetValue,
+    );
+    if (isDuplicate) {
+      throw new DuplicateAlertError();
     }
 
     const alert = PriceAlert.create({

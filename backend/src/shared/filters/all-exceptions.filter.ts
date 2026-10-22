@@ -26,6 +26,7 @@ import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.e
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
 import { AlertNotFoundError } from '../../domain/alerts/errors/alert-not-found.error';
+import { DuplicateAlertError } from '../../domain/alerts/errors/duplicate-alert.error';
 import { NotificationNotFoundError } from '../../domain/notifications/errors/notification-not-found.error';
 
 interface ErrorBody {
@@ -118,7 +119,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       exception instanceof EmailAlreadyInUseError ||
       exception instanceof ApiKeyAlreadyRevokedError ||
       exception instanceof ReservedUsernameError ||
-      exception instanceof OrderNotCancellableError
+      exception instanceof OrderNotCancellableError ||
+      exception instanceof DuplicateAlertError
     ) {
       return { status: HttpStatus.CONFLICT, message: exception.message };
     }

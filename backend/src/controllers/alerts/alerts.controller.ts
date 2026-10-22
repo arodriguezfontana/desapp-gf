@@ -21,6 +21,7 @@ export class AlertsController {
   @ApiResponse({ status: 400, description: 'Umbral no positivo o condición inválida.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'El jugador indicado no existe.' })
+  @ApiResponse({ status: 409, description: 'Ya existe una alerta activa idéntica (mismo jugador, condición y umbral).' })
   async create(
     @CurrentUser() userId: string,
     @Body() dto: CreatePriceAlertRequestDto,

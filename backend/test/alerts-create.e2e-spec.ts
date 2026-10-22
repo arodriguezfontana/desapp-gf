@@ -127,4 +127,22 @@ describe('POST /alerts (e2e)', () => {
     expect(res2.status).toBe(201);
     expect(res1.body.id).not.toBe(res2.body.id);
   });
+
+  it('409: no permite crear una alerta idéntica (mismo jugador, condición y umbral) a una ya activa', async () => {
+    const player = await insertPlayer();
+    const token = await registerAndLogin('alertuser6@mail.com');
+
+    const first = await request(server())
+      .post('/alerts')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ playerId: player.id, condition: 'PRICE_BELOW', targetValue: 10 });
+    expect(first.status).toBe(201);
+
+    const duplicate = await request(server())
+      .post('/alerts')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ playerId: player.id, condition: 'PRICE_BELOW', targetValue: 10 });
+
+    expect(duplicate.status).toBe(409);
+  });
 });
