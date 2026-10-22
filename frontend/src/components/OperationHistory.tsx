@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { TokenTransactionDto } from '../types/orders.types';
 
@@ -6,7 +6,10 @@ interface OperationHistoryProps {
   transactions: TokenTransactionDto[];
   isLoading: boolean;
   error: string | null;
+  hideHeader?: boolean;
 }
+
+const PAGE_SIZE = 8;
 
 function formatCurrency(amount: string): string {
   return new Intl.NumberFormat('en-US', {
@@ -27,17 +30,33 @@ function formatDate(iso: string): string {
   });
 }
 
-export const OperationHistory: React.FC<OperationHistoryProps> = ({ transactions, isLoading, error }) => {
+export const OperationHistory: React.FC<OperationHistoryProps> = ({
+  transactions,
+  isLoading,
+  error,
+  hideHeader = false,
+}) => {
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => transactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [transactions, currentPage],
+  );
+
   return (
     <section aria-label="Historial de operaciones" className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white">
-          Historial de Operaciones ({isLoading ? '…' : transactions.length})
-        </h2>
-        <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3 py-1 rounded-full border border-[#b79753]/30">
-          HISTORIAL
-        </span>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white">
+            Historial de Operaciones ({isLoading ? '…' : transactions.length})
+          </h2>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3 py-1 rounded-full border border-[#b79753]/30">
+            HISTORIAL
+          </span>
+        </div>
+      )}
 
       {isLoading && (
         <div className="text-center py-10 bg-[#104443] rounded-2xl border border-[#1a6866]">
@@ -77,7 +96,7 @@ export const OperationHistory: React.FC<OperationHistoryProps> = ({ transactions
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1a6866]/60 text-xs sm:text-sm font-semibold">
-                {transactions.map((tx) => {
+                {pageItems.map((tx) => {
                   const isCredit = tx.type === 'CREDIT';
                   const typeColor = isCredit ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
                   const typeLabel = isCredit ? 'COMPRA' : 'VENTA';
@@ -112,7 +131,7 @@ export const OperationHistory: React.FC<OperationHistoryProps> = ({ transactions
 
           {/* Tarjetas — móviles */}
           <div className="grid grid-cols-1 gap-4 md:hidden">
-            {transactions.map((tx) => {
+            {pageItems.map((tx) => {
               const isCredit = tx.type === 'CREDIT';
               const typeColor = isCredit ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
               const typeLabel = isCredit ? 'COMPRA' : 'VENTA';
@@ -154,6 +173,30 @@ export const OperationHistory: React.FC<OperationHistoryProps> = ({ transactions
               );
             })}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider text-gray-200 bg-[#104443] border border-[#1a6866] rounded-xl hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Anterior
+              </button>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider text-gray-200 bg-[#104443] border border-[#1a6866] rounded-xl hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </>
       )}
     </section>

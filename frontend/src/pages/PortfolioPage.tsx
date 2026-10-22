@@ -7,8 +7,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useAdmin } from '../hooks/useAdmin';
 import { PortfolioSummary } from '../components/PortfolioSummary';
 import { HoldingList } from '../components/HoldingList';
-import { OperationHistory } from '../components/OperationHistory';
-import { MyOrders } from '../components/MyOrders';
+import { ActivityTabs } from '../components/ActivityTabs';
 import { PortfolioMetrics } from '../components/PortfolioMetrics';
 import { PortfolioEvolutionChart } from '../components/PortfolioEvolutionChart';
 
@@ -121,17 +120,15 @@ export const PortfolioPage: React.FC = () => {
           </div>
         </div>
 
-        <MyOrders
+        <ActivityTabs
           orders={orders}
-          isLoading={isOrdersLoading}
+          isOrdersLoading={isOrdersLoading}
           cancellingOrderId={cancellingOrderId}
-          error={ordersError}
+          ordersError={ordersError}
           onCancelOrder={handleCancelOrder}
-        />
-        <OperationHistory
           transactions={transactions}
-          isLoading={isHistoryLoading}
-          error={historyError}
+          isHistoryLoading={isHistoryLoading}
+          historyError={historyError}
         />
       </div>
     );
@@ -142,17 +139,15 @@ export const PortfolioPage: React.FC = () => {
         <PortfolioMetrics holdings={holdings} />
         <PortfolioEvolutionChart transactions={transactions} />
         <HoldingList holdings={holdings} />
-        <MyOrders
+        <ActivityTabs
           orders={orders}
-          isLoading={isOrdersLoading}
+          isOrdersLoading={isOrdersLoading}
           cancellingOrderId={cancellingOrderId}
-          error={ordersError}
+          ordersError={ordersError}
           onCancelOrder={handleCancelOrder}
-        />
-        <OperationHistory
           transactions={transactions}
-          isLoading={isHistoryLoading}
-          error={historyError}
+          isHistoryLoading={isHistoryLoading}
+          historyError={historyError}
         />
       </div>
     );

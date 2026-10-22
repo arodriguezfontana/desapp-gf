@@ -7,6 +7,7 @@ interface MyOrdersProps {
   cancellingOrderId: string | null;
   error: string | null;
   onCancelOrder: (orderId: string) => Promise<boolean>;
+  hideHeader?: boolean;
 }
 
 function formatCurrency(amount: string | number): string {
@@ -34,17 +35,20 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
   cancellingOrderId,
   error,
   onCancelOrder,
+  hideHeader = false,
 }) => {
   return (
     <section aria-label="Mis órdenes" className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white">
-          Mis Órdenes ({isLoading ? '…' : orders.length})
-        </h2>
-        <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3 py-1 rounded-full border border-[#b79753]/30">
-          MERCADO
-        </span>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white">
+            Mis Órdenes ({isLoading ? '…' : orders.length})
+          </h2>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3 py-1 rounded-full border border-[#b79753]/30">
+            MERCADO
+          </span>
+        </div>
+      )}
 
       {isLoading && (
         <div className="text-center py-10 bg-[#104443] rounded-2xl border border-[#1a6866]">
