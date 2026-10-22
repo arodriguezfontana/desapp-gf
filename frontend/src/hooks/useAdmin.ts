@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { adminService } from '../service/adminService';
 import type {
+  RecalculateQuotesResultDto,
   SimulationResultDto,
   SyncAcceptedDto,
   SyncRunStatusDto,
@@ -32,10 +33,15 @@ export function useAdmin() {
     return adminService.simulateMarket();
   }, []);
 
+  const recalculateQuotes = useCallback((): Promise<RecalculateQuotesResultDto> => {
+    return adminService.recalculateQuotes();
+  }, []);
+
   return {
     triggerWhoScoredSync,
     getWhoScoredRunStatus,
     triggerFootballDataSync,
     simulateMarket,
+    recalculateQuotes,
   };
 }

@@ -163,4 +163,63 @@ describe('AdminPage', () => {
       expect(screen.getByText('⚽ Emiliano Martínez')).toBeInTheDocument();
     });
   });
+
+  it('dispara el recálculo global de cotizaciones y muestra el resumen de recalculados/salteados', async () => {
+    vi.spyOn(authServiceModule.authService, 'me').mockResolvedValueOnce({
+      id: 'u-admin',
+      email: 'admin@mail.com',
+      role: 'admin',
+    });
+
+    const recalcSpy = vi.spyOn(adminServiceModule.adminService, 'recalculateQuotes').mockResolvedValueOnce({
+      recalculated: [{ userId: 'u-1', playerId: 'p-1', value: 50, score: 0.5 }],
+      skipped: [{ userId: 'u-2', playerId: 'p-2', reason: 'faltan métricas' }],
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Recalcular$/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Recalcular$/i }));
+
+    await waitFor(() => {
+      expect(recalcSpy).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Cotizaciones actualizadas:')).toBeInTheDocument();
+      expect(screen.getByText(/Combinaciones salteadas \(1\)/)).toBeInTheDocument();
+    });
+  });
+
+  it('muestra un error si falla el recálculo global de cotizaciones', async () => {
+    vi.spyOn(authServiceModule.authService, 'me').mockResolvedValueOnce({
+      id: 'u-admin',
+      email: 'admin@mail.com',
+      role: 'admin',
+    });
+
+    vi.spyOn(adminServiceModule.adminService, 'recalculateQuotes').mockRejectedValueOnce(
+      new Error('Ya hay un recálculo en curso'),
+    );
+
+    render(
+      <MemoryRouter>
+        <AdminPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Recalcular$/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Recalcular$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Ya hay un recálculo en curso')).toBeInTheDocument();
+    });
+  });
 });

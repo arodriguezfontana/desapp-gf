@@ -35,6 +35,24 @@ export interface SyncSummaryDto {
   failedLeagues: string[];
 }
 
+export interface RecalculatedQuoteEntryDto {
+  userId: string;
+  playerId: string;
+  value: number;
+  score: number;
+}
+
+export interface SkippedQuoteEntryDto {
+  userId: string;
+  playerId: string;
+  reason: string;
+}
+
+export interface RecalculateQuotesResultDto {
+  recalculated: RecalculatedQuoteEntryDto[];
+  skipped: SkippedQuoteEntryDto[];
+}
+
 export interface SimulationResultDto {
   success: boolean;
   message: string;

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useUserStrategies } from '../hooks/useUserStrategies';
 import { POSITIONS, getPositionLabel } from '../types/catalog.types';
 import type { Position } from '../types/catalog.types';
-import type { UserStrategyResponseDto, UserRecalculateResponseDto } from '../types/userStrategy.types';
+import type { UserStrategyResponseDto } from '../types/userStrategy.types';
 
 function sumOf(weights: Record<string, number>): number {
   return Object.values(weights).reduce((acc, w) => acc + w, 0);
@@ -137,44 +137,14 @@ const StrategyCard: React.FC<{
   );
 };
 
-const RecalculateFeedback: React.FC<{ result: UserRecalculateResponseDto }> = ({ result }) => (
-  <div className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] space-y-2 text-xs font-medium">
-    <div className="flex items-center justify-between">
-      <span className="text-gray-400">Cotizaciones actualizadas:</span>
-      <span className="font-bold text-emerald-400">{result.recalculated.length}</span>
-    </div>
-    {result.skipped.length > 0 && (
-      <div className="space-y-1">
-        <span className="text-gray-400">Jugadores salteados ({result.skipped.length}):</span>
-        <div className="flex flex-wrap gap-1">
-          {result.skipped.map((s) => (
-            <span
-              key={s.playerId}
-              title={s.reason}
-              className="text-[9px] font-bold px-2 py-0.5 bg-rose-500/20 text-rose-300 rounded border border-rose-500/30"
-            >
-              {s.playerId.slice(0, 8)}…
-            </span>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-);
-
 export const MyStrategiesPage: React.FC = () => {
-  const { listStrategies, selectStrategy, editWeights, editPositionWeights, recalculate } =
-    useUserStrategies();
+  const { listStrategies, selectStrategy, editWeights, editPositionWeights } = useUserStrategies();
 
   const [strategies, setStrategies] = useState<UserStrategyResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectingId, setSelectingId] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<{ strategyId: string; key: string } | null>(null);
-
-  const [isRecalculating, setIsRecalculating] = useState(false);
-  const [recalculateResult, setRecalculateResult] = useState<UserRecalculateResponseDto | null>(null);
-  const [recalculateError, setRecalculateError] = useState<string | null>(null);
 
   const loadStrategies = useCallback(async () => {
     setIsLoading(true);
@@ -234,19 +204,6 @@ export const MyStrategiesPage: React.FC = () => {
     }
   };
 
-  const handleRecalculate = async () => {
-    setIsRecalculating(true);
-    setRecalculateError(null);
-    try {
-      const result = await recalculate();
-      setRecalculateResult(result);
-    } catch (err: unknown) {
-      setRecalculateError(err instanceof Error ? err.message : 'No se pudo recalcular tus cotizaciones.');
-    } finally {
-      setIsRecalculating(false);
-    }
-  };
-
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
       <title>Mis Estrategias — FútVal</title>
@@ -256,29 +213,9 @@ export const MyStrategiesPage: React.FC = () => {
           Mis estrategias
         </h1>
         <p className="text-xs sm:text-sm text-gray-300 font-medium mt-2 max-w-2xl">
-          Tenés exactamente dos estrategias de valuación propias. Elegí cuál usar, ajustá sus pesos a tu
-          criterio, y recalculá tus cotizaciones cuando quieras actualizar tu historial.
+          Tenés exactamente dos estrategias de valuación propias. Elegí cuál usar y ajustá sus pesos a tu
+          criterio; el recálculo de cotizaciones es una operación de sistema que ejecuta el administrador.
         </p>
-      </div>
-
-      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8 space-y-4">
-        <h2 className="text-lg font-black uppercase tracking-wider text-white">Recalcular mis cotizaciones</h2>
-        <p className="text-xs text-gray-300">
-          Usa tu estrategia seleccionada para recalcular el valor de todos los jugadores del catálogo.
-        </p>
-        {recalculateError && (
-          <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-3 rounded-xl font-bold">
-            {recalculateError}
-          </div>
-        )}
-        {recalculateResult && <RecalculateFeedback result={recalculateResult} />}
-        <button
-          onClick={handleRecalculate}
-          disabled={isRecalculating}
-          className="px-6 py-2.5 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-xs tracking-widest rounded-xl shadow-md transition-all cursor-pointer"
-        >
-          {isRecalculating ? 'Recalculando...' : 'Recalcular'}
-        </button>
       </div>
 
       <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8 space-y-4">

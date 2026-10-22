@@ -29,7 +29,6 @@ describe('MyStrategiesPage', () => {
   const selectStrategy = vi.fn();
   const editWeights = vi.fn();
   const editPositionWeights = vi.fn();
-  const recalculate = vi.fn();
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -37,14 +36,12 @@ describe('MyStrategiesPage', () => {
     selectStrategy.mockReset();
     editWeights.mockReset();
     editPositionWeights.mockReset();
-    recalculate.mockReset();
 
     vi.spyOn(useUserStrategiesModule, 'useUserStrategies').mockReturnValue({
       listStrategies,
       selectStrategy,
       editWeights,
       editPositionWeights,
-      recalculate,
     });
   });
 
@@ -123,37 +120,5 @@ describe('MyStrategiesPage', () => {
     const saveButtons = screen.getAllByRole('button', { name: /^Guardar$/i });
     expect(saveButtons[0]).toBeDisabled();
     expect(editWeights).not.toHaveBeenCalled();
-  });
-
-  it('dispara el recálculo y muestra el resumen de recalculados/salteados', async () => {
-    recalculate.mockResolvedValueOnce({
-      recalculated: [{ playerId: 'p-1', value: 50, score: 0.5 }],
-      skipped: [{ playerId: 'p-2', reason: 'faltan métricas' }],
-    });
-
-    render(<MyStrategiesPage />);
-    await waitFor(() => screen.getByText('Performance general'));
-
-    fireEvent.click(screen.getByRole('button', { name: /^Recalcular$/i }));
-
-    await waitFor(() => {
-      expect(recalculate).toHaveBeenCalledTimes(1);
-      expect(screen.getByText('Cotizaciones actualizadas:')).toBeInTheDocument();
-      expect(screen.getByText('1')).toBeInTheDocument();
-      expect(screen.getByText(/Jugadores salteados \(1\)/)).toBeInTheDocument();
-    });
-  });
-
-  it('muestra un error si falla el recálculo', async () => {
-    recalculate.mockRejectedValueOnce(new Error('Ya hay un recálculo en curso'));
-
-    render(<MyStrategiesPage />);
-    await waitFor(() => screen.getByText('Performance general'));
-
-    fireEvent.click(screen.getByRole('button', { name: /^Recalcular$/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Ya hay un recálculo en curso')).toBeInTheDocument();
-    });
   });
 });
