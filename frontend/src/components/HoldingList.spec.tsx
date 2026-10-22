@@ -28,11 +28,19 @@ describe('HoldingList', () => {
     render(<MemoryRouter><HoldingList holdings={mockHoldings} /></MemoryRouter>);
 
     expect(screen.getByText('Mis Posiciones (2)')).toBeInTheDocument();
-    expect(screen.getAllByText('Kylian Mbappé')).toHaveLength(2); // desktop table + mobile card
-    expect(screen.getAllByText('Jude Bellingham')).toHaveLength(2);
+    // desktop table + mobile card + leyenda del gráfico de distribución
+    expect(screen.getAllByText('Kylian Mbappé')).toHaveLength(3);
+    expect(screen.getAllByText('Jude Bellingham')).toHaveLength(3);
 
     expect(screen.getAllByText('+$300.00')[0]).toHaveClass('text-[#6ab547]');
     expect(screen.getAllByText('-$200.00')[0]).toHaveClass('text-red-500');
+  });
+
+  it('muestra el gráfico de distribución del portfolio junto a la tabla de posiciones', () => {
+    render(<MemoryRouter><HoldingList holdings={mockHoldings} /></MemoryRouter>);
+
+    expect(screen.getByText('Distribución del Portfolio')).toBeInTheDocument();
+    expect(document.querySelector('svg')).toBeInTheDocument();
   });
 
   it('muestra la cantidad de tokens, precio medio y cotización actual', () => {

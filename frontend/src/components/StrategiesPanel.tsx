@@ -3,6 +3,7 @@ import { useUserStrategies } from '../hooks/useUserStrategies';
 import { POSITIONS, getPositionLabel } from '../types/catalog.types';
 import type { Position } from '../types/catalog.types';
 import type { UserStrategyResponseDto } from '../types/userStrategy.types';
+import { StrategyCompositionChart } from './StrategyCompositionChart';
 
 function sumOf(weights: Record<string, number>): number {
   return Object.values(weights).reduce((acc, w) => acc + w, 0);
@@ -103,6 +104,8 @@ const StrategyCard: React.FC<{
           </button>
         )}
       </div>
+
+      <StrategyCompositionChart weights={strategy.weights} />
 
       <button
         onClick={() => setExpanded((prev) => !prev)}

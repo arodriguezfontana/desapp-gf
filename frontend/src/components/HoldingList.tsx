@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Holding } from '../types/portfolio';
+import { PortfolioDistributionChart } from './PortfolioDistributionChart';
 
 interface HoldingListProps {
   holdings: Holding[];
@@ -26,6 +27,8 @@ export const HoldingList: React.FC<HoldingListProps> = ({ holdings }) => {
           HOLDINGS
         </span>
       </div>
+
+      <PortfolioDistributionChart holdings={holdings} />
 
       {/* Vista de Tabla para Pantallas Medianas y Grandes */}
       <div className="hidden md:block overflow-x-auto rounded-2xl border border-[#1a6866] bg-[#104443] shadow-xl">

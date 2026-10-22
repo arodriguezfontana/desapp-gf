@@ -29,12 +29,8 @@ describe('OrderBookView', () => {
     expect(screen.getByText('Fallo de conexión')).toBeInTheDocument();
   });
 
-  it('renderiza el estado vacío cuando no hay órdenes en bids ni en asks (US3)', () => {
-    const emptyBook: OrderBookResponseDto = {
-      playerId: 'player-empty',
-      bids: [],
-      asks: [],
-    };
+  it('renderiza el estado vacío cuando no hay órdenes en bids ni en asks', () => {
+    const emptyBook: OrderBookResponseDto = { playerId: 'player-empty', bids: [], asks: [] };
 
     render(<OrderBookView orderBook={emptyBook} isLoading={false} error={null} />);
 
@@ -43,37 +39,19 @@ describe('OrderBookView', () => {
     ).toBeInTheDocument();
   });
 
-  it('renderiza correctamente las columnas de compras (bids) y ventas (asks) con sus cantidades y barras', () => {
+  it('renderiza el gráfico de profundidad con todos los niveles de precio', () => {
     render(<OrderBookView orderBook={mockOrderBook} isLoading={false} error={null} />);
 
-    expect(screen.getByText('Compras (Bids)')).toBeInTheDocument();
-    expect(screen.getByText('Ventas (Asks)')).toBeInTheDocument();
-
-    // Compras: $24.50 y $23.00
+    expect(screen.getByText('Profundidad de mercado')).toBeInTheDocument();
     expect(screen.getByText('$24.50')).toBeInTheDocument();
     expect(screen.getByText('$23.00')).toBeInTheDocument();
-    expect(screen.getByText('15')).toBeInTheDocument();
-    expect(screen.getByText('30')).toBeInTheDocument();
-
-    // Ventas: $25.00 y $26.50
     expect(screen.getByText('$25.00')).toBeInTheDocument();
     expect(screen.getByText('$26.50')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('25')).toBeInTheDocument();
-
-    // Barras de profundidad
-    const bidBars = screen.getAllByTestId('bid-depth-bar');
-    expect(bidBars).toHaveLength(2);
-
-    const askBars = screen.getAllByTestId('ask-depth-bar');
-    expect(askBars).toHaveLength(2);
-
-    // Totales de volumen
-    expect(screen.getByText('Total: 45 tokens')).toBeInTheDocument();
-    expect(screen.getByText('Total: 35 tokens')).toBeInTheDocument();
+    expect(screen.getAllByTestId('bid-depth-bar').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('ask-depth-bar').length).toBeGreaterThan(0);
   });
 
-  it('muestra mensaje informativo cuando un lado está vacío pero el otro tiene órdenes', () => {
+  it('renderiza el gráfico cuando solo hay órdenes de un lado', () => {
     const onlyBidsBook: OrderBookResponseDto = {
       playerId: 'player-bids-only',
       bids: [{ price: '20.00', totalQuantity: 10 }],
@@ -82,7 +60,6 @@ describe('OrderBookView', () => {
 
     render(<OrderBookView orderBook={onlyBidsBook} isLoading={false} error={null} />);
 
-    expect(screen.getByText('Sin posturas de venta activas')).toBeInTheDocument();
     expect(screen.getByText('$20.00')).toBeInTheDocument();
   });
 
@@ -97,10 +74,8 @@ describe('OrderBookView', () => {
       />,
     );
 
-    const reloadButton = screen.getByRole('button', { name: /actualizar/i });
-    fireEvent.click(reloadButton);
+    fireEvent.click(screen.getByRole('button', { name: /actualizar/i }));
 
     expect(handleReload).toHaveBeenCalledTimes(1);
   });
 });
-

@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { type ReactNode } from 'react';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  type TooltipContentProps,
+} from 'recharts';
 import type { PlayerQuote } from '../types/catalog.types';
 
 interface QuoteHistoryChartProps {
   quotes: PlayerQuote[];
   color?: string;
 }
-
-const VIEW_WIDTH = 560;
-const VIEW_HEIGHT = 160;
-const PADDING_X = 12;
-const PADDING_Y = 16;
 
 const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: '2-digit' });
@@ -19,15 +23,34 @@ const formatCurrency = (n: number) =>
 
 const toDateKey = (iso: string) => iso.slice(0, 10); // 'YYYY-MM-DD'
 
-interface PlotPoint {
-  x: number;
-  y: number;
-  quote: PlayerQuote;
+interface ChartPoint {
+  t: number;
+  value: number;
+  score: number;
+  calculatedAt: string;
 }
 
-export const QuoteHistoryChart: React.FC<QuoteHistoryChartProps> = ({ quotes, color = '#2dd4bf' }) => {
-  const [hovered, setHovered] = useState<PlotPoint | null>(null);
+const QuoteTooltip = ({ active, payload }: TooltipContentProps): ReactNode => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+  const point = payload[0].payload as ChartPoint;
+  return (
+    <div className="bg-[#0b3332] border border-[#1a6866] rounded-xl px-3 py-2 shadow-2xl whitespace-nowrap">
+      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
+        {formatDate(point.calculatedAt)}
+      </p>
+      <p className="text-[12px] font-black tabular-nums" style={{ color: payload[0].color }}>
+        {formatCurrency(point.value)}
+      </p>
+      <p className="text-[9px] text-gray-400 mt-0.5">
+        Score: <span className="text-white font-bold">{point.score.toFixed(2)}</span>
+      </p>
+    </div>
+  );
+};
 
+export const QuoteHistoryChart: React.FC<QuoteHistoryChartProps> = ({ quotes, color = '#2dd4bf' }) => {
   if (quotes.length === 0) {
     return (
       <div className="rounded-xl border border-white/8 py-8 px-5 text-center" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
@@ -47,105 +70,45 @@ export const QuoteHistoryChart: React.FC<QuoteHistoryChartProps> = ({ quotes, co
     (a, b) => new Date(a.calculatedAt).getTime() - new Date(b.calculatedAt).getTime(),
   );
 
-  const values = deduplicated.map((q) => q.value);
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
-  const valueRange = maxValue - minValue || 1;
-
-  const timestamps = deduplicated.map((q) => new Date(q.calculatedAt).getTime());
-  const minTime = Math.min(...timestamps);
-  const maxTime = Math.max(...timestamps);
-  const timeRange = maxTime - minTime || 1;
-
-  const plotWidth = VIEW_WIDTH - PADDING_X * 2;
-  const plotHeight = VIEW_HEIGHT - PADDING_Y * 2;
-
-  const points: PlotPoint[] = deduplicated.map((quote) => {
-    const t = new Date(quote.calculatedAt).getTime();
-    const x = PADDING_X + (deduplicated.length === 1 ? plotWidth / 2 : ((t - minTime) / timeRange) * plotWidth);
-    const y = PADDING_Y + plotHeight - ((quote.value - minValue) / valueRange) * plotHeight;
-    return { x, y, quote };
-  });
-
-  const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
+  const data: ChartPoint[] = deduplicated.map((q) => ({
+    t: new Date(q.calculatedAt).getTime(),
+    value: q.value,
+    score: q.score,
+    calculatedAt: q.calculatedAt,
+  }));
 
   return (
     <div className="rounded-xl border border-white/8 p-4" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-      <div className="relative">
-        <svg
-          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-          className="w-full h-auto"
-          role="img"
-          aria-label="Tu valuación de este jugador en el tiempo"
-          onMouseLeave={() => setHovered(null)}
-        >
-          <line
-            x1={PADDING_X} y1={VIEW_HEIGHT - PADDING_Y}
-            x2={VIEW_WIDTH - PADDING_X} y2={VIEW_HEIGHT - PADDING_Y}
-            stroke="rgba(255,255,255,0.1)" strokeWidth={1}
-          />
-
-          {hovered && (
-            <line
-              x1={hovered.x} y1={PADDING_Y}
-              x2={hovered.x} y2={VIEW_HEIGHT - PADDING_Y}
-              stroke="rgba(255,255,255,0.15)" strokeWidth={1} strokeDasharray="3 3"
+      <div
+        role="img"
+        aria-label="Tu valuación de este jugador en el tiempo"
+        style={{ width: '100%', height: 160 }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 12 }}>
+            <XAxis
+              dataKey="t"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(t: number) => formatDate(new Date(t).toISOString())}
+              stroke="rgba(255,255,255,0.3)"
+              tick={{ fontSize: 9 }}
+              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              tickLine={false}
             />
-          )}
-
-          {points.length > 1 && (
-            <polyline
-              points={polylinePoints}
-              fill="none"
+            <YAxis hide domain={['dataMin', 'dataMax']} />
+            <Tooltip content={QuoteTooltip} />
+            <Line
+              type="linear"
+              dataKey="value"
               stroke={color}
               strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              dot={{ r: 4, fill: color, strokeWidth: 1 }}
+              activeDot={{ r: 6, fill: '#fff', stroke: color, strokeWidth: 2 }}
+              isAnimationActive={false}
             />
-          )}
-
-          {points.map((p) => {
-            const isHovered = hovered?.quote.id === p.quote.id;
-            return (
-              <circle
-                key={p.quote.id}
-                cx={p.x} cy={p.y}
-                r={isHovered ? 6 : 4}
-                fill={isHovered ? '#fff' : color}
-                stroke={isHovered ? color : 'rgba(0,0,0,0.3)'}
-                strokeWidth={isHovered ? 2 : 1}
-                className="cursor-pointer"
-                onMouseEnter={() => setHovered(p)}
-              />
-            );
-          })}
-        </svg>
-
-        {hovered && (() => {
-          const pct = (hovered.x - PADDING_X) / plotWidth;
-          const alignRight = pct > 0.55;
-          return (
-            <div
-              className="absolute bottom-full mb-1 z-10 pointer-events-none"
-              style={{
-                left: alignRight ? undefined : `${pct * 100}%`,
-                right: alignRight ? `${(1 - pct) * 100}%` : undefined,
-              }}
-            >
-              <div className="bg-[#0b3332] border border-[#1a6866] rounded-xl px-3 py-2 shadow-2xl whitespace-nowrap">
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
-                  {formatDate(hovered.quote.calculatedAt)}
-                </p>
-                <p className="text-[12px] font-black tabular-nums" style={{ color }}>
-                  {formatCurrency(hovered.quote.value)}
-                </p>
-                <p className="text-[9px] text-gray-400 mt-0.5">
-                  Score: <span className="text-white font-bold">{hovered.quote.score.toFixed(2)}</span>
-                </p>
-              </div>
-            </div>
-          );
-        })()}
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="flex items-center justify-between mt-2 text-[9px] font-bold uppercase tracking-wider text-white/40">

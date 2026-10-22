@@ -157,7 +157,11 @@ describe('PlayerDetailPage', () => {
       expect(screen.getByText('Kylian Mbappé')).toBeInTheDocument();
     });
 
-    expect(document.querySelector('svg[aria-label="Tu valuación de este jugador en el tiempo"]')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        document.querySelector('[role="img"][aria-label="Tu valuación de este jugador en el tiempo"] svg'),
+      ).toBeInTheDocument();
+    });
     expect(
       screen.queryByText('Todavía no hay historial de cotizaciones para este jugador.'),
     ).not.toBeInTheDocument();
@@ -395,8 +399,8 @@ describe('PlayerDetailPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Profundidad de Mercado')).toBeInTheDocument();
-      expect(screen.getByText('$24.50')).toBeInTheDocument();
-      expect(screen.getByText('$25.00')).toBeInTheDocument();
+      expect(screen.getAllByText('$24.50').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('$25.00').length).toBeGreaterThan(0);
     });
   });
 });

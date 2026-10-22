@@ -58,6 +58,19 @@ describe('StrategiesPanel', () => {
     expect(listStrategies).toHaveBeenCalledTimes(1);
   });
 
+  it('muestra el gráfico de composición de ambas estrategias, sea cual sea la seleccionada', async () => {
+    render(<StrategiesPanel />);
+
+    await waitFor(() => screen.getByText('Performance general'));
+
+    expect(screen.getAllByText('Composición de la estrategia')).toHaveLength(2);
+    // Un gráfico por cada una de las dos estrategias (seleccionada o no);
+    // Recharts mide el contenedor de forma asíncrona antes de montar el svg.
+    await waitFor(() => {
+      expect(document.querySelectorAll('svg')).toHaveLength(2);
+    });
+  });
+
   it('muestra un error si falla la carga de estrategias', async () => {
     listStrategies.mockReset().mockRejectedValueOnce(new Error('No se pudo conectar'));
 
