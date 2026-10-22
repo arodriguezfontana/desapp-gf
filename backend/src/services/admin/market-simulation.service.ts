@@ -427,9 +427,9 @@ export class MarketSimulationService {
       const hash = await this.hasher.hash(rawPassword);
       admin = User.register(randomUUID(), email, hash, new Date(), UserRole.ADMIN, 'admin');
       await this.users.save(admin);
+      await this.strategyProvisioning.provisionDefaultStrategiesFor(admin.id);
     }
 
-    await this.strategyProvisioning.provisionDefaultStrategiesFor(admin.id);
     return admin;
   }
 
@@ -443,8 +443,8 @@ export class MarketSimulationService {
       if (!bot) {
         bot = User.register(randomUUID(), email, botPasswordHash, new Date(), UserRole.USER, cfg.username);
         await this.users.save(bot);
+        await this.strategyProvisioning.provisionDefaultStrategiesFor(bot.id);
       }
-      await this.strategyProvisioning.provisionDefaultStrategiesFor(bot.id);
       bots.push(bot);
     }
 
