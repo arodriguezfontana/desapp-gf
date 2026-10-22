@@ -572,7 +572,8 @@ export class MarketSimulationService {
 
   private async ensureBots(): Promise<User[]> {
     const bots: User[] = [];
-    const botPasswordHash = await this.hasher.hash('BotSecurePass123!');
+    const botPassword = this.config.get<string>('BOT_PASSWORD') ?? 'BotSecurePass123!';
+    const botPasswordHash = await this.hasher.hash(botPassword);
 
     for (const cfg of DEFAULT_BOTS) {
       const email = Email.create(cfg.email);

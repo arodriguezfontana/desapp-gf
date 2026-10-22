@@ -17,6 +17,7 @@ describe('notificationsService', () => {
     id: 'notif-1',
     alertId: 'alert-1',
     playerId: 'player-1',
+    playerName: 'Lionel Messi',
     condition: 'PRICE_BELOW',
     triggeredValue: 9.5,
     createdAt: '2026-10-22T00:00:00.000Z',

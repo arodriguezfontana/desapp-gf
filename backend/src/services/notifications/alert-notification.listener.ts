@@ -28,6 +28,6 @@ export class AlertNotificationListener {
     });
 
     const persisted = await this.notifications.persist(notification);
-    this.notifications.pushToStream(persisted);
+    await this.notifications.pushToStream(persisted);
   }
 }

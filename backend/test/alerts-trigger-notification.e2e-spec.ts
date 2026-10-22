@@ -88,6 +88,7 @@ describe('Disparo de alerta por recálculo -> notificación (e2e)', () => {
     expect(notification).toBeDefined();
     expect(notification.condition).toBe('PRICE_BELOW');
     expect(notification.read).toBe(false);
+    expect(notification.playerName).toBe('Jugador Disparo');
   });
 
   it('una cotización que no cumple ninguna condición no genera notificación', async () => {

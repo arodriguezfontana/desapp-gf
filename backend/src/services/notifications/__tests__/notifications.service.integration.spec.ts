@@ -7,6 +7,7 @@ import { DataSource } from 'typeorm';
 import { DatabaseModule } from '../../../database/database.module';
 import { NOTIFICATION_REPOSITORY } from '../../../modules/notifications/notifications.constants';
 import { PRICE_ALERT_REPOSITORY } from '../../../modules/alerts/alerts.constants';
+import { PLAYER_REPOSITORY } from '../../../modules/player/player.constants';
 
 import { NotificationEntity } from '../../../repositories/notifications/entities/notification.entity';
 import { PriceAlertEntity } from '../../../repositories/alerts/entities/price-alert.entity';
@@ -15,9 +16,11 @@ import { UserEntity } from '../../../repositories/auth/entities/user.entity';
 
 import { NotificationMapper } from '../../../repositories/notifications/notification.mapper';
 import { PriceAlertMapper } from '../../../repositories/alerts/price-alert.mapper';
+import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
 
 import { TypeOrmNotificationRepository } from '../../../repositories/notifications/typeorm-notification.repository';
 import { TypeOrmPriceAlertRepository } from '../../../repositories/alerts/typeorm-price-alert.repository';
+import { TypeOrmPlayerRepository } from '../../../repositories/player/typeorm-player.repository';
 
 import { AlertCondition } from '../../../domain/alerts/alert-condition';
 import { PriceAlert } from '../../../domain/alerts/price-alert';
@@ -46,8 +49,10 @@ describe('NotificationsService (integración contra Postgres real)', () => {
         NotificationsService,
         NotificationMapper,
         PriceAlertMapper,
+        PlayerMapper,
         { provide: NOTIFICATION_REPOSITORY, useClass: TypeOrmNotificationRepository },
         { provide: PRICE_ALERT_REPOSITORY, useClass: TypeOrmPriceAlertRepository },
+        { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
       ],
     }).compile();
 
@@ -130,6 +135,7 @@ describe('NotificationsService (integración contra Postgres real)', () => {
 
       expect(ownNotifications).toHaveLength(1);
       expect(ownNotifications[0].userId).toBe(userIdA);
+      expect(ownNotifications[0].playerName).toBe('Jugador Test');
     });
 
     it('devuelve las notificaciones ordenadas por createdAt descendente (más reciente primero)', async () => {

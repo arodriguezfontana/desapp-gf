@@ -9,14 +9,18 @@ import { DatabaseModule } from '../../../database/database.module';
 import { NOTIFICATION_REPOSITORY } from '../../../modules/notifications/notifications.constants';
 import { MAIL_ADAPTER } from '../../../modules/mail/mail.constants';
 import { USER_REPOSITORY } from '../../../modules/auth/auth.constants';
+import { PLAYER_REPOSITORY } from '../../../modules/player/player.constants';
 
 import { NotificationEntity } from '../../../repositories/notifications/entities/notification.entity';
 import { UserEntity } from '../../../repositories/auth/entities/user.entity';
+import { PlayerEntity } from '../../../repositories/player/entities/player.entity';
 
 import { NotificationMapper } from '../../../repositories/notifications/notification.mapper';
 import { TypeOrmNotificationRepository } from '../../../repositories/notifications/typeorm-notification.repository';
 import { UserMapper } from '../../../repositories/auth/mappers/user.mapper';
 import { TypeOrmUserRepository } from '../../../repositories/auth/typeorm-user.repository';
+import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
+import { TypeOrmPlayerRepository } from '../../../repositories/player/typeorm-player.repository';
 
 import { AlertCondition } from '../../../domain/alerts/alert-condition';
 import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../../domain/alerts/events/alert-triggered.event';
@@ -39,16 +43,18 @@ describe('AlertNotificationListener + AlertMailListener (integración: independe
         ConfigModule.forRoot({ isGlobal: true }),
         EventEmitterModule.forRoot(),
         DatabaseModule,
-        TypeOrmModule.forFeature([NotificationEntity, UserEntity]),
+        TypeOrmModule.forFeature([NotificationEntity, UserEntity, PlayerEntity]),
       ],
       providers: [
         NotificationsService,
         NotificationMapper,
         UserMapper,
+        PlayerMapper,
         AlertNotificationListener,
         AlertMailListener,
         { provide: NOTIFICATION_REPOSITORY, useClass: TypeOrmNotificationRepository },
         { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
+        { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
         {
           provide: MAIL_ADAPTER,
           useValue: { sendAlertTriggeredMail: jest.fn().mockRejectedValue(new Error('SMTP caído')) },

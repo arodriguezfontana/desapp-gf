@@ -3,7 +3,12 @@ import { Subject } from 'rxjs';
 import { Notification } from '../../domain/notifications/notification';
 import { NotificationNotFoundError } from '../../domain/notifications/errors/notification-not-found.error';
 import { NotificationRepository } from '../../repositories/notifications/notification.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 import { NOTIFICATION_REPOSITORY } from '../../modules/notifications/notifications.constants';
+import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
+
+/** Notificación enriquecida con el nombre del jugador, resuelto al vuelo (no se denormaliza en la tabla). */
+export type NotificationWithPlayerName = Notification & { playerName: string };
 
 /**
  * Orquesta la consulta, el marcado de lectura y el push en vivo de
@@ -14,14 +19,37 @@ import { NOTIFICATION_REPOSITORY } from '../../modules/notifications/notificatio
  */
 @Injectable()
 export class NotificationsService {
-  private readonly streams = new Map<string, Subject<Notification>>();
+  private readonly streams = new Map<string, Subject<NotificationWithPlayerName>>();
 
   constructor(
     @Inject(NOTIFICATION_REPOSITORY) private readonly notifications: NotificationRepository,
+    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
   ) {}
 
-  async listOwn(userId: string, unreadOnly = false): Promise<Notification[]> {
-    return this.notifications.findAllByUserId(userId, unreadOnly);
+  /**
+   * Resuelve el nombre del jugador al vuelo (sin denormalizarlo en la
+   * tabla): la bandeja de notificaciones es para que el usuario sepa de qué
+   * jugador se trata y pueda ir a su ficha, no un registro histórico que
+   * necesite sobrevivir a un jugador dado de baja del catálogo.
+   */
+  private async resolvePlayerName(playerId: string): Promise<string> {
+    const player = await this.players.findById(playerId);
+    return player?.name ?? playerId;
+  }
+
+  async listOwn(userId: string, unreadOnly = false): Promise<NotificationWithPlayerName[]> {
+    const notifications = await this.notifications.findAllByUserId(userId, unreadOnly);
+    const nameCache = new Map<string, string>();
+    const enriched: NotificationWithPlayerName[] = [];
+    for (const notification of notifications) {
+      let playerName = nameCache.get(notification.playerId);
+      if (playerName === undefined) {
+        playerName = await this.resolvePlayerName(notification.playerId);
+        nameCache.set(notification.playerId, playerName);
+      }
+      enriched.push(Object.assign(notification, { playerName }));
+    }
+    return enriched;
   }
 
   async markAsRead(userId: string, notificationId: string): Promise<Notification> {
@@ -42,17 +70,22 @@ export class NotificationsService {
   }
 
   /** Suscribe la conexión SSE de `userId`; se usa desde NotificationsSseController. */
-  subscribe(userId: string): Subject<Notification> {
+  subscribe(userId: string): Subject<NotificationWithPlayerName> {
     let stream = this.streams.get(userId);
     if (!stream) {
-      stream = new Subject<Notification>();
+      stream = new Subject<NotificationWithPlayerName>();
       this.streams.set(userId, stream);
     }
     return stream;
   }
 
   /** Empuja `notification` al stream de su usuario si hay una conexión SSE abierta (spec FR-018). */
-  pushToStream(notification: Notification): void {
-    this.streams.get(notification.userId)?.next(notification);
+  async pushToStream(notification: Notification): Promise<void> {
+    const stream = this.streams.get(notification.userId);
+    if (!stream) {
+      return;
+    }
+    const playerName = await this.resolvePlayerName(notification.playerId);
+    stream.next(Object.assign(notification, { playerName }));
   }
 }

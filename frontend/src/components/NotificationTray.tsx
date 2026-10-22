@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import type { NotificationResponseDto } from '../types/notifications.types';
 
 interface NotificationTrayProps {
@@ -42,19 +43,24 @@ export const NotificationTray: React.FC<NotificationTrayProps> = ({
               key={notification.id}
               className={`px-4 py-3 ${notification.read ? 'opacity-60' : ''}`}
             >
-              <button
-                onClick={() => onMarkAsRead(notification.id)}
-                disabled={notification.read}
-                className="w-full text-left"
+              <Link
+                to={`/catalog/${notification.playerId}`}
+                onClick={() => {
+                  if (!notification.read) {
+                    onMarkAsRead(notification.id);
+                  }
+                }}
+                className="block w-full text-left hover:text-[#2dd4bf] transition-colors"
               >
                 <p className="text-sm text-white">
-                  El precio {CONDITION_LABEL[notification.condition]}{' '}
+                  <span className="font-black text-[#b79753]">{notification.playerName}</span>: el precio{' '}
+                  {CONDITION_LABEL[notification.condition]}{' '}
                   <span className="font-bold text-[#b79753]">{notification.triggeredValue}</span>
                 </p>
                 <p className="text-[10px] text-gray-400 mt-1">
                   {new Date(notification.createdAt).toLocaleString()}
                 </p>
-              </button>
+              </Link>
             </li>
           ))}
         </ul>
