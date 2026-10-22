@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import type { OrderResponseDto } from '../types/orders.types';
 
 interface MyOrdersProps {
@@ -9,6 +9,8 @@ interface MyOrdersProps {
   onCancelOrder: (orderId: string) => Promise<boolean>;
   hideHeader?: boolean;
 }
+
+const PAGE_SIZE = 8;
 
 function formatCurrency(amount: string | number): string {
   return new Intl.NumberFormat('en-US', {
@@ -37,6 +39,15 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
   onCancelOrder,
   hideHeader = false,
 }) => {
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => orders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [orders, currentPage],
+  );
+
   return (
     <section aria-label="Mis órdenes" className="space-y-4">
       {!hideHeader && (
@@ -89,7 +100,7 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1a6866]/60 text-xs sm:text-sm font-semibold">
-                {orders.map((order) => {
+                {pageItems.map((order) => {
                   const isBuy = order.side === 'BUY';
                   const typeColor = isBuy ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
                   const typeLabel = isBuy ? 'COMPRA' : 'VENTA';
@@ -157,7 +168,7 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
 
           {/* Tarjetas — pantallas móviles */}
           <div className="grid grid-cols-1 gap-4 md:hidden">
-            {orders.map((order) => {
+            {pageItems.map((order) => {
               const isBuy = order.side === 'BUY';
               const typeColor = isBuy ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
               const typeLabel = isBuy ? 'COMPRA' : 'VENTA';
@@ -230,6 +241,30 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
               );
             })}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider text-gray-200 bg-[#104443] border border-[#1a6866] rounded-xl hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Anterior
+              </button>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider text-gray-200 bg-[#104443] border border-[#1a6866] rounded-xl hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </>
       )}
     </section>

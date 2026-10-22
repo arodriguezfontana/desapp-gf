@@ -3,6 +3,20 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MyOrders } from './MyOrders';
 import type { OrderResponseDto } from '../types/orders.types';
 
+function buildOrder(overrides: Partial<OrderResponseDto> & { id: string }): OrderResponseDto {
+  return {
+    side: 'BUY',
+    playerId: 'player-1',
+    quantity: 1,
+    remainingQuantity: 1,
+    price: '10.00',
+    status: 'PENDING',
+    createdAt: '2026-10-21T10:00:00.000Z',
+    fills: [],
+    ...overrides,
+  };
+}
+
 describe('MyOrders', () => {
   const mockOrders: OrderResponseDto[] = [
     {
@@ -163,6 +177,54 @@ describe('MyOrders', () => {
     const cancellingButtons = screen.getAllByLabelText('Cancelar orden order-1');
     expect(cancellingButtons[0]).toBeDisabled();
     expect(cancellingButtons[0]).toHaveTextContent('Cancelando...');
+  });
+
+  it('no muestra controles de paginación si hay 8 o menos órdenes', () => {
+    const orders = Array.from({ length: 8 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    render(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    expect(screen.queryByText(/Página/)).not.toBeInTheDocument();
+  });
+
+  it('pagina de a 8 órdenes por página, mostrando solo esa porción', () => {
+    const orders = Array.from({ length: 20 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    render(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Cancelar orden order-7').length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('Cancelar orden order-8')).not.toBeInTheDocument();
+  });
+
+  it('el botón "Anterior" está deshabilitado en la primera página y "Siguiente" avanza de página', () => {
+    const orders = Array.from({ length: 20 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    render(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+    expect(screen.queryByLabelText('Cancelar orden order-8')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+    expect(screen.getByText('Página 2 de 3')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Cancelar orden order-8').length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('Cancelar orden order-0')).not.toBeInTheDocument();
+  });
+
+  it('el botón "Siguiente" está deshabilitado en la última página', () => {
+    const orders = Array.from({ length: 12 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    render(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+    expect(screen.getByText('Página 2 de 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
   });
 });
 
