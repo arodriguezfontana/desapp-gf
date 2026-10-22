@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 
 import { USER_REPOSITORY, PASSWORD_HASHER } from '../../modules/auth/auth.constants';
@@ -27,6 +28,7 @@ import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
+import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 import { QuotationService } from '../quotation/quotation.service';
 import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
@@ -59,6 +61,7 @@ export class MarketSimulationService {
     private readonly quotation: QuotationService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
     private readonly config: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async simulate(targetEmail?: string): Promise<SimulationResultDto> {
@@ -371,6 +374,7 @@ export class MarketSimulationService {
 
     const quotesToSave: PlayerQuote[] = [];
     const quotesSummary: SimulatedQuoteDto[] = [];
+    const latestQuoteByPlayer: PlayerQuote[] = [];
     for (const player of simPlayers) {
       const currentPrice = refPrices.get(player.id) ?? 20.0;
       // 5 puntos en el tiempo: 25 días atrás, 20, 15, 10, 5
@@ -382,29 +386,42 @@ export class MarketSimulationService {
         { daysAgo: 5, factor: 0.99 },
       ];
 
-      let latestQuoteValue = currentPrice;
+      let latestQuote: PlayerQuote | null = null;
       for (const step of intervals) {
         const quoteValue = roundToTwoDecimals(currentPrice * step.factor);
-        quotesToSave.push(
-          PlayerQuote.create({
-            id: randomUUID(),
-            userId: admin.id,
-            playerId: player.id,
-            strategyId,
-            weightSnapshot: { rating: 1.0, goals: 1.0 },
-            factorEscalaSnapshot: 1.0,
-            score: roundToTwoDecimals(quoteValue / 10),
-            value: quoteValue,
-            calculatedAt: tDate(step.daysAgo),
-            appliedPosition: player.position,
-          }),
-        );
+        const quote = PlayerQuote.create({
+          id: randomUUID(),
+          userId: admin.id,
+          playerId: player.id,
+          strategyId,
+          weightSnapshot: { rating: 1.0, goals: 1.0 },
+          factorEscalaSnapshot: 1.0,
+          score: roundToTwoDecimals(quoteValue / 10),
+          value: quoteValue,
+          calculatedAt: tDate(step.daysAgo),
+          appliedPosition: player.position,
+        });
+        quotesToSave.push(quote);
         quotesCount++;
-        latestQuoteValue = quoteValue;
+        latestQuote = quote;
       }
-      quotesSummary.push({ playerId: player.id, playerName: player.name, value: latestQuoteValue });
+      quotesSummary.push({ playerId: player.id, playerName: player.name, value: latestQuote!.value });
+      latestQuoteByPlayer.push(latestQuote!);
     }
     await this.playerQuotes.saveMany(quotesToSave);
+
+    // Emite quote.recalculated solo por la cotización más reciente de cada
+    // jugador (no por los 4 puntos históricos de respaldo), igual que
+    // QuotationService.recalculateAll: así las alertas de precio del admin
+    // se evalúan también contra las cotizaciones que carga la simulación
+    // (025-player-price-alerts, spec FR-011), sin que este Service conozca
+    // al módulo de alertas.
+    for (const quote of latestQuoteByPlayer) {
+      await this.eventEmitter.emitAsync(
+        QUOTE_RECALCULATED_EVENT,
+        new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
+      );
+    }
 
     this.logger.log(
       `Simulación completada con éxito: ${holdingsCount} holdings, ${transactionsCount} transacciones, ${adminOrdersCount} órdenes admin, ${marketOrdersCount} órdenes de mercado, ${quotesCount} cotizaciones.`,

@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MarketSimulationService } from './market-simulation.service';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
@@ -32,6 +33,7 @@ describe('MarketSimulationService', () => {
   let quotation: jest.Mocked<QuotationService>;
   let strategyProvisioning: jest.Mocked<UserStrategyProvisioningService>;
   let config: jest.Mocked<ConfigService>;
+  let eventEmitter: jest.Mocked<EventEmitter2>;
 
   const adminEmail = 'abi_admin@ejemplo.com';
   const adminUser = User.register(
@@ -180,6 +182,10 @@ describe('MarketSimulationService', () => {
       }),
     } as unknown as jest.Mocked<ConfigService>;
 
+    eventEmitter = {
+      emitAsync: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<EventEmitter2>;
+
     service = new MarketSimulationService(
       users,
       hasher,
@@ -192,6 +198,7 @@ describe('MarketSimulationService', () => {
       quotation,
       strategyProvisioning,
       config,
+      eventEmitter,
     );
   });
 
@@ -222,6 +229,15 @@ describe('MarketSimulationService', () => {
     expect(holdings.save).toHaveBeenCalled();
     expect(orders.save).toHaveBeenCalled();
     expect(playerQuotes.saveMany).toHaveBeenCalled();
+
+    // Una emisión de quote.recalculated por jugador (la cotización más
+    // reciente, no los 4 puntos históricos de respaldo), para que el módulo
+    // de alertas evalúe las alertas del admin (025-player-price-alerts).
+    expect(eventEmitter.emitAsync).toHaveBeenCalledTimes(result.playersInvolved.length);
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      'quote.recalculated',
+      expect.objectContaining({ userId: adminUser.id }),
+    );
   });
 
   it('actualiza un holding existente en lugar de duplicarlo', async () => {
