@@ -147,6 +147,7 @@ describe('AdminPage', () => {
         { playerId: 'p-1', playerName: 'Emiliano Martínez', value: 24.5 },
         { playerId: 'p-2', playerName: 'Wesley Fofana', value: 18.3 },
       ],
+      alertsCreated: 2,
     });
 
     render(
@@ -166,6 +167,8 @@ describe('AdminPage', () => {
       expect(screen.getByText(/Simulación ejecutada con éxito para admin@mail\.com/i)).toBeInTheDocument();
       expect(screen.getByText(/Emiliano Martínez/)).toBeInTheDocument();
       expect(screen.getByText(/\$24\.50/)).toBeInTheDocument();
+      expect(screen.getByText('Alertas Demo')).toBeInTheDocument();
+      expect(screen.getByText(/Se sembraron 2 alertas de precio de demo/i)).toBeInTheDocument();
     });
   });
 

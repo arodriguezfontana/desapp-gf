@@ -70,4 +70,5 @@ export interface SimulationResultDto {
   quotesCreated: number;
   playersInvolved: string[];
   quotes: SimulatedQuoteDto[];
+  alertsCreated: number;
 }

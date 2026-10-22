@@ -45,5 +45,12 @@ export class SimulationResultDto {
 
   @ApiProperty({ type: [SimulatedQuoteDto], description: 'Cotización más reciente cargada por jugador simulado' })
   quotes!: SimulatedQuoteDto[];
+
+  @ApiProperty({
+    example: 2,
+    description:
+      'Alertas de precio de demo sembradas para el admin (solo la primera vez que se corre la simulación)',
+  })
+  alertsCreated!: number;
 }
 

@@ -13,6 +13,7 @@ import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { PlayerRepository } from '../../repositories/player/player.repository';
+import { Player } from '../../domain/player/player';
 import { OrderRepository } from '../../repositories/orders/order.repository';
 import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
@@ -93,6 +94,7 @@ export class MarketSimulationService {
         quotesCreated: 0,
         playersInvolved: [],
         quotes: [],
+        alertsCreated: 0,
       };
     }
 
@@ -113,6 +115,18 @@ export class MarketSimulationService {
         refPrices.set(player.id, 20.0);
       }
     }
+
+    // 4.1 Sembrar un par de alertas de precio de demo del admin (025-player-
+    // price-alerts), una por cada condición, sobre dos de los jugadores con
+    // actividad simulada. Los umbrales se calculan sobre el precio de
+    // referencia para que la cotización que se genera más abajo (paso 9) las
+    // cumpla con margen, de forma que el recálculo simulado dispare el flujo
+    // completo (notificación en bandeja + mail) igual que un recálculo real.
+    // Idempotente: solo se siembran la primera vez (si el admin ya tiene
+    // alguna alerta propia, no se agregan más en corridas sucesivas, para no
+    // acumular duplicados como pasó con las estrategias antes de ser
+    // idempotentes).
+    const alertsCreated = await this.ensureDemoAlerts(admin.id, simPlayers, refPrices);
 
     // 5. Generar transacciones históricas de compra y venta para el admin (y contrapartes)
     const now = Date.now();
@@ -450,7 +464,61 @@ export class MarketSimulationService {
       quotesCreated: quotesCount,
       playersInvolved: playerNames,
       quotes: quotesSummary,
+      alertsCreated,
     };
+  }
+
+  /**
+   * Siembra, solo la primera vez, dos `PriceAlert` de demo del admin: una
+   * `PRICE_BELOW` y una `PRICE_ABOVE`, sobre dos jugadores distintos de los
+   * que tienen actividad de mercado simulada. Los umbrales se calculan a
+   * partir de `refPrices` con margen suficiente para que la cotización que
+   * genera el paso 9 (≈0.99 × precio de referencia) las cumpla, de forma
+   * que el recálculo simulado dispare el flujo real de alertas.
+   */
+  private async ensureDemoAlerts(
+    adminId: string,
+    simPlayers: Player[],
+    refPrices: Map<string, number>,
+  ): Promise<number> {
+    const existing = await this.priceAlerts.findAllByUserId(adminId);
+    if (existing.length > 0 || simPlayers.length === 0) {
+      return 0;
+    }
+
+    const now = new Date();
+    const belowPlayer = simPlayers[0];
+    const belowPrice = refPrices.get(belowPlayer.id) ?? 20.0;
+    const alertsToCreate: PriceAlert[] = [
+      PriceAlert.create({
+        id: randomUUID(),
+        userId: adminId,
+        playerId: belowPlayer.id,
+        condition: AlertCondition.PRICE_BELOW,
+        targetValue: roundToTwoDecimals(belowPrice * 1.05),
+        createdAt: now,
+      }),
+    ];
+
+    if (simPlayers.length > 1) {
+      const abovePlayer = simPlayers[1];
+      const abovePrice = refPrices.get(abovePlayer.id) ?? 20.0;
+      alertsToCreate.push(
+        PriceAlert.create({
+          id: randomUUID(),
+          userId: adminId,
+          playerId: abovePlayer.id,
+          condition: AlertCondition.PRICE_ABOVE,
+          targetValue: roundToTwoDecimals(abovePrice * 0.9),
+          createdAt: now,
+        }),
+      );
+    }
+
+    for (const alert of alertsToCreate) {
+      await this.priceAlerts.save(alert);
+    }
+    return alertsToCreate.length;
   }
 
   private async ensureAdminUser(emailStr: string): Promise<User> {

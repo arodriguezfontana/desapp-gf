@@ -572,7 +572,7 @@ export const AdminPage: React.FC = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 text-center">
               <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">Holdings</span>
                 <span className="text-lg font-black text-[#b79753]">{simulationResult.holdingsCreated}</span>
@@ -589,11 +589,22 @@ export const AdminPage: React.FC = () => {
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">Libro L2</span>
                 <span className="text-lg font-black text-[#2dd4bf]">{simulationResult.marketOrdersCreated}</span>
               </div>
-              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866] col-span-2 sm:col-span-1">
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">Cotizaciones</span>
                 <span className="text-lg font-black text-purple-300">{simulationResult.quotesCreated}</span>
               </div>
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866] col-span-2 sm:col-span-1">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Alertas Demo</span>
+                <span className="text-lg font-black text-[#f59e0b]">{simulationResult.alertsCreated}</span>
+              </div>
             </div>
+
+            {simulationResult.alertsCreated > 0 && (
+              <p className="text-[10px] text-gray-400 font-medium">
+                Se sembraron {simulationResult.alertsCreated} alertas de precio de demo para la cuenta admin — revisá la
+                campanita de notificaciones, ya deberían haberse disparado con las cotizaciones recién generadas.
+              </p>
+            )}
 
             <div className="space-y-1.5 pt-1">
               <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
