@@ -57,6 +57,7 @@ describe('QuotationService', () => {
     quoteRepo = {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findAllByPlayerIdAndUserId: jest.fn(),
+      deleteAllByUserId: jest.fn().mockResolvedValue(undefined),
     };
     playerRepo = {
       findPage: jest.fn(),

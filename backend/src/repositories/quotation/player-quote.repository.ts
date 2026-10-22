@@ -11,4 +11,13 @@ import { PlayerQuote } from '../../domain/quotation/player-quote';
 export interface PlayerQuoteRepository {
   saveMany(quotes: PlayerQuote[]): Promise<void>;
   findAllByPlayerIdAndUserId(playerId: string, userId: string): Promise<PlayerQuote[]>;
+
+  /**
+   * Borra todas las cotizaciones de `userId` (cualquier jugador). Usado por
+   * la simulación de mercado (admin) para reemplazar su historial de demo
+   * en cada corrida en vez de acumularlo sin límite — PlayerQuote no es un
+   * log de auditoría append-only (a diferencia de TokenTransaction,
+   * Principio V de la constitución), así que reemplazarlo es seguro.
+   */
+  deleteAllByUserId(userId: string): Promise<void>;
 }

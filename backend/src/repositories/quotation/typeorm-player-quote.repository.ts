@@ -48,4 +48,8 @@ export class TypeOrmPlayerQuoteRepository implements PlayerQuoteRepository {
     });
     return entities.map((entity) => this.mapper.toDomain(entity));
   }
+
+  async deleteAllByUserId(userId: string): Promise<void> {
+    await this.repo.delete({ userId });
+  }
 }

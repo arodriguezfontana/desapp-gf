@@ -128,12 +128,26 @@ export class MarketSimulationService {
     // idempotentes).
     const alertsCreated = await this.ensureDemoAlerts(admin.id, simPlayers, refPrices);
 
-    // 5. Generar transacciones históricas de compra y venta para el admin (y contrapartes)
     const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
     const tDate = (daysAgo: number, hoursAgo = 0) => new Date(now - daysAgo * dayMs - hoursAgo * 3600 * 1000);
 
     let transactionsCount = 0;
+    let holdingsCount = 0;
+    let adminOrdersCount = 0;
+    let marketOrdersCount = 0;
+
+    // 5-8. Actividad histórica de mercado (transacciones, holdings, órdenes
+    // del admin en 4 estados, libro L2): se genera SOLO la primera vez. Sin
+    // esta guarda, cada corrida de la simulación volvía a insertar
+    // transacciones y órdenes nuevas sin límite (TokenTransaction además es
+    // append-only por la constitución, Principio V — nunca se puede borrar
+    // para "reemplazarla"), haciendo crecer la base indefinidamente en cada
+    // click de "Simular". Las cotizaciones (paso 9) y las alertas de demo sí
+    // se re-sincronizan en cada corrida, por separado.
+    const alreadySimulated = (await this.tokenTransactions.findByUserId(admin.id)).length > 0;
+    if (!alreadySimulated) {
+    // 5. Generar transacciones históricas de compra y venta para el admin (y contrapartes)
     const adminHoldingsQty = new Map<string, number>();
 
     interface TxPlan {
@@ -254,7 +268,6 @@ export class MarketSimulationService {
     }
 
     // 6. Persistir holdings exactos del admin
-    let holdingsCount = 0;
     for (const [playerId, quantity] of adminHoldingsQty.entries()) {
       if (quantity > 0) {
         const existingHolding = await this.holdings.findByUserAndPlayer(admin.id, playerId);
@@ -279,7 +292,6 @@ export class MarketSimulationService {
     }
 
     // 7. Generar órdenes del admin ("Mis Órdenes" en los 4 estados)
-    let adminOrdersCount = 0;
 
     // A. Orden PENDING (COMPRA)
     const pBuy = simPlayers[simPlayers.length - 1];
@@ -350,7 +362,6 @@ export class MarketSimulationService {
     adminOrdersCount++;
 
     // 8. Proveer liquidez de mercado L2 (Bids y Asks activos en Order Book)
-    let marketOrdersCount = 0;
     for (const player of simPlayers) {
       const base = refPrices.get(player.id) ?? 20.0;
       const bot1 = bots[0];
@@ -422,11 +433,20 @@ export class MarketSimulationService {
         marketOrdersCount++;
       }
     }
+    } // fin if (!alreadySimulated)
 
     // 9. Generar cotizaciones históricas del admin para los gráficos de
     // detalle de jugadores. Cubre todo el catálogo activo (no solo los 6
     // jugadores con actividad de compra/venta simulada) para que el
     // historial de cualquier jugador tenga datos al mirarlo como admin.
+    // A diferencia de las transacciones (append-only, no se pueden borrar),
+    // PlayerQuote se REEMPLAZA en cada corrida: se borra el historial previo
+    // del admin antes de insertar el nuevo, así la tabla no crece sin límite
+    // con cada click de "Simular" (esto fue justo lo que rompió el
+    // recálculo global antes: 23k+ filas superando el límite de parámetros
+    // de Postgres).
+    await this.playerQuotes.deleteAllByUserId(admin.id);
+
     let quotesCount = 0;
     const adminStrategies = await this.strategies.findByUserId(admin.id);
     const selectedStrategy = adminStrategies.find((s) => s.isSelected) ?? adminStrategies[0];

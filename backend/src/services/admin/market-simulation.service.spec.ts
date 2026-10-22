@@ -142,13 +142,14 @@ describe('MarketSimulationService', () => {
     tokenTransactions = {
       save: jest.fn().mockImplementation((t) => Promise.resolve(t)),
       saveInTransaction: jest.fn(),
-      findByUserId: jest.fn(),
+      findByUserId: jest.fn().mockResolvedValue([]),
       findCreditsByUserId: jest.fn(),
     } as unknown as jest.Mocked<TokenTransactionRepository>;
 
     playerQuotes = {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findAllByPlayerIdAndUserId: jest.fn(),
+      deleteAllByUserId: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<PlayerQuoteRepository>;
 
     strategies = {
@@ -277,6 +278,31 @@ describe('MarketSimulationService', () => {
 
     expect(result.alertsCreated).toBe(0);
     expect(priceAlerts.save).not.toHaveBeenCalled();
+  });
+
+  it('no vuelve a generar transacciones/órdenes/holdings si el admin ya tiene actividad simulada (idempotente, no acumula)', async () => {
+    users.findByEmail.mockImplementation(async (email) => {
+      if (email.toString() === adminEmail) return adminUser;
+      return null;
+    });
+    tokenTransactions.findByUserId.mockResolvedValue([
+      { id: 'tx-existing', userId: adminUser.id },
+    ] as unknown as Awaited<ReturnType<TokenTransactionRepository['findByUserId']>>);
+
+    const result = await service.simulate();
+
+    expect(result.transactionsCreated).toBe(0);
+    expect(result.holdingsCreated).toBe(0);
+    expect(result.ordersCreated).toBe(0);
+    expect(result.marketOrdersCreated).toBe(0);
+    expect(tokenTransactions.save).not.toHaveBeenCalled();
+    expect(orders.save).not.toHaveBeenCalled();
+    expect(holdings.save).not.toHaveBeenCalled();
+
+    // Las cotizaciones y las alertas de demo sí siguen comportándose igual
+    // que siempre: las cotizaciones se reemplazan en cada corrida.
+    expect(playerQuotes.deleteAllByUserId).toHaveBeenCalledWith(adminUser.id);
+    expect(result.quotesCreated).toBeGreaterThan(0);
   });
 
   it('simula historial de cotizaciones para todo el catálogo activo, no solo los 6 jugadores con actividad de mercado', async () => {
