@@ -183,6 +183,40 @@ export class MarketSimulationService {
       const orderId = randomUUID();
       const counterpartOrderId = randomUUID();
 
+      // token_transactions.order_id/counterpart_order_id tienen FK hacia
+      // orders: hay que persistir ambas órdenes (ya completadas, remanente 0)
+      // antes de las transacciones que las referencian, aunque no formen
+      // parte del conteo de "órdenes propias" del admin (eso son las 4
+      // órdenes de ejemplo en distintos estados del paso 7).
+      const adminSide = plan.type === TokenTransactionType.CREDIT ? OrderSide.BUY : OrderSide.SELL;
+      const botSide = adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY;
+      await this.orders.save(
+        Order.restore({
+          id: orderId,
+          userId: admin.id,
+          playerId: player.id,
+          side: adminSide,
+          quantity: plan.quantity,
+          remainingQuantity: 0,
+          price,
+          createdAt,
+          status: OrderStatus.COMPLETED,
+        }),
+      );
+      await this.orders.save(
+        Order.restore({
+          id: counterpartOrderId,
+          userId: bot.id,
+          playerId: player.id,
+          side: botSide,
+          quantity: plan.quantity,
+          remainingQuantity: 0,
+          price,
+          createdAt,
+          status: OrderStatus.COMPLETED,
+        }),
+      );
+
       // Transacción del admin
       const adminTx = TokenTransaction.create({
         id: randomUUID(),
