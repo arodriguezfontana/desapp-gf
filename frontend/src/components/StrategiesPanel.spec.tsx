@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MyStrategiesPage } from './MyStrategiesPage';
+import { StrategiesPanel } from './StrategiesPanel';
 import * as useUserStrategiesModule from '../hooks/useUserStrategies';
 import type { UserStrategyResponseDto } from '../types/userStrategy.types';
 
@@ -24,7 +24,7 @@ const TACTICAL: UserStrategyResponseDto = {
   positionWeights: {},
 };
 
-describe('MyStrategiesPage', () => {
+describe('StrategiesPanel', () => {
   const listStrategies = vi.fn();
   const selectStrategy = vi.fn();
   const editWeights = vi.fn();
@@ -46,7 +46,7 @@ describe('MyStrategiesPage', () => {
   });
 
   it('muestra el estado de carga y luego lista mis dos estrategias', async () => {
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
 
     expect(screen.getByText('Cargando estrategias...')).toBeInTheDocument();
 
@@ -61,7 +61,7 @@ describe('MyStrategiesPage', () => {
   it('muestra un error si falla la carga de estrategias', async () => {
     listStrategies.mockReset().mockRejectedValueOnce(new Error('No se pudo conectar'));
 
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
 
     await waitFor(() => {
       expect(screen.getByText('No se pudo conectar')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('MyStrategiesPage', () => {
       .mockResolvedValueOnce({ strategies: [PERFORMANCE, TACTICAL] })
       .mockResolvedValueOnce({ strategies: [{ ...PERFORMANCE, isSelected: false }, { ...TACTICAL, isSelected: true }] });
 
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
 
     await waitFor(() => screen.getByText('Impacto táctico'));
 
@@ -89,7 +89,7 @@ describe('MyStrategiesPage', () => {
   it('edita los pesos generales con suma válida y guarda', async () => {
     editWeights.mockResolvedValueOnce({ ...PERFORMANCE, weights: { goals: 0.6, assists: 0.4 } });
 
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
     await waitFor(() => screen.getByText('Performance general'));
 
     const cards = screen.getAllByText(/Editar pesos/i);
@@ -108,7 +108,7 @@ describe('MyStrategiesPage', () => {
   });
 
   it('deshabilita Guardar cuando la suma de los pesos no es 1.0 ±0.001', async () => {
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
     await waitFor(() => screen.getByText('Performance general'));
 
     fireEvent.click(screen.getAllByText(/Editar pesos/i)[0]);

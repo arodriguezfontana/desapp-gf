@@ -137,7 +137,12 @@ const StrategyCard: React.FC<{
   );
 };
 
-export const MyStrategiesPage: React.FC = () => {
+/**
+ * Las dos estrategias de valuación propias del usuario, integradas como tab
+ * dentro de Portfolio en vez de una pantalla aparte: la estrategia activa es
+ * lo que determina la cotización que el usuario ve en sus tenencias.
+ */
+export const StrategiesPanel: React.FC = () => {
   const { listStrategies, selectStrategy, editWeights, editPositionWeights } = useUserStrategies();
 
   const [strategies, setStrategies] = useState<UserStrategyResponseDto[]>([]);
@@ -205,48 +210,37 @@ export const MyStrategiesPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
-      <title>Mis Estrategias — FútVal</title>
+    <section aria-label="Mis estrategias" className="space-y-4">
+      <p className="text-xs sm:text-sm text-gray-300 font-medium max-w-2xl">
+        Tenés exactamente dos estrategias de valuación propias. Elegí cuál usar y ajustá sus pesos a tu
+        criterio; el recálculo de cotizaciones es una operación de sistema que ejecuta el administrador.
+      </p>
 
-      <div className="bg-[#104443] border border-[#1a6866] p-6 sm:p-8 rounded-2xl shadow-xl border-l-8 border-l-[#b79753]">
-        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white leading-none">
-          Mis estrategias
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-300 font-medium mt-2 max-w-2xl">
-          Tenés exactamente dos estrategias de valuación propias. Elegí cuál usar y ajustá sus pesos a tu
-          criterio; el recálculo de cotizaciones es una operación de sistema que ejecuta el administrador.
-        </p>
-      </div>
+      {loadError && (
+        <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-3 rounded-xl font-bold">
+          {loadError}
+        </div>
+      )}
 
-      <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8 space-y-4">
-        <h2 className="text-lg font-black uppercase tracking-wider text-white">Mis dos estrategias</h2>
-
-        {loadError && (
-          <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-3 rounded-xl font-bold">
-            {loadError}
-          </div>
-        )}
-
-        {isLoading ? (
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cargando estrategias...</p>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {strategies.map((strategy) => (
-              <StrategyCard
-                key={strategy.id}
-                strategy={strategy}
-                isSelecting={selectingId === strategy.id}
-                savingKey={savingKey?.strategyId === strategy.id ? savingKey.key : null}
-                onSelect={() => handleSelect(strategy.id)}
-                onSaveWeights={(weights) => handleSaveWeights(strategy.id, weights)}
-                onSavePositionWeights={(position, weights) =>
-                  handleSavePositionWeights(strategy.id, position, weights)
-                }
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      {isLoading ? (
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cargando estrategias...</p>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {strategies.map((strategy) => (
+            <StrategyCard
+              key={strategy.id}
+              strategy={strategy}
+              isSelecting={selectingId === strategy.id}
+              savingKey={savingKey?.strategyId === strategy.id ? savingKey.key : null}
+              onSelect={() => handleSelect(strategy.id)}
+              onSaveWeights={(weights) => handleSaveWeights(strategy.id, weights)}
+              onSavePositionWeights={(position, weights) =>
+                handleSavePositionWeights(strategy.id, position, weights)
+              }
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 };

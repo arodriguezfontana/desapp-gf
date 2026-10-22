@@ -10,6 +10,7 @@ import { HoldingList } from '../components/HoldingList';
 import { ActivityTabs } from '../components/ActivityTabs';
 import { PortfolioMetrics } from '../components/PortfolioMetrics';
 import { PortfolioEvolutionChart } from '../components/PortfolioEvolutionChart';
+import { StrategiesPanel } from '../components/StrategiesPanel';
 
 export const PortfolioPage: React.FC = () => {
   const { summary, holdings, isEmpty, isLoading, error, refetch: refetchPortfolio } = usePortfolio();
@@ -130,6 +131,11 @@ export const PortfolioPage: React.FC = () => {
           isHistoryLoading={isHistoryLoading}
           historyError={historyError}
         />
+
+        <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8 space-y-4">
+          <h2 className="text-lg font-black uppercase tracking-wider text-white">Mis estrategias</h2>
+          <StrategiesPanel />
+        </div>
       </div>
     );
   } else {
@@ -149,6 +155,11 @@ export const PortfolioPage: React.FC = () => {
           isHistoryLoading={isHistoryLoading}
           historyError={historyError}
         />
+
+        <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8 space-y-4">
+          <h2 className="text-lg font-black uppercase tracking-wider text-white">Mis estrategias</h2>
+          <StrategiesPanel />
+        </div>
       </div>
     );
   }

@@ -86,19 +86,6 @@ export function AppLayout() {
                 </NavLink>
 
                 <NavLink
-                  to="/my-strategies"
-                  className={({ isActive }) =>
-                    `px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all ${
-                      isActive
-                        ? 'bg-[#104443] text-white border-[#b79753]'
-                        : 'text-gray-300 border-[#1a6866] hover:text-white hover:border-gray-400'
-                    }`
-                  }
-                >
-                  Mis estrategias
-                </NavLink>
-
-                <NavLink
                   to="/account"
                   className={({ isActive }) =>
                     `px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all ${
@@ -190,13 +177,6 @@ export function AppLayout() {
                   className="block px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-[#104443] rounded-xl"
                 >
                   Mi Portfolio
-                </NavLink>
-                <NavLink
-                  to="/my-strategies"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-[#104443] rounded-xl"
-                >
-                  Mis estrategias
                 </NavLink>
                 <NavLink
                   to="/account"

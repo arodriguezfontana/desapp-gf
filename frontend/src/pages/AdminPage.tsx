@@ -329,7 +329,7 @@ export const AdminPage: React.FC = () => {
             <button
               onClick={handleWhoScoredTrigger}
               disabled={isWhoScoredTriggering || whoScoredStatus?.status === 'running'}
-              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] border border-[#b79753]/40 disabled:opacity-50 text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
+              className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
             >
               {isWhoScoredTriggering || whoScoredStatus?.status === 'running'
                 ? 'Actualizando datos...'
@@ -392,7 +392,7 @@ export const AdminPage: React.FC = () => {
             <button
               onClick={handleFootballDataTrigger}
               disabled={isFootballDataSyncing}
-              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] border border-[#b79753]/40 disabled:opacity-50 text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
+              className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
             >
               {isFootballDataSyncing ? 'Actualizando (aprox. 1 min)...' : 'Actualizar Clubes y Escudos'}
             </button>
@@ -461,7 +461,7 @@ export const AdminPage: React.FC = () => {
             <button
               onClick={handleRecalculateQuotes}
               disabled={isRecalculating}
-              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] border border-[#b79753]/40 disabled:opacity-50 text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
+              className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
             >
               {isRecalculating ? 'Recalculando...' : 'Recalcular'}
             </button>
