@@ -21,29 +21,32 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setNotifications([]);
       streamRef.current?.close();
       streamRef.current = null;
+      const clear = async () => {
+        setNotifications([]);
+      };
+      void clear();
       return;
     }
 
     let isMounted = true;
-    setIsLoading(true);
-    notificationsService
-      .listOwn()
-      .then((result) => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const result = await notificationsService.listOwn();
         if (isMounted) {
           setNotifications(result);
         }
-      })
-      .catch(() => {
+      } catch {
         /* la bandeja queda vacía; el usuario puede reintentar recargando */
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) {
           setIsLoading(false);
         }
-      });
+      }
+    };
+    void load();
 
     const stream = notificationsService.openStream();
     streamRef.current = stream;

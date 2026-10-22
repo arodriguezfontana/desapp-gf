@@ -29,7 +29,10 @@ export function usePlayerAlerts() {
   }, []);
 
   useEffect(() => {
-    void refetch();
+    const load = async () => {
+      await refetch();
+    };
+    void load();
   }, [refetch]);
 
   const createAlert = useCallback(
