@@ -94,9 +94,13 @@ export class MarketSimulationService {
     const simPlayers = activePlayers.slice(0, Math.min(6, activePlayers.length));
     const playerNames = simPlayers.map((p) => p.name);
 
-    // 4. Calcular precio de referencia para cada jugador
+    // 4. Calcular precio de referencia para cada jugador activo (no solo los
+    // 6 de la demo de mercado): el historial de cotizaciones simulado más
+    // abajo cubre todo el catálogo activo, para que la métrica de cualquier
+    // jugador tenga datos al verla, no solo la de los 6 jugadores con
+    // actividad de compra/venta simulada.
     const refPrices = new Map<string, number>();
-    for (const player of simPlayers) {
+    for (const player of activePlayers) {
       try {
         const val = await this.quotation.valuate(admin.id, player.id);
         refPrices.set(player.id, Math.max(5, roundToTwoDecimals(val.value)));
@@ -366,7 +370,10 @@ export class MarketSimulationService {
       }
     }
 
-    // 9. Generar cotizaciones históricas del admin para los gráficos de detalle de jugadores
+    // 9. Generar cotizaciones históricas del admin para los gráficos de
+    // detalle de jugadores. Cubre todo el catálogo activo (no solo los 6
+    // jugadores con actividad de compra/venta simulada) para que el
+    // historial de cualquier jugador tenga datos al mirarlo como admin.
     let quotesCount = 0;
     const adminStrategies = await this.strategies.findByUserId(admin.id);
     const selectedStrategy = adminStrategies.find((s) => s.isSelected) ?? adminStrategies[0];
@@ -375,7 +382,7 @@ export class MarketSimulationService {
     const quotesToSave: PlayerQuote[] = [];
     const quotesSummary: SimulatedQuoteDto[] = [];
     const latestQuoteByPlayer: PlayerQuote[] = [];
-    for (const player of simPlayers) {
+    for (const player of activePlayers) {
       const currentPrice = refPrices.get(player.id) ?? 20.0;
       // 5 puntos en el tiempo: 25 días atrás, 20, 15, 10, 5
       const intervals = [

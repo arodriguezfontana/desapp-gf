@@ -240,6 +240,39 @@ describe('MarketSimulationService', () => {
     );
   });
 
+  it('simula historial de cotizaciones para todo el catálogo activo, no solo los 6 jugadores con actividad de mercado', async () => {
+    const manyPlayers: Player[] = [
+      ...testPlayers,
+      ...Array.from({ length: 4 }, (_, i) =>
+        Player.restore({
+          id: `p-extra-${i}`,
+          name: `Extra Player ${i}`,
+          team: 'Chelsea',
+          position: Position.MF,
+          league: League.PREMIER_LEAGUE,
+          passesCompleted: null,
+          shots: null,
+          interceptions: null,
+          rating: null,
+        }),
+      ),
+    ];
+    players.findAllActive.mockResolvedValue(manyPlayers);
+    users.findByEmail.mockImplementation(async (email) => {
+      if (email.toString() === adminEmail) return adminUser;
+      return null;
+    });
+
+    const result = await service.simulate();
+
+    // 8 jugadores activos × 5 puntos históricos cada uno
+    expect(result.quotesCreated).toBe(40);
+    expect(result.quotes).toHaveLength(8);
+    expect(eventEmitter.emitAsync).toHaveBeenCalledTimes(8);
+    // La actividad de mercado (órdenes/holdings) sigue acotada a los primeros 6
+    expect(result.playersInvolved).toHaveLength(6);
+  });
+
   it('actualiza un holding existente en lugar de duplicarlo', async () => {
     users.findByEmail.mockResolvedValue(adminUser);
     holdings.findByUserAndPlayer.mockResolvedValue(
