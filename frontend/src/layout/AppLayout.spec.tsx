@@ -1,23 +1,35 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppLayout } from './AppLayout';
 import { AuthContext, type AuthContextValue } from '../contexts/auth-context';
+import { NotificationsProvider } from '../contexts/NotificationsContext';
+import { notificationsService } from '../service/notificationsService';
+
+// AppLayout incluye <NotificationBell/> (025-player-price-alerts), que
+// requiere <NotificationsProvider/> en el árbol; se mockea el servicio para
+// que no dependa de red en este test de layout.
+beforeEach(() => {
+  vi.spyOn(notificationsService, 'listOwn').mockResolvedValue([]);
+  vi.spyOn(notificationsService, 'openStream').mockReturnValue(null);
+});
 
 function renderLayout(logout = vi.fn(), initialPath = '/home', isAuthenticated = true) {
   const authValue: AuthContextValue = { isAuthenticated, login: vi.fn(), logout };
   return render(
     <AuthContext.Provider value={authValue}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/home" element={<div>Home Content</div>} />
-            <Route path="/account" element={<div>Account Content</div>} />
-            <Route path="/login" element={<div>Login Content</div>} />
-            <Route path="/catalog" element={<div>Catalog Content</div>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>
+      <NotificationsProvider>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/home" element={<div>Home Content</div>} />
+              <Route path="/account" element={<div>Account Content</div>} />
+              <Route path="/login" element={<div>Login Content</div>} />
+              <Route path="/catalog" element={<div>Catalog Content</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </NotificationsProvider>
     </AuthContext.Provider>,
   );
 }

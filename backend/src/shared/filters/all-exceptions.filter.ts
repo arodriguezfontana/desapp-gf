@@ -25,6 +25,8 @@ import { StrategyOwnershipError } from '../../domain/quotation/errors/strategy-o
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
+import { AlertNotFoundError } from '../../domain/alerts/errors/alert-not-found.error';
+import { NotificationNotFoundError } from '../../domain/notifications/errors/notification-not-found.error';
 
 interface ErrorBody {
   statusCode: number;
@@ -70,13 +72,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ...(runId !== undefined && { runId }),
     };
 
+    // Loguea solo el path, sin query string: /notifications/stream lleva el
+    // JWT como query param (único mecanismo soportado por EventSource,
+    // research.md §2 de 025-player-price-alerts) y no debe quedar en logs
+    // de la aplicación (constitución, Principio IV).
+    const loggedPath = request.url.split('?')[0];
     if (status >= 500) {
       this.logger.error(
-        `${request.method} ${request.url} -> ${status}`,
+        `${request.method} ${loggedPath} -> ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     } else {
-      this.logger.warn(`${request.method} ${request.url} -> ${status}`);
+      this.logger.warn(`${request.method} ${loggedPath} -> ${status}`);
     }
 
     response.status(status).json(body);
@@ -100,7 +107,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (
       exception instanceof PlayerNotFoundError ||
-      exception instanceof OrderNotFoundError
+      exception instanceof OrderNotFoundError ||
+      exception instanceof AlertNotFoundError ||
+      exception instanceof NotificationNotFoundError
     ) {
       return { status: HttpStatus.NOT_FOUND, message: exception.message };
     }

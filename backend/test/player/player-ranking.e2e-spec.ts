@@ -112,13 +112,16 @@ describe('GET /players/ranking (e2e, spec 016 + 019-per-user-valuation-strategie
         strategyB.id,
       ]);
     }
-    await ctx.dataSource.getRepository(PlayerEntity).clear();
+    // DELETE, no .clear() (TRUNCATE): price_alerts/notifications tienen FK
+    // hacia players (025-player-price-alerts) y TRUNCATE rechaza cualquier
+    // tabla referenciada por una FK aunque esa tabla ya esté vacía.
+    await ctx.dataSource.query('DELETE FROM "players"');
     await ctx.close();
   });
 
   beforeEach(async () => {
     await ctx.dataSource.query('DELETE FROM "player_quotes"');
-    await ctx.dataSource.getRepository(PlayerEntity).clear();
+    await ctx.dataSource.query('DELETE FROM "players"');
   });
 
   describe('US1: Consultar mi ranking general ordenado por valor (MVP)', () => {

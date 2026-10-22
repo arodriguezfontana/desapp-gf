@@ -11,6 +11,9 @@ import type { OrderSide } from '../types/orders.types';
 import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
 import { OrderConfirmDialog } from '../components/OrderConfirmDialog';
 import { OrderBookView } from '../components/OrderBookView';
+import { CreateAlertForm } from '../components/CreateAlertForm';
+import { PlayerAlertsList } from '../components/PlayerAlertsList';
+import { usePlayerAlerts } from '../hooks/usePlayerAlerts';
 
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
 const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
@@ -110,6 +113,14 @@ export const PlayerDetailPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderDialogSide, setOrderDialogSide] = useState<OrderSide | null>(null);
   const [orderSuccessMessage, setOrderSuccessMessage] = useState<string | null>(null);
+  const {
+    alerts,
+    isLoading: isLoadingAlerts,
+    error: alertsError,
+    createAlert,
+    cancelAlert,
+  } = usePlayerAlerts();
+  const playerAlerts = alerts.filter((alert) => alert.playerId === id);
 
   const handleConfirmOrder = async (quantity: number) => {
     if (!id || !orderDialogSide) return;
@@ -407,6 +418,24 @@ export const PlayerDetailPage: React.FC = () => {
           error={orderBookError}
           onReload={reloadOrderBook}
         />
+      </div>
+
+      {/* ── Alertas de precio (025-player-price-alerts) ── */}
+      <div className="mb-8 sm:mb-12 max-w-3xl">
+        <h2 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white/40 mb-3">
+          <span className="w-4 h-px bg-white/20" />{' '}
+          <span>Alertas de precio para este jugador</span>
+          {' '}<span className="flex-1 h-px bg-white/10" />
+        </h2>
+        {id && <CreateAlertForm playerId={id} onCreate={createAlert} />}
+        <div className="mt-4">
+          <PlayerAlertsList
+            alerts={playerAlerts}
+            isLoading={isLoadingAlerts}
+            error={alertsError}
+            onCancel={cancelAlert}
+          />
+        </div>
       </div>
 
       {orderDialogSide != null && quote != null && (
