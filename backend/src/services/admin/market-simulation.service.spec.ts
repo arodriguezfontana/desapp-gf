@@ -211,6 +211,12 @@ describe('MarketSimulationService', () => {
     expect(result.marketOrdersCreated).toBeGreaterThan(0);
     expect(result.quotesCreated).toBeGreaterThan(0);
     expect(result.playersInvolved).toEqual(['Player One', 'Player Two', 'Player Three', 'Player Four']);
+    expect(result.quotes).toHaveLength(result.playersInvolved.length);
+    for (const quote of result.quotes) {
+      expect(quote.playerId).toEqual(expect.any(String));
+      expect(quote.playerName).toEqual(expect.any(String));
+      expect(quote.value).toEqual(expect.any(Number));
+    }
 
     expect(tokenTransactions.save).toHaveBeenCalled();
     expect(holdings.save).toHaveBeenCalled();

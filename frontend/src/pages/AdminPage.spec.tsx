@@ -143,6 +143,10 @@ describe('AdminPage', () => {
       marketOrdersCreated: 36,
       quotesCreated: 30,
       playersInvolved: ['Emiliano Martínez', 'Wesley Fofana'],
+      quotes: [
+        { playerId: 'p-1', playerName: 'Emiliano Martínez', value: 24.5 },
+        { playerId: 'p-2', playerName: 'Wesley Fofana', value: 18.3 },
+      ],
     });
 
     render(
@@ -160,7 +164,8 @@ describe('AdminPage', () => {
     await waitFor(() => {
       expect(simSpy).toHaveBeenCalledTimes(1);
       expect(screen.getByText(/Simulación ejecutada con éxito para admin@mail\.com/i)).toBeInTheDocument();
-      expect(screen.getByText('⚽ Emiliano Martínez')).toBeInTheDocument();
+      expect(screen.getByText(/Emiliano Martínez/)).toBeInTheDocument();
+      expect(screen.getByText(/\$24\.50/)).toBeInTheDocument();
     });
   });
 

@@ -30,7 +30,7 @@ import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { QuotationService } from '../quotation/quotation.service';
 import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
-import { SimulationResultDto } from '../../controllers/admin/dto/simulation-result.dto';
+import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/admin/dto/simulation-result.dto';
 
 interface BotConfig {
   email: string;
@@ -84,6 +84,7 @@ export class MarketSimulationService {
         marketOrdersCreated: 0,
         quotesCreated: 0,
         playersInvolved: [],
+        quotes: [],
       };
     }
 
@@ -369,6 +370,7 @@ export class MarketSimulationService {
     const strategyId = selectedStrategy ? selectedStrategy.id : randomUUID();
 
     const quotesToSave: PlayerQuote[] = [];
+    const quotesSummary: SimulatedQuoteDto[] = [];
     for (const player of simPlayers) {
       const currentPrice = refPrices.get(player.id) ?? 20.0;
       // 5 puntos en el tiempo: 25 días atrás, 20, 15, 10, 5
@@ -380,6 +382,7 @@ export class MarketSimulationService {
         { daysAgo: 5, factor: 0.99 },
       ];
 
+      let latestQuoteValue = currentPrice;
       for (const step of intervals) {
         const quoteValue = roundToTwoDecimals(currentPrice * step.factor);
         quotesToSave.push(
@@ -397,7 +400,9 @@ export class MarketSimulationService {
           }),
         );
         quotesCount++;
+        latestQuoteValue = quoteValue;
       }
+      quotesSummary.push({ playerId: player.id, playerName: player.name, value: latestQuoteValue });
     }
     await this.playerQuotes.saveMany(quotesToSave);
 
@@ -415,6 +420,7 @@ export class MarketSimulationService {
       marketOrdersCreated: marketOrdersCount,
       quotesCreated: quotesCount,
       playersInvolved: playerNames,
+      quotes: quotesSummary,
     };
   }
 

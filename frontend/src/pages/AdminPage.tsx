@@ -597,15 +597,15 @@ export const AdminPage: React.FC = () => {
 
             <div className="space-y-1.5 pt-1">
               <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                Futbolistas involucrados en la simulación:
+                Futbolistas involucrados en la simulación (cotización vigente):
               </span>
               <div className="flex flex-wrap gap-2">
-                {simulationResult.playersInvolved.map((pName) => (
+                {simulationResult.quotes.map((q) => (
                   <span
-                    key={pName}
+                    key={q.playerId}
                     className="text-[10px] font-bold px-2.5 py-1 bg-[#104443] text-gray-200 rounded-md border border-[#1a6866]"
                   >
-                    ⚽ {pName}
+                    ⚽ {q.playerName} — <span className="text-[#b79753]">${q.value.toFixed(2)}</span>
                   </span>
                 ))}
               </div>
