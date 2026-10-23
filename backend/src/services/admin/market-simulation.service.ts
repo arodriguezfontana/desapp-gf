@@ -71,7 +71,7 @@ export class MarketSimulationService {
   ) {}
 
   async simulate(targetEmail?: string): Promise<SimulationResultDto> {
-    const adminEmailStr = targetEmail ?? this.config.get<string>('ADMIN_EMAIL') ?? 'abi_admin@ejemplo.com';
+    const adminEmailStr = targetEmail ?? this.config.get<string>('ADMIN_EMAIL') ?? 'admin@desapp.com';
     this.logger.log(`Iniciando simulación de mercado para ${adminEmailStr}...`);
 
     // 1. Resolver usuario admin
