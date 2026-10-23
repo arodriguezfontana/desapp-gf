@@ -5,11 +5,10 @@ import { OrderBookDepthChart } from './OrderBookDepthChart';
 describe('OrderBookDepthChart', () => {
   it('no renderiza nada cuando no hay bids ni asks', () => {
     const { container } = render(<OrderBookDepthChart bids={[]} asks={[]} />);
-
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('muestra una fila por nivel de precio con volumen de compra y venta', () => {
+  it('muestra una fila por nivel de precio con precio, volumen y barras', () => {
     render(
       <OrderBookDepthChart
         bids={[
@@ -31,16 +30,21 @@ describe('OrderBookDepthChart', () => {
     expect(screen.getByText('30')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();
     expect(screen.getByText('25')).toBeInTheDocument();
-    // 4 filas en total (cada fila tiene ambas barras, aunque una tenga width 0)
     expect(screen.getAllByTestId('bid-depth-bar')).toHaveLength(4);
     expect(screen.getAllByTestId('ask-depth-bar')).toHaveLength(4);
   });
 
-  it('renderiza cuando solo hay órdenes de un lado', () => {
+  it('renderiza cuando solo hay órdenes de compra', () => {
     render(<OrderBookDepthChart bids={[{ price: '20.00', totalQuantity: 10 }]} asks={[]} />);
-
     expect(screen.getByText('$20.00')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();
     expect(screen.getAllByTestId('bid-depth-bar')).toHaveLength(1);
+  });
+
+  it('renderiza cuando solo hay órdenes de venta', () => {
+    render(<OrderBookDepthChart bids={[]} asks={[{ price: '30.00', totalQuantity: 7 }]} />);
+    expect(screen.getByText('$30.00')).toBeInTheDocument();
+    expect(screen.getByText('7')).toBeInTheDocument();
+    expect(screen.getAllByTestId('ask-depth-bar')).toHaveLength(1);
   });
 });

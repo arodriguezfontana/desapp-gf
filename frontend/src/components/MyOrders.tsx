@@ -102,7 +102,7 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
               <tbody className="divide-y divide-[#1a6866]/60 text-xs sm:text-sm font-semibold">
                 {pageItems.map((order) => {
                   const isBuy = order.side === 'BUY';
-                  const typeColor = isBuy ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
+                  const typeColor = isBuy ? 'text-emerald-400' : 'text-rose-400';
                   const typeLabel = isBuy ? 'COMPRA' : 'VENTA';
                   const isCancellable = order.status === 'PENDING' || order.status === 'PARTIALLY_FILLED';
                   const isCancelling = cancellingOrderId === order.id;
@@ -170,7 +170,7 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
           <div className="grid grid-cols-1 gap-4 md:hidden">
             {pageItems.map((order) => {
               const isBuy = order.side === 'BUY';
-              const typeColor = isBuy ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
+              const typeColor = isBuy ? 'text-emerald-400' : 'text-rose-400';
               const typeLabel = isBuy ? 'COMPRA' : 'VENTA';
               const isCancellable = order.status === 'PENDING' || order.status === 'PARTIALLY_FILLED';
               const isCancelling = cancellingOrderId === order.id;

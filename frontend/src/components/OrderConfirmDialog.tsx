@@ -24,7 +24,7 @@ export function OrderConfirmDialog({
   onCancel,
 }: OrderConfirmDialogProps) {
   const [quantity, setQuantity] = useState<number>(1);
-  const accent = side === 'BUY' ? '#a78bfa' : '#f59e0b';
+  const accent = side === 'BUY' ? '#34d399' : '#fb7185';
   const isValid = Number.isInteger(quantity) && quantity > 0;
 
   return (
