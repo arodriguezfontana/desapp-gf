@@ -224,10 +224,16 @@ export class OrdersService {
   }
 
   /**
-   * Obtiene todas las órdenes emitidas por un usuario ordenadas por fecha descendente.
+   * Obtiene todas las órdenes emitidas por un usuario ordenadas por fecha descendente,
+   * enriquecidas con el nombre del jugador correspondiente.
    */
-  async getUserOrders(userId: string): Promise<Order[]> {
-    return this.orders.findByUserId(userId);
+  async getUserOrders(userId: string): Promise<Array<Order & { playerName: string }>> {
+    const orders = await this.orders.findByUserId(userId);
+    if (orders.length === 0) return [];
+
+    const allPlayers = await this.players.findAllActive();
+    const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
+    return orders.map((o) => Object.assign(o, { playerName: nameMap.get(o.playerId) ?? '' }));
   }
 
   async getHistory(userId: string): Promise<Array<TokenTransaction & { playerName: string }>> {

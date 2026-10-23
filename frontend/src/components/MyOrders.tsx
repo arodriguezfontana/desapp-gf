@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { OrderResponseDto } from '../types/orders.types';
 
 interface MyOrdersProps {
@@ -90,6 +91,7 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#1a6866] bg-[#0e3b3a] text-[10px] font-black uppercase tracking-widest text-[#b79753]">
+                  <th scope="col" className="py-4 px-6">Jugador</th>
                   <th scope="col" className="py-4 px-6">Tipo</th>
                   <th scope="col" className="py-4 px-6 text-right">Cantidad</th>
                   <th scope="col" className="py-4 px-6 text-right">Remanente</th>
@@ -134,6 +136,11 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
 
                   return (
                     <tr key={order.id} className="hover:bg-[#165756]/50 transition-colors">
+                      <td className="py-4 px-6 font-black uppercase text-white tracking-wide">
+                        <Link to={`/catalog/${order.playerId}`} className="hover:text-[#b79753] transition-colors">
+                          {order.playerName}
+                        </Link>
+                      </td>
                       <td className="py-4 px-6">
                         <span className={`font-black text-[10px] uppercase tracking-widest ${typeColor}`}>
                           {typeLabel}
@@ -181,9 +188,14 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
                   className="bg-[#104443] border border-[#1a6866] rounded-xl p-5 shadow-lg space-y-3"
                 >
                   <div className="flex items-center justify-between border-b border-[#1a6866] pb-2">
-                    <span className={`text-xs font-black uppercase tracking-wider ${typeColor} bg-[#0b3332] px-2.5 py-1 rounded-md`}>
-                      {typeLabel}
-                    </span>
+                    <div className="space-y-0.5">
+                      <Link to={`/catalog/${order.playerId}`} className="font-black uppercase text-white text-sm hover:text-[#b79753] transition-colors block">
+                        {order.playerName}
+                      </Link>
+                      <span className={`text-[10px] font-black uppercase tracking-wider ${typeColor}`}>
+                        {typeLabel}
+                      </span>
+                    </div>
                     <div>
                       {order.status === 'PENDING' && (
                         <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
