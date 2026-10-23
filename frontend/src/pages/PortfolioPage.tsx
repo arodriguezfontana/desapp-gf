@@ -33,7 +33,7 @@ export const PortfolioPage: React.FC = () => {
   const handleCancelOrder = async (orderId: string): Promise<boolean> => {
     const success = await cancelOrder(orderId);
     if (success) {
-      void refetchPortfolio();
+      void refetchPortfolio(true);
     }
     return success;
   };
