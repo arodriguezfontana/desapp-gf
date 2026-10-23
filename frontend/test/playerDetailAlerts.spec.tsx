@@ -90,6 +90,9 @@ describe('PlayerDetailPage — flujo de alertas de precio contra backend real', 
 
     await waitFor(() => expect(screen.getByText('Jugador Alertas')).toBeInTheDocument());
 
+    fireEvent.click(screen.getByRole('button', { name: /alertas de precio/i }));
+    await waitFor(() => expect(screen.getByLabelText(/valor umbral/i)).toBeInTheDocument());
+
     fireEvent.change(screen.getByLabelText(/valor umbral/i), { target: { value: '150' } });
     fireEvent.click(screen.getByRole('button', { name: /crear alerta/i }));
 
@@ -114,6 +117,9 @@ describe('PlayerDetailPage — flujo de alertas de precio contra backend real', 
 
     renderPlayerDetail(playerId);
     await waitFor(() => expect(screen.getByText('Jugador Alertas')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /alertas de precio/i }));
+    await waitFor(() => expect(screen.getByLabelText(/valor umbral/i)).toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText(/valor umbral/i), { target: { value: '200' } });
     fireEvent.click(screen.getByRole('button', { name: /crear alerta/i }));
