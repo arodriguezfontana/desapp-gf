@@ -125,10 +125,10 @@ describe('PlayerDetailPage — flujo de alertas de precio contra backend real', 
     fireEvent.click(screen.getByRole('button', { name: /crear alerta/i }));
     await waitFor(() => expect(screen.getByText(/baja de 200/i)).toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /cancelar alerta baja de 200/i }));
 
     await waitFor(() =>
-      expect(screen.queryByRole('button', { name: /^cancelar$/i })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('button', { name: /cancelar alerta baja de 200/i })).not.toBeInTheDocument(),
     );
 
     const alerts = await pg.query(
