@@ -1,10 +1,13 @@
 import { Outlet } from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
+import { NotificationsProvider } from '../contexts/NotificationsContext';
 
 export function RootLayout() {
   return (
     <AuthProvider>
-      <Outlet />
+      <NotificationsProvider>
+        <Outlet />
+      </NotificationsProvider>
     </AuthProvider>
   );
 }

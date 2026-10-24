@@ -7,12 +7,14 @@ import * as useUserOrdersModule from '../hooks/useUserOrders';
 import * as useOrderHistoryModule from '../hooks/useOrderHistory';
 import * as useCurrentUserModule from '../hooks/useCurrentUser';
 import * as useAdminModule from '../hooks/useAdmin';
+import * as useUserStrategiesModule from '../hooks/useUserStrategies';
 
 vi.mock('../hooks/usePortfolio');
 vi.mock('../hooks/useUserOrders');
 vi.mock('../hooks/useOrderHistory');
 vi.mock('../hooks/useCurrentUser');
 vi.mock('../hooks/useAdmin');
+vi.mock('../hooks/useUserStrategies');
 
 describe('PortfolioPage', () => {
   const mockRefetch = vi.fn();
@@ -37,6 +39,14 @@ describe('PortfolioPage', () => {
       getWhoScoredRunStatus: vi.fn(),
       triggerFootballDataSync: vi.fn(),
       simulateMarket: mockSimulateMarket,
+      recalculateQuotes: vi.fn(),
+    });
+
+    vi.spyOn(useUserStrategiesModule, 'useUserStrategies').mockReturnValue({
+      listStrategies: vi.fn().mockResolvedValue({ strategies: [] }),
+      selectStrategy: vi.fn(),
+      editWeights: vi.fn(),
+      editPositionWeights: vi.fn(),
     });
 
     vi.spyOn(useOrderHistoryModule, 'useOrderHistory').mockReturnValue({

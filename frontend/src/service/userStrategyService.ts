@@ -2,14 +2,14 @@ import { httpClient } from './httpClient';
 import type {
   UserStrategyListResponseDto,
   UserStrategyResponseDto,
-  UserRecalculateResponseDto,
 } from '../types/userStrategy.types';
 
 /**
- * Estrategias de valuación propias del usuario autenticado y recálculo
- * manual de sus cotizaciones (019-per-user-valuation-strategies). Todas las
- * llamadas usan el JWT de sesión (sin `useApiKey`), a diferencia del resto
- * del catálogo que usa ApiKey.
+ * Estrategias de valuación propias del usuario autenticado
+ * (019-per-user-valuation-strategies). Todas las llamadas usan el JWT de
+ * sesión (sin `useApiKey`), a diferencia del resto del catálogo que usa
+ * ApiKey. El recálculo de cotizaciones es una operación de sistema
+ * (admin-only, `POST /quotes/recalculate`) y vive en `adminService`, no acá.
  */
 export const userStrategyService = {
   async listStrategies(): Promise<UserStrategyListResponseDto> {
@@ -41,11 +41,5 @@ export const userStrategyService = {
       `/users/me/strategies/${encodeURIComponent(strategyId)}/position-weights/${encodeURIComponent(position)}`,
       { weights },
     );
-  },
-
-  async recalculate(playerId?: string): Promise<UserRecalculateResponseDto> {
-    return httpClient.post<UserRecalculateResponseDto>('/users/me/quotes/recalculate', {
-      playerId,
-    });
   },
 };

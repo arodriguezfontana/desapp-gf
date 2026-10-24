@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 import { calculatePlayerValue } from '../../domain/quotation/calculate-player-value';
+import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { Position } from '../../domain/player/enums/position';
@@ -50,6 +52,7 @@ export class QuotationService {
     private readonly quoteRepository: PlayerQuoteRepository,
     @Inject(PLAYER_REPOSITORY)
     private readonly playerRepository: PlayerRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /** Las dos estrategias propias del usuario (spec FR-004). */
@@ -214,6 +217,24 @@ export class QuotationService {
       }
 
       await this.quoteRepository.saveMany(quotes);
+
+      // Emite quote.recalculated una vez por cada PlayerQuote efectivamente
+      // persistida (nunca por las salteadas en `skipped`), para que el
+      // módulo de alertas evalúe sus alertas activas sin que este Service
+      // lo conozca (025-player-price-alerts, spec FR-011, FR-021).
+      // emitAsync (no emit): espera a que los listeners async (evaluación de
+      // alertas, persistencia de notificación, envío de mail) terminen antes
+      // de resolver, para que la notificación ya esté visible al terminar
+      // este mismo recálculo (spec SC-003). No afecta la independencia entre
+      // los listeners de alert.triggered entre sí (FR-021): cada uno sigue
+      // corriendo su propia lógica sin conocer al otro, solo se espera a que
+      // ambos conjuntos de listeners terminen antes de responder.
+      for (const quote of quotes) {
+        await this.eventEmitter.emitAsync(
+          QUOTE_RECALCULATED_EVENT,
+          new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
+        );
+      }
 
       this.logger.log(
         `Recálculo global completado: ${recalculated.length} procesados, ${skipped.length} salteados`,

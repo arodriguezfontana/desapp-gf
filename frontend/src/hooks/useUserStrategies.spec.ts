@@ -57,15 +57,4 @@ describe('useUserStrategies', () => {
 
     expect(spy).toHaveBeenCalledWith('s-1', 'GK', weights);
   });
-
-  it('recalculate delega en userStrategyService.recalculate con el playerId', async () => {
-    const resultMock = { recalculated: [{ playerId: 'p-1', value: 50, score: 0.5 }], skipped: [] };
-    const spy = vi.spyOn(userStrategyService, 'recalculate').mockResolvedValueOnce(resultMock);
-
-    const { result } = renderHook(() => useUserStrategies());
-    const recalc = await result.current.recalculate('p-1');
-
-    expect(spy).toHaveBeenCalledWith('p-1');
-    expect(recalc).toEqual(resultMock);
-  });
 });

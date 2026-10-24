@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MyStrategiesPage } from './MyStrategiesPage';
+import { StrategiesPanel } from './StrategiesPanel';
 import * as useUserStrategiesModule from '../hooks/useUserStrategies';
 import type { UserStrategyResponseDto } from '../types/userStrategy.types';
 
@@ -24,12 +24,11 @@ const TACTICAL: UserStrategyResponseDto = {
   positionWeights: {},
 };
 
-describe('MyStrategiesPage', () => {
+describe('StrategiesPanel', () => {
   const listStrategies = vi.fn();
   const selectStrategy = vi.fn();
   const editWeights = vi.fn();
   const editPositionWeights = vi.fn();
-  const recalculate = vi.fn();
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -37,19 +36,17 @@ describe('MyStrategiesPage', () => {
     selectStrategy.mockReset();
     editWeights.mockReset();
     editPositionWeights.mockReset();
-    recalculate.mockReset();
 
     vi.spyOn(useUserStrategiesModule, 'useUserStrategies').mockReturnValue({
       listStrategies,
       selectStrategy,
       editWeights,
       editPositionWeights,
-      recalculate,
     });
   });
 
   it('muestra el estado de carga y luego lista mis dos estrategias', async () => {
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
 
     expect(screen.getByText('Cargando estrategias...')).toBeInTheDocument();
 
@@ -61,10 +58,23 @@ describe('MyStrategiesPage', () => {
     expect(listStrategies).toHaveBeenCalledTimes(1);
   });
 
+  it('muestra el gráfico de composición de ambas estrategias, sea cual sea la seleccionada', async () => {
+    render(<StrategiesPanel />);
+
+    await waitFor(() => screen.getByText('Performance general'));
+
+    expect(screen.getAllByText('Composición de la estrategia')).toHaveLength(2);
+    // Un gráfico por cada una de las dos estrategias (seleccionada o no);
+    // Recharts mide el contenedor de forma asíncrona antes de montar el svg.
+    await waitFor(() => {
+      expect(document.querySelectorAll('svg')).toHaveLength(2);
+    });
+  });
+
   it('muestra un error si falla la carga de estrategias', async () => {
     listStrategies.mockReset().mockRejectedValueOnce(new Error('No se pudo conectar'));
 
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
 
     await waitFor(() => {
       expect(screen.getByText('No se pudo conectar')).toBeInTheDocument();
@@ -77,7 +87,7 @@ describe('MyStrategiesPage', () => {
       .mockResolvedValueOnce({ strategies: [PERFORMANCE, TACTICAL] })
       .mockResolvedValueOnce({ strategies: [{ ...PERFORMANCE, isSelected: false }, { ...TACTICAL, isSelected: true }] });
 
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
 
     await waitFor(() => screen.getByText('Impacto táctico'));
 
@@ -92,7 +102,7 @@ describe('MyStrategiesPage', () => {
   it('edita los pesos generales con suma válida y guarda', async () => {
     editWeights.mockResolvedValueOnce({ ...PERFORMANCE, weights: { goals: 0.6, assists: 0.4 } });
 
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
     await waitFor(() => screen.getByText('Performance general'));
 
     const cards = screen.getAllByText(/Editar pesos/i);
@@ -111,7 +121,7 @@ describe('MyStrategiesPage', () => {
   });
 
   it('deshabilita Guardar cuando la suma de los pesos no es 1.0 ±0.001', async () => {
-    render(<MyStrategiesPage />);
+    render(<StrategiesPanel />);
     await waitFor(() => screen.getByText('Performance general'));
 
     fireEvent.click(screen.getAllByText(/Editar pesos/i)[0]);
@@ -123,37 +133,5 @@ describe('MyStrategiesPage', () => {
     const saveButtons = screen.getAllByRole('button', { name: /^Guardar$/i });
     expect(saveButtons[0]).toBeDisabled();
     expect(editWeights).not.toHaveBeenCalled();
-  });
-
-  it('dispara el recálculo y muestra el resumen de recalculados/salteados', async () => {
-    recalculate.mockResolvedValueOnce({
-      recalculated: [{ playerId: 'p-1', value: 50, score: 0.5 }],
-      skipped: [{ playerId: 'p-2', reason: 'faltan métricas' }],
-    });
-
-    render(<MyStrategiesPage />);
-    await waitFor(() => screen.getByText('Performance general'));
-
-    fireEvent.click(screen.getByRole('button', { name: /^Recalcular$/i }));
-
-    await waitFor(() => {
-      expect(recalculate).toHaveBeenCalledTimes(1);
-      expect(screen.getByText('Cotizaciones actualizadas:')).toBeInTheDocument();
-      expect(screen.getByText('1')).toBeInTheDocument();
-      expect(screen.getByText(/Jugadores salteados \(1\)/)).toBeInTheDocument();
-    });
-  });
-
-  it('muestra un error si falla el recálculo', async () => {
-    recalculate.mockRejectedValueOnce(new Error('Ya hay un recálculo en curso'));
-
-    render(<MyStrategiesPage />);
-    await waitFor(() => screen.getByText('Performance general'));
-
-    fireEvent.click(screen.getByRole('button', { name: /^Recalcular$/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Ya hay un recálculo en curso')).toBeInTheDocument();
-    });
   });
 });

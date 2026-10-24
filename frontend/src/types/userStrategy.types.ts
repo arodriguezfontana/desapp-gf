@@ -21,18 +21,3 @@ export interface PlayerValuationResponseDto {
   appliedPosition: Position | null;
 }
 
-export interface RecalculatedEntryDto {
-  playerId: string;
-  value: number;
-  score: number;
-}
-
-export interface SkippedEntryDto {
-  playerId: string;
-  reason: string;
-}
-
-export interface UserRecalculateResponseDto {
-  recalculated: RecalculatedEntryDto[];
-  skipped: SkippedEntryDto[];
-}

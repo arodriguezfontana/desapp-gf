@@ -3,7 +3,6 @@ import { userStrategyService } from '../service/userStrategyService';
 import type {
   UserStrategyListResponseDto,
   UserStrategyResponseDto,
-  UserRecalculateResponseDto,
 } from '../types/userStrategy.types';
 
 /**
@@ -38,11 +37,5 @@ export function useUserStrategies() {
     [],
   );
 
-  const recalculate = useCallback(
-    (playerId?: string): Promise<UserRecalculateResponseDto> =>
-      userStrategyService.recalculate(playerId),
-    [],
-  );
-
-  return { listStrategies, selectStrategy, editWeights, editPositionWeights, recalculate };
+  return { listStrategies, selectStrategy, editWeights, editPositionWeights };
 }

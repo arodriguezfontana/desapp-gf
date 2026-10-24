@@ -63,8 +63,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
   const displayValue = quote != null ? Math.round(quote.value) : null;
 
   return (
-    <div
-      className="relative group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
+    <Link
+      to={`/catalog/${player.id}`}
+      className="relative group block transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
       style={{ filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.65))' }}
     >
       {/* ── Borde exterior metálico con forma de escudo FIFA ── */}
@@ -180,21 +181,10 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
             <StatPill value={player.yellowCards} label="TA" color="#b79753" />
           </div>
 
-          {/* ── Pie con forma de punta de escudo: Botón 'Ver detalle' ── */}
-          <div className="pb-7 pt-1 text-center relative z-10">
-            <Link
-              to={`/catalog/${player.id}`}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-[#0b3332] transition-all hover:scale-105 shadow-md active:scale-95"
-              style={{
-                background: `linear-gradient(135deg, ${accent.from}, ${accent.via})`,
-              }}
-            >
-              <span>Ver detalle</span>
-              <span className="text-xs">&rarr;</span>
-            </Link>
-          </div>
+          {/* ── Pie con forma de punta de escudo: espacio para el recorte del borde ── */}
+          <div className="pb-7 pt-1" />
         </div>
       </div>
-    </div>
+    </Link>
   );
 };

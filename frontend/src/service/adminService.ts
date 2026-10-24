@@ -1,6 +1,7 @@
 import { httpClient } from './httpClient';
 import { apiKeyStorage } from './apiKeyStorage';
 import type {
+  RecalculateQuotesResultDto,
   SimulationResultDto,
   SyncAcceptedDto,
   SyncRunStatusDto,
@@ -46,6 +47,17 @@ export const adminService = {
     const hasKey = Boolean(apiKeyStorage.getApiKey());
     return httpClient.post<SimulationResultDto>('/admin/simulate-market', undefined, {
       useApiKey: hasKey,
+    });
+  },
+
+  /**
+   * Recálculo global de cotizaciones: recalcula y persiste una cotización por
+   * cada combinación usuario × jugador del sistema (operación de sistema,
+   * no ligada a un usuario individual: AdminApiKeyGuard en el backend).
+   */
+  async recalculateQuotes(): Promise<RecalculateQuotesResultDto> {
+    return httpClient.post<RecalculateQuotesResultDto>('/quotes/recalculate', undefined, {
+      useApiKey: true,
     });
   },
 };

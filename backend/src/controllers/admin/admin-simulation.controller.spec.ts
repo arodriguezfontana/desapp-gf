@@ -25,6 +25,11 @@ describe('AdminSimulationController', () => {
       marketOrdersCreated: 24,
       quotesCreated: 20,
       playersInvolved: ['Player One', 'Player Two'],
+      quotes: [
+        { playerId: 'p-1', playerName: 'Player One', value: 24.5 },
+        { playerId: 'p-2', playerName: 'Player Two', value: 18.3 },
+      ],
+      alertsCreated: 2,
     };
 
     service.simulate.mockResolvedValue(mockResult);

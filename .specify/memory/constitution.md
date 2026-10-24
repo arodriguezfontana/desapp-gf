@@ -1,6 +1,65 @@
 <!--
 Sync Impact Report
 ==================
+Version change: 1.10.0 → 1.10.1
+Rationale: PATCH. Corrección de redacción: el título de la constitución decía "DesApp"
+pero el nombre real del proyecto es "FútVal". No cambia ningún principio, regla ni
+sección — sólo el nombre propio en el encabezado.
+
+Modified principles: ninguno.
+
+Modified sections:
+  - Encabezado del documento (nombre del proyecto: "DesApp" → "FútVal")
+
+Added sections: none
+Removed sections: none
+Renumbered principles: none
+
+Follow-up TODOs: ninguno.
+-->
+
+<!--
+Sync Impact Report (enmienda anterior)
+==================
+Version change: 1.9.0 → 1.10.0
+Rationale: MINOR. Reubicación y expansión del Principio I: la arquitectura en capas del
+frontend vivía como un bullet dentro de "Technology Stack & Constraints → Estructura"
+(sección de stack tecnológico), no como un principio arquitectónico, pese a ser una regla
+de capas tan central como la del backend. No se redefine ni elimina ninguna regla
+existente, sólo se reubica y se nombra explícitamente bajo el principio que le corresponde:
+  1. Principio I → Arquitectura en capas: se divide en subsecciones "Backend" (contenido
+     preexistente, sin cambios de fondo) y "Frontend" (nueva subsección con las reglas de
+     `service/`, `hooks/`, `contexts/`, `components/`, `layout/`, `pages/`, `types/`,
+     `data/`, `assets/`, `utils/` y la ubicación de tests que ejercitan o no el cliente de
+     API — contenido movido, no copiado, desde Technology Stack & Constraints → Estructura).
+  2. Technology Stack & Constraints → bullet "Estructura": se recorta a una sola línea que
+     remite al Principio I para las reglas de capas; ya no repite la lista de carpetas.
+  3. Technology Stack & Constraints → bullet "Frontend": se recorta eliminando la regla de
+     `service/` como único acceso a la red (ahora vive sólo en Principio I); conserva las
+     versiones del stack (React 19, Vite 8, Tailwind 4) y la exigencia de responsividad.
+
+Modified principles:
+  - I. Arquitectura en capas (nueva subsección "Frontend"; la subsección "Backend" preserva
+    el contenido previo sin cambios semánticos)
+
+Modified sections:
+  - Technology Stack & Constraints → bullet "Estructura" (contenido de capas movido a
+    Principio I; sólo queda la mención de monorepo y la remisión al principio)
+  - Technology Stack & Constraints → bullet "Frontend" (recorte de la regla de `service/`,
+    ahora exclusiva de Principio I)
+
+Added sections: none
+Removed sections: none
+Renumbered principles: none
+
+Follow-up TODOs: ninguno. Las referencias cruzadas a "Principio I" en el resto del
+documento (Principio IX, Development Workflow & Quality Gates) ya eran genéricas o
+específicas de backend y no requirieron cambios de redacción.
+-->
+
+<!--
+Sync Impact Report (enmienda anterior)
+==================
 Version change: 1.8.0 → 1.9.0
 Rationale: MINOR. Dos enmiendas que expanden principios y constraints existentes sin
 redefinir ni eliminar nada:
@@ -63,7 +122,7 @@ ci.yml) y los tests directos de service/hooks/contexts que esta enmienda exige y
 implementaron en el mismo cambio.
 -->
 
-# DesApp — Plataforma de Valuación de Jugadores Constitution
+# FútVal — Plataforma de Valuación de Jugadores Constitution
 
 Plataforma de valoración de mercado de jugadores de fútbol. Monorepo único con backend
 NestJS 11 + TypeScript y frontend React 19 + Vite + Tailwind. Trabajo grupal para la
@@ -72,6 +131,13 @@ cátedra de Desarrollo de Aplicaciones.
 ## Core Principles
 
 ### I. Arquitectura en capas
+
+Tanto el backend como el frontend MUST organizarse en capas con dependencias en un único
+sentido. Las reglas concretas de cada lado se detallan por separado porque sus capas no
+son equivalentes entre sí, pero el principio que las rige —sentido único de dependencias,
+sin saltos entre capas no adyacentes— es el mismo para ambos.
+
+#### Backend
 
 El backend MUST organizarse en capas con dependencias en un único sentido
 (Controller → Service → {Dominio, Repository, Adapter}). Reglas no negociables:
@@ -99,14 +165,48 @@ El backend MUST organizarse en capas con dependencias en un único sentido
   persistidos MUST NOT bloquearse por la caída del proveedor; sólo las funcionalidades
   que requieren datos frescos e inexistentes localmente pueden quedar indisponibles.
 
-**Rationale**: El sentido único de dependencias mantiene el dominio testeable en
-aislamiento y permite cambiar framework, ORM o proveedor externo sin reescribir reglas
+**Rationale (Backend)**: El sentido único de dependencias mantiene el dominio testeable
+en aislamiento y permite cambiar framework, ORM o proveedor externo sin reescribir reglas
 de negocio. Aislar el proveedor detrás de un Adapter además permite que su caída degrade
 sólo una parte del sistema y no lo tumbe entero. La misma lógica aplica a librerías de
 infraestructura como hasheo o generación de aleatoriedad criptográfica: aislarlas detrás
 de un Adapter permite reemplazarlas o testearlas con un doble sin tocar el Service, y
 evita que la regla se resuelva caso por caso cada vez que aparece una librería nueva
 (ya pasó con el hasheo de contraseñas y de nuevo con el hasheo de API keys).
+
+#### Frontend
+
+Dentro de `frontend/src/` la organización MUST ser por capa, nunca por feature, con
+dependencias en un único sentido:
+
+- `service/` — clientes de API por recurso (un módulo por recurso) y servicios que los
+  consumen. Es la única capa que accede a la red: toda llamada HTTP al backend MUST pasar
+  por acá, nunca invocada directamente desde un componente de UI. Centraliza en un solo
+  lugar la base URL, los headers y el manejo de errores de red.
+- `hooks/` y `contexts/` — únicas capas que MUST invocar `service/`. `contexts/` solo si
+  la feature necesita estado compartido entre componentes lejanos en el árbol de React.
+- `components/` — todo lo que pueda componentizarse; MUST NOT contener llamadas HTTP
+  propias. Mantiene la UI escalable y reutilizable.
+- `layout/` — estructura común de página, incluida la resolución de metadatos de SEO y el
+  comportamiento responsivo exigido por el stack de frontend.
+- `pages/` — vistas de nivel de ruta, solo si la feature las necesita.
+- `types/` — tipos e interfaces TypeScript, separados del resto.
+- `data/` — contenido estático o de configuración.
+- `assets/` — imágenes y otros estáticos, si la feature los requiere.
+- `utils/` — funciones auxiliares puras, si la feature las requiere.
+
+Los tests de componentes que **no** ejercitan el cliente de API viven junto al archivo
+que testean (co-located). Los tests de componentes que **sí** ejercitan el cliente de API
+viven en `frontend/test/`, fuera de `src/`, igual que los tests end-to-end del backend
+viven en `backend/test/`.
+
+**Rationale (Frontend)**: Organizar por capa en vez de por feature impide que la lógica de
+red, el estado y la presentación se mezclen dentro de un mismo módulo; que `service/` sea
+la única puerta de salida a la red hace posible testear `hooks/`, `contexts/` y
+`components/` sin red real, y permite cambiar de backend o de cliente HTTP sin tocar la
+UI. Separar la ubicación de los tests según si ejercitan o no el cliente de API hace
+explícito, por la carpeta en la que vive el archivo, qué tests necesitan el backend real
+levantado y cuáles no.
 
 ### II. Modelo de dominio rico
 
@@ -312,11 +412,10 @@ constitución:
 
 - **Backend**: Node.js 20, NestJS 11, TypeScript 5.7 en modo `strict`.
 - **Frontend**: React 19, Vite 8, TypeScript, Tailwind CSS 4. MUST ser una aplicación
-  web responsiva y comunicarse con el backend vía HTTP/REST. Toda llamada HTTP al backend
-  MUST pasar por un cliente de API propio (un módulo por recurso, en `frontend/src/service/`),
-  nunca invocada directamente desde un componente de UI: centraliza en un solo lugar la
-  base URL, los headers y el manejo de errores de red. El testing de componentes se realiza
-  con Vitest + React Testing Library.
+  web responsiva y comunicarse con el backend vía HTTP/REST. El testing de componentes se
+  realiza con Vitest + React Testing Library. La organización en capas (`service/`,
+  `hooks/`, `contexts/`, etc.) y la regla de que toda llamada HTTP pase por `service/` se
+  rigen por el Principio I (Frontend), no por este bullet.
 - **Persistencia**: PostgreSQL, accedida vía TypeORM. Las columnas que representen pesos
   de estrategia, scores calculados o precios/valores de token MUST declararse con
   `type: 'decimal'` en TypeORM con `precision` y `scale` explícitos, nunca como `float`
@@ -330,27 +429,9 @@ constitución:
   PostgreSQL provisto como servicio del workflow ni de ninguna base persistente.
 - **Testing**: Jest + supertest + Testcontainers + tsarch (backend); Vitest + React
   Testing Library (frontend).
-- **Estructura**: monorepo único con `backend/` y `frontend/`. Dentro de `backend/src/`
-  la organización MUST ser por capa (según el Principio I). Dentro de `frontend/src/` la
-  organización también MUST ser por capa, nunca por feature:
-  - `service/` — clientes de API por recurso (el módulo del bullet "Frontend") y servicios
-    que los consumen. Es la única capa que accede a la red.
-  - `hooks/` y `contexts/` — únicas capas que MUST invocar `service/`. `contexts/` solo
-    si la feature necesita estado compartido entre componentes lejanos en el árbol de React.
-  - `components/` — todo lo que pueda componentizarse; MUST NOT contener llamadas HTTP
-    propias. Mantiene la UI escalable y reutilizable.
-  - `layout/` — estructura común de página, incluida la resolución de metadatos de SEO
-    y el comportamiento responsivo ya exigido en el bullet "Frontend".
-  - `pages/` — vistas de nivel de ruta, solo si la feature las necesita.
-  - `types/` — tipos e interfaces TypeScript, separados del resto.
-  - `data/` — contenido estático o de configuración.
-  - `assets/` — imágenes y otros estáticos, si la feature los requiere.
-  - `utils/` — funciones auxiliares puras, si la feature las requiere.
-
-  Los tests de componentes que **no** ejercitan el cliente de API viven junto al archivo
-  que testean (co-located). Los tests de componentes que **sí** ejercitan el cliente de
-  API viven en `frontend/test/`, fuera de `src/`, igual que los tests end-to-end del
-  backend viven en `backend/test/`.
+- **Estructura**: monorepo único con `backend/` y `frontend/`. La organización por capa de
+  ambos lados —qué carpetas existen, qué puede importar a qué, dónde viven los tests— es
+  una regla de arquitectura, no de stack: se rige por el Principio I (Backend y Frontend).
 
 ## Development Workflow & Quality Gates
 
@@ -385,4 +466,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.9.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-07
+**Version**: 1.10.1 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-22

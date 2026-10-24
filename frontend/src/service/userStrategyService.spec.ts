@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { userStrategyService } from './userStrategyService';
 import { httpClient } from './httpClient';
-import type { UserStrategyListResponseDto, UserStrategyResponseDto, UserRecalculateResponseDto } from '../types/userStrategy.types';
+import type { UserStrategyListResponseDto, UserStrategyResponseDto } from '../types/userStrategy.types';
 
 describe('userStrategyService', () => {
   beforeEach(() => {
@@ -66,25 +66,6 @@ describe('userStrategyService', () => {
 
     expect(patchSpy).toHaveBeenCalledWith('/users/me/strategies/s-1/position-weights/GK', { weights });
     expect(result).toEqual(mockResponse);
-  });
-
-  it('recalculate llama a POST /users/me/quotes/recalculate con el playerId indicado', async () => {
-    const mockResponse: UserRecalculateResponseDto = { recalculated: [{ playerId: 'p-1', value: 50, score: 0.5 }], skipped: [] };
-    const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValueOnce(mockResponse);
-
-    const result = await userStrategyService.recalculate('p-1');
-
-    expect(postSpy).toHaveBeenCalledWith('/users/me/quotes/recalculate', { playerId: 'p-1' });
-    expect(result).toEqual(mockResponse);
-  });
-
-  it('recalculate sin playerId envía playerId: undefined (recálculo masivo)', async () => {
-    const mockResponse: UserRecalculateResponseDto = { recalculated: [], skipped: [] };
-    const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValueOnce(mockResponse);
-
-    await userStrategyService.recalculate();
-
-    expect(postSpy).toHaveBeenCalledWith('/users/me/quotes/recalculate', { playerId: undefined });
   });
 
   it('propaga errores lanzados por httpClient', async () => {

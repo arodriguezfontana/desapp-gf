@@ -7,10 +7,10 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useAdmin } from '../hooks/useAdmin';
 import { PortfolioSummary } from '../components/PortfolioSummary';
 import { HoldingList } from '../components/HoldingList';
-import { OperationHistory } from '../components/OperationHistory';
-import { MyOrders } from '../components/MyOrders';
+import { ActivityTabs } from '../components/ActivityTabs';
 import { PortfolioMetrics } from '../components/PortfolioMetrics';
 import { PortfolioEvolutionChart } from '../components/PortfolioEvolutionChart';
+import { StrategiesPanel } from '../components/StrategiesPanel';
 
 export const PortfolioPage: React.FC = () => {
   const { summary, holdings, isEmpty, isLoading, error, refetch: refetchPortfolio } = usePortfolio();
@@ -33,7 +33,7 @@ export const PortfolioPage: React.FC = () => {
   const handleCancelOrder = async (orderId: string): Promise<boolean> => {
     const success = await cancelOrder(orderId);
     if (success) {
-      void refetchPortfolio();
+      void refetchPortfolio(true);
     }
     return success;
   };
@@ -121,18 +121,21 @@ export const PortfolioPage: React.FC = () => {
           </div>
         </div>
 
-        <MyOrders
+        <ActivityTabs
           orders={orders}
-          isLoading={isOrdersLoading}
+          isOrdersLoading={isOrdersLoading}
           cancellingOrderId={cancellingOrderId}
-          error={ordersError}
+          ordersError={ordersError}
           onCancelOrder={handleCancelOrder}
-        />
-        <OperationHistory
           transactions={transactions}
-          isLoading={isHistoryLoading}
-          error={historyError}
+          isHistoryLoading={isHistoryLoading}
+          historyError={historyError}
         />
+
+        <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8 space-y-4">
+          <h2 className="text-lg font-black uppercase tracking-wider text-white">Mis estrategias</h2>
+          <StrategiesPanel />
+        </div>
       </div>
     );
   } else {
@@ -142,18 +145,21 @@ export const PortfolioPage: React.FC = () => {
         <PortfolioMetrics holdings={holdings} />
         <PortfolioEvolutionChart transactions={transactions} />
         <HoldingList holdings={holdings} />
-        <MyOrders
+        <ActivityTabs
           orders={orders}
-          isLoading={isOrdersLoading}
+          isOrdersLoading={isOrdersLoading}
           cancellingOrderId={cancellingOrderId}
-          error={ordersError}
+          ordersError={ordersError}
           onCancelOrder={handleCancelOrder}
-        />
-        <OperationHistory
           transactions={transactions}
-          isLoading={isHistoryLoading}
-          error={historyError}
+          isHistoryLoading={isHistoryLoading}
+          historyError={historyError}
         />
+
+        <div className="bg-[#104443] border border-[#1a6866] rounded-2xl shadow-xl p-6 sm:p-8 space-y-4">
+          <h2 className="text-lg font-black uppercase tracking-wider text-white">Mis estrategias</h2>
+          <StrategiesPanel />
+        </div>
       </div>
     );
   }

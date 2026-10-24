@@ -5,6 +5,7 @@ import { useAdmin } from '../hooks/useAdmin';
 import { useApiKey } from '../hooks/useApiKey';
 import { useAuthActions } from '../hooks/useAuthActions';
 import type {
+  RecalculateQuotesResultDto,
   SimulationResultDto,
   SyncRunStatusDto,
   SyncSummaryDto,
@@ -27,6 +28,7 @@ export const AdminPage: React.FC = () => {
     getWhoScoredRunStatus,
     triggerFootballDataSync,
     simulateMarket,
+    recalculateQuotes,
   } = useAdmin();
   const { hasApiKey, saveApiKey } = useApiKey();
   const { generateApiKey } = useAuthActions();
@@ -46,6 +48,11 @@ export const AdminPage: React.FC = () => {
   const [isSimulatingMarket, setIsSimulatingMarket] = useState<boolean>(false);
   const [simulationResult, setSimulationResult] = useState<SimulationResultDto | null>(null);
   const [simulationError, setSimulationError] = useState<string | null>(null);
+
+  // Estados de Recálculo Global de Cotizaciones
+  const [isRecalculating, setIsRecalculating] = useState<boolean>(false);
+  const [recalculateResult, setRecalculateResult] = useState<RecalculateQuotesResultDto | null>(null);
+  const [recalculateError, setRecalculateError] = useState<string | null>(null);
 
   // Generación de clave de acceso
   const [isGeneratingKey, setIsGeneratingKey] = useState<boolean>(false);
@@ -134,6 +141,23 @@ export const AdminPage: React.FC = () => {
       }
     } finally {
       setIsSimulatingMarket(false);
+    }
+  };
+
+  const handleRecalculateQuotes = async () => {
+    setIsRecalculating(true);
+    setRecalculateError(null);
+    try {
+      const result = await recalculateQuotes();
+      setRecalculateResult(result);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setRecalculateError(err.message);
+      } else {
+        setRecalculateError('No se pudo recalcular las cotizaciones.');
+      }
+    } finally {
+      setIsRecalculating(false);
     }
   };
 
@@ -241,8 +265,8 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Grid de Módulos 1 y 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+      {/* Grid de Módulos 1, 2 y 3 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
         {/* Módulo 1: WHOSCORED */}
         <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753]/50 rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden transition-all group">
           <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
@@ -368,9 +392,78 @@ export const AdminPage: React.FC = () => {
             <button
               onClick={handleFootballDataTrigger}
               disabled={isFootballDataSyncing}
-              className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] border border-[#b79753]/40 disabled:opacity-50 text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
+              className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
             >
               {isFootballDataSyncing ? 'Actualizando (aprox. 1 min)...' : 'Actualizar Clubes y Escudos'}
+            </button>
+          </div>
+        </div>
+
+        {/* Módulo 3: RECÁLCULO DE COTIZACIONES */}
+        <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753]/50 rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden transition-all group">
+          <div className="relative h-44 overflow-hidden border-b border-[#1a6866]">
+            <img
+              src="/assets/admin_pricing.jpg"
+              alt="Cotizaciones"
+              className="w-full h-full object-cover filter brightness-90 group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/40 to-transparent" />
+            <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#b79753]/40">
+              COTIZACIONES
+            </span>
+          </div>
+
+          <div className="p-6 flex-1 flex flex-col justify-between">
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-wider text-white mb-2">
+                Recalcular Cotizaciones del Sistema
+              </h2>
+              <p className="text-xs text-gray-300 leading-relaxed mb-4">
+                Recalcula y persiste una cotización por cada combinación usuario × jugador del sistema, usando la
+                estrategia seleccionada de cada usuario. Afecta a todos los usuarios, no solo a tu cuenta.
+              </p>
+
+              {/* Resultados */}
+              {recalculateResult && (
+                <div className="bg-[#0b3332] p-4 rounded-xl border border-[#1a6866] space-y-2 mb-4 text-xs font-medium">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Cotizaciones actualizadas:</span>
+                    <span className="font-bold text-emerald-400">{recalculateResult.recalculated.length}</span>
+                  </div>
+                  {recalculateResult.skipped.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-gray-400">
+                        Combinaciones salteadas ({recalculateResult.skipped.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {recalculateResult.skipped.map((s) => (
+                          <span
+                            key={`${s.userId}-${s.playerId}`}
+                            title={s.reason}
+                            className="text-[9px] font-bold px-2 py-0.5 bg-rose-500/20 text-rose-300 rounded border border-rose-500/30"
+                          >
+                            {s.playerId.slice(0, 8)}…
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {recalculateError && (
+                <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs p-3 rounded-xl mb-4 font-bold">
+                  {recalculateError}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleRecalculateQuotes}
+              disabled={isRecalculating}
+              className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] disabled:opacity-50 text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl shadow-lg active:scale-95 cursor-pointer mt-2"
+            >
+              {isRecalculating ? 'Recalculando...' : 'Recalcular'}
             </button>
           </div>
         </div>
@@ -479,7 +572,7 @@ export const AdminPage: React.FC = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 text-center">
               <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">Holdings</span>
                 <span className="text-lg font-black text-[#b79753]">{simulationResult.holdingsCreated}</span>
@@ -496,23 +589,34 @@ export const AdminPage: React.FC = () => {
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">Libro L2</span>
                 <span className="text-lg font-black text-[#2dd4bf]">{simulationResult.marketOrdersCreated}</span>
               </div>
-              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866] col-span-2 sm:col-span-1">
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866]">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">Cotizaciones</span>
                 <span className="text-lg font-black text-purple-300">{simulationResult.quotesCreated}</span>
               </div>
+              <div className="bg-[#104443] p-3 rounded-lg border border-[#1a6866] col-span-2 sm:col-span-1">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">Alertas Demo</span>
+                <span className="text-lg font-black text-[#f59e0b]">{simulationResult.alertsCreated}</span>
+              </div>
             </div>
+
+            {simulationResult.alertsCreated > 0 && (
+              <p className="text-[10px] text-gray-400 font-medium">
+                Se sembraron {simulationResult.alertsCreated} alertas de precio de demo para la cuenta admin — revisá la
+                campanita de notificaciones, ya deberían haberse disparado con las cotizaciones recién generadas.
+              </p>
+            )}
 
             <div className="space-y-1.5 pt-1">
               <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                Futbolistas involucrados en la simulación:
+                Futbolistas involucrados en la simulación (cotización vigente):
               </span>
               <div className="flex flex-wrap gap-2">
-                {simulationResult.playersInvolved.map((pName) => (
+                {simulationResult.quotes.map((q) => (
                   <span
-                    key={pName}
+                    key={q.playerId}
                     className="text-[10px] font-bold px-2.5 py-1 bg-[#104443] text-gray-200 rounded-md border border-[#1a6866]"
                   >
-                    ⚽ {pName}
+                    ⚽ {q.playerName} — <span className="text-[#b79753]">${q.value.toFixed(2)}</span>
                   </span>
                 ))}
               </div>

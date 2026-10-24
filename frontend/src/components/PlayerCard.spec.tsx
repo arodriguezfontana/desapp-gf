@@ -15,7 +15,7 @@ const playerMock = {
 };
 
 describe('PlayerCard', () => {
-  it('renderiza la informacion del jugador con su link al detalle', () => {
+  it('renderiza la informacion del jugador con la card completa como link al detalle', () => {
     render(
       <MemoryRouter>
         <PlayerCard player={playerMock} />
@@ -27,8 +27,9 @@ describe('PlayerCard', () => {
     expect(screen.getByText('Boca Juniors')).toBeInTheDocument();
     expect(screen.getByText('Delantero')).toBeInTheDocument();
 
-    const link = screen.getByRole('link', { name: /Ver detalle/i });
+    const link = screen.getByRole('link');
     expect(link).toHaveAttribute('href', '/catalog/p-1');
+    expect(screen.queryByText(/Ver detalle/i)).not.toBeInTheDocument();
   });
 
   it('muestra el valor del token redondeado cuando hay cotización', () => {

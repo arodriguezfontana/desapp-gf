@@ -81,4 +81,16 @@ describe('adminService', () => {
     expect(result.success).toBe(true);
     expect(result.holdingsCreated).toBe(5);
   });
+
+  it('recalculateQuotes llama a POST /quotes/recalculate con useApiKey: true', async () => {
+    const postSpy = vi.spyOn(httpClient, 'post').mockResolvedValueOnce({
+      recalculated: [{ userId: 'u-1', playerId: 'p-1', value: 50, score: 0.5 }],
+      skipped: [],
+    });
+
+    const result = await adminService.recalculateQuotes();
+
+    expect(postSpy).toHaveBeenCalledWith('/quotes/recalculate', undefined, { useApiKey: true });
+    expect(result.recalculated).toHaveLength(1);
+  });
 });

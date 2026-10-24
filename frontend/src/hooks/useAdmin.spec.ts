@@ -71,4 +71,17 @@ describe('useAdmin', () => {
     expect(simResult.success).toBe(true);
     expect(simResult.holdingsCreated).toBe(4);
   });
+
+  it('recalculateQuotes delega en adminService.recalculateQuotes', async () => {
+    const spy = vi.spyOn(adminService, 'recalculateQuotes').mockResolvedValueOnce({
+      recalculated: [{ userId: 'u-1', playerId: 'p-1', value: 50, score: 0.5 }],
+      skipped: [],
+    });
+
+    const { result } = renderHook(() => useAdmin());
+    const recalcResult = await result.current.recalculateQuotes();
+
+    expect(spy).toHaveBeenCalled();
+    expect(recalcResult.recalculated).toHaveLength(1);
+  });
 });

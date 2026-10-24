@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { NotificationBell } from '../components/NotificationBell';
 
 export function AppLayout() {
   const { isAuthenticated, logout } = useAuth();
@@ -85,19 +86,6 @@ export function AppLayout() {
                 </NavLink>
 
                 <NavLink
-                  to="/my-strategies"
-                  className={({ isActive }) =>
-                    `px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all ${
-                      isActive
-                        ? 'bg-[#104443] text-white border-[#b79753]'
-                        : 'text-gray-300 border-[#1a6866] hover:text-white hover:border-gray-400'
-                    }`
-                  }
-                >
-                  Mis estrategias
-                </NavLink>
-
-                <NavLink
                   to="/account"
                   className={({ isActive }) =>
                     `px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all ${
@@ -125,6 +113,8 @@ export function AppLayout() {
                   </NavLink>
                 )}
 
+                <NotificationBell />
+
                 <button
                   onClick={logout}
                   className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white bg-[#f43f5e] hover:bg-[#e11d48] rounded-xl shadow-md transition-all cursor-pointer"
@@ -144,6 +134,7 @@ export function AppLayout() {
 
           {/* Mobile Hamburger Menu Toggle Button */}
           <div className="flex items-center md:hidden gap-2">
+            {isAuthenticated && <NotificationBell />}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
@@ -186,13 +177,6 @@ export function AppLayout() {
                   className="block px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-[#104443] rounded-xl"
                 >
                   Mi Portfolio
-                </NavLink>
-                <NavLink
-                  to="/my-strategies"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-[#104443] rounded-xl"
-                >
-                  Mis estrategias
                 </NavLink>
                 <NavLink
                   to="/account"
