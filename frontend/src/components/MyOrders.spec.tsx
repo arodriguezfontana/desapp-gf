@@ -1,7 +1,25 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { MyOrders } from './MyOrders';
 import type { OrderResponseDto } from '../types/orders.types';
+
+const wrap = (ui: React.ReactNode) => render(<MemoryRouter>{ui}</MemoryRouter>);
+
+function buildOrder(overrides: Partial<OrderResponseDto> & { id: string }): OrderResponseDto {
+  return {
+    side: 'BUY',
+    playerId: 'player-1',
+    playerName: 'Jugador Test',
+    quantity: 1,
+    remainingQuantity: 1,
+    price: '10.00',
+    status: 'PENDING',
+    createdAt: '2026-10-21T10:00:00.000Z',
+    fills: [],
+    ...overrides,
+  };
+}
 
 describe('MyOrders', () => {
   const mockOrders: OrderResponseDto[] = [
@@ -9,6 +27,7 @@ describe('MyOrders', () => {
       id: 'order-1',
       side: 'BUY',
       playerId: 'player-1',
+      playerName: 'Lionel Messi',
       quantity: 10,
       remainingQuantity: 10,
       price: '15.00',
@@ -20,6 +39,7 @@ describe('MyOrders', () => {
       id: 'order-2',
       side: 'SELL',
       playerId: 'player-2',
+      playerName: 'Cristiano Ronaldo',
       quantity: 8,
       remainingQuantity: 3,
       price: '22.50',
@@ -31,6 +51,7 @@ describe('MyOrders', () => {
       id: 'order-3',
       side: 'BUY',
       playerId: 'player-3',
+      playerName: 'Kylian Mbappé',
       quantity: 5,
       remainingQuantity: 0,
       price: '18.00',
@@ -42,6 +63,7 @@ describe('MyOrders', () => {
       id: 'order-4',
       side: 'SELL',
       playerId: 'player-4',
+      playerName: 'Erling Haaland',
       quantity: 6,
       remainingQuantity: 6,
       price: '30.00',
@@ -52,7 +74,7 @@ describe('MyOrders', () => {
   ];
 
   it('muestra spinner de carga cuando isLoading es true', () => {
-    render(
+    wrap(
       <MyOrders
         orders={[]}
         isLoading={true}
@@ -66,7 +88,7 @@ describe('MyOrders', () => {
   });
 
   it('muestra mensaje de error cuando ocurre un fallo', () => {
-    render(
+    wrap(
       <MyOrders
         orders={[]}
         isLoading={false}
@@ -80,7 +102,7 @@ describe('MyOrders', () => {
   });
 
   it('muestra mensaje de lista vacía cuando no hay órdenes', () => {
-    render(
+    wrap(
       <MyOrders
         orders={[]}
         isLoading={false}
@@ -98,7 +120,7 @@ describe('MyOrders', () => {
   });
 
   it('renderiza órdenes con sus badges de estado correspondientes', () => {
-    render(
+    wrap(
       <MyOrders
         orders={mockOrders}
         isLoading={false}
@@ -115,7 +137,7 @@ describe('MyOrders', () => {
   });
 
   it('muestra botón "Cancelar" solo para órdenes PENDING y PARTIALLY_FILLED', () => {
-    render(
+    wrap(
       <MyOrders
         orders={mockOrders}
         isLoading={false}
@@ -133,7 +155,7 @@ describe('MyOrders', () => {
 
   it('invoca onCancelOrder al hacer clic en el botón Cancelar', () => {
     const handleCancel = vi.fn().mockResolvedValue(true);
-    render(
+    wrap(
       <MyOrders
         orders={mockOrders}
         isLoading={false}
@@ -150,7 +172,7 @@ describe('MyOrders', () => {
   });
 
   it('deshabilita el botón y muestra "Cancelando..." para la orden en proceso', () => {
-    render(
+    wrap(
       <MyOrders
         orders={mockOrders}
         isLoading={false}
@@ -163,6 +185,54 @@ describe('MyOrders', () => {
     const cancellingButtons = screen.getAllByLabelText('Cancelar orden order-1');
     expect(cancellingButtons[0]).toBeDisabled();
     expect(cancellingButtons[0]).toHaveTextContent('Cancelando...');
+  });
+
+  it('no muestra controles de paginación si hay 8 o menos órdenes', () => {
+    const orders = Array.from({ length: 8 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    wrap(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    expect(screen.queryByText(/Página/)).not.toBeInTheDocument();
+  });
+
+  it('pagina de a 8 órdenes por página, mostrando solo esa porción', () => {
+    const orders = Array.from({ length: 20 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    wrap(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    expect(screen.getByText('Página 1 de 3')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Cancelar orden order-7').length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('Cancelar orden order-8')).not.toBeInTheDocument();
+  });
+
+  it('el botón "Anterior" está deshabilitado en la primera página y "Siguiente" avanza de página', () => {
+    const orders = Array.from({ length: 20 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    wrap(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+    expect(screen.queryByLabelText('Cancelar orden order-8')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+    expect(screen.getByText('Página 2 de 3')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Cancelar orden order-8').length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('Cancelar orden order-0')).not.toBeInTheDocument();
+  });
+
+  it('el botón "Siguiente" está deshabilitado en la última página', () => {
+    const orders = Array.from({ length: 12 }, (_, i) => buildOrder({ id: `order-${i}` }));
+    wrap(
+      <MyOrders orders={orders} isLoading={false} cancellingOrderId={null} error={null} onCancelOrder={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+    expect(screen.getByText('Página 2 de 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
   });
 });
 

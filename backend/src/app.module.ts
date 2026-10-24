@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,11 +15,14 @@ import { QuotationModule } from './modules/quotation/quotation.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AlertsModule } from './modules/alerts/alerts.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot(),
     DatabaseModule,
     AuthModule,
     ApiKeyModule,
@@ -30,6 +34,8 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     PortfolioModule,
     OrdersModule,
     AdminModule,
+    AlertsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],

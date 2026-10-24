@@ -46,13 +46,15 @@ export function usePortfolio(options: UsePortfolioOptions = {}) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPortfolio = useCallback(async () => {
+  const fetchPortfolio = useCallback(async (silent = false) => {
     if (!targetUserId) {
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    if (!silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {

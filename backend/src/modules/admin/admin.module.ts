@@ -5,6 +5,7 @@ import { PlayerModule } from '../player/player.module';
 import { OrdersModule } from '../orders/orders.module';
 import { PortfolioModule } from '../portfolio/portfolio.module';
 import { QuotationModule } from '../quotation/quotation.module';
+import { AlertsModule } from '../alerts/alerts.module';
 import { AdminSimulationController } from '../../controllers/admin/admin-simulation.controller';
 import { MarketSimulationService } from '../../services/admin/market-simulation.service';
 import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
@@ -17,6 +18,7 @@ import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
     forwardRef(() => OrdersModule),
     forwardRef(() => PortfolioModule),
     forwardRef(() => QuotationModule),
+    forwardRef(() => AlertsModule),
   ],
   controllers: [AdminSimulationController],
   providers: [MarketSimulationService, AdminAccessGuard],

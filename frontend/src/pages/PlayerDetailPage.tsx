@@ -11,6 +11,8 @@ import type { OrderSide } from '../types/orders.types';
 import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
 import { OrderConfirmDialog } from '../components/OrderConfirmDialog';
 import { OrderBookView } from '../components/OrderBookView';
+import { AlertsPopover } from '../components/AlertsPopover';
+import { usePlayerAlerts } from '../hooks/usePlayerAlerts';
 
 // ── Mismos accentos que PlayerCard ──────────────────────────────────────────
 const POSITION_ACCENT: Record<string, { from: string; via: string; text: string }> = {
@@ -110,6 +112,14 @@ export const PlayerDetailPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderDialogSide, setOrderDialogSide] = useState<OrderSide | null>(null);
   const [orderSuccessMessage, setOrderSuccessMessage] = useState<string | null>(null);
+  const {
+    alerts,
+    isLoading: isLoadingAlerts,
+    error: alertsError,
+    createAlert,
+    cancelAlert,
+  } = usePlayerAlerts();
+  const playerAlerts = alerts.filter((alert) => alert.playerId === id);
 
   const handleConfirmOrder = async (quantity: number) => {
     if (!id || !orderDialogSide) return;
@@ -254,7 +264,7 @@ export const PlayerDetailPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setOrderDialogSide('BUY')}
-                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#a78bfa] hover:bg-[#8b5cf6] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                      className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-emerald-400 hover:bg-emerald-300 text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
                     >
                       Comprar
                     </button>
@@ -262,10 +272,20 @@ export const PlayerDetailPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setOrderDialogSide('SELL')}
-                        className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-[#f59e0b] hover:bg-[#d97706] text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
+                        className="px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-rose-400 hover:bg-rose-300 text-[#0b3332] shadow-md transition-all rounded-xl cursor-pointer active:scale-95"
                       >
                         Vender
                       </button>
+                    )}
+                    {id && (
+                      <AlertsPopover
+                        playerId={id}
+                        alerts={playerAlerts}
+                        isLoadingAlerts={isLoadingAlerts}
+                        alertsError={alertsError}
+                        onCreate={createAlert}
+                        onCancel={cancelAlert}
+                      />
                     )}
                   </div>
                 )}

@@ -11,7 +11,6 @@ import { CatalogPage } from '../pages/CatalogPage';
 import { PlayerDetailPage } from '../pages/PlayerDetailPage';
 import { AdminPage } from '../pages/AdminPage';
 import { PortfolioPage } from '../pages/PortfolioPage';
-import { MyStrategiesPage } from '../pages/MyStrategiesPage';
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -44,7 +43,6 @@ export const router = createBrowserRouter([
               { path: '/admin', element: <AdminPage /> },
               { path: '/portfolio', element: <PortfolioPage /> },
               { path: '/catalog/:id', element: <PlayerDetailPage /> },
-              { path: '/my-strategies', element: <MyStrategiesPage /> },
             ],
           },
         ],

@@ -34,15 +34,14 @@ describe('QuoteHistoryChart', () => {
     render(<QuoteHistoryChart quotes={quotes} />);
 
     expect(document.querySelector('svg')).toBeInTheDocument();
-    expect(document.querySelectorAll('circle')).toHaveLength(3);
-    expect(document.querySelector('polyline')).toBeInTheDocument();
+    expect(document.querySelectorAll('.recharts-dot')).toHaveLength(3);
+    expect(document.querySelector('.recharts-line-curve')).toBeInTheDocument();
   });
 
   it('renderiza un único punto sin error cuando solo hay una cotización', () => {
     render(<QuoteHistoryChart quotes={[makeQuote()]} />);
 
     expect(document.querySelector('svg')).toBeInTheDocument();
-    expect(document.querySelectorAll('circle')).toHaveLength(1);
-    expect(document.querySelector('polyline')).not.toBeInTheDocument();
+    expect(document.querySelectorAll('.recharts-dot')).toHaveLength(1);
   });
 });

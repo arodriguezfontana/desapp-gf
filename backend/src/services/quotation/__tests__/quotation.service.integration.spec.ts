@@ -1,4 +1,5 @@
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
@@ -35,11 +36,13 @@ describe('QuotationService (integración contra Postgres real)', () => {
   let dataSource: DataSource;
   let userIdA: string;
   let userIdB: string;
+  let eventEmitter: EventEmitter2;
 
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        EventEmitterModule.forRoot(),
         DatabaseModule,
         TypeOrmModule.forFeature([ValuationStrategyEntity, PlayerQuoteEntity, PlayerEntity, UserEntity]),
       ],
@@ -56,6 +59,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
 
     service = moduleRef.get(QuotationService);
     dataSource = moduleRef.get(DataSource);
+    eventEmitter = moduleRef.get(EventEmitter2);
   });
 
   afterAll(async () => {
@@ -231,6 +235,21 @@ describe('QuotationService (integración contra Postgres real)', () => {
       expect(quotesA).toHaveLength(1);
       expect(quotesB).toHaveLength(1);
       expect(quotesA[0].id).not.toBe(quotesB[0].id);
+    });
+
+    it('emite quote.recalculated una vez por cada PlayerQuote nueva persistida (025-player-price-alerts)', async () => {
+      await insertStrategy({ userId: userIdA, name: 'A', weights: WEIGHTS_GOALS_ONLY, factorEscala: 10, isSelected: true });
+      await insertPlayer({ goals: 20 });
+
+      const received: Array<{ userId: string; playerId: string; value: number }> = [];
+      const listener = (payload: { userId: string; playerId: string; value: number }) => received.push(payload);
+      eventEmitter.on('quote.recalculated', listener);
+
+      await service.recalculateAll();
+
+      eventEmitter.off('quote.recalculated', listener);
+      expect(received).toHaveLength(1);
+      expect(received[0].userId).toBe(userIdA);
     });
   });
 

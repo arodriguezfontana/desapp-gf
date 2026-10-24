@@ -49,7 +49,10 @@ export class OrderResponseDto {
   @ApiProperty({ type: [OrderFillDto] })
   fills: OrderFillDto[];
 
-  private constructor(order: Order, fills: OrderFillDto[]) {
+  @ApiProperty({ example: 'Lionel Messi' })
+  playerName: string;
+
+  private constructor(order: Order, fills: OrderFillDto[], playerName: string) {
     this.id = order.id;
     this.side = order.side;
     this.playerId = order.playerId;
@@ -59,15 +62,18 @@ export class OrderResponseDto {
     this.status = order.status;
     this.createdAt = order.createdAt.toISOString();
     this.fills = fills;
+    this.playerName = playerName;
   }
 
   static fromDomain(
     order: Order,
     fills: Array<{ counterpartOrderId: string; quantity: number; price: number }> = [],
+    playerName = '',
   ): OrderResponseDto {
     return new OrderResponseDto(
       order,
       fills.map((f) => new OrderFillDto(f.counterpartOrderId, f.quantity, f.price)),
+      playerName,
     );
   }
 }

@@ -13,6 +13,7 @@ import { Player } from '../../../domain/player/player';
 import { PlayerNotFoundError } from '../../../domain/player/errors/player-not-found.error';
 import { PlayerQuote } from '../../../domain/quotation/player-quote';
 import * as calculatePlayerValueModule from '../../../domain/quotation/calculate-player-value';
+import { QUOTE_RECALCULATED_EVENT } from '../../../domain/alerts/events/quote-recalculated.event';
 
 const USER_ID = 'user-1';
 const OTHER_USER_ID = 'user-2';
@@ -41,6 +42,7 @@ describe('QuotationService', () => {
   let strategyRepo: jest.Mocked<ValuationStrategyRepository>;
   let quoteRepo: jest.Mocked<PlayerQuoteRepository>;
   let playerRepo: jest.Mocked<PlayerRepository>;
+  let eventEmitter: { emit: jest.Mock; emitAsync: jest.Mock };
 
   beforeEach(() => {
     strategyRepo = {
@@ -55,6 +57,7 @@ describe('QuotationService', () => {
     quoteRepo = {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findAllByPlayerIdAndUserId: jest.fn(),
+      deleteAllByUserId: jest.fn().mockResolvedValue(undefined),
     };
     playerRepo = {
       findPage: jest.fn(),
@@ -64,7 +67,8 @@ describe('QuotationService', () => {
       applyTeamRosterSync: jest.fn(),
       findAllActive: jest.fn(),
     };
-    service = new QuotationService(strategyRepo, quoteRepo, playerRepo);
+    eventEmitter = { emit: jest.fn(), emitAsync: jest.fn() };
+    service = new QuotationService(strategyRepo, quoteRepo, playerRepo, eventEmitter as never);
   });
 
   // ---- listStrategies ----------------------------------------------------------
@@ -222,6 +226,30 @@ describe('QuotationService', () => {
       expect(quoteRepo.saveMany).toHaveBeenCalledTimes(1);
       const [savedQuotes] = quoteRepo.saveMany.mock.calls[0] as [PlayerQuote[]];
       expect(savedQuotes[0].userId).toBe(USER_ID);
+    });
+
+    it('emite quote.recalculated una vez por cada PlayerQuote nueva persistida', async () => {
+      const player = makePlayer();
+      strategyRepo.findAllUserIds.mockResolvedValue([USER_ID]);
+      strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
+      playerRepo.findAllActive.mockResolvedValue([player]);
+
+      await service.recalculateAll();
+
+      expect(eventEmitter.emitAsync).toHaveBeenCalledTimes(1);
+      const [eventName, payload] = eventEmitter.emitAsync.mock.calls[0];
+      expect(eventName).toBe(QUOTE_RECALCULATED_EVENT);
+      expect(payload).toMatchObject({ userId: USER_ID, playerId: 'p-1' });
+    });
+
+    it('no emite quote.recalculated por las combinaciones salteadas', async () => {
+      strategyRepo.findAllUserIds.mockResolvedValue([USER_ID]);
+      strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: false })]);
+      playerRepo.findAllActive.mockResolvedValue([makePlayer()]);
+
+      await service.recalculateAll();
+
+      expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
     });
 
     it('procesa múltiples usuarios en la misma llamada', async () => {

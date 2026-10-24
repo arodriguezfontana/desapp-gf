@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 
 import { USER_REPOSITORY, PASSWORD_HASHER } from '../../modules/auth/auth.constants';
@@ -7,15 +8,18 @@ import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY } from '../../modules/orders/orders.constants';
 import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
 import { PLAYER_QUOTE_REPOSITORY, VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
+import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
 
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { PlayerRepository } from '../../repositories/player/player.repository';
+import { Player } from '../../domain/player/player';
 import { OrderRepository } from '../../repositories/orders/order.repository';
 import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 
 import { Email } from '../../domain/auth/email';
 import { User } from '../../domain/auth/user';
@@ -27,10 +31,13 @@ import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
+import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
+import { PriceAlert } from '../../domain/alerts/price-alert';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
 import { QuotationService } from '../quotation/quotation.service';
 import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
-import { SimulationResultDto } from '../../controllers/admin/dto/simulation-result.dto';
+import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/admin/dto/simulation-result.dto';
 
 interface BotConfig {
   email: string;
@@ -56,13 +63,15 @@ export class MarketSimulationService {
     @Inject(TOKEN_TRANSACTION_REPOSITORY) private readonly tokenTransactions: TokenTransactionRepository,
     @Inject(PLAYER_QUOTE_REPOSITORY) private readonly playerQuotes: PlayerQuoteRepository,
     @Inject(VALUATION_STRATEGY_REPOSITORY) private readonly strategies: ValuationStrategyRepository,
+    @Inject(PRICE_ALERT_REPOSITORY) private readonly priceAlerts: PriceAlertRepository,
     private readonly quotation: QuotationService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
     private readonly config: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async simulate(targetEmail?: string): Promise<SimulationResultDto> {
-    const adminEmailStr = targetEmail ?? this.config.get<string>('ADMIN_EMAIL') ?? 'abi_admin@ejemplo.com';
+    const adminEmailStr = targetEmail ?? this.config.get<string>('ADMIN_EMAIL') ?? 'admin@desapp.com';
     this.logger.log(`Iniciando simulación de mercado para ${adminEmailStr}...`);
 
     // 1. Resolver usuario admin
@@ -84,15 +93,21 @@ export class MarketSimulationService {
         marketOrdersCreated: 0,
         quotesCreated: 0,
         playersInvolved: [],
+        quotes: [],
+        alertsCreated: 0,
       };
     }
 
     const simPlayers = activePlayers.slice(0, Math.min(6, activePlayers.length));
     const playerNames = simPlayers.map((p) => p.name);
 
-    // 4. Calcular precio de referencia para cada jugador
+    // 4. Calcular precio de referencia para cada jugador activo (no solo los
+    // 6 de la demo de mercado): el historial de cotizaciones simulado más
+    // abajo cubre todo el catálogo activo, para que la métrica de cualquier
+    // jugador tenga datos al verla, no solo la de los 6 jugadores con
+    // actividad de compra/venta simulada.
     const refPrices = new Map<string, number>();
-    for (const player of simPlayers) {
+    for (const player of activePlayers) {
       try {
         const val = await this.quotation.valuate(admin.id, player.id);
         refPrices.set(player.id, Math.max(5, roundToTwoDecimals(val.value)));
@@ -101,12 +116,38 @@ export class MarketSimulationService {
       }
     }
 
-    // 5. Generar transacciones históricas de compra y venta para el admin (y contrapartes)
+    // 4.1 Sembrar un par de alertas de precio de demo del admin (025-player-
+    // price-alerts), una por cada condición, sobre dos de los jugadores con
+    // actividad simulada. Los umbrales se calculan sobre el precio de
+    // referencia para que la cotización que se genera más abajo (paso 9) las
+    // cumpla con margen, de forma que el recálculo simulado dispare el flujo
+    // completo (notificación en bandeja + mail) igual que un recálculo real.
+    // Idempotente: solo se siembran la primera vez (si el admin ya tiene
+    // alguna alerta propia, no se agregan más en corridas sucesivas, para no
+    // acumular duplicados como pasó con las estrategias antes de ser
+    // idempotentes).
+    const alertsCreated = await this.ensureDemoAlerts(admin.id, simPlayers, refPrices);
+
     const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
     const tDate = (daysAgo: number, hoursAgo = 0) => new Date(now - daysAgo * dayMs - hoursAgo * 3600 * 1000);
 
     let transactionsCount = 0;
+    let holdingsCount = 0;
+    let adminOrdersCount = 0;
+    let marketOrdersCount = 0;
+
+    // 5-8. Actividad histórica de mercado (transacciones, holdings, órdenes
+    // del admin en 4 estados, libro L2): se genera SOLO la primera vez. Sin
+    // esta guarda, cada corrida de la simulación volvía a insertar
+    // transacciones y órdenes nuevas sin límite (TokenTransaction además es
+    // append-only por la constitución, Principio V — nunca se puede borrar
+    // para "reemplazarla"), haciendo crecer la base indefinidamente en cada
+    // click de "Simular". Las cotizaciones (paso 9) y las alertas de demo sí
+    // se re-sincronizan en cada corrida, por separado.
+    const alreadySimulated = (await this.tokenTransactions.findByUserId(admin.id)).length > 0;
+    if (!alreadySimulated) {
+    // 5. Generar transacciones históricas de compra y venta para el admin (y contrapartes)
     const adminHoldingsQty = new Map<string, number>();
 
     interface TxPlan {
@@ -156,6 +197,40 @@ export class MarketSimulationService {
       const orderId = randomUUID();
       const counterpartOrderId = randomUUID();
 
+      // token_transactions.order_id/counterpart_order_id tienen FK hacia
+      // orders: hay que persistir ambas órdenes (ya completadas, remanente 0)
+      // antes de las transacciones que las referencian, aunque no formen
+      // parte del conteo de "órdenes propias" del admin (eso son las 4
+      // órdenes de ejemplo en distintos estados del paso 7).
+      const adminSide = plan.type === TokenTransactionType.CREDIT ? OrderSide.BUY : OrderSide.SELL;
+      const botSide = adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY;
+      await this.orders.save(
+        Order.restore({
+          id: orderId,
+          userId: admin.id,
+          playerId: player.id,
+          side: adminSide,
+          quantity: plan.quantity,
+          remainingQuantity: 0,
+          price,
+          createdAt,
+          status: OrderStatus.COMPLETED,
+        }),
+      );
+      await this.orders.save(
+        Order.restore({
+          id: counterpartOrderId,
+          userId: bot.id,
+          playerId: player.id,
+          side: botSide,
+          quantity: plan.quantity,
+          remainingQuantity: 0,
+          price,
+          createdAt,
+          status: OrderStatus.COMPLETED,
+        }),
+      );
+
       // Transacción del admin
       const adminTx = TokenTransaction.create({
         id: randomUUID(),
@@ -193,7 +268,6 @@ export class MarketSimulationService {
     }
 
     // 6. Persistir holdings exactos del admin
-    let holdingsCount = 0;
     for (const [playerId, quantity] of adminHoldingsQty.entries()) {
       if (quantity > 0) {
         const existingHolding = await this.holdings.findByUserAndPlayer(admin.id, playerId);
@@ -218,7 +292,6 @@ export class MarketSimulationService {
     }
 
     // 7. Generar órdenes del admin ("Mis Órdenes" en los 4 estados)
-    let adminOrdersCount = 0;
 
     // A. Orden PENDING (COMPRA)
     const pBuy = simPlayers[simPlayers.length - 1];
@@ -289,7 +362,6 @@ export class MarketSimulationService {
     adminOrdersCount++;
 
     // 8. Proveer liquidez de mercado L2 (Bids y Asks activos en Order Book)
-    let marketOrdersCount = 0;
     for (const player of simPlayers) {
       const base = refPrices.get(player.id) ?? 20.0;
       const bot1 = bots[0];
@@ -361,15 +433,29 @@ export class MarketSimulationService {
         marketOrdersCount++;
       }
     }
+    } // fin if (!alreadySimulated)
 
-    // 9. Generar cotizaciones históricas del admin para los gráficos de detalle de jugadores
+    // 9. Generar cotizaciones históricas del admin para los gráficos de
+    // detalle de jugadores. Cubre todo el catálogo activo (no solo los 6
+    // jugadores con actividad de compra/venta simulada) para que el
+    // historial de cualquier jugador tenga datos al mirarlo como admin.
+    // A diferencia de las transacciones (append-only, no se pueden borrar),
+    // PlayerQuote se REEMPLAZA en cada corrida: se borra el historial previo
+    // del admin antes de insertar el nuevo, así la tabla no crece sin límite
+    // con cada click de "Simular" (esto fue justo lo que rompió el
+    // recálculo global antes: 23k+ filas superando el límite de parámetros
+    // de Postgres).
+    await this.playerQuotes.deleteAllByUserId(admin.id);
+
     let quotesCount = 0;
     const adminStrategies = await this.strategies.findByUserId(admin.id);
     const selectedStrategy = adminStrategies.find((s) => s.isSelected) ?? adminStrategies[0];
     const strategyId = selectedStrategy ? selectedStrategy.id : randomUUID();
 
     const quotesToSave: PlayerQuote[] = [];
-    for (const player of simPlayers) {
+    const quotesSummary: SimulatedQuoteDto[] = [];
+    const latestQuoteByPlayer: PlayerQuote[] = [];
+    for (const player of activePlayers) {
       const currentPrice = refPrices.get(player.id) ?? 20.0;
       // 5 puntos en el tiempo: 25 días atrás, 20, 15, 10, 5
       const intervals = [
@@ -380,26 +466,42 @@ export class MarketSimulationService {
         { daysAgo: 5, factor: 0.99 },
       ];
 
+      let latestQuote: PlayerQuote | null = null;
       for (const step of intervals) {
         const quoteValue = roundToTwoDecimals(currentPrice * step.factor);
-        quotesToSave.push(
-          PlayerQuote.create({
-            id: randomUUID(),
-            userId: admin.id,
-            playerId: player.id,
-            strategyId,
-            weightSnapshot: { rating: 1.0, goals: 1.0 },
-            factorEscalaSnapshot: 1.0,
-            score: roundToTwoDecimals(quoteValue / 10),
-            value: quoteValue,
-            calculatedAt: tDate(step.daysAgo),
-            appliedPosition: player.position,
-          }),
-        );
+        const quote = PlayerQuote.create({
+          id: randomUUID(),
+          userId: admin.id,
+          playerId: player.id,
+          strategyId,
+          weightSnapshot: { rating: 1.0, goals: 1.0 },
+          factorEscalaSnapshot: 1.0,
+          score: roundToTwoDecimals(quoteValue / 10),
+          value: quoteValue,
+          calculatedAt: tDate(step.daysAgo),
+          appliedPosition: player.position,
+        });
+        quotesToSave.push(quote);
         quotesCount++;
+        latestQuote = quote;
       }
+      quotesSummary.push({ playerId: player.id, playerName: player.name, value: latestQuote!.value });
+      latestQuoteByPlayer.push(latestQuote!);
     }
     await this.playerQuotes.saveMany(quotesToSave);
+
+    // Emite quote.recalculated solo por la cotización más reciente de cada
+    // jugador (no por los 4 puntos históricos de respaldo), igual que
+    // QuotationService.recalculateAll: así las alertas de precio del admin
+    // se evalúan también contra las cotizaciones que carga la simulación
+    // (025-player-price-alerts, spec FR-011), sin que este Service conozca
+    // al módulo de alertas.
+    for (const quote of latestQuoteByPlayer) {
+      await this.eventEmitter.emitAsync(
+        QUOTE_RECALCULATED_EVENT,
+        new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
+      );
+    }
 
     this.logger.log(
       `Simulación completada con éxito: ${holdingsCount} holdings, ${transactionsCount} transacciones, ${adminOrdersCount} órdenes admin, ${marketOrdersCount} órdenes de mercado, ${quotesCount} cotizaciones.`,
@@ -415,7 +517,62 @@ export class MarketSimulationService {
       marketOrdersCreated: marketOrdersCount,
       quotesCreated: quotesCount,
       playersInvolved: playerNames,
+      quotes: quotesSummary,
+      alertsCreated,
     };
+  }
+
+  /**
+   * Siembra, solo la primera vez, dos `PriceAlert` de demo del admin: una
+   * `PRICE_BELOW` y una `PRICE_ABOVE`, sobre dos jugadores distintos de los
+   * que tienen actividad de mercado simulada. Los umbrales se calculan a
+   * partir de `refPrices` con margen suficiente para que la cotización que
+   * genera el paso 9 (≈0.99 × precio de referencia) las cumpla, de forma
+   * que el recálculo simulado dispare el flujo real de alertas.
+   */
+  private async ensureDemoAlerts(
+    adminId: string,
+    simPlayers: Player[],
+    refPrices: Map<string, number>,
+  ): Promise<number> {
+    const existing = await this.priceAlerts.findAllByUserId(adminId);
+    if (existing.length > 0 || simPlayers.length === 0) {
+      return 0;
+    }
+
+    const now = new Date();
+    const belowPlayer = simPlayers[0];
+    const belowPrice = refPrices.get(belowPlayer.id) ?? 20.0;
+    const alertsToCreate: PriceAlert[] = [
+      PriceAlert.create({
+        id: randomUUID(),
+        userId: adminId,
+        playerId: belowPlayer.id,
+        condition: AlertCondition.PRICE_BELOW,
+        targetValue: roundToTwoDecimals(belowPrice * 1.05),
+        createdAt: now,
+      }),
+    ];
+
+    if (simPlayers.length > 1) {
+      const abovePlayer = simPlayers[1];
+      const abovePrice = refPrices.get(abovePlayer.id) ?? 20.0;
+      alertsToCreate.push(
+        PriceAlert.create({
+          id: randomUUID(),
+          userId: adminId,
+          playerId: abovePlayer.id,
+          condition: AlertCondition.PRICE_ABOVE,
+          targetValue: roundToTwoDecimals(abovePrice * 0.9),
+          createdAt: now,
+        }),
+      );
+    }
+
+    for (const alert of alertsToCreate) {
+      await this.priceAlerts.save(alert);
+    }
+    return alertsToCreate.length;
   }
 
   private async ensureAdminUser(emailStr: string): Promise<User> {
@@ -427,15 +584,16 @@ export class MarketSimulationService {
       const hash = await this.hasher.hash(rawPassword);
       admin = User.register(randomUUID(), email, hash, new Date(), UserRole.ADMIN, 'admin');
       await this.users.save(admin);
+      await this.strategyProvisioning.provisionDefaultStrategiesFor(admin.id);
     }
 
-    await this.strategyProvisioning.provisionDefaultStrategiesFor(admin.id);
     return admin;
   }
 
   private async ensureBots(): Promise<User[]> {
     const bots: User[] = [];
-    const botPasswordHash = await this.hasher.hash('BotSecurePass123!');
+    const botPassword = this.config.get<string>('BOT_PASSWORD') ?? 'BotSecurePass123!';
+    const botPasswordHash = await this.hasher.hash(botPassword);
 
     for (const cfg of DEFAULT_BOTS) {
       const email = Email.create(cfg.email);
@@ -443,8 +601,8 @@ export class MarketSimulationService {
       if (!bot) {
         bot = User.register(randomUUID(), email, botPasswordHash, new Date(), UserRole.USER, cfg.username);
         await this.users.save(bot);
+        await this.strategyProvisioning.provisionDefaultStrategiesFor(bot.id);
       }
-      await this.strategyProvisioning.provisionDefaultStrategiesFor(bot.id);
       bots.push(bot);
     }
 

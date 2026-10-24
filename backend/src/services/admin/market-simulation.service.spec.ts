@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MarketSimulationService } from './market-simulation.service';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
@@ -8,6 +9,7 @@ import { TokenHoldingRepository } from '../../repositories/portfolio/token-holdi
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { QuotationService } from '../quotation/quotation.service';
 import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
 import { User } from '../../domain/auth/user';
@@ -18,6 +20,8 @@ import { Position } from '../../domain/player/enums/position';
 import { League } from '../../domain/player/enums/league';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
+import { PriceAlert } from '../../domain/alerts/price-alert';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
 
 describe('MarketSimulationService', () => {
   let service: MarketSimulationService;
@@ -29,9 +33,11 @@ describe('MarketSimulationService', () => {
   let tokenTransactions: jest.Mocked<TokenTransactionRepository>;
   let playerQuotes: jest.Mocked<PlayerQuoteRepository>;
   let strategies: jest.Mocked<ValuationStrategyRepository>;
+  let priceAlerts: jest.Mocked<PriceAlertRepository>;
   let quotation: jest.Mocked<QuotationService>;
   let strategyProvisioning: jest.Mocked<UserStrategyProvisioningService>;
   let config: jest.Mocked<ConfigService>;
+  let eventEmitter: jest.Mocked<EventEmitter2>;
 
   const adminEmail = 'abi_admin@ejemplo.com';
   const adminUser = User.register(
@@ -136,13 +142,14 @@ describe('MarketSimulationService', () => {
     tokenTransactions = {
       save: jest.fn().mockImplementation((t) => Promise.resolve(t)),
       saveInTransaction: jest.fn(),
-      findByUserId: jest.fn(),
+      findByUserId: jest.fn().mockResolvedValue([]),
       findCreditsByUserId: jest.fn(),
     } as unknown as jest.Mocked<TokenTransactionRepository>;
 
     playerQuotes = {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findAllByPlayerIdAndUserId: jest.fn(),
+      deleteAllByUserId: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<PlayerQuoteRepository>;
 
     strategies = {
@@ -164,6 +171,13 @@ describe('MarketSimulationService', () => {
       findAllUserIds: jest.fn(),
     } as unknown as jest.Mocked<ValuationStrategyRepository>;
 
+    priceAlerts = {
+      save: jest.fn().mockImplementation((a) => Promise.resolve(a)),
+      findById: jest.fn(),
+      findActiveByUserIdAndPlayerId: jest.fn(),
+      findAllByUserId: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<PriceAlertRepository>;
+
     quotation = {
       valuate: jest.fn().mockResolvedValue({ playerId: 'p1', strategyId: 's1', score: 10, value: 25.0, appliedPosition: null }),
     } as unknown as jest.Mocked<QuotationService>;
@@ -180,6 +194,10 @@ describe('MarketSimulationService', () => {
       }),
     } as unknown as jest.Mocked<ConfigService>;
 
+    eventEmitter = {
+      emitAsync: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<EventEmitter2>;
+
     service = new MarketSimulationService(
       users,
       hasher,
@@ -189,9 +207,11 @@ describe('MarketSimulationService', () => {
       tokenTransactions,
       playerQuotes,
       strategies,
+      priceAlerts,
       quotation,
       strategyProvisioning,
       config,
+      eventEmitter,
     );
   });
 
@@ -211,11 +231,111 @@ describe('MarketSimulationService', () => {
     expect(result.marketOrdersCreated).toBeGreaterThan(0);
     expect(result.quotesCreated).toBeGreaterThan(0);
     expect(result.playersInvolved).toEqual(['Player One', 'Player Two', 'Player Three', 'Player Four']);
+    expect(result.quotes).toHaveLength(result.playersInvolved.length);
+    for (const quote of result.quotes) {
+      expect(quote.playerId).toEqual(expect.any(String));
+      expect(quote.playerName).toEqual(expect.any(String));
+      expect(quote.value).toEqual(expect.any(Number));
+    }
 
     expect(tokenTransactions.save).toHaveBeenCalled();
     expect(holdings.save).toHaveBeenCalled();
     expect(orders.save).toHaveBeenCalled();
     expect(playerQuotes.saveMany).toHaveBeenCalled();
+
+    // Una emisión de quote.recalculated por jugador (la cotización más
+    // reciente, no los 4 puntos históricos de respaldo), para que el módulo
+    // de alertas evalúe las alertas del admin (025-player-price-alerts).
+    expect(eventEmitter.emitAsync).toHaveBeenCalledTimes(result.playersInvolved.length);
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      'quote.recalculated',
+      expect.objectContaining({ userId: adminUser.id }),
+    );
+
+    // Siembra dos alertas de demo del admin (una PRICE_BELOW, una
+    // PRICE_ABOVE) la primera vez que corre la simulación.
+    expect(result.alertsCreated).toBe(2);
+    expect(priceAlerts.save).toHaveBeenCalledTimes(2);
+  });
+
+  it('no vuelve a sembrar alertas de demo si el admin ya tiene alguna propia (idempotente)', async () => {
+    users.findByEmail.mockImplementation(async (email) => {
+      if (email.toString() === adminEmail) return adminUser;
+      return null;
+    });
+    priceAlerts.findAllByUserId.mockResolvedValue([
+      PriceAlert.create({
+        id: 'existing-alert',
+        userId: adminUser.id,
+        playerId: 'p-1',
+        condition: AlertCondition.PRICE_BELOW,
+        targetValue: 999,
+        createdAt: new Date(),
+      }),
+    ]);
+
+    const result = await service.simulate();
+
+    expect(result.alertsCreated).toBe(0);
+    expect(priceAlerts.save).not.toHaveBeenCalled();
+  });
+
+  it('no vuelve a generar transacciones/órdenes/holdings si el admin ya tiene actividad simulada (idempotente, no acumula)', async () => {
+    users.findByEmail.mockImplementation(async (email) => {
+      if (email.toString() === adminEmail) return adminUser;
+      return null;
+    });
+    tokenTransactions.findByUserId.mockResolvedValue([
+      { id: 'tx-existing', userId: adminUser.id },
+    ] as unknown as Awaited<ReturnType<TokenTransactionRepository['findByUserId']>>);
+
+    const result = await service.simulate();
+
+    expect(result.transactionsCreated).toBe(0);
+    expect(result.holdingsCreated).toBe(0);
+    expect(result.ordersCreated).toBe(0);
+    expect(result.marketOrdersCreated).toBe(0);
+    expect(tokenTransactions.save).not.toHaveBeenCalled();
+    expect(orders.save).not.toHaveBeenCalled();
+    expect(holdings.save).not.toHaveBeenCalled();
+
+    // Las cotizaciones y las alertas de demo sí siguen comportándose igual
+    // que siempre: las cotizaciones se reemplazan en cada corrida.
+    expect(playerQuotes.deleteAllByUserId).toHaveBeenCalledWith(adminUser.id);
+    expect(result.quotesCreated).toBeGreaterThan(0);
+  });
+
+  it('simula historial de cotizaciones para todo el catálogo activo, no solo los 6 jugadores con actividad de mercado', async () => {
+    const manyPlayers: Player[] = [
+      ...testPlayers,
+      ...Array.from({ length: 4 }, (_, i) =>
+        Player.restore({
+          id: `p-extra-${i}`,
+          name: `Extra Player ${i}`,
+          team: 'Chelsea',
+          position: Position.MF,
+          league: League.PREMIER_LEAGUE,
+          passesCompleted: null,
+          shots: null,
+          interceptions: null,
+          rating: null,
+        }),
+      ),
+    ];
+    players.findAllActive.mockResolvedValue(manyPlayers);
+    users.findByEmail.mockImplementation(async (email) => {
+      if (email.toString() === adminEmail) return adminUser;
+      return null;
+    });
+
+    const result = await service.simulate();
+
+    // 8 jugadores activos × 5 puntos históricos cada uno
+    expect(result.quotesCreated).toBe(40);
+    expect(result.quotes).toHaveLength(8);
+    expect(eventEmitter.emitAsync).toHaveBeenCalledTimes(8);
+    // La actividad de mercado (órdenes/holdings) sigue acotada a los primeros 6
+    expect(result.playersInvolved).toHaveLength(6);
   });
 
   it('actualiza un holding existente en lugar de duplicarlo', async () => {

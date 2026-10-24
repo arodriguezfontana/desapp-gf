@@ -58,6 +58,11 @@ export async function createTestApp(overrides?: ProviderOverride[]): Promise<Tes
     // lo tiene) — hay que vaciarlas antes de poder borrar "users".
     await dataSource.query('DELETE FROM "token_transactions"');
     await dataSource.query('DELETE FROM "orders"');
+    // 025-player-price-alerts: "notifications" referencia "price_alerts" y
+    // "users" con ON DELETE CASCADE, pero hay que vaciarlas explícitamente
+    // antes de "users" por la misma razón que el resto de las FK de arriba.
+    await dataSource.query('DELETE FROM "notifications"');
+    await dataSource.query('DELETE FROM "price_alerts"');
     await dataSource.query('DELETE FROM "users"');
   };
 

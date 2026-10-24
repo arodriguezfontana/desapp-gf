@@ -30,6 +30,7 @@ export interface OrderResponseDto {
   id: string;
   side: OrderSide;
   playerId: string;
+  playerName: string;
   quantity: number;
   remainingQuantity: number;
   price: string;

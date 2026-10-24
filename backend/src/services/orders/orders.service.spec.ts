@@ -168,17 +168,29 @@ describe('OrdersService', () => {
   });
 
   describe('getUserOrders', () => {
-    it('obtiene las órdenes del usuario delegando en findByUserId', async () => {
+    it('obtiene las órdenes del usuario con el nombre del jugador adjunto', async () => {
       const orders = [
-        createFakeOrder({ id: 'order-1', userId: 'user-1' }),
-        createFakeOrder({ id: 'order-2', userId: 'user-1' }),
+        createFakeOrder({ id: 'order-1', userId: 'user-1', playerId: 'player-1' }),
+        createFakeOrder({ id: 'order-2', userId: 'user-1', playerId: 'player-1' }),
       ];
       (orderRepoMock.findByUserId as jest.Mock).mockResolvedValue(orders);
+      (playerRepoMock.findAllActive as jest.Mock).mockResolvedValue([
+        { id: 'player-1', name: 'Lionel Messi' } as unknown as Player,
+      ]);
 
       const result = await service.getUserOrders('user-1');
 
       expect(orderRepoMock.findByUserId).toHaveBeenCalledWith('user-1');
-      expect(result).toEqual(orders);
+      expect(result.every((o) => (o as Order & { playerName: string }).playerName === 'Lionel Messi')).toBe(true);
+    });
+
+    it('devuelve array vacío sin consultar jugadores cuando no hay órdenes', async () => {
+      (orderRepoMock.findByUserId as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.getUserOrders('user-1');
+
+      expect(result).toHaveLength(0);
+      expect(playerRepoMock.findAllActive).not.toHaveBeenCalled();
     });
   });
 

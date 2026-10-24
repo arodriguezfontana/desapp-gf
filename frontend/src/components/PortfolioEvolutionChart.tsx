@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
+import React, { type ReactNode } from 'react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+  type TooltipContentProps,
+  type DotItemDotProps,
+} from 'recharts';
 import type { TokenTransactionDto } from '../types/orders.types';
 
 interface Props {
   transactions: TokenTransactionDto[];
 }
-
-const W = 600;
-const H = 180;
-const PX = 56; // espacio para etiquetas Y
-const PY = 20;
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: '2-digit' });
@@ -16,21 +22,49 @@ const formatDate = (iso: string) =>
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
 
-interface PlotPoint {
-  x: number;
-  y: number;
+interface ChartPoint {
+  t: number;
   value: number;
-  tx: TokenTransactionDto;
+  tx: TokenTransactionDto | null;
 }
 
-interface TooltipState {
-  pt: PlotPoint;
-  svgX: number; // porcentaje horizontal (0–1) para posicionar el div
-}
+const EvolutionTooltip = ({ active, payload }: TooltipContentProps): ReactNode => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+  const point = payload[0].payload as ChartPoint;
+  if (!point.tx) {
+    return null;
+  }
+  const tx = point.tx;
+  const isCredit = tx.type === 'CREDIT';
+  const amount = Number(tx.price) * tx.quantity;
+  const sign = isCredit ? '+' : '-';
+  const color = isCredit ? '#a78bfa' : '#f59e0b';
+
+  return (
+    <div className="bg-[#0b3332] border border-[#1a6866] rounded-xl px-3 py-2.5 shadow-2xl text-left whitespace-nowrap">
+      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
+        {formatDate(tx.createdAt)}
+      </p>
+      <p className="text-[11px] font-black text-white truncate max-w-[180px]">{tx.playerName}</p>
+      <p className="text-[10px] font-semibold text-gray-300 mt-0.5">
+        {tx.quantity} token{tx.quantity !== 1 ? 's' : ''} · {formatCurrency(Number(tx.price))} c/u
+      </p>
+      <p className="text-[10px] font-black mt-1" style={{ color }}>
+        {isCredit ? 'COMPRA' : 'VENTA'} {sign}{formatCurrency(amount)}
+      </p>
+      <div className="border-t border-white/10 mt-1.5 pt-1.5">
+        <p className="text-[9px] text-gray-400 font-medium">
+          Capital neto acum.:{' '}
+          <span className="text-white font-black">{formatCurrency(point.value)}</span>
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-
   if (transactions.length === 0) {
     return (
       <div className="bg-[#104443] border border-[#1a6866] rounded-2xl p-6 shadow-xl">
@@ -49,7 +83,7 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
   );
 
   let cumulative = 0;
-  const series: { t: number; value: number; tx: TokenTransactionDto }[] = [];
+  const series: ChartPoint[] = [];
   for (const tx of sorted) {
     const amount = Number(tx.price) * tx.quantity;
     cumulative += tx.type === 'CREDIT' ? amount : -amount;
@@ -57,38 +91,10 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
   }
 
   const firstT = series[0].t - 1;
-  const allPoints = [{ t: firstT, value: 0, tx: null as unknown as TokenTransactionDto }, ...series];
+  const data: ChartPoint[] = [{ t: firstT, value: 0, tx: null }, ...series];
 
-  const times = allPoints.map((p) => p.t);
-  const values = allPoints.map((p) => p.value);
-  const minT = Math.min(...times);
-  const maxT = Math.max(...times);
-  const minV = Math.min(0, Math.min(...values));
-  const maxV = Math.max(...values);
-  const tRange = maxT - minT || 1;
-  const vRange = maxV - minV || 1;
-
-  const plotW = W - PX * 2;
-  const plotH = H - PY * 2;
-
-  const toX = (t: number) => PX + ((t - minT) / tRange) * plotW;
-  const toY = (v: number) => PY + plotH - ((v - minV) / vRange) * plotH;
-
-  const pts = allPoints.map((p) => ({ x: toX(p.t), y: toY(p.value), value: p.value, tx: p.tx }));
-  const polyline = pts.map((p) => `${p.x},${p.y}`).join(' ');
-  const zeroY = toY(0);
-  const showZeroLine = minV < 0;
-
-  const areaPath = [
-    `M${pts[0].x},${zeroY}`,
-    ...pts.map((p) => `L${p.x},${p.y}`),
-    `L${pts[pts.length - 1].x},${zeroY}`,
-    'Z',
-  ].join(' ');
-
-  const yTicks = [minV, (minV + maxV) / 2, maxV];
-  const visiblePts = pts.slice(1) as PlotPoint[];
-  const lastPt = pts[pts.length - 1];
+  const minV = Math.min(0, ...data.map((p) => p.value));
+  const lastPt = data[data.length - 1];
   const isPositive = lastPt.value >= 0;
 
   return (
@@ -108,112 +114,66 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
         </span>
       </div>
 
-      {/* Contenedor relativo para posicionar el tooltip */}
-      <div className="relative">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="w-full h-auto"
-          role="img"
-          aria-label="Evolución del capital invertido"
-          onMouseLeave={() => setTooltip(null)}
-        >
-          <defs>
-            <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
-
-          {/* Grid + etiquetas Y */}
-          {yTicks.map((v, i) => (
-            <g key={i}>
-              <line x1={PX} y1={toY(v)} x2={W - PX} y2={toY(v)} stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
-              <text x={PX - 6} y={toY(v) + 4} textAnchor="end" fontSize={8} fill="rgba(255,255,255,0.3)" fontFamily="sans-serif">
-                {formatCurrency(v)}
-              </text>
-            </g>
-          ))}
-
-          {showZeroLine && (
-            <line x1={PX} y1={zeroY} x2={W - PX} y2={zeroY} stroke="rgba(255,255,255,0.2)" strokeWidth={1} strokeDasharray="4 3" />
-          )}
-
-          <path d={areaPath} fill="url(#portfolioGrad)" />
-
-          <polyline points={polyline} fill="none" stroke="#2dd4bf" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-
-          {/* Línea vertical del tooltip */}
-          {tooltip && (
-            <line
-              x1={tooltip.pt.x} y1={PY}
-              x2={tooltip.pt.x} y2={PY + plotH}
-              stroke="rgba(255,255,255,0.15)"
-              strokeWidth={1}
-              strokeDasharray="3 3"
+      <div style={{ width: '100%', height: 180 }} role="img" aria-label="Evolución del capital invertido">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 12 }}>
+            <defs>
+              <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="t"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(t: number) => formatDate(new Date(t).toISOString())}
+              stroke="rgba(255,255,255,0.3)"
+              tick={{ fontSize: 8 }}
+              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              tickLine={false}
             />
-          )}
-
-          {/* Puntos interactivos */}
-          {visiblePts.map((p) => {
-            const isHovered = tooltip?.pt === p;
-            const dotColor = p.tx.type === 'CREDIT' ? '#a78bfa' : '#f59e0b';
-            return (
-              <circle
-                key={p.tx.id}
-                cx={p.x}
-                cy={p.y}
-                r={isHovered ? 6 : 4}
-                fill={isHovered ? '#fff' : dotColor}
-                stroke={isHovered ? dotColor : '#104443'}
-                strokeWidth={isHovered ? 2 : 1.5}
-                className="cursor-pointer transition-all"
-                onMouseEnter={() => setTooltip({ pt: p, svgX: (p.x - PX) / plotW })}
-              />
-            );
-          })}
-
-          {/* Punto final siempre destacado */}
-          {!tooltip && (
-            <circle cx={lastPt.x} cy={lastPt.y} r={5} fill="#2dd4bf" stroke="#104443" strokeWidth={2} />
-          )}
-        </svg>
-
-        {/* Tooltip flotante */}
-        {tooltip && (() => {
-          const { pt, svgX } = tooltip;
-          const tx = pt.tx;
-          const isCredit = tx.type === 'CREDIT';
-          const amount = Number(tx.price) * tx.quantity;
-          const sign = isCredit ? '+' : '-';
-          const color = isCredit ? '#a78bfa' : '#f59e0b';
-          // Posiciona a izquierda si el punto está en la mitad derecha
-          const alignRight = svgX > 0.55;
-          return (
-            <div
-              className="absolute bottom-full mb-2 z-10 pointer-events-none"
-              style={{ left: alignRight ? undefined : `${svgX * 100}%`, right: alignRight ? `${(1 - svgX) * 100}%` : undefined }}
-            >
-              <div className="bg-[#0b3332] border border-[#1a6866] rounded-xl px-3 py-2.5 shadow-2xl text-left whitespace-nowrap">
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
-                  {formatDate(tx.createdAt)}
-                </p>
-                <p className="text-[11px] font-black text-white truncate max-w-[180px]">{tx.playerName}</p>
-                <p className="text-[10px] font-semibold text-gray-300 mt-0.5">
-                  {tx.quantity} token{tx.quantity !== 1 ? 's' : ''} · {formatCurrency(Number(tx.price))} c/u
-                </p>
-                <p className="text-[10px] font-black mt-1" style={{ color }}>
-                  {isCredit ? 'COMPRA' : 'VENTA'} {sign}{formatCurrency(amount)}
-                </p>
-                <div className="border-t border-white/10 mt-1.5 pt-1.5">
-                  <p className="text-[9px] text-gray-400 font-medium">
-                    Capital neto acum.:{' '}
-                    <span className="text-white font-black">{formatCurrency(pt.value)}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+            <YAxis
+              stroke="rgba(255,255,255,0.3)"
+              tick={{ fontSize: 8 }}
+              tickFormatter={(v: number) => formatCurrency(v)}
+              axisLine={false}
+              tickLine={false}
+              width={56}
+            />
+            {minV < 0 && <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 3" />}
+            <Tooltip content={EvolutionTooltip} />
+            <Area
+              type="linear"
+              dataKey="value"
+              stroke="#2dd4bf"
+              strokeWidth={2}
+              fill="url(#portfolioGrad)"
+              dot={(props: DotItemDotProps) => {
+                const { cx, cy, index } = props;
+                const payload = props.payload as ChartPoint;
+                if (!payload.tx) {
+                  return <circle key={index} cx={cx} cy={cy} r={0} />;
+                }
+                const dotColor = payload.tx.type === 'CREDIT' ? '#a78bfa' : '#f59e0b';
+                return (
+                  <circle
+                    key={index}
+                    cx={cx}
+                    cy={cy}
+                    r={4}
+                    fill={dotColor}
+                    stroke="#104443"
+                    strokeWidth={1.5}
+                    className="recharts-dot"
+                  />
+                );
+              }}
+              activeDot={{ r: 6, fill: '#fff', strokeWidth: 2 }}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="flex items-center justify-between mt-1">

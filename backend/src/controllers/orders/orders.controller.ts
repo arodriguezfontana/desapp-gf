@@ -64,7 +64,7 @@ export class OrdersController {
   @ApiResponse({ status: 401, description: 'No autorizado' })
   async getOrders(@CurrentUser() userId: string): Promise<OrderResponseDto[]> {
     const orders = await this.ordersService.getUserOrders(userId);
-    return orders.map((order) => OrderResponseDto.fromDomain(order));
+    return orders.map((order) => OrderResponseDto.fromDomain(order, [], order.playerName));
   }
 
   @Get('history')

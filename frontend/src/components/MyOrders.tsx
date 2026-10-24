@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { OrderResponseDto } from '../types/orders.types';
 
 interface MyOrdersProps {
@@ -7,7 +8,10 @@ interface MyOrdersProps {
   cancellingOrderId: string | null;
   error: string | null;
   onCancelOrder: (orderId: string) => Promise<boolean>;
+  hideHeader?: boolean;
 }
+
+const PAGE_SIZE = 8;
 
 function formatCurrency(amount: string | number): string {
   return new Intl.NumberFormat('en-US', {
@@ -34,17 +38,29 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
   cancellingOrderId,
   error,
   onCancelOrder,
+  hideHeader = false,
 }) => {
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => orders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [orders, currentPage],
+  );
+
   return (
     <section aria-label="Mis órdenes" className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white">
-          Mis Órdenes ({isLoading ? '…' : orders.length})
-        </h2>
-        <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3 py-1 rounded-full border border-[#b79753]/30">
-          MERCADO
-        </span>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white">
+            Mis Órdenes ({isLoading ? '…' : orders.length})
+          </h2>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#104443] px-3 py-1 rounded-full border border-[#b79753]/30">
+            MERCADO
+          </span>
+        </div>
+      )}
 
       {isLoading && (
         <div className="text-center py-10 bg-[#104443] rounded-2xl border border-[#1a6866]">
@@ -75,6 +91,7 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#1a6866] bg-[#0e3b3a] text-[10px] font-black uppercase tracking-widest text-[#b79753]">
+                  <th scope="col" className="py-4 px-6">Jugador</th>
                   <th scope="col" className="py-4 px-6">Tipo</th>
                   <th scope="col" className="py-4 px-6 text-right">Cantidad</th>
                   <th scope="col" className="py-4 px-6 text-right">Remanente</th>
@@ -85,9 +102,9 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1a6866]/60 text-xs sm:text-sm font-semibold">
-                {orders.map((order) => {
+                {pageItems.map((order) => {
                   const isBuy = order.side === 'BUY';
-                  const typeColor = isBuy ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
+                  const typeColor = isBuy ? 'text-emerald-400' : 'text-rose-400';
                   const typeLabel = isBuy ? 'COMPRA' : 'VENTA';
                   const isCancellable = order.status === 'PENDING' || order.status === 'PARTIALLY_FILLED';
                   const isCancelling = cancellingOrderId === order.id;
@@ -119,6 +136,11 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
 
                   return (
                     <tr key={order.id} className="hover:bg-[#165756]/50 transition-colors">
+                      <td className="py-4 px-6 font-black uppercase text-white tracking-wide">
+                        <Link to={`/catalog/${order.playerId}`} className="hover:text-[#b79753] transition-colors">
+                          {order.playerName}
+                        </Link>
+                      </td>
                       <td className="py-4 px-6">
                         <span className={`font-black text-[10px] uppercase tracking-widest ${typeColor}`}>
                           {typeLabel}
@@ -153,9 +175,9 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
 
           {/* Tarjetas — pantallas móviles */}
           <div className="grid grid-cols-1 gap-4 md:hidden">
-            {orders.map((order) => {
+            {pageItems.map((order) => {
               const isBuy = order.side === 'BUY';
-              const typeColor = isBuy ? 'text-[#a78bfa]' : 'text-[#f59e0b]';
+              const typeColor = isBuy ? 'text-emerald-400' : 'text-rose-400';
               const typeLabel = isBuy ? 'COMPRA' : 'VENTA';
               const isCancellable = order.status === 'PENDING' || order.status === 'PARTIALLY_FILLED';
               const isCancelling = cancellingOrderId === order.id;
@@ -166,9 +188,14 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
                   className="bg-[#104443] border border-[#1a6866] rounded-xl p-5 shadow-lg space-y-3"
                 >
                   <div className="flex items-center justify-between border-b border-[#1a6866] pb-2">
-                    <span className={`text-xs font-black uppercase tracking-wider ${typeColor} bg-[#0b3332] px-2.5 py-1 rounded-md`}>
-                      {typeLabel}
-                    </span>
+                    <div className="space-y-0.5">
+                      <Link to={`/catalog/${order.playerId}`} className="font-black uppercase text-white text-sm hover:text-[#b79753] transition-colors block">
+                        {order.playerName}
+                      </Link>
+                      <span className={`text-[10px] font-black uppercase tracking-wider ${typeColor}`}>
+                        {typeLabel}
+                      </span>
+                    </div>
                     <div>
                       {order.status === 'PENDING' && (
                         <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -226,6 +253,30 @@ export const MyOrders: React.FC<MyOrdersProps> = ({
               );
             })}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider text-gray-200 bg-[#104443] border border-[#1a6866] rounded-xl hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Anterior
+              </button>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider text-gray-200 bg-[#104443] border border-[#1a6866] rounded-xl hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </>
       )}
     </section>
