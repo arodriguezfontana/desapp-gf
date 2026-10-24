@@ -45,9 +45,9 @@ jobs:
         run: pnpm build
 
   backend-heavy:
-    name: Backend (integración y e2e — solo PR a main)
+    name: Backend (integración y e2e — PR a main o push a main)
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     # Los tests de integración/e2e levantan su propio Postgres efímero con
     # Testcontainers (constitución, Principio IX). Los runners hosteados de GitHub
@@ -85,9 +85,9 @@ jobs:
         run: pnpm test:e2e
 
   frontend-heavy:
-    name: Frontend (integración — solo PR a main)
+    name: Frontend (integración — PR a main o push a main)
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     env:
       NODE_ENV: test
