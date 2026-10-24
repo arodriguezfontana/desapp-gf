@@ -43,7 +43,14 @@ export const PortfolioDistributionChart: React.FC<PortfolioDistributionChartProp
         const h = row.holding;
         const plPositive = h.totalProfitLoss > 0;
         const plNegative = h.totalProfitLoss < 0;
-        const plColor = plPositive ? 'text-[#6ab547]' : plNegative ? 'text-rose-400' : 'text-gray-300';
+        let plColor: string;
+        if (plPositive) {
+          plColor = 'text-[#6ab547]';
+        } else if (plNegative) {
+          plColor = 'text-rose-400';
+        } else {
+          plColor = 'text-gray-300';
+        }
         const plSign = plPositive ? '+' : '';
         const isHovered = hoveredIndex === i;
 

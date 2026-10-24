@@ -49,11 +49,10 @@ export const AlertsPopover: React.FC<AlertsPopoverProps> = ({
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b3332]/80 backdrop-blur-md p-4 animate-fade-in">
-          <div
-            role="dialog"
-            aria-modal="true"
+          <dialog
+            open
             aria-label="Alertas de precio"
-            className="w-full max-w-md bg-[#104443] border-2 border-[#b79753] p-6 sm:p-8 shadow-2xl rounded-2xl relative overflow-hidden text-white space-y-4"
+            className="w-full max-w-md bg-[#104443] border-2 border-[#b79753] p-6 sm:p-8 shadow-2xl rounded-2xl relative overflow-hidden text-white space-y-4 m-0"
           >
             <div className="h-1.5 absolute top-0 inset-x-0 bg-[#b79753]" />
 
@@ -79,7 +78,7 @@ export const AlertsPopover: React.FC<AlertsPopoverProps> = ({
                 onCancel={onCancel}
               />
             </div>
-          </div>
+          </dialog>
         </div>
       )}
     </>

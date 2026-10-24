@@ -28,6 +28,27 @@ interface ChartPoint {
   tx: TokenTransactionDto | null;
 }
 
+const renderEvolutionDot = (props: DotItemDotProps): React.ReactElement => {
+  const { cx, cy, index } = props;
+  const payload = props.payload as ChartPoint;
+  if (!payload.tx) {
+    return <circle key={index} cx={cx} cy={cy} r={0} />;
+  }
+  const dotColor = payload.tx.type === 'CREDIT' ? '#a78bfa' : '#f59e0b';
+  return (
+    <circle
+      key={index}
+      cx={cx}
+      cy={cy}
+      r={4}
+      fill={dotColor}
+      stroke="#104443"
+      strokeWidth={1.5}
+      className="recharts-dot"
+    />
+  );
+};
+
 const EvolutionTooltip = ({ active, payload }: TooltipContentProps): ReactNode => {
   if (!active || !payload || payload.length === 0) {
     return null;
@@ -149,26 +170,7 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ transactions }) => {
               stroke="#2dd4bf"
               strokeWidth={2}
               fill="url(#portfolioGrad)"
-              dot={(props: DotItemDotProps) => {
-                const { cx, cy, index } = props;
-                const payload = props.payload as ChartPoint;
-                if (!payload.tx) {
-                  return <circle key={index} cx={cx} cy={cy} r={0} />;
-                }
-                const dotColor = payload.tx.type === 'CREDIT' ? '#a78bfa' : '#f59e0b';
-                return (
-                  <circle
-                    key={index}
-                    cx={cx}
-                    cy={cy}
-                    r={4}
-                    fill={dotColor}
-                    stroke="#104443"
-                    strokeWidth={1.5}
-                    className="recharts-dot"
-                  />
-                );
-              }}
+              dot={renderEvolutionDot}
               activeDot={{ r: 6, fill: '#fff', strokeWidth: 2 }}
               isAnimationActive={false}
             />

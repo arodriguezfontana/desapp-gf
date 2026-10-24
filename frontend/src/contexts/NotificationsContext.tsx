@@ -23,10 +23,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
     if (!isAuthenticated) {
       streamRef.current?.close();
       streamRef.current = null;
-      const clear = async () => {
-        setNotifications([]);
-      };
-      void clear();
+      setNotifications([]);
       return;
     }
 

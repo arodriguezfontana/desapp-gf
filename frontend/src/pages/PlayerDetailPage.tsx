@@ -364,8 +364,8 @@ export const PlayerDetailPage: React.FC = () => {
             {/* 1. Métricas de Rendimiento */}
             <div>
               <h2 className="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: `${accent.text}90` }}>
-                <span className="w-4 h-px" style={{ backgroundColor: `${accent.from}60` }} />
-                Métricas de rendimiento
+                <span className="w-4 h-px" style={{ backgroundColor: `${accent.from}60` }} />{' '}
+                Métricas de rendimiento{' '}
                 <span className="flex-1 h-px bg-white/10" />
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -379,8 +379,8 @@ export const PlayerDetailPage: React.FC = () => {
             {/* 2. Estadísticas de Temporada */}
             <div className="space-y-3">
               <h2 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white/40">
-                <span className="w-4 h-px bg-white/20" />
-                Estadísticas de temporada
+                <span className="w-4 h-px bg-white/20" />{' '}
+                Estadísticas de temporada{' '}
                 <span className="flex-1 h-px bg-white/10" />
               </h2>
 

@@ -57,6 +57,12 @@
   animation: fifaShine 5s infinite ease-in-out;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .fifa-card-shine {
+    animation: none;
+  }
+}
+
 /* Custom scrollbar styling for Deep Petrol Green & Soft Gold Dashboard */
 ::-webkit-scrollbar {
   width: 8px;
