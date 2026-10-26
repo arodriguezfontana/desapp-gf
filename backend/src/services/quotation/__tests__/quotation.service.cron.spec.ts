@@ -10,6 +10,7 @@ describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', 
   let strategyRepo: jest.Mocked<ValuationStrategyRepository>;
   let warnSpy: jest.SpyInstance;
   let logSpy: jest.SpyInstance;
+  let errorSpy: jest.SpyInstance;
 
   beforeEach(() => {
     strategyRepo = {
@@ -41,7 +42,7 @@ describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', 
     );
     warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
-    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -88,10 +89,18 @@ describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', 
     await manual;
   });
 
-  it('si el recálculo falla, libera el lock y el siguiente cron puede correr', async () => {
+  it('ante un error inesperado lo registra y no lo propaga al scheduler', async () => {
     strategyRepo.findAllUserIds.mockRejectedValueOnce(new Error('base de datos caída'));
 
-    await expect(service.handleCron()).rejects.toThrow('base de datos caída');
+    await expect(service.handleCron()).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('error inesperado'), expect.any(String));
+  });
+
+  it('tras un error libera el lock y el siguiente cron puede correr', async () => {
+    strategyRepo.findAllUserIds.mockRejectedValueOnce(new Error('base de datos caída'));
+
+    await service.handleCron();
     await expect(service.handleCron()).resolves.toBeUndefined();
 
     expect(warnSpy).not.toHaveBeenCalled();

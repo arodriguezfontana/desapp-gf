@@ -264,7 +264,8 @@ export class QuotationService {
    * que el scheduler dispare una corrida nueva mientras la anterior sigue
    * corriendo. Si el lock ya está tomado (p. ej. un recálculo manual de un
    * administrador), se salta esta ejecución y loguea una advertencia, igual que
-   * los crons de sincronización de jugadores y de partidos.
+   * los crons de sincronización de jugadores y de partidos. Un error inesperado
+   * se registra en el log y no se propaga al scheduler.
    */
   @Cron(QUOTATION_RECALCULATION_CRON, { waitForCompletion: true })
   async handleCron(): Promise<void> {
@@ -274,10 +275,17 @@ export class QuotationService {
       );
       return;
     }
-    this.logger.log('Iniciando el recálculo semanal de cotizaciones...');
-    const result = await this.recalculateAll();
-    this.logger.log(
-      `Recálculo semanal completado: ${result.recalculated.length} cotizaciones, ${result.skipped.length} salteadas.`,
-    );
+    try {
+      this.logger.log('Iniciando el recálculo semanal de cotizaciones...');
+      const result = await this.recalculateAll();
+      this.logger.log(
+        `Recálculo semanal completado: ${result.recalculated.length} cotizaciones, ${result.skipped.length} salteadas.`,
+      );
+    } catch (error) {
+      this.logger.error(
+        'El recálculo semanal de cotizaciones falló con un error inesperado.',
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 }
