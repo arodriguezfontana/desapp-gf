@@ -188,6 +188,8 @@ El historial de cotizaciones, que antes era único por jugador para todo el sist
 
 ### DD-003: El recálculo de cotizaciones deja de ser un job automático y pasa a ser exclusivamente manual por usuario
 
+> **Actualizado:** el recálculo dejó de ser manual por usuario y pasó a ser global y de administrador (commit `5966b88`), y el cron semanal volvió a existir sobre ese recálculo global (ver spec 027). Lo que sigue es el registro de la decisión original.
+
 Antes de esta feature existía un job semanal automático que recalculaba las cotizaciones de todos los jugadores con la estrategia activa de sistema (ver 012-valuation-strategies, FR-014). Esta feature discontinúa ese job automático: el recálculo pasa a ser una acción manual que cada usuario dispara individualmente, cuando quiere actualizar su propio historial con las métricas más recientes de los jugadores, usando la estrategia que tiene seleccionada en ese momento.
 
 **Justificación**: Al no existir más una única estrategia de sistema ni un historial compartido, ya no hay un recálculo único cuyo resultado sirva a todos los usuarios por igual; ejecutar un job automático tendría que recalcular por separado para cada usuario registrado con su propia estrategia seleccionada, lo cual escala mal y no responde a una necesidad real: el usuario que quiere ver su historial actualizado es quien mejor sabe cuándo pedirlo.

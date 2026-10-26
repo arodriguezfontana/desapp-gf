@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { RuntimeModule } from '../runtime/runtime.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiKeyModule } from '../api-key/api-key.module';
 import { PlayerModule } from '../player/player.module';
@@ -11,6 +12,7 @@ import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-
 import { PlayerQuoteMapper } from '../../repositories/quotation/player-quote.mapper';
 import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
 import { TypeOrmPlayerQuoteRepository } from '../../repositories/quotation/typeorm-player-quote.repository';
+import { QuotationJob } from '../../services/quotation/quotation.job';
 import { QuotationService } from '../../services/quotation/quotation.service';
 import { UserStrategyProvisioningService } from '../../services/quotation/user-strategy-provisioning.service';
 import {
@@ -19,21 +21,24 @@ import {
 } from './quotation.constants';
 
 /**
- * Estrategias de valuación propias por usuario y recálculo manual de
- * cotizaciones (019-per-user-valuation-strategies). Ya no registra
- * `QuotationJob` ni `ScheduleModule`: el recálculo discontinuó su modalidad
- * de cron semanal global (spec DD-003, FR-016).
+ * Estrategias de valuación propias por usuario y recálculo de cotizaciones
+ * (019-per-user-valuation-strategies). El recálculo puede dispararlo un
+ * administrador a mano (`POST /quotes/recalculate`) o el `QuotationJob`
+ * semanal (spec 027), que reemplaza la discontinuación del cron de la spec
+ * 019 (DD-003). Ambos comparten el mismo método y el mismo lock de sistema.
  */
 @Module({
   imports: [
     RuntimeModule,
     forwardRef(() => PlayerModule),
     forwardRef(() => ApiKeyModule),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([ValuationStrategyEntity, PlayerQuoteEntity]),
   ],
   controllers: [QuotationController, UserStrategyController],
   providers: [
     QuotationService,
+    QuotationJob,
     UserStrategyProvisioningService,
     ValuationStrategyMapper,
     PlayerQuoteMapper,
