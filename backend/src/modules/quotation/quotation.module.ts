@@ -12,7 +12,6 @@ import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-
 import { PlayerQuoteMapper } from '../../repositories/quotation/player-quote.mapper';
 import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
 import { TypeOrmPlayerQuoteRepository } from '../../repositories/quotation/typeorm-player-quote.repository';
-import { QuotationJob } from '../../services/quotation/quotation.job';
 import { QuotationService } from '../../services/quotation/quotation.service';
 import { UserStrategyProvisioningService } from '../../services/quotation/user-strategy-provisioning.service';
 import {
@@ -23,9 +22,9 @@ import {
 /**
  * Estrategias de valuación propias por usuario y recálculo de cotizaciones
  * (019-per-user-valuation-strategies). El recálculo puede dispararlo un
- * administrador a mano (`POST /quotes/recalculate`) o el `QuotationJob`
- * semanal (spec 027), que reemplaza la discontinuación del cron de la spec
- * 019 (DD-003). Ambos comparten el mismo método y el mismo lock de sistema.
+ * administrador a mano (`POST /quotes/recalculate`) o el `@Cron` semanal de
+ * `QuotationService` (019, FR-016); ambos comparten el mismo método y el mismo
+ * lock de sistema. `ScheduleModule` registra ese cron.
  */
 @Module({
   imports: [
@@ -38,7 +37,6 @@ import {
   controllers: [QuotationController, UserStrategyController],
   providers: [
     QuotationService,
-    QuotationJob,
     UserStrategyProvisioningService,
     ValuationStrategyMapper,
     PlayerQuoteMapper,
