@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TokenTransaction } from '../../../domain/orders/token-transaction';
 import { TokenTransactionType } from '../../../domain/orders/token-transaction-type';
+import { WithPlayerName } from '../../../shared/with-player-name';
 
 /** Respuesta de GET /orders/history (historial de operaciones del usuario autenticado). */
 export class TokenTransactionResponseDto {
@@ -31,7 +32,7 @@ export class TokenTransactionResponseDto {
   @ApiProperty({ example: '2026-10-16T12:00:00.000Z' })
   createdAt: string;
 
-  private constructor(tx: TokenTransaction & { playerName: string }) {
+  private constructor(tx: WithPlayerName<TokenTransaction>) {
     this.id = tx.id;
     this.type = tx.type;
     this.playerId = tx.playerId;
@@ -43,7 +44,7 @@ export class TokenTransactionResponseDto {
     this.createdAt = tx.createdAt.toISOString();
   }
 
-  static fromDomain(tx: TokenTransaction & { playerName: string }): TokenTransactionResponseDto {
+  static fromDomain(tx: WithPlayerName<TokenTransaction>): TokenTransactionResponseDto {
     return new TokenTransactionResponseDto(tx);
   }
 }

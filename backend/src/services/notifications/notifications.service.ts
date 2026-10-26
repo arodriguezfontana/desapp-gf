@@ -6,9 +6,10 @@ import { NotificationRepository } from '../../repositories/notifications/notific
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { NOTIFICATION_REPOSITORY } from '../../modules/notifications/notifications.constants';
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
+import { WithPlayerName, withPlayerName } from '../../shared/with-player-name';
 
 /** Notificación enriquecida con el nombre del jugador, resuelto al vuelo (no se denormaliza en la tabla). */
-export type NotificationWithPlayerName = Notification & { playerName: string };
+export type NotificationWithPlayerName = WithPlayerName<Notification>;
 
 /**
  * Orquesta la consulta, el marcado de lectura y el push en vivo de
@@ -47,7 +48,7 @@ export class NotificationsService {
         playerName = await this.resolvePlayerName(notification.playerId);
         nameCache.set(notification.playerId, playerName);
       }
-      enriched.push(Object.assign(notification, { playerName }));
+      enriched.push(withPlayerName(notification, playerName));
     }
     return enriched;
   }
@@ -86,6 +87,6 @@ export class NotificationsService {
       return;
     }
     const playerName = await this.resolvePlayerName(notification.playerId);
-    stream.next(Object.assign(notification, { playerName }));
+    stream.next(withPlayerName(notification, playerName));
   }
 }

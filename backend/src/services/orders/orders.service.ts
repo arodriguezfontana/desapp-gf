@@ -25,6 +25,7 @@ import { TransactionManager } from '../../repositories/shared/transaction-manage
 
 import { QuotationService } from '../quotation/quotation.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
+import { WithPlayerName, withPlayerName } from '../../shared/with-player-name';
 
 export interface OrderCreationResult {
   order: Order;
@@ -179,23 +180,25 @@ export class OrdersService {
    * Obtiene todas las órdenes emitidas por un usuario ordenadas por fecha descendente,
    * enriquecidas con el nombre del jugador correspondiente.
    */
-  async getUserOrders(userId: string): Promise<Array<Order & { playerName: string }>> {
+  async getUserOrders(userId: string): Promise<Array<WithPlayerName<Order>>> {
     const orders = await this.orders.findByUserId(userId);
     if (orders.length === 0) return [];
 
-    const allPlayers = await this.players.findAllActive();
-    const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
-    return orders.map((o) => Object.assign(o, { playerName: nameMap.get(o.playerId) ?? '' }));
+    const nameMap = await this.loadPlayerNames();
+    return orders.map((o) => withPlayerName(o, nameMap.get(o.playerId) ?? ''));
   }
 
-  async getHistory(userId: string): Promise<Array<TokenTransaction & { playerName: string }>> {
+  async getHistory(userId: string): Promise<Array<WithPlayerName<TokenTransaction>>> {
     const transactions = await this.tokenTransactions.findByUserId(userId);
     if (transactions.length === 0) return [];
 
-    const allPlayers = await this.players.findAllActive();
-    const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
+    const nameMap = await this.loadPlayerNames();
+    return transactions.map((tx) => withPlayerName(tx, nameMap.get(tx.playerId) ?? tx.playerId));
+  }
 
-    return transactions.map((tx) => Object.assign(tx, { playerName: nameMap.get(tx.playerId) ?? tx.playerId }));
+  private async loadPlayerNames(): Promise<Map<string, string>> {
+    const allPlayers = await this.players.findAllActive();
+    return new Map(allPlayers.map((p) => [p.id, p.name]));
   }
 
   /**
