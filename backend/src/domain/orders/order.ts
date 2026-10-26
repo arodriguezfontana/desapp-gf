@@ -1,6 +1,7 @@
 import { OrderSide } from './order-side';
 import { OrderStatus } from './order-status';
 import { InvalidOrderQuantityError } from './errors/invalid-order-quantity.error';
+import { InconsistentOrderStatusError } from './errors/inconsistent-order-status.error';
 import { OrderOverfillError } from './errors/order-overfill.error';
 import { OrderNotCancellableError } from './errors/order-not-cancellable.error';
 
@@ -21,7 +22,7 @@ export class Order {
     private readonly _remainingQuantity: number,
     private readonly _price: number,
     private readonly _createdAt: Date,
-    private readonly _status?: OrderStatus,
+    private readonly _cancelled: boolean = false,
   ) {}
 
   /** Crea una Order nueva: `remainingQuantity = quantity`, status PENDING (derivado). */
@@ -47,7 +48,12 @@ export class Order {
     );
   }
 
-  /** Reconstruye una Order ya persistida, con su `remainingQuantity` y `status` actual. */
+  /**
+   * Reconstruye una Order ya persistida, con su `remainingQuantity` y `status` actual.
+   * Solo `CANCELLED` se almacena; cualquier otro `status` se deriva de la cantidad
+   * pendiente, y si se informa debe coincidir con el derivado.
+   * @throws InconsistentOrderStatusError si `status` contradice `remainingQuantity`.
+   */
   static restore(props: {
     id: string;
     userId: string;
@@ -63,6 +69,10 @@ export class Order {
     if (props.remainingQuantity < 0 || props.remainingQuantity > props.quantity) {
       throw new OrderOverfillError();
     }
+    const cancelled = props.status === OrderStatus.CANCELLED;
+    if (props.status !== undefined && !cancelled) {
+      Order.assertStatusMatchesRemaining(props.status, props.quantity, props.remainingQuantity);
+    }
     return new Order(
       props.id,
       props.userId,
@@ -72,7 +82,7 @@ export class Order {
       props.remainingQuantity,
       props.price,
       props.createdAt,
-      props.status,
+      cancelled,
     );
   }
 
@@ -84,6 +94,20 @@ export class Order {
    */
   static seed(props: Parameters<typeof Order.restore>[0]): Order {
     return Order.restore(props);
+  }
+
+  /** Un estado distinto de CANCELLED debe coincidir con el que se deriva de la cantidad pendiente. */
+  private static assertStatusMatchesRemaining(status: OrderStatus, quantity: number, remainingQuantity: number): void {
+    if (status !== Order.deriveStatus(quantity, remainingQuantity)) {
+      throw new InconsistentOrderStatusError();
+    }
+  }
+
+  private static deriveStatus(quantity: number, remainingQuantity: number): OrderStatus {
+    if (remainingQuantity <= 0) {
+      return OrderStatus.COMPLETED;
+    }
+    return remainingQuantity < quantity ? OrderStatus.PARTIALLY_FILLED : OrderStatus.PENDING;
   }
 
   private static assertValidQuantity(quantity: number): void {
@@ -117,7 +141,7 @@ export class Order {
       this._remainingQuantity,
       this._price,
       this._createdAt,
-      OrderStatus.CANCELLED,
+      true,
     );
   }
 
@@ -195,15 +219,6 @@ export class Order {
   }
 
   get status(): OrderStatus {
-    if (this._status === OrderStatus.CANCELLED) {
-      return OrderStatus.CANCELLED;
-    }
-    if (this._remainingQuantity <= 0) {
-      return OrderStatus.COMPLETED;
-    }
-    if (this._remainingQuantity < this._quantity) {
-      return OrderStatus.PARTIALLY_FILLED;
-    }
-    return OrderStatus.PENDING;
+    return this._cancelled ? OrderStatus.CANCELLED : Order.deriveStatus(this._quantity, this._remainingQuantity);
   }
 }
