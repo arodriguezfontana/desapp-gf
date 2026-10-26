@@ -12,18 +12,21 @@ import { OrderNotCancellableError } from './errors/order-not-cancellable.error';
  * quien publica la orden) y es inmutable (spec DD-003): no existe ningun
  * metodo que lo modifique.
  */
+/** Estado completo de una Order; `cancelled` es lo unico del estado que se almacena (el resto se deriva). */
+interface OrderState {
+  readonly id: string;
+  readonly userId: string;
+  readonly playerId: string;
+  readonly side: OrderSide;
+  readonly quantity: number;
+  readonly remainingQuantity: number;
+  readonly price: number;
+  readonly createdAt: Date;
+  readonly cancelled: boolean;
+}
+
 export class Order {
-  private constructor(
-    private readonly _id: string,
-    private readonly _userId: string,
-    private readonly _playerId: string,
-    private readonly _side: OrderSide,
-    private readonly _quantity: number,
-    private readonly _remainingQuantity: number,
-    private readonly _price: number,
-    private readonly _createdAt: Date,
-    private readonly _cancelled: boolean = false,
-  ) {}
+  private constructor(private readonly state: OrderState) {}
 
   /** Crea una Order nueva: `remainingQuantity = quantity`, status PENDING (derivado). */
   static create(props: {
@@ -36,16 +39,17 @@ export class Order {
     createdAt: Date;
   }): Order {
     Order.assertValidQuantity(props.quantity);
-    return new Order(
-      props.id,
-      props.userId,
-      props.playerId,
-      props.side,
-      props.quantity,
-      props.quantity,
-      props.price,
-      props.createdAt,
-    );
+    return new Order({
+      id: props.id,
+      userId: props.userId,
+      playerId: props.playerId,
+      side: props.side,
+      quantity: props.quantity,
+      remainingQuantity: props.quantity,
+      price: props.price,
+      createdAt: props.createdAt,
+      cancelled: false,
+    });
   }
 
   /**
@@ -73,17 +77,17 @@ export class Order {
     if (props.status !== undefined && !cancelled) {
       Order.assertStatusMatchesRemaining(props.status, props.quantity, props.remainingQuantity);
     }
-    return new Order(
-      props.id,
-      props.userId,
-      props.playerId,
-      props.side,
-      props.quantity,
-      props.remainingQuantity,
-      props.price,
-      props.createdAt,
+    return new Order({
+      id: props.id,
+      userId: props.userId,
+      playerId: props.playerId,
+      side: props.side,
+      quantity: props.quantity,
+      remainingQuantity: props.remainingQuantity,
+      price: props.price,
+      createdAt: props.createdAt,
       cancelled,
-    );
+    });
   }
 
   /**
@@ -132,17 +136,7 @@ export class Order {
     if (!this.isCancellable) {
       throw new OrderNotCancellableError(this.status);
     }
-    return new Order(
-      this._id,
-      this._userId,
-      this._playerId,
-      this._side,
-      this._quantity,
-      this._remainingQuantity,
-      this._price,
-      this._createdAt,
-      true,
-    );
+    return new Order({ ...this.state, cancelled: true });
   }
 
   /**
@@ -154,19 +148,10 @@ export class Order {
     if (this.status === OrderStatus.CANCELLED) {
       throw new OrderNotCancellableError(this.status);
     }
-    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > this._remainingQuantity) {
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > this.state.remainingQuantity) {
       throw new OrderOverfillError();
     }
-    return new Order(
-      this._id,
-      this._userId,
-      this._playerId,
-      this._side,
-      this._quantity,
-      this._remainingQuantity - quantity,
-      this._price,
-      this._createdAt,
-    );
+    return new Order({ ...this.state, remainingQuantity: this.state.remainingQuantity - quantity });
   }
 
   /**
@@ -179,46 +164,46 @@ export class Order {
       return false;
     }
     if (other.remainingQuantity <= 0) return false;
-    if (this._playerId !== other.playerId) return false;
-    if (this._side === other.side) return false;
-    const buyPrice = this._side === OrderSide.BUY ? this._price : other.price;
-    const sellPrice = this._side === OrderSide.SELL ? this._price : other.price;
+    if (this.state.playerId !== other.playerId) return false;
+    if (this.state.side === other.side) return false;
+    const buyPrice = this.state.side === OrderSide.BUY ? this.state.price : other.price;
+    const sellPrice = this.state.side === OrderSide.SELL ? this.state.price : other.price;
     return Math.round(buyPrice * 100) >= Math.round(sellPrice * 100);
   }
 
   get id(): string {
-    return this._id;
+    return this.state.id;
   }
 
   get userId(): string {
-    return this._userId;
+    return this.state.userId;
   }
 
   get playerId(): string {
-    return this._playerId;
+    return this.state.playerId;
   }
 
   get side(): OrderSide {
-    return this._side;
+    return this.state.side;
   }
 
   get quantity(): number {
-    return this._quantity;
+    return this.state.quantity;
   }
 
   get remainingQuantity(): number {
-    return this._remainingQuantity;
+    return this.state.remainingQuantity;
   }
 
   get price(): number {
-    return this._price;
+    return this.state.price;
   }
 
   get createdAt(): Date {
-    return this._createdAt;
+    return this.state.createdAt;
   }
 
   get status(): OrderStatus {
-    return this._cancelled ? OrderStatus.CANCELLED : Order.deriveStatus(this._quantity, this._remainingQuantity);
+    return this.state.cancelled ? OrderStatus.CANCELLED : Order.deriveStatus(this.state.quantity, this.state.remainingQuantity);
   }
 }

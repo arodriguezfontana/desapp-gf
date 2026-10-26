@@ -13,17 +13,19 @@ export enum AlertStatus {
  * cotización personal del usuario que la creó (spec FR-010); nunca contra
  * un valor ajeno o de mercado.
  */
+interface PriceAlertState {
+  readonly id: string;
+  readonly userId: string;
+  readonly playerId: string;
+  readonly condition: AlertCondition;
+  readonly targetValue: number;
+  readonly status: AlertStatus;
+  readonly createdAt: Date;
+  readonly cancelledAt: Date | null;
+}
+
 export class PriceAlert {
-  private constructor(
-    private readonly _id: string,
-    private readonly _userId: string,
-    private readonly _playerId: string,
-    private readonly _condition: AlertCondition,
-    private readonly _targetValue: number,
-    private readonly _status: AlertStatus,
-    private readonly _createdAt: Date,
-    private readonly _cancelledAt: Date | null,
-  ) {}
+  private constructor(private readonly state: PriceAlertState) {}
 
   static create(props: {
     id: string;
@@ -34,16 +36,7 @@ export class PriceAlert {
     createdAt: Date;
   }): PriceAlert {
     PriceAlert.assertValid(props.condition, props.targetValue);
-    return new PriceAlert(
-      props.id,
-      props.userId,
-      props.playerId,
-      props.condition,
-      props.targetValue,
-      AlertStatus.ACTIVE,
-      props.createdAt,
-      null,
-    );
+    return new PriceAlert({ ...props, status: AlertStatus.ACTIVE, cancelledAt: null });
   }
 
   static restore(props: {
@@ -57,16 +50,7 @@ export class PriceAlert {
     cancelledAt: Date | null;
   }): PriceAlert {
     PriceAlert.assertValid(props.condition, props.targetValue);
-    return new PriceAlert(
-      props.id,
-      props.userId,
-      props.playerId,
-      props.condition,
-      props.targetValue,
-      props.status,
-      props.createdAt,
-      props.cancelledAt,
-    );
+    return new PriceAlert({ ...props });
   }
 
   private static assertValid(condition: AlertCondition, targetValue: number): void {
@@ -80,41 +64,32 @@ export class PriceAlert {
 
   /** Evalúa si `newValue` cumple la condición de esta alerta, solo si está activa (spec FR-008, FR-009, FR-010). */
   matches(newValue: number): boolean {
-    if (this._status !== AlertStatus.ACTIVE) {
+    if (this.state.status !== AlertStatus.ACTIVE) {
       return false;
     }
-    return this._condition === AlertCondition.PRICE_BELOW
-      ? newValue < this._targetValue
-      : newValue > this._targetValue;
+    return this.state.condition === AlertCondition.PRICE_BELOW
+      ? newValue < this.state.targetValue
+      : newValue > this.state.targetValue;
   }
 
   /** Transición ACTIVE → CANCELLED, idempotente (spec FR-006, FR-008). */
   cancel(cancelledAt: Date = new Date()): PriceAlert {
-    if (this._status === AlertStatus.CANCELLED) {
+    if (this.state.status === AlertStatus.CANCELLED) {
       return this;
     }
-    return new PriceAlert(
-      this._id,
-      this._userId,
-      this._playerId,
-      this._condition,
-      this._targetValue,
-      AlertStatus.CANCELLED,
-      this._createdAt,
-      cancelledAt,
-    );
+    return new PriceAlert({ ...this.state, status: AlertStatus.CANCELLED, cancelledAt });
   }
 
   isOwnedBy(userId: string): boolean {
-    return this._userId === userId;
+    return this.state.userId === userId;
   }
 
-  get id(): string { return this._id; }
-  get userId(): string { return this._userId; }
-  get playerId(): string { return this._playerId; }
-  get condition(): AlertCondition { return this._condition; }
-  get targetValue(): number { return this._targetValue; }
-  get status(): AlertStatus { return this._status; }
-  get createdAt(): Date { return this._createdAt; }
-  get cancelledAt(): Date | null { return this._cancelledAt; }
+  get id(): string { return this.state.id; }
+  get userId(): string { return this.state.userId; }
+  get playerId(): string { return this.state.playerId; }
+  get condition(): AlertCondition { return this.state.condition; }
+  get targetValue(): number { return this.state.targetValue; }
+  get status(): AlertStatus { return this.state.status; }
+  get createdAt(): Date { return this.state.createdAt; }
+  get cancelledAt(): Date | null { return this.state.cancelledAt; }
 }
