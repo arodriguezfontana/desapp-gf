@@ -29,6 +29,10 @@ export class ValuationStrategyEntity {
   @Column({ name: 'is_selected', type: 'boolean', default: false })
   isSelected!: boolean;
 
+  /** Método de cálculo (ValuationMethod, spec 027). Las filas previas quedan en WEIGHTED. */
+  @Column({ name: 'valuation_method', type: 'varchar', length: 20, default: 'WEIGHTED' })
+  valuationMethod!: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

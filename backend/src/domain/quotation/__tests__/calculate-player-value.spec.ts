@@ -3,6 +3,7 @@ import { Position } from '../../player/enums/position';
 import { Player } from '../../player/player';
 import {
   calculatePlayerValue,
+  MIN_PLAYER_VALUE,
   NORMALIZATION_BOUNDS,
 } from '../calculate-player-value';
 import { ValuationStrategy } from '../valuation-strategy';
@@ -175,7 +176,8 @@ describe('calculatePlayerValue', () => {
       const { score, value } = calculatePlayerValue(player, strategy);
 
       expect(score).toBe(-1.0);
-      expect(value).toBeCloseTo(1 + (-1.0) * 99, 4); // value = -98
+      // 1 + (-1.0) * 99 = -98, pero el valor no baja del piso (spec 027).
+      expect(value).toBe(MIN_PLAYER_VALUE);
     });
   });
 

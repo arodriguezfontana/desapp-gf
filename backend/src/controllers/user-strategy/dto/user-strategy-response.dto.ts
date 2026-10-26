@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ValuationStrategy } from '../../../domain/quotation/valuation-strategy';
 import { Position } from '../../../domain/player/enums/position';
+import { ValuationMethod } from '../../../domain/quotation/valuation-method';
 
 export class UserStrategyResponseDto {
   @ApiProperty() id!: string;
@@ -8,6 +9,13 @@ export class UserStrategyResponseDto {
   @ApiProperty() weights!: Record<string, number>;
   @ApiProperty() factorEscala!: number;
   @ApiProperty() isSelected!: boolean;
+
+  @ApiProperty({
+    enum: ValuationMethod,
+    description:
+      'Método de cálculo: WEIGHTED normaliza contra techos de temporada; PER_MATCH divide las métricas acumuladas por los partidos jugados.',
+  })
+  method!: ValuationMethod;
 
   @ApiProperty({
     description: 'Perfiles de pesos por posición (FW/MF/DF/GK), si la estrategia los define.',
@@ -22,6 +30,7 @@ export class UserStrategyResponseDto {
     dto.weights = strategy.weights;
     dto.factorEscala = strategy.factorEscala;
     dto.isSelected = strategy.isSelected;
+    dto.method = strategy.method;
     dto.positionWeights = strategy.positionWeights;
     return dto;
   }

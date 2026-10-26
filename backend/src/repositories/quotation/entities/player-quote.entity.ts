@@ -40,4 +40,8 @@ export class PlayerQuoteEntity {
 
   @Column({ name: 'applied_position', type: 'varchar', length: 2, nullable: true })
   appliedPosition!: string | null;
+
+  /** Método de cálculo que produjo la cotización (snapshot, spec 027). */
+  @Column({ name: 'valuation_method', type: 'varchar', length: 20, default: 'WEIGHTED' })
+  valuationMethod!: string;
 }

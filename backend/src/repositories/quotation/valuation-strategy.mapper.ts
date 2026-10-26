@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { parseValuationMethod, ValuationMethod } from '../../domain/quotation/valuation-method';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { ValuationStrategyEntity } from './entities/valuation-strategy.entity';
 
@@ -14,6 +15,7 @@ export class ValuationStrategyMapper {
       factorEscala: Number.parseFloat(entity.factorEscala),
       isSelected: entity.isSelected,
       positionWeights: entity.positionWeights ?? {},
+      method: parseValuationMethod(entity.valuationMethod ?? ValuationMethod.WEIGHTED),
     });
   }
 
@@ -27,6 +29,7 @@ export class ValuationStrategyMapper {
       factorEscala: domain.factorEscala.toString(),
       isSelected: domain.isSelected,
       positionWeights: Object.keys(positionWeights).length > 0 ? positionWeights : null,
+      valuationMethod: domain.method,
     };
   }
 }

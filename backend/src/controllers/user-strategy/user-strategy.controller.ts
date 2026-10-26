@@ -6,6 +6,7 @@ import { QuotationService } from '../../services/quotation/quotation.service';
 import { UserStrategyListResponseDto, UserStrategyResponseDto } from './dto/user-strategy-response.dto';
 import { EditWeightsRequestDto } from './dto/edit-weights-request.dto';
 import { EditPositionWeightsRequestDto } from './dto/edit-position-weights-request.dto';
+import { EditMethodRequestDto } from './dto/edit-method-request.dto';
 
 /**
  * Las dos estrategias de valuación propias del usuario autenticado
@@ -58,6 +59,23 @@ export class UserStrategyController {
     @Body() body: EditWeightsRequestDto,
   ): Promise<UserStrategyResponseDto> {
     const strategy = await this.quotationService.editWeights(userId, id, body.weights);
+    return UserStrategyResponseDto.fromDomain(strategy);
+  }
+
+  @Patch(':id/method')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Cambiar el método de cálculo de una de mis estrategias (WEIGHTED o PER_MATCH)' })
+  @ApiResponse({ status: 200, type: UserStrategyResponseDto })
+  @ApiResponse({ status: 400, description: 'Método inválido (no es WEIGHTED ni PER_MATCH)' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 403, description: 'La estrategia no es propia del usuario autenticado' })
+  @ApiResponse({ status: 404, description: 'La estrategia no existe' })
+  async editMethod(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() body: EditMethodRequestDto,
+  ): Promise<UserStrategyResponseDto> {
+    const strategy = await this.quotationService.editMethod(userId, id, body.method);
     return UserStrategyResponseDto.fromDomain(strategy);
   }
 

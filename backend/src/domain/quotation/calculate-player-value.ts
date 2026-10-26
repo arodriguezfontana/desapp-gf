@@ -1,5 +1,5 @@
 import { Player } from '../player/player';
-import { Position } from '../player/enums/position';
+import { PlayerValuation } from './player-valuator';
 import { ValuationStrategy } from './valuation-strategy';
 
 /**
@@ -33,8 +33,11 @@ export const NORMALIZATION_BOUNDS: Readonly<Record<string, number>> = {
   redCards: 5,
 } as const;
 
+/** Valor mínimo de un jugador: el score no puede llevar el precio por debajo de este piso (spec 027). */
+export const MIN_PLAYER_VALUE = 1;
+
 /** Obtiene el valor bruto de una métrica del jugador dado su nombre de campo. */
-function getMetric(player: Player, key: string): number | null {
+export function getMetric(player: Player, key: string): number | null {
   const map: Record<string, number | null> = {
     goals: player.goals,
     assists: player.assists,
@@ -51,8 +54,25 @@ function getMetric(player: Player, key: string): number | null {
   return map[key] ?? null;
 }
 
+/** Lleva `raw` al rango [0,1] recortándolo entre 0 y `bound`. Un valor `null` cuenta como 0. */
+export function clampAndNormalize(raw: number | null, bound: number): number {
+  const clamped = Math.max(0, Math.min(raw ?? 0, bound));
+  return clamped / bound;
+}
+
 /**
- * Calcula el score y el valor de un jugador según una estrategia de valuación.
+ * Cómo se normaliza UNA métrica de UN jugador a [0,1]. Es lo único que cambia
+ * entre los métodos de valuación (`PlayerValuator`).
+ */
+export type MetricNormalizer = (player: Player, metricKey: string, bound: number) => number;
+
+/** Normalización de temporada: el valor bruto contra el techo de `NORMALIZATION_BOUNDS`. */
+export const normalizeBySeason: MetricNormalizer = (player, metricKey, bound) =>
+  clampAndNormalize(getMetric(player, metricKey), bound);
+
+/**
+ * Calcula el score y el valor de un jugador según una estrategia de valuación,
+ * con el normalizador de métricas que se le indique.
  *
  * Función de dominio pura: sin acceso a base de datos ni dependencias de NestJS
  * (012-valuation-strategies, spec FR-008, constitución Principio I).
@@ -65,22 +85,19 @@ function getMetric(player: Player, key: string): number | null {
  * `PlayerQuote` (spec FR-009).
  *
  * Algoritmo:
- *   normalizada_i = clamp(metrica_i ?? 0, 0, bound_i) / bound_i
+ *   normalizada_i = normalizador(jugador, metrica_i)   // en [0,1]
  *   score = Σ(peso_i × normalizada_i)
- *   value = 1 + (score × factorEscala)
+ *   value = max(MIN_PLAYER_VALUE, 1 + (score × factorEscala))
  *
- * El value puede ser negativo si el score es muy negativo (pesos negativos en
- * métricas disciplinarias). Se persiste sin clamp — riesgo aceptado (spec FR-010).
+ * El score puede ser negativo (pesos negativos en métricas disciplinarias), pero
+ * el value nunca baja de `MIN_PLAYER_VALUE` (spec 027, reemplaza el riesgo
+ * aceptado de 012 FR-010: un precio negativo no tiene sentido en el mercado).
  */
-export function calculatePlayerValue(
+export function valuateWithNormalizer(
   player: Player,
   strategy: ValuationStrategy,
-): {
-  score: number;
-  value: number;
-  appliedPosition: Position | null;
-  weightsUsed: Record<string, number>;
-} {
+  normalize: MetricNormalizer,
+): PlayerValuation {
   const profile = strategy.positionWeights[player.position];
   const weightsUsed = profile ?? strategy.weights;
   const appliedPosition = profile ? player.position : null;
@@ -91,12 +108,14 @@ export function calculatePlayerValue(
     const bound = NORMALIZATION_BOUNDS[metricKey];
     if (bound === undefined) continue;
 
-    const raw = getMetric(player, metricKey) ?? 0;
-    const clamped = Math.max(0, Math.min(raw, bound));
-    const normalized = clamped / bound;
-    score += weight * normalized;
+    score += weight * normalize(player, metricKey, bound);
   }
 
-  const value = 1 + score * strategy.factorEscala;
+  const value = Math.max(MIN_PLAYER_VALUE, 1 + score * strategy.factorEscala);
   return { score, value, appliedPosition, weightsUsed };
+}
+
+/** Valuación con normalización de temporada (método `WEIGHTED`, el original de 012). */
+export function calculatePlayerValue(player: Player, strategy: ValuationStrategy): PlayerValuation {
+  return valuateWithNormalizer(player, strategy, normalizeBySeason);
 }

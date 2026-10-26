@@ -1,4 +1,5 @@
 import { Position } from '../player/enums/position';
+import { ValuationMethod } from './valuation-method';
 
 /**
  * Cotización calculada de un jugador en un momento dado, generada por el
@@ -25,6 +26,7 @@ export class PlayerQuote {
     private readonly _value: number,
     private readonly _calculatedAt: Date,
     private readonly _appliedPosition: Position | null,
+    private readonly _valuationMethod: ValuationMethod,
   ) {}
 
   static create(props: {
@@ -38,6 +40,7 @@ export class PlayerQuote {
     value: number;
     calculatedAt: Date;
     appliedPosition?: Position | null;
+    valuationMethod?: ValuationMethod;
   }): PlayerQuote {
     return PlayerQuote.restore(props);
   }
@@ -53,6 +56,7 @@ export class PlayerQuote {
     value: number;
     calculatedAt: Date;
     appliedPosition?: Position | null;
+    valuationMethod?: ValuationMethod;
   }): PlayerQuote {
     return new PlayerQuote(
       props.id,
@@ -65,6 +69,7 @@ export class PlayerQuote {
       props.value,
       props.calculatedAt,
       props.appliedPosition ?? null,
+      props.valuationMethod ?? ValuationMethod.WEIGHTED,
     );
   }
 
@@ -78,4 +83,6 @@ export class PlayerQuote {
   get value(): number { return this._value; }
   get calculatedAt(): Date { return this._calculatedAt; }
   get appliedPosition(): Position | null { return this._appliedPosition; }
+  /** Método de cálculo con el que se produjo la cotización (parte del snapshot de reproducibilidad, spec 027). */
+  get valuationMethod(): ValuationMethod { return this._valuationMethod; }
 }
