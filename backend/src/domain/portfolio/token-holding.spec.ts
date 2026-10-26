@@ -2,6 +2,28 @@ import { TokenHolding } from './token-holding';
 import { InsufficientHoldingError } from './errors/insufficient-holding.error';
 
 describe('TokenHolding', () => {
+  describe('assertCanSell', () => {
+    const holdingOf = (quantity: number) =>
+      TokenHolding.restore({ id: 'h-1', userId: 'user-1', playerId: 'player-1', quantity, updatedAt: new Date() });
+
+    it('permite vender exactamente lo que se posee', () => {
+      expect(() => TokenHolding.assertCanSell(holdingOf(5), 5, 0)).not.toThrow();
+    });
+
+    it('descuenta lo ya comprometido en ordenes SELL pendientes', () => {
+      expect(() => TokenHolding.assertCanSell(holdingOf(5), 3, 2)).not.toThrow();
+      expect(() => TokenHolding.assertCanSell(holdingOf(5), 4, 2)).toThrow(InsufficientHoldingError);
+    });
+
+    it('rechaza vender mas de lo que se posee', () => {
+      expect(() => TokenHolding.assertCanSell(holdingOf(5), 6, 0)).toThrow(InsufficientHoldingError);
+    });
+
+    it('rechaza vender si nunca hubo holding', () => {
+      expect(() => TokenHolding.assertCanSell(null, 1, 0)).toThrow(InsufficientHoldingError);
+    });
+  });
+
   it('createEmpty nace en 0', () => {
     const holding = TokenHolding.createEmpty('user-1', 'player-1');
     expect(holding.quantity).toBe(0);

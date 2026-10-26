@@ -38,6 +38,18 @@ export class TokenHolding {
     return new TokenHolding(props.id, props.userId, props.playerId, props.quantity, props.updatedAt);
   }
 
+  /**
+   * Regla de venta (spec FR-010): los tokens ya comprometidos en ordenes SELL
+   * pendientes no se pueden volver a ofrecer. `holding` es `null` si el usuario
+   * nunca tuvo tokens de ese jugador.
+   * @throws InsufficientHoldingError si `quantity + pendingSellQuantity` supera lo que posee.
+   */
+  static assertCanSell(holding: TokenHolding | null, quantity: number, pendingSellQuantity: number): void {
+    if ((holding?.quantity ?? 0) < quantity + pendingSellQuantity) {
+      throw new InsufficientHoldingError();
+    }
+  }
+
   /** Devuelve una nueva instancia con `quantity` incrementada. */
   credit(quantity: number): TokenHolding {
     if (!Number.isInteger(quantity) || quantity <= 0) {
