@@ -26,6 +26,8 @@ pnpm test:integration
 
 Esperado: Testcontainers levanta un Postgres efímero, corre todos los `*.integration.spec.ts`, destruye el contenedor. Sin efectos sobre la base de desarrollo.
 
+> **Advertencia**: si Docker no está corriendo, `backend/test/setup/global-setup.ts` cae a un fallback y usa la `DATABASE_URL` local, es decir, la base de desarrollo. Arrancar Docker antes de correr este perfil y el e2e.
+
 ### Perfil e2e
 
 ```bash
@@ -44,18 +46,28 @@ Esperado: Testcontainers levanta un Postgres efímero, corre todos los `*.e2e-sp
 1. Hacer push a cualquier rama que no sea main (ej. `feat/algo`)
 2. Ir a GitHub Actions → ver el run disparado por el push
 3. Verificar que el job `backend-unit` corre y completa
-4. Verificar que el job `backend-heavy` **no** aparece (o aparece como skipped si se usa `if:`)
+4. Verificar que los jobs `backend-heavy`, `frontend-heavy` y `sonarqube` aparecen como skipped: solo corren `backend-unit` y `frontend`
 5. El tiempo total del pipeline debe ser notablemente menor que antes del cambio
 
 ### Escenario 2: PR contra main (suite completa)
 
 1. Abrir un PR desde cualquier rama hacia `main`
 2. Ir a GitHub Actions → ver el run disparado por el PR
-3. Verificar que corren tanto `backend-unit` como `backend-heavy`
-4. El botón de merge queda bloqueado hasta que ambos jobs pasen en verde
+3. Verificar que corren `backend-unit`, `frontend`, `backend-heavy`, `frontend-heavy` y `sonarqube`
+4. El botón de merge queda bloqueado hasta que todos los jobs pasen en verde
 5. Si `backend-heavy` falla (ej. un test de integración roto), el PR no puede mergearse
 
-### Escenario 3: Ningún archivo de test modificado
+### Escenario 3: Push a main
+
+1. Mergear un PR (o hacer push) a `main`
+2. Verificar que corren todos los jobs, incluidos `backend-heavy`, `frontend-heavy` y `sonarqube`
+
+### Escenario 4: PR contra dev
+
+1. Abrir un PR contra `dev`
+2. Verificar que solo corren `backend-unit` y `frontend`; los jobs pesados y `sonarqube` quedan skipped
+
+### Escenario 5: Ningún archivo de test modificado
 
 ```bash
 git diff HEAD~1 HEAD -- '**/*.spec.ts' '**/*.integration.spec.ts' '**/*.e2e-spec.ts'
@@ -74,11 +86,15 @@ ci.yml
 │   ├── pnpm test:unit
 │   └── build
 │
-├── job: backend-heavy      (solo pull_request targeting main)
+├── job: backend-heavy      (pull_request con base main, o push a main)
 │   ├── pnpm test:integration
 │   └── pnpm test:e2e
 │
-├── job: frontend           (sin cambios — ya solo corre test:unit)
+├── job: frontend-heavy     (misma condición que backend-heavy)
+│   ├── pnpm build (backend)
+│   └── pnpm test:integration (frontend)
 │
-└── job: sonarqube          (sin cambios — corre suite completa con coverage)
+├── job: frontend           (push + PR a cualquier rama: lint, test:unit, build)
+│
+└── job: sonarqube          (misma condición que backend-heavy; suite completa con coverage)
 ```

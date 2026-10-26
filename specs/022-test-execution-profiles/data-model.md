@@ -11,8 +11,9 @@ Un perfil es una agrupación lógica de archivos de test que comparten el mismo 
 | Perfil | Script | Trigger CI | Requiere infraestructura |
 |--------|--------|-----------|--------------------------|
 | `unit` | `pnpm test:unit` | Todo push + todo PR | No |
-| `integration` | `pnpm test:integration` | Solo PR a `main` | Sí (Testcontainers + Postgres) |
-| `e2e` | `pnpm test:e2e` | Solo PR a `main` | Sí (Testcontainers + Postgres) |
+| `integration` | `pnpm test:integration` | PR a `main` o push a `main` | Sí (Testcontainers + Postgres) |
+| `e2e` | `pnpm test:e2e` | PR a `main` o push a `main` | Sí (Testcontainers + Postgres) |
+| `integration` (frontend) | `pnpm test:integration` (en `frontend/`) | PR a `main` o push a `main` | Sí (backend real + Testcontainers) |
 
 ### Relación perfil → archivos
 
@@ -29,4 +30,4 @@ e2e         →  backend/test/**/*.e2e-spec.ts
 |---------|-----|--------|
 | `backend/package.json` | Define scripts `test:unit`, `test:integration`, `test:e2e` y la config de proyectos Jest | **Ya correcto, sin cambios** |
 | `backend/test/jest-e2e.json` | Config Jest para el perfil e2e | **Ya correcto, sin cambios** |
-| `.github/workflows/ci.yml` | Define los jobs y cuándo corre cada perfil | **Requiere cambio: separar job backend en dos** |
+| `.github/workflows/ci.yml` | Define los jobs y cuándo corre cada perfil | **Modificado: separa el job backend en dos, agrega `frontend-heavy` y condiciona `sonarqube` igual que los perfiles pesados** |

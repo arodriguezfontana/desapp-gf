@@ -57,7 +57,7 @@ El e2e usa `jest-e2e.json` con `testRegex: "\\.e2e-spec\\.ts$"`.
 **Cambio requerido**:
 - Separar el job `backend` en dos jobs (o usar condiciones `if:` sobre los steps):
   - **backend-unit**: corre en todo push + todo PR (lint + test:unit + build)
-  - **backend-heavy**: corre solo en `pull_request` targeting `main` (test:integration + test:e2e)
+  - **backend-heavy**: corre solo en `pull_request` con base `main` o `push` a `main` (test:integration + test:e2e)
 
 **Alternatives considered**:
 - `if:` condicional sobre steps dentro del mismo job: más compacto pero el job entero tarda igual en pushes de rama (los steps de integración/e2e se saltean pero el job igual se encola y ocupa runner). Preferible dos jobs separados para paralelizar y visibilizar el estado.
@@ -67,14 +67,18 @@ El e2e usa `jest-e2e.json` con `testRegex: "\\.e2e-spec\\.ts$"`.
 
 ## Impacto sobre el job SonarCloud
 
-**Decision**: el job `sonarqube` siempre corre la suite completa (unit + integration + e2e con coverage). Este job ya tiene su propio `on:` heredado del workflow. Se mantiene tal cual — su propósito es cobertura, no feedback rápido.
+**Decision**: el job `sonarqube` ejecuta la suite completa (unit + integration + e2e con coverage) y por eso sigue la **misma condición `if:`** que `backend-heavy` y `frontend-heavy`: PR contra `main` o push a `main`.
 
-**Rationale**: SonarCloud necesita datos de cobertura completos para análisis de calidad. No hay trade-off de velocidad que aplicar acá.
+**Rationale**: la primera versión de esta feature lo dejó sin condición, con el argumento de que SonarCloud necesita cobertura completa. El efecto fue que en cada push a una rama corrían igual integración y e2e (dentro de ese job), contradiciendo FR-005 y SC-001. Como el análisis de calidad solo importa al integrar a `main`, se le aplicó la misma condición que a los perfiles pesados.
+
+**Trade-off aceptado**: no se analizan pushes a ramas ni PRs contra `dev`.
+
+**Alternatives considered**: ejecutar Sonar siempre pero con alcance reducido (solo unit) en eventos livianos. Se descartó: la cobertura que vería Sonar sería baja y engañosa, y `test:cov` del backend corre unit e integración juntos, así que habría que cambiar los scripts.
 
 ---
 
 ## Impacto sobre el job frontend
 
-**Decision**: el job `frontend` ya corre solo `test:unit` en todo evento. No requiere cambios.
+**Decision**: el job `frontend` corre solo `test:unit` (más lint y build) en todo evento. La integración del frontend (`test:integration`) corre en el job `frontend-heavy`, con la misma condición que `backend-heavy`; ese job construye antes el backend porque los tests de integración del frontend lo levantan.
 
-**Rationale**: el frontend no tiene tests de integración/e2e en CI por el momento; su perfil pesado (`test:integration`) existe en `package.json` pero no está wired en el workflow.
+**Rationale**: la primera versión de esta investigación decía que el perfil pesado del frontend "no estaba wired en el workflow". Se cableó en esta misma feature (commits `8e8a543` y `60eeb2c`) como job propio, para que el build del backend no atrase al resto.
