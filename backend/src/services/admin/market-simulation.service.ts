@@ -37,7 +37,7 @@ import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/a
 import { PriceAlert } from '../../domain/alerts/price-alert';
 import { AlertCondition } from '../../domain/alerts/alert-condition';
 import { QuotationService } from '../quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/admin/dto/simulation-result.dto';
 import {

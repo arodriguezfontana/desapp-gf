@@ -26,7 +26,7 @@ import { TokenHoldingRepository } from '../../repositories/portfolio/token-holdi
 
 import { QuotationService } from '../quotation/quotation.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 
 const SUPERUSER_USERNAME = 'superuser';
 const INITIAL_HOLDING_QUANTITY = 100;

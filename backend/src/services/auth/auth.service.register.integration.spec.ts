@@ -15,7 +15,7 @@ import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repo
 import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
 import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService.register (integración contra Postgres real)', () => {

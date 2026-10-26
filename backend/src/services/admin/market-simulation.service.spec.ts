@@ -12,7 +12,7 @@ import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { QuotationService } from '../quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { User } from '../../domain/auth/user';
 import { Email } from '../../domain/auth/email';
 import { UserRole } from '../../domain/auth/user-role';

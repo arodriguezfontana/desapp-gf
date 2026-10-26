@@ -12,7 +12,7 @@ import { PlayerQuoteMapper } from '../../repositories/quotation/player-quote.map
 import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
 import { TypeOrmPlayerQuoteRepository } from '../../repositories/quotation/typeorm-player-quote.repository';
 import { QuotationService } from '../../services/quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../../services/auth/user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../../services/quotation/user-strategy-provisioning.service';
 import {
   VALUATION_STRATEGY_REPOSITORY,
   PLAYER_QUOTE_REPOSITORY,

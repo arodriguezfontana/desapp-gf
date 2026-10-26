@@ -10,7 +10,7 @@ import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-creden
 import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { UserRole } from '../../domain/auth/user-role';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 
 describe('AuthService', () => {
   let users: jest.Mocked<UserRepository>;

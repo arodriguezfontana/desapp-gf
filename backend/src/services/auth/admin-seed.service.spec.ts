@@ -8,7 +8,7 @@ import { User } from '../../domain/auth/user';
 import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { AdminSeedService } from './admin-seed.service';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 
 describe('AdminSeedService', () => {
   const PASSWORD = 'Admin1234!';

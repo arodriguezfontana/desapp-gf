@@ -17,7 +17,7 @@ import { User } from '../../domain/auth/user';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { UserRepository } from '../../repositories/auth/user.repository';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 
 @Injectable()
 export class AuthService {
