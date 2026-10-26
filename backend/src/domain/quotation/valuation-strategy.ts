@@ -115,30 +115,6 @@ export class ValuationStrategy {
     }
   }
 
-  select(): ValuationStrategy {
-    return new ValuationStrategy(
-      this._id,
-      this._userId,
-      this._name,
-      this._weights,
-      this._factorEscala,
-      true,
-      this._positionWeights,
-    );
-  }
-
-  deselect(): ValuationStrategy {
-    return new ValuationStrategy(
-      this._id,
-      this._userId,
-      this._name,
-      this._weights,
-      this._factorEscala,
-      false,
-      this._positionWeights,
-    );
-  }
-
   /** Reemplazo completo de los pesos generales, revalidando la suma (spec FR-006, FR-008). */
   withWeights(weights: Record<string, number>): ValuationStrategy {
     validateWeightsSum(weights, 'los pesos generales');
