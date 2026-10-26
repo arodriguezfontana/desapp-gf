@@ -1,4 +1,5 @@
 import { QuotationService } from '../quotation.service';
+import { FixedClock, SequentialIdGenerator } from '../../../adapters/runtime/fake-runtime';
 import { ValuationStrategyRepository } from '../../../repositories/quotation/valuation-strategy.repository';
 import { PlayerQuoteRepository } from '../../../repositories/quotation/player-quote.repository';
 import { PlayerRepository } from '../../../repositories/player/player.repository';
@@ -68,7 +69,14 @@ describe('QuotationService', () => {
       findAllActive: jest.fn(),
     };
     eventEmitter = { emit: jest.fn(), emitAsync: jest.fn() };
-    service = new QuotationService(strategyRepo, quoteRepo, playerRepo, eventEmitter as never);
+    service = new QuotationService(
+      strategyRepo,
+      quoteRepo,
+      playerRepo,
+      eventEmitter as never,
+      new FixedClock(),
+      new SequentialIdGenerator('quote'),
+    );
   });
 
   // ---- listStrategies ----------------------------------------------------------

@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { randomUUID } from 'node:crypto';
 import { WHOSCORED_ADAPTER } from '../../modules/player-sync/player-sync.constants';
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import {
@@ -40,6 +42,8 @@ export class PlayerSyncService {
   constructor(
     @Inject(WHOSCORED_ADAPTER) private readonly whoScored: WhoScoredAdapter,
     @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /**
@@ -51,13 +55,13 @@ export class PlayerSyncService {
     if (this.activeRunId !== null) {
       throw new SyncInProgressError(this.activeRunId);
     }
-    const runId = randomUUID();
+    const runId = this.ids.generate();
     this.activeRunId = runId;
     this.runs.set(runId, {
       runId,
       status: 'running',
       trigger: 'manual',
-      startedAt: new Date(),
+      startedAt: this.clock.now(),
     });
     this.evictOldRuns();
     // Arrancar en background; el caller recibe el runId de inmediato.
@@ -82,13 +86,13 @@ export class PlayerSyncService {
       );
       return;
     }
-    const runId = randomUUID();
+    const runId = this.ids.generate();
     this.activeRunId = runId;
     this.runs.set(runId, {
       runId,
       status: 'running',
       trigger: 'cron',
-      startedAt: new Date(),
+      startedAt: this.clock.now(),
     });
     this.evictOldRuns();
     await this.runSyncAndRecord(runId, 'cron');
@@ -112,7 +116,7 @@ export class PlayerSyncService {
         status: 'completed',
         trigger,
         startedAt: this.runs.get(runId)!.startedAt,
-        finishedAt: new Date(),
+        finishedAt: this.clock.now(),
         summary,
       });
     } catch (error) {
@@ -125,7 +129,7 @@ export class PlayerSyncService {
         status: 'failed',
         trigger,
         startedAt: this.runs.get(runId)!.startedAt,
-        finishedAt: new Date(),
+        finishedAt: this.clock.now(),
         summary,
         errorMessage: FATAL_ERROR_MESSAGE,
       });

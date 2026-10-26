@@ -1,5 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
 import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } from '../../modules/orders/orders.constants';
 import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
@@ -53,6 +55,8 @@ export class OrdersService {
     @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
     @Inject(TRANSACTION_MANAGER) private readonly transactionManager: TransactionManager,
     private readonly quotation: QuotationService,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /**
@@ -83,13 +87,13 @@ export class OrdersService {
     const price = roundToTwoDecimals(valuation.value);
 
     const newOrder = Order.create({
-      id: randomUUID(),
+      id: this.ids.generate(),
       userId,
       playerId,
       side,
       quantity,
       price,
-      createdAt: new Date(),
+      createdAt: this.clock.now(),
     });
 
     const plan = await this.transactionManager.run(async (tx) => {
@@ -124,13 +128,13 @@ export class OrdersService {
         this.orders.saveInTransaction(tx, matchPlan.newOrderFinal),
       ]);
 
-      const executedAt = new Date();
+      const executedAt = this.clock.now();
       await Promise.all(
         matchPlan.fills.flatMap((fill) => {
           this.logger.log(
             `Fill ejecutado: BUY ${fill.buyOrderId} x SELL ${fill.sellOrderId}, cantidad ${fill.quantity}, precio ${fill.price}`,
           );
-          return TokenTransaction.pairFromFill(fill, playerId, executedAt, randomUUID).map((entry) =>
+          return TokenTransaction.pairFromFill(fill, playerId, executedAt, () => this.ids.generate()).map((entry) =>
             this.tokenTransactions.saveInTransaction(tx, entry),
           );
         }),

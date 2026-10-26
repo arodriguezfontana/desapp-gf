@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { randomUUID } from 'node:crypto';
 import { calculatePlayerValue } from '../../domain/quotation/calculate-player-value';
 import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
@@ -53,6 +55,8 @@ export class QuotationService {
     @Inject(PLAYER_REPOSITORY)
     private readonly playerRepository: PlayerRepository,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /** Las dos estrategias propias del usuario (spec FR-004). */
@@ -131,7 +135,7 @@ export class QuotationService {
         const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(player, strategy);
         quotes.push(
           PlayerQuote.create({
-            id: randomUUID(),
+            id: this.ids.generate(),
             userId,
             playerId: player.id,
             strategyId: strategy.id,
@@ -139,7 +143,7 @@ export class QuotationService {
             factorEscalaSnapshot: strategy.factorEscala,
             score,
             value,
-            calculatedAt: new Date(),
+            calculatedAt: this.clock.now(),
             appliedPosition,
           }),
         );

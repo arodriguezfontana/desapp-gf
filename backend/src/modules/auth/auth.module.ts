@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { RuntimeModule } from '../runtime/runtime.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -27,6 +28,7 @@ import { PortfolioModule } from '../portfolio/portfolio.module';
 
 @Module({
   imports: [
+    RuntimeModule,
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

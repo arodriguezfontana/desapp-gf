@@ -1,5 +1,6 @@
-import { randomUUID } from 'node:crypto';
 import { Injectable, Inject } from '@nestjs/common';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
@@ -67,12 +68,13 @@ export class UserStrategyProvisioningService {
   constructor(
     @Inject(VALUATION_STRATEGY_REPOSITORY)
     private readonly strategyRepository: ValuationStrategyRepository,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   async provisionDefaultStrategiesFor(userId: string): Promise<ValuationStrategy[]> {
     const strategies = DEFAULT_STRATEGIES_SEED.map((seed) =>
       ValuationStrategy.create({
-        id: randomUUID(),
+        id: this.ids.generate(),
         userId,
         name: seed.name,
         weights: { ...seed.weights },

@@ -32,10 +32,10 @@ export const MIN_REFERENCE_PRICE = 5;
 /** Tokens con los que arranca cada bot por cada jugador simulado. */
 export const BOT_INITIAL_HOLDING = 250;
 
-export function buildDateHelper(): (daysAgo: number) => Date {
-  const now = Date.now();
+/** Devuelve una funcion que da la fecha de hace N dias respecto de `now`. */
+export function buildDateHelper(now: Date): (daysAgo: number) => Date {
   const dayMs = 24 * 60 * 60 * 1000;
-  return (daysAgo: number) => new Date(now - daysAgo * dayMs);
+  return (daysAgo: number) => new Date(now.getTime() - daysAgo * dayMs);
 }
 
 /** Operacion historica ya ejecutada entre el admin y un bot. */

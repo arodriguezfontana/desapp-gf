@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MarketSimulationService } from './market-simulation.service';
 import { UserRepository } from '../../repositories/auth/user.repository';
@@ -212,6 +213,8 @@ describe('MarketSimulationService', () => {
       strategyProvisioning,
       config,
       eventEmitter,
+      new FixedClock(),
+      new SequentialIdGenerator('sim'),
     );
   });
 

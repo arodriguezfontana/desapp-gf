@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'node:crypto';
 
 import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
@@ -36,6 +38,8 @@ export class AdminSeedService {
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     private readonly config: ConfigService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   async run(): Promise<void> {
@@ -66,10 +70,10 @@ export class AdminSeedService {
 
     const passwordHash = await this.hasher.hash(password.value());
     const admin = User.register(
-      randomUUID(),
+      this.ids.generate(),
       email,
       passwordHash,
-      new Date(),
+      this.clock.now(),
       UserRole.ADMIN,
       ADMIN_USERNAME,
     );

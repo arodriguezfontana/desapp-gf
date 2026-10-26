@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { RuntimeModule } from '../runtime/runtime.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
@@ -21,7 +22,7 @@ import { NOTIFICATION_REPOSITORY } from './notifications.constants';
  * (spec FR-021).
  */
 @Module({
-  imports: [AuthModule, MailModule, forwardRef(() => PlayerModule), TypeOrmModule.forFeature([NotificationEntity])],
+  imports: [RuntimeModule, AuthModule, MailModule, forwardRef(() => PlayerModule), TypeOrmModule.forFeature([NotificationEntity])],
   controllers: [NotificationsController, NotificationsSseController],
   providers: [
     NotificationsService,

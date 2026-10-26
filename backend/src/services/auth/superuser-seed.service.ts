@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'node:crypto';
 
 import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
@@ -58,6 +60,8 @@ export class SuperuserSeedService {
     private readonly config: ConfigService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
     private readonly quotation: QuotationService,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   async run(): Promise<void> {
@@ -98,7 +102,7 @@ export class SuperuserSeedService {
     }
 
     const passwordHash = await this.hasher.hash(password.value());
-    let superuser = User.register(randomUUID(), email, passwordHash, new Date(), UserRole.USER, SUPERUSER_USERNAME);
+    let superuser = User.register(this.ids.generate(), email, passwordHash, this.clock.now(), UserRole.USER, SUPERUSER_USERNAME);
 
     try {
       await this.users.save(superuser);
@@ -136,13 +140,13 @@ export class SuperuserSeedService {
 
     const price = await this.resolvePrice(userId, playerId);
     const order = Order.create({
-      id: randomUUID(),
+      id: this.ids.generate(),
       userId,
       playerId,
       side: OrderSide.SELL,
       quantity: INITIAL_HOLDING_QUANTITY,
       price,
-      createdAt: new Date(),
+      createdAt: this.clock.now(),
     });
     await this.orders.save(order);
     return true;

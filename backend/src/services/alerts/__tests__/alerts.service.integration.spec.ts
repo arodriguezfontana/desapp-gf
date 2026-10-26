@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { RuntimeModule } from '../../../modules/runtime/runtime.module';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -40,6 +41,7 @@ describe('AlertsService (integración contra Postgres real)', () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        RuntimeModule,
         DatabaseModule,
         TypeOrmModule.forFeature([PriceAlertEntity, PlayerEntity, UserEntity]),
       ],

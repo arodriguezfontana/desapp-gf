@@ -1,5 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { AlertCondition } from '../../domain/alerts/alert-condition';
@@ -20,6 +22,8 @@ export class AlertsService {
   constructor(
     @Inject(PRICE_ALERT_REPOSITORY) private readonly alerts: PriceAlertRepository,
     @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /** Crea una alerta de precio propia sobre un jugador existente (spec FR-001..FR-004). */
@@ -43,12 +47,12 @@ export class AlertsService {
     }
 
     const alert = PriceAlert.create({
-      id: randomUUID(),
+      id: this.ids.generate(),
       userId,
       playerId,
       condition,
       targetValue,
-      createdAt: new Date(),
+      createdAt: this.clock.now(),
     });
 
     return this.alerts.save(alert);

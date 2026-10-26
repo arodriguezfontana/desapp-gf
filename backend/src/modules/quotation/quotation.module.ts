@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { RuntimeModule } from '../runtime/runtime.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiKeyModule } from '../api-key/api-key.module';
 import { PlayerModule } from '../player/player.module';
@@ -25,6 +26,7 @@ import {
  */
 @Module({
   imports: [
+    RuntimeModule,
     forwardRef(() => PlayerModule),
     forwardRef(() => ApiKeyModule),
     TypeOrmModule.forFeature([ValuationStrategyEntity, PlayerQuoteEntity]),

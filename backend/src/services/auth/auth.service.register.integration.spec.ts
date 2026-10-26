@@ -1,4 +1,5 @@
 import { ConfigModule } from '@nestjs/config';
+import { RuntimeModule } from '../../modules/runtime/runtime.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -26,6 +27,7 @@ describe('AuthService.register (integración contra Postgres real)', () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        RuntimeModule,
         DatabaseModule,
         TypeOrmModule.forFeature([UserEntity, ValuationStrategyEntity]),
       ],

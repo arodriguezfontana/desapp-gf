@@ -1,4 +1,5 @@
 import { ConfigModule } from '@nestjs/config';
+import { RuntimeModule } from '../../../modules/runtime/runtime.module';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -42,6 +43,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        RuntimeModule,
         EventEmitterModule.forRoot(),
         DatabaseModule,
         TypeOrmModule.forFeature([ValuationStrategyEntity, PlayerQuoteEntity, PlayerEntity, UserEntity]),

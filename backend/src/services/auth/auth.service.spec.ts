@@ -1,4 +1,5 @@
 import { AuthService } from './auth.service';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { TokenIssuer } from '../../adapters/auth/token-issuer';
 import { UserRepository } from '../../repositories/auth/user.repository';
@@ -38,7 +39,7 @@ describe('AuthService', () => {
     strategyProvisioning = {
       provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
     } as unknown as jest.Mocked<UserStrategyProvisioningService>;
-    service = new AuthService(users, hasher, tokens, strategyProvisioning);
+    service = new AuthService(users, hasher, tokens, strategyProvisioning, new FixedClock(), new SequentialIdGenerator('user'));
   });
 
   describe('register', () => {

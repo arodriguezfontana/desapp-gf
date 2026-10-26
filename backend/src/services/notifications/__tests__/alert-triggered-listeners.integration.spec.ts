@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { RuntimeModule } from '../../../modules/runtime/runtime.module';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -41,6 +42,7 @@ describe('AlertNotificationListener + AlertMailListener (integración: independe
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        RuntimeModule,
         EventEmitterModule.forRoot(),
         DatabaseModule,
         TypeOrmModule.forFeature([NotificationEntity, UserEntity, PlayerEntity]),

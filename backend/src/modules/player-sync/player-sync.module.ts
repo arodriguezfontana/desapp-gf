@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RuntimeModule } from '../runtime/runtime.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { PlayerModule } from '../player/player.module';
@@ -20,7 +21,7 @@ import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
  * protegido con `ApiKeyGuard`.
  */
 @Module({
-  imports: [PlayerModule, ApiKeyModule, ScheduleModule.forRoot()],
+  imports: [RuntimeModule, PlayerModule, ApiKeyModule, ScheduleModule.forRoot()],
   controllers: [PlayerSyncController],
   providers: [
     PlayerSyncService,

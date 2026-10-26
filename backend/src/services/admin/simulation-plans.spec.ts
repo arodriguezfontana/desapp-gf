@@ -68,15 +68,17 @@ describe('plantillas de simulacion', () => {
 });
 
 describe('buildDateHelper', () => {
-  it('devuelve la fecha de hace N dias respecto del instante de creacion del helper', () => {
-    const before = Date.now();
-    const tDate = buildDateHelper();
-    const dayMs = 24 * 60 * 60 * 1000;
+  const now = new Date('2026-10-26T12:00:00.000Z');
 
-    const threeDaysAgo = tDate(3).getTime();
+  it('devuelve la fecha de hace N dias respecto del instante recibido', () => {
+    const tDate = buildDateHelper(now);
+    expect(tDate(0).toISOString()).toBe('2026-10-26T12:00:00.000Z');
+    expect(tDate(3).toISOString()).toBe('2026-10-23T12:00:00.000Z');
+    expect(tDate(25).toISOString()).toBe('2026-10-01T12:00:00.000Z');
+  });
 
-    expect(threeDaysAgo).toBeLessThanOrEqual(before - 3 * dayMs + 1000);
-    expect(threeDaysAgo).toBeGreaterThanOrEqual(before - 3 * dayMs - 1000);
-    expect(tDate(0).getTime()).toBeGreaterThan(threeDaysAgo);
+  it('no modifica el instante recibido', () => {
+    buildDateHelper(now)(5);
+    expect(now.toISOString()).toBe('2026-10-26T12:00:00.000Z');
   });
 });

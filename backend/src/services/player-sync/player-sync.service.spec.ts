@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { CronExpression } from '@nestjs/schedule';
 import { PlayerSyncService } from './player-sync.service';
 import {
@@ -74,7 +75,7 @@ describe('PlayerSyncService', () => {
       applyTeamRosterSync: jest.fn().mockResolvedValue(undefined),
       findAllActive: jest.fn(),
     };
-    service = new PlayerSyncService(whoScored, players);
+    service = new PlayerSyncService(whoScored, players, new FixedClock(), new SequentialIdGenerator('run'));
   });
 
   it('sincroniza cada equipo de cada liga con éxito: upsert correcto por equipo', async () => {

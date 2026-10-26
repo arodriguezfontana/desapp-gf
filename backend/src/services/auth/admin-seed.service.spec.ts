@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { Logger } from '@nestjs/common';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
@@ -42,7 +43,14 @@ describe('AdminSeedService', () => {
     strategyProvisioning = {
       provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
     } as unknown as jest.Mocked<UserStrategyProvisioningService>;
-    service = new AdminSeedService(users, hasher, config, strategyProvisioning);
+    service = new AdminSeedService(
+      users,
+      hasher,
+      config,
+      strategyProvisioning,
+      new FixedClock(),
+      new SequentialIdGenerator('admin'),
+    );
     warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     log = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
   });

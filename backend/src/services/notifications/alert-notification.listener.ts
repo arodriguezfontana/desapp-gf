@@ -1,5 +1,6 @@
-import { randomUUID } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Notification } from '../../domain/notifications/notification';
 import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../domain/alerts/events/alert-triggered.event';
@@ -13,12 +14,15 @@ import { NotificationsService } from './notifications.service';
  */
 @Injectable()
 export class AlertNotificationListener {
-  constructor(private readonly notifications: NotificationsService) {}
+  constructor(
+    private readonly notifications: NotificationsService,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+  ) {}
 
   @OnEvent(ALERT_TRIGGERED_EVENT)
   async handle(event: AlertTriggeredEvent): Promise<void> {
     const notification = Notification.create({
-      id: randomUUID(),
+      id: this.ids.generate(),
       userId: event.userId,
       alertId: event.alertId,
       playerId: event.playerId,

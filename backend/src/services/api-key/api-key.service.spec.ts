@@ -1,4 +1,5 @@
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { ApiKey } from '../../domain/api-key/api-key';
 import { Email } from '../../domain/auth/email';
 import { User } from '../../domain/auth/user';
@@ -22,7 +23,7 @@ describe('ApiKeyService', () => {
       saveWithRevocation: jest.fn(),
     };
     hasher = { hash: jest.fn(), compare: jest.fn() };
-    service = new ApiKeyService(repo, hasher);
+    service = new ApiKeyService(repo, hasher, new FixedClock(), new SequentialIdGenerator('key'));
   });
 
   describe('issueApiKey', () => {
