@@ -180,8 +180,8 @@ export class MarketSimulationService {
       const counterpartOrderId = randomUUID();
       const adminSide = plan.type === TokenTransactionType.CREDIT ? OrderSide.BUY : OrderSide.SELL;
 
-      await this.orders.save(Order.restore({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
-      await this.orders.save(Order.restore({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
+      await this.orders.save(Order.seed({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
+      await this.orders.save(Order.seed({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
 
       await this.tokenTransactions.save(TokenTransaction.create({ id: randomUUID(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt }));
       transactionsCount++;
@@ -213,7 +213,7 @@ export class MarketSimulationService {
     const orders = ADMIN_ORDER_PLANS.map((plan) => {
       const player = plan.playerIdx < 0 ? simPlayers.at(plan.playerIdx)! : simPlayers[plan.playerIdx];
       const referencePrice = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
-      return Order.restore({
+      return Order.seed({
         id: randomUUID(),
         userId: adminId,
         playerId: player.id,
@@ -247,7 +247,7 @@ export class MarketSimulationService {
 
       for (const level of MARKET_BOOK_LEVELS) {
         await this.orders.save(
-          Order.restore({
+          Order.seed({
             id: randomUUID(),
             userId: bots[level.botIdx].id,
             playerId: player.id,

@@ -76,6 +76,16 @@ export class Order {
     );
   }
 
+  /**
+   * Crea una Order historica o de simulacion ya en un estado intermedio o
+   * final (parcial, completada, cancelada) y con fecha pasada, sin ejecutar el
+   * matching. Es para sembrar datos de demo, no para ordenes reales (esas
+   * nacen con `create`); valida los mismos invariantes que `restore`.
+   */
+  static seed(props: Parameters<typeof Order.restore>[0]): Order {
+    return Order.restore(props);
+  }
+
   private static assertValidQuantity(quantity: number): void {
     if (!Number.isInteger(quantity) || quantity <= 0) {
       throw new InvalidOrderQuantityError();

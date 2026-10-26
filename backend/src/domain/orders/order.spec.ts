@@ -179,6 +179,43 @@ describe('Order', () => {
     });
   });
 
+  describe('seed', () => {
+    const base = {
+      id: 'order-1',
+      userId: 'user-1',
+      playerId: 'player-1',
+      side: OrderSide.BUY,
+      quantity: 10,
+      price: 12.5,
+      createdAt,
+    };
+
+    it.each([
+      { remainingQuantity: 10, status: OrderStatus.PENDING },
+      { remainingQuantity: 4, status: OrderStatus.PARTIALLY_FILLED },
+      { remainingQuantity: 0, status: OrderStatus.COMPLETED },
+    ])('siembra una orden $status con cantidad pendiente $remainingQuantity', ({ remainingQuantity, status }) => {
+      const order = Order.seed({ ...base, remainingQuantity, status });
+      expect(order.status).toBe(status);
+      expect(order.remainingQuantity).toBe(remainingQuantity);
+      expect(order.createdAt).toBe(createdAt);
+    });
+
+    it('siembra una orden CANCELLED conservando la cantidad pendiente', () => {
+      const order = Order.seed({ ...base, remainingQuantity: 10, status: OrderStatus.CANCELLED });
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.remainingQuantity).toBe(10);
+    });
+
+    it('rechaza una cantidad pendiente mayor a la total', () => {
+      expect(() => Order.seed({ ...base, remainingQuantity: 11 })).toThrow(OrderOverfillError);
+    });
+
+    it('rechaza una cantidad total invalida', () => {
+      expect(() => Order.seed({ ...base, quantity: 0, remainingQuantity: 0 })).toThrow(InvalidOrderQuantityError);
+    });
+  });
+
   describe('restore', () => {
     it('reconstruye una orden persistida con su remainingQuantity actual', () => {
       const order = Order.restore({
