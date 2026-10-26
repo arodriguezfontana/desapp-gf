@@ -176,7 +176,7 @@ describe('calculatePlayerValue', () => {
       const { score, value } = calculatePlayerValue(player, strategy);
 
       expect(score).toBe(-1.0);
-      // 1 + (-1.0) * 99 = -98, pero el valor no baja del piso (spec 027).
+      // 1 + (-1.0) * 99 = -98, pero el valor no baja del piso.
       expect(value).toBe(MIN_PLAYER_VALUE);
     });
   });

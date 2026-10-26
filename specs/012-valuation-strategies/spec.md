@@ -22,7 +22,7 @@ El sistema debe poder calcular el valor de un jugador aplicando la estrategia de
 
 1. **Given** un jugador con métricas conocidas y una estrategia activa con pesos que suman 1.0 y factorEscala=99, **When** se calcula la cotización, **Then** el valor resultante es `1 + (score × 99)` donde score es la suma ponderada de métricas normalizadas.
 2. **Given** un jugador con alguna métrica null, **When** se calcula la cotización, **Then** la métrica null se trata como 0 y el cálculo continúa sin error.
-3. **Given** una estrategia con pesos negativos en métricas disciplinarias y un jugador con alto conteo de tarjetas, **When** se calcula la cotización, **Then** el score es más bajo que sin tarjetas, pudiendo incluso ser negativo, y el valor resultante se persiste tal cual (sin clamp). _Reemplazado por la spec 027: el valor nunca baja de 1._
+3. **Given** una estrategia con pesos negativos en métricas disciplinarias y un jugador con alto conteo de tarjetas, **When** se calcula la cotización, **Then** el score es más bajo que sin tarjetas, pudiendo incluso ser negativo, y el valor resultante se persiste tal cual (sin clamp). _Actualizado: el valor nunca baja de 1 (ver FR-010)._
 4. **Given** un jugador con una métrica que supera el bound fijo del sistema, **When** se normaliza esa métrica, **Then** el valor normalizado es 1.0 (no supera el rango [0,1]).
 
 ---
@@ -78,7 +78,7 @@ El sistema registra cada cotización calculada incluyendo un snapshot completo d
 
 - ¿Qué sucede si todos los jugadores tienen una métrica nula? → Se trata como 0 y el score queda determinado únicamente por los pesos de las demás métricas.
 - ¿Qué sucede si el recálculo falla a mitad por un error inesperado? → Los jugadores procesados hasta ese punto conservan sus cotizaciones; el resumen de respuesta incluye el conteo de errores.
-- ¿Qué sucede si el valor resultante es negativo? → Se persistía tal cual, sin clamp (riesgo conocido). _Reemplazado por la spec 027: el valor tiene un piso en 1._
+- ¿Qué sucede si el valor resultante es negativo? → Se persistía tal cual, sin clamp (riesgo conocido). _Actualizado: el valor tiene un piso en 1 (ver FR-010)._
 - ¿Qué sucede si se intenta crear una estrategia con pesos que no suman 1.0 (fuera de tolerancia ±0.001)? → El sistema rechaza la operación con un error de validación.
 - ¿Qué sucede si se intenta crear una estrategia con factorEscala ≤ 0? → El sistema rechaza la operación con un error de validación.
 - ¿Qué sucede si no hay ninguna estrategia activa al momento del recálculo? → El sistema no puede calcular cotizaciones y el recálculo termina con error o no procesa ningún jugador.
@@ -96,7 +96,7 @@ El sistema registra cada cotización calculada incluyendo un snapshot completo d
 - **FR-007**: El sistema MUST calcular el valor de un jugador como: valor = 1 + (score × factorEscala), donde 1 representa el precio base fijo del token en créditos.
 - **FR-008**: El cálculo de normalización, score y valor MUST implementarse como lógica de dominio pura, sin acceso a base de datos ni dependencias del framework.
 - **FR-009**: El sistema MUST registrar cada cotización calculada (PlayerQuote) con: referencia al jugador, referencia a la estrategia, snapshot completo de los pesos y factorEscala usados, score calculado, valor resultante y timestamp del cálculo.
-- **FR-010**: ~~Los valores negativos de cotización MUST persistirse sin ningún ajuste ni clamp.~~ _Reemplazado por la spec 027 (FR-001): el valor es `max(1, 1 + score × factorEscala)`._
+- **FR-010**: ~~Los valores negativos de cotización MUST persistirse sin ningún ajuste ni clamp.~~ _Actualizado: el valor de un jugador MUST ser `max(1, 1 + score × factorEscala)`. El score puede ser negativo, pero el precio no baja de 1 porque un precio negativo o cero no se puede operar en el mercado._
 - **FR-011**: El sistema MUST exponer un endpoint POST /quotes/recalculate protegido con ApiKeyGuard que dispare el recálculo de cotizaciones de todos los jugadores usando la estrategia activa.
 - **FR-012**: Si un recálculo ya está en curso cuando se invoca POST /quotes/recalculate, el sistema MUST responder 409 Conflict sin iniciar un nuevo recálculo, usando un mecanismo de lock en memoria (mismo patrón que sync-trigger).
 - **FR-013**: La respuesta del recálculo MUST incluir: número de jugadores procesados, número de errores y duración total.

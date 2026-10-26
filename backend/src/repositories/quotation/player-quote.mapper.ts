@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { Position } from '../../domain/player/enums/position';
-import { parseValuationMethod, ValuationMethod } from '../../domain/quotation/valuation-method';
 import { PlayerQuoteEntity } from './entities/player-quote.entity';
 
 /** Conversión dominio ↔ persistencia. Sin lógica de negocio. */
@@ -19,7 +18,6 @@ export class PlayerQuoteMapper {
       value: Number.parseFloat(entity.value),
       calculatedAt: entity.calculatedAt,
       appliedPosition: entity.appliedPosition as Position | null,
-      valuationMethod: parseValuationMethod(entity.valuationMethod ?? ValuationMethod.WEIGHTED),
     });
   }
 
@@ -35,7 +33,6 @@ export class PlayerQuoteMapper {
       value: domain.value.toString(),
       calculatedAt: domain.calculatedAt,
       appliedPosition: domain.appliedPosition,
-      valuationMethod: domain.valuationMethod,
     };
   }
 }

@@ -3,8 +3,7 @@ import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { getPlayerValuator } from '../../domain/quotation/valuator-registry';
-import { ValuationMethod } from '../../domain/quotation/valuation-method';
+import { calculatePlayerValue } from '../../domain/quotation/calculate-player-value';
 import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
@@ -103,12 +102,6 @@ export class QuotationService {
     return this.strategyRepository.save(updated);
   }
 
-  /** Cambia el método de cálculo de una estrategia propia (spec 027). */
-  async editMethod(userId: string, strategyId: string, method: ValuationMethod): Promise<ValuationStrategy> {
-    const strategy = await this.getOwnedStrategyOrThrow(strategyId, userId);
-    return this.strategyRepository.save(strategy.withMethod(method));
-  }
-
   /**
    * Calcula al vuelo el valor de un jugador, sin persistir nada (spec FR-010).
    * Sin `strategyId`, usa la estrategia seleccionada del usuario; con
@@ -125,7 +118,7 @@ export class QuotationService {
       ? await this.getOwnedStrategyOrThrow(strategyId, userId)
       : await this.getSelectedStrategyOrThrow(userId);
 
-    const { score, value, appliedPosition } = getPlayerValuator(strategy.method).valuate(player, strategy);
+    const { score, value, appliedPosition } = calculatePlayerValue(player, strategy);
     return { playerId, strategyId: strategy.id, score, value, appliedPosition };
   }
 
@@ -139,10 +132,7 @@ export class QuotationService {
   ): void {
     for (const player of players) {
       try {
-        const { score, value, appliedPosition, weightsUsed } = getPlayerValuator(strategy.method).valuate(
-          player,
-          strategy,
-        );
+        const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(player, strategy);
         quotes.push(
           PlayerQuote.create({
             id: this.ids.generate(),
@@ -155,7 +145,6 @@ export class QuotationService {
             value,
             calculatedAt: this.clock.now(),
             appliedPosition,
-            valuationMethod: strategy.method,
           }),
         );
         recalculated.push({ userId, playerId: player.id, value, score });
