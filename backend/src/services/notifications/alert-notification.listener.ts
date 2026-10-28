@@ -9,8 +9,7 @@ import { NotificationsService } from './notifications.service';
 /**
  * Escucha alert.triggered, persiste la Notification correspondiente y la
  * empuja al stream SSE del usuario si está conectado (025-player-price-alerts,
- * spec FR-013, FR-018, FR-021). Independiente de AlertMailListener: no lo
- * conoce ni depende de él.
+ * spec FR-013, FR-018, FR-021).
  */
 @Injectable()
 export class AlertNotificationListener {

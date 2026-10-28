@@ -4,9 +4,9 @@ export const ALERT_TRIGGERED_EVENT = 'alert.triggered';
 
 /**
  * Emitido cuando una PriceAlert activa cumple su condición
- * (025-player-price-alerts, spec FR-012, FR-021). Dos listeners
- * independientes entre sí reaccionan: uno persiste la Notification (+ push
- * SSE), otro envía el mail. Ninguno conoce al otro.
+ * (025-player-price-alerts, spec FR-012, FR-021). El listener de
+ * notificaciones persiste la Notification (+ push SSE); quien emite el evento
+ * no lo conoce.
  */
 export class AlertTriggeredEvent {
   constructor(

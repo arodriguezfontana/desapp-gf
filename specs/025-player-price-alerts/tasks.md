@@ -6,6 +6,8 @@ description: "Task list for Alertas de precio por estrategia personal"
 
 # Tasks: Alertas de precio por estrategia personal
 
+> **Actualización (2026-10-27):** se eliminó el envío de emails de alertas (historia 4, FR-019 a FR-021 en su parte de email). El aviso queda solo en la bandeja de notificaciones, con push en vivo por SSE. Los módulos de mail, el adaptador de Nodemailer y las variables `MAIL_*` ya no existen; las referencias al email que siguen en este documento son registro histórico de la decisión original.
+
 **Input**: Design documents from `specs/025-player-price-alerts/`
 
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [contracts/alerts-api.md](./contracts/alerts-api.md), [contracts/notifications-api.md](./contracts/notifications-api.md), [quickstart.md](./quickstart.md)
