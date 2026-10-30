@@ -164,7 +164,6 @@ describe('MarketSimulationService', () => {
           isSelected: true,
         }),
       ]),
-      findByIdAndUserId: jest.fn(),
       findById: jest.fn(),
       save: jest.fn(),
       saveMany: jest.fn(),

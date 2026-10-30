@@ -15,7 +15,6 @@ describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', 
   beforeEach(() => {
     strategyRepo = {
       findByUserId: jest.fn().mockResolvedValue([]),
-      findByIdAndUserId: jest.fn(),
       findById: jest.fn(),
       save: jest.fn(),
       saveMany: jest.fn(),

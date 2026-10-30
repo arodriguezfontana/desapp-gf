@@ -48,7 +48,6 @@ describe('QuotationService', () => {
   beforeEach(() => {
     strategyRepo = {
       findByUserId: jest.fn(),
-      findByIdAndUserId: jest.fn(),
       findById: jest.fn(),
       save: jest.fn(),
       saveMany: jest.fn(),

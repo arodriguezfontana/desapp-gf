@@ -94,23 +94,6 @@ describe('TypeOrmValuationStrategyRepository (integración, 019-per-user-valuati
     expect(strategies).toEqual([]);
   });
 
-  it('findByIdAndUserId() devuelve la estrategia si pertenece al usuario', async () => {
-    const id = await insertStrategy({ userId: userIdA, name: 'Test por id', weights: WEIGHTS_B, factorEscala: 99, isSelected: false });
-
-    const strategy = await repo.findByIdAndUserId(id, userIdA);
-
-    expect(strategy).not.toBeNull();
-    expect(strategy!.id).toBe(id);
-  });
-
-  it('findByIdAndUserId() devuelve null si la estrategia pertenece a otro usuario', async () => {
-    const id = await insertStrategy({ userId: userIdB, name: 'De otro usuario', weights: WEIGHTS_B, factorEscala: 99, isSelected: false });
-
-    const strategy = await repo.findByIdAndUserId(id, userIdA);
-
-    expect(strategy).toBeNull();
-  });
-
   it('findById() devuelve la estrategia por id, sin filtrar por usuario', async () => {
     const id = await insertStrategy({ userId: userIdA, name: 'Test por id', weights: WEIGHTS_B, factorEscala: 99, isSelected: false });
 

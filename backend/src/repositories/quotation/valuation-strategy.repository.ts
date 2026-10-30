@@ -13,7 +13,6 @@ import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 export interface ValuationStrategyRepository {
   /** Las dos estrategias propias de `userId`, en el orden en que se crearon. */
   findByUserId(userId: string): Promise<ValuationStrategy[]>;
-  findByIdAndUserId(id: string, userId: string): Promise<ValuationStrategy | null>;
   findById(id: string): Promise<ValuationStrategy | null>;
   save(strategy: ValuationStrategy): Promise<ValuationStrategy>;
   saveMany(strategies: ValuationStrategy[]): Promise<ValuationStrategy[]>;
