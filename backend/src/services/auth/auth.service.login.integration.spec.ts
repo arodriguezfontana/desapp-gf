@@ -1,4 +1,5 @@
 import { ConfigModule } from '@nestjs/config';
+import { RuntimeModule } from '../../modules/runtime/runtime.module';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -21,7 +22,7 @@ import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repo
 import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
 import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService.login (integración contra Postgres real)', () => {
@@ -34,6 +35,7 @@ describe('AuthService.login (integración contra Postgres real)', () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        RuntimeModule,
         DatabaseModule,
         TypeOrmModule.forFeature([UserEntity, ValuationStrategyEntity]),
         JwtModule.register({ secret: 'integration-secret' }),

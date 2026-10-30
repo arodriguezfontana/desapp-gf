@@ -6,7 +6,7 @@
 
 ## Summary
 
-Separar el pipeline de CI en dos perfiles de ejecución: unitario (rápido, sin infraestructura) que corre en todo push, y pesado (integración + e2e, con Testcontainers) que corre solo en PRs contra main. Los scripts npm y la configuración Jest ya existen y están correctos; el único cambio es en `.github/workflows/ci.yml`.
+Separar el pipeline de CI en dos perfiles de ejecución: unitario (rápido, sin infraestructura) que corre en todo push, y pesado (integración + e2e, con Testcontainers, más el análisis de SonarCloud) que corre solo en PRs contra main y en push a main. Los scripts npm y la configuración Jest ya existen y están correctos; el único cambio es en `.github/workflows/ci.yml`.
 
 ## Technical Context
 
@@ -73,12 +73,12 @@ jobs:
     steps: [lint, test:unit, build]
 
   backend-heavy:
-    # Corre SOLO en pull_request targeting main
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    # Corre SOLO en pull_request con base main o push a main
+    if: (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps: [test:integration, test:e2e]
 ```
 
-Los jobs `frontend` y `sonarqube` quedan sin cambios.
+El job `frontend` queda sin cambios. Después, `frontend-heavy` (integración del frontend, en su propio job) y `sonarqube` pasaron a tener la misma condición `if:` que `backend-heavy`.
 
 ## Complexity Tracking
 

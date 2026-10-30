@@ -61,7 +61,7 @@ La separación de perfiles se logra únicamente cambiando cómo Jest invoca los 
 ### Edge Cases
 
 - ¿Qué ocurre si un archivo de test no sigue la convención de nombre establecida? El perfil correspondiente lo ignorará silenciosamente; el desarrollador no recibirá error, sino ausencia de ejecución. Se asume que la convención ya se respeta en todos los tests existentes.
-- ¿Qué ocurre si se hace push directamente a main (sin PR)? Queda fuera del alcance de esta feature; la protección de rama contra pushes directos es una política de GitHub, no un comportamiento de los perfiles de test.
+- ¿Qué ocurre si se hace push a main (por el merge de un PR o directo)? Corren también los perfiles pesados y SonarCloud (commit `9ad1990`), de modo que main nunca queda sin verificación completa. Bloquear los pushes directos sigue siendo una política de GitHub, no un comportamiento de los perfiles de test.
 - ¿Puede un desarrollador correr localmente el perfil de integración/e2e antes de abrir el PR? Sí, mediante el script de npm correspondiente; pero no hay forma de dispararlo automáticamente en CI para una rama sin PR abierto.
 
 ## Requirements *(mandatory)*
@@ -73,17 +73,19 @@ La separación de perfiles se logra únicamente cambiando cómo Jest invoca los 
 - **FR-003**: El perfil de integración MUST incluir únicamente los tests identificados por el patrón `*.integration.spec.ts`.
 - **FR-004**: El perfil e2e MUST incluir únicamente los tests identificados por el patrón `*.e2e-spec.ts`.
 - **FR-005**: El pipeline de CI MUST ejecutar solo el perfil unitario en cada push a cualquier rama que no sea main.
-- **FR-006**: El pipeline de CI MUST ejecutar los perfiles pesados de backend (integración + e2e) y el perfil de integración del frontend en cada PR abierto contra main, antes de habilitar el merge.
+- **FR-006**: El pipeline de CI MUST ejecutar los perfiles pesados de backend (integración + e2e) y el perfil de integración del frontend en cada PR abierto contra main, antes de habilitar el merge, y también en cada push a main.
 - **FR-007**: La separación de perfiles MUST implementarse mediante configuración (scripts npm, configuración de Jest, workflow de CI), sin modificar el contenido de ningún archivo de test existente.
 - **FR-008**: Cada perfil MUST poder ejecutarse de forma independiente mediante un comando local documentado, de modo que un desarrollador pueda correr el perfil costoso antes de abrir el PR si lo desea.
 - **FR-009**: El pipeline de CI MUST bloquear el merge del PR si cualquier test de cualquier perfil falla.
+- **FR-010**: El job de SonarCloud, que ejecuta la suite completa con cobertura (unit + integración + e2e), MUST seguir la misma condición que los perfiles pesados (PR contra main o push a main). En pushes a ramas y en PRs contra dev solo corren los jobs unitarios.
 
 ### Key Entities
 
 - **Perfil unitario**: conjunto de tests que corren sin infraestructura externa, identificados por `*.spec.ts` (excluyendo los subpatrones de integración y e2e). Se ejecuta en cada push.
-- **Perfil de integración (backend)**: tests contra base de datos real efímera (Testcontainers), identificados por `*.integration.spec.ts` bajo `backend/src/`. Se ejecuta solo en PRs contra main.
-- **Perfil e2e (backend)**: tests de extremo a extremo con supertest + base real efímera, identificados por `*.e2e-spec.ts` bajo `backend/test/`. Se ejecuta solo en PRs contra main.
-- **Perfil de integración (frontend)**: tests de componentes que ejercitan el cliente HTTP real contra el backend con base efímera (Testcontainers), bajo `frontend/test/`. Se ejecuta solo en PRs contra main.
+- **Perfil de integración (backend)**: tests contra base de datos real efímera (Testcontainers), identificados por `*.integration.spec.ts` bajo `backend/src/`. Se ejecuta solo en PRs contra main y en push a main.
+- **Perfil e2e (backend)**: tests de extremo a extremo con supertest + base real efímera, identificados por `*.e2e-spec.ts` bajo `backend/test/`. Se ejecuta solo en PRs contra main y en push a main.
+- **Perfil de integración (frontend)**: tests de componentes que ejercitan el cliente HTTP real contra el backend con base efímera (Testcontainers), bajo `frontend/test/`. Se ejecuta solo en PRs contra main y en push a main.
+- **Análisis SonarCloud**: job que ejecuta la suite completa con cobertura (unit + integración + e2e backend, unit frontend) y publica el análisis. Tiene la misma condición de ejecución que los perfiles pesados.
 - **Pipeline de CI**: workflow de GitHub Actions que determina qué perfiles correr según el evento que lo disparó (push a rama vs. PR contra main).
 
 ## Success Criteria *(mandatory)*
@@ -99,6 +101,7 @@ La separación de perfiles se logra únicamente cambiando cómo Jest invoca los 
 
 - La convención de nombre de archivo (`*.spec.ts` / `*.integration.spec.ts` / `*.e2e-spec.ts`) ya está respetada por todos los tests existentes en el proyecto; no hay tests fuera de convención que deban reclasificarse.
 - El repositorio usa GitHub Actions como sistema de CI; el workflow se configura en `.github/workflows/`.
-- La rama de integración principal es `main`; la condición del perfil costoso se basa en `pull_request` targeting `main`.
+- La rama de integración principal es `main`; la condición del perfil costoso se basa en `pull_request` con base `main` o `push` a `main`.
 - Queda fuera de alcance (riesgo aceptado): un push a una rama feature puede introducir una rotura de integración que no se detecta hasta que se abre el PR. No se provee mecanismo para disparar el perfil costoso sobre una rama sin PR desde CI.
+- Trade-off aceptado: como SonarCloud sigue la misma condición que los perfiles pesados, no se analizan los pushes a ramas ni los PRs contra dev; el análisis de calidad se hace al integrar a main.
 - Queda fuera de alcance: proteger main contra pushes directos (política de rama de GitHub, no responsabilidad de esta feature).

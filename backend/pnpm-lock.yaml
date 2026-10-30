@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@nestjs-modules/mailer':
-        specifier: ^3.0.2
-        version: 3.0.2(@nestjs/common@11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)(@nestjs/event-emitter@3.1.0(@nestjs/common@11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3))(handlebars@4.7.9)(nodemailer@10.2.1)
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -56,9 +53,6 @@ importers:
       got-scraping:
         specifier: 3.2.15
         version: 3.2.15
-      nodemailer:
-        specifier: ^10.2.1
-        version: 10.2.1
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -99,9 +93,6 @@ importers:
       '@types/node':
         specifier: ^22.10.0
         version: 22.20.1
-      '@types/nodemailer':
-        specifier: ^8.0.2
-        version: 8.0.2
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
@@ -347,76 +338,6 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
-
-  '@css-inline/css-inline-android-arm-eabi@0.22.0':
-    resolution: {integrity: sha512-SAKnj3t5SpO5WOP6mSt+LQ+bANcXgx05oS/pEjWugfA5yM4Gcfsu6vqqZIljZSgfwxomGj9KJZvyUCvUzcL88w==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [android]
-
-  '@css-inline/css-inline-android-arm64@0.22.0':
-    resolution: {integrity: sha512-MGCtmZXsM1zqR16LLKYrCQHrrDLEMBPiFaImGFKHZpUgH7LF/wH94QjD0LyryPDbkbEz2qbJ8CCkIx1oQN1jAQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [android]
-
-  '@css-inline/css-inline-darwin-arm64@0.22.0':
-    resolution: {integrity: sha512-/1536wbgC3ajWE/wQpQMrO+es+dCZ6ApYusjSTu+D4wA9c+WQTmc5wT1og09P8FTGzP0y/N2Mec9AsYB2yL1FA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@css-inline/css-inline-darwin-x64@0.22.0':
-    resolution: {integrity: sha512-99PM7DCxDQ6yzmlM7BrsTJKauGx0D5WGm70DEIBlhI87it7rax0i2kyykV/xgojOihttR4EbzF1jv9opvKpn+A==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@css-inline/css-inline-linux-arm-gnueabihf@0.22.0':
-    resolution: {integrity: sha512-5QBP5gunVeQvM2dcirBgSPgeS7hxN5fZO+VGtp1meVw8zArP40MFhnC0yPqt6kCVUjVgchBmYy8PmA/iLS4a+w==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [linux]
-
-  '@css-inline/css-inline-linux-arm64-gnu@0.22.0':
-    resolution: {integrity: sha512-UMmZr5kJOZ67LbBZZsGdD2mPhCDGwfCj3/Aaw2srY3lc99HiGAqQ4qgjd9sOI7W85kmBmUEqnf/X60JOJsAhWw==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@css-inline/css-inline-linux-arm64-musl@0.22.0':
-    resolution: {integrity: sha512-QgeTwJtVibEE4NN1vDu5xRPrQNWedUyfQyCHxlsh6vdXY8nZ9cd9iFa4aguqaAi7ljr6gkjAFuERHULSjynLJg==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@css-inline/css-inline-linux-x64-gnu@0.22.0':
-    resolution: {integrity: sha512-l8QAh5/zEdYNlS1Ctqi/0D9tDXhEic9w9ou7FTxmQjMirAg2+oUmiraqWNnZr0YeYySPN500XHbCKDGq9ACYRg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@css-inline/css-inline-linux-x64-musl@0.22.0':
-    resolution: {integrity: sha512-9LcUU2ZJl7VGfcCa6LGCeGQsnUomLgcxJvbnCWiSH7A8iP1O5tZ2HWIj9j8zpCEHciBwn9WklWewZ4gP0ZlB9A==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@css-inline/css-inline-win32-arm64-msvc@0.22.0':
-    resolution: {integrity: sha512-Sn2F+N3NiMFkho6r4JGgdkiwGmjR9tzUY+pSQ3Jtosruos7rF0qtCBSycu2O3Kceuf/rWaKi3H0q0TnjrSYRVw==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [win32]
-
-  '@css-inline/css-inline-win32-x64-msvc@0.22.0':
-    resolution: {integrity: sha512-3K87N3QCyznTOuU4gZA3kkVlDSp5niKHTVL/7GtlkSLJQYb6s0ZfKxxBD8AUrOyajd4iYWyWsr8HM/Rs+BdUlg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [win32]
-
-  '@css-inline/css-inline@0.22.0':
-    resolution: {integrity: sha512-C1vALHUS02Vv8dBoH07A1fQG7F0Mf/SG7cfQw2BX0eHmUgw+rjWrW/hedP1CGNoBLjGVvBDyjYfVOSjgLdm18w==}
-    engines: {node: '>= 10'}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -779,53 +700,6 @@ packages:
     peerDependencies:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
       '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
-
-  '@nestjs-modules/mailer@3.0.2':
-    resolution: {integrity: sha512-029fQd7UrTGNr+WogAgTUw5UHYCSLpnbQW7y5Ueyp6LZtAZssOjwqGcDqfYijNdxNKI8wdcBUfhVoOh39L+Z5w==}
-    peerDependencies:
-      '@nestjs/common': '>=7.0.9'
-      '@nestjs/core': '>=7.0.9'
-      '@nestjs/event-emitter': '>=2.0.0'
-      '@nestjs/terminus': '>=10.0.0'
-      '@types/ejs': '>=3.0.3'
-      '@types/mjml': '>=4.7.4'
-      '@types/pug': '>=2.0.6'
-      bullmq: '>=4.0.0'
-      ejs: '>=3.1.10'
-      handlebars: '>=4.7.9'
-      liquidjs: '>=10.25.5'
-      mjml: '>=4.15.3'
-      nodemailer: '>=8.0.5'
-      nunjucks: '>=3.2.0'
-      preview-email: '>=3.0.19'
-      pug: '>=3.0.3'
-    peerDependenciesMeta:
-      '@nestjs/event-emitter':
-        optional: true
-      '@nestjs/terminus':
-        optional: true
-      '@types/ejs':
-        optional: true
-      '@types/mjml':
-        optional: true
-      '@types/pug':
-        optional: true
-      bullmq:
-        optional: true
-      ejs:
-        optional: true
-      handlebars:
-        optional: true
-      liquidjs:
-        optional: true
-      mjml:
-        optional: true
-      nunjucks:
-        optional: true
-      preview-email:
-        optional: true
-      pug:
-        optional: true
 
   '@nestjs/cli@11.0.24':
     resolution: {integrity: sha512-aIHxQLSYtXShifA3zwWIeznEsZnNa3Iz2QRykFj+sl9IcbERBHr5nH87FRgywM+He3NxoF5WazHfR8FsmVeWxw==}
@@ -1225,9 +1099,6 @@ packages:
 
   '@types/node@22.20.1':
     resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
-
-  '@types/nodemailer@8.0.2':
-    resolution: {integrity: sha512-c7M5ox8p0nEOfbJ2E9Qcmt8/QCu/VzsiAhzBiZbvky2PhKZDHpKB3sQHBM5MEZNkCfBOaS6S9//AGPRTNB7IaA==}
 
   '@types/pg@8.23.1':
     resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
@@ -3183,10 +3054,6 @@ packages:
     resolution: {integrity: sha512-AB1qHzJWjAuxpDvTr/n1wvKVOg8c9BjAHV21QXq+q9yEUNr7wSqfHmAhAzvpQWSbf8mQQle3fjsnu3R14jrElA==}
     engines: {node: '>=0.12'}
 
-  nodemailer@10.2.1:
-    resolution: {integrity: sha512-ZrDNsPFoDMwefNs7sJwrYiEJ/CG4ClJWDZv05iNJsEBWa8GRDry1QJHTJxsuTAY9eDDKjX4k+q3SxslXJOao7w==}
-    engines: {node: '>=20.0.0'}
-
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
@@ -4505,53 +4372,6 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@css-inline/css-inline-android-arm-eabi@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-android-arm64@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-darwin-arm64@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-darwin-x64@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-linux-arm-gnueabihf@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-linux-arm64-gnu@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-linux-arm64-musl@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-linux-x64-gnu@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-linux-x64-musl@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-win32-arm64-msvc@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline-win32-x64-msvc@0.22.0':
-    optional: true
-
-  '@css-inline/css-inline@0.22.0':
-    optionalDependencies:
-      '@css-inline/css-inline-android-arm-eabi': 0.22.0
-      '@css-inline/css-inline-android-arm64': 0.22.0
-      '@css-inline/css-inline-darwin-arm64': 0.22.0
-      '@css-inline/css-inline-darwin-x64': 0.22.0
-      '@css-inline/css-inline-linux-arm-gnueabihf': 0.22.0
-      '@css-inline/css-inline-linux-arm64-gnu': 0.22.0
-      '@css-inline/css-inline-linux-arm64-musl': 0.22.0
-      '@css-inline/css-inline-linux-x64-gnu': 0.22.0
-      '@css-inline/css-inline-linux-x64-musl': 0.22.0
-      '@css-inline/css-inline-win32-arm64-msvc': 0.22.0
-      '@css-inline/css-inline-win32-x64-msvc': 0.22.0
-
   '@emnapi/core@1.10.0':
     dependencies:
       '@emnapi/wasi-threads': 1.2.1
@@ -5019,18 +4839,6 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@nestjs-modules/mailer@3.0.2(@nestjs/common@11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)(@nestjs/event-emitter@3.1.0(@nestjs/common@11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3))(handlebars@4.7.9)(nodemailer@10.2.1)':
-    dependencies:
-      '@css-inline/css-inline': 0.22.0
-      '@nestjs/common': 11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.2.3(@nestjs/common@11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      glob: 13.0.6
-      nodemailer: 10.2.1
-      tslib: 2.8.1
-    optionalDependencies:
-      '@nestjs/event-emitter': 3.1.0(@nestjs/common@11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)
-      handlebars: 4.7.9
-
   '@nestjs/cli@11.0.24(@types/node@22.20.1)(prettier@3.9.6)':
     dependencies:
       '@angular-devkit/core': 19.2.27(chokidar@4.0.3)
@@ -5448,10 +5256,6 @@ snapshots:
   '@types/node@22.20.1':
     dependencies:
       undici-types: 6.21.0
-
-  '@types/nodemailer@8.0.2':
-    dependencies:
-      '@types/node': 22.20.1
 
   '@types/pg@8.23.1':
     dependencies:
@@ -7645,8 +7449,6 @@ snapshots:
       split2: 2.2.0
       stream-combiner2: 1.1.1
       through2: 2.0.5
-
-  nodemailer@10.2.1: {}
 
   normalize-path@3.0.0: {}
 

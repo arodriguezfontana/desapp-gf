@@ -1,7 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { randomUUID } from 'node:crypto';
 
 import { USER_REPOSITORY, PASSWORD_HASHER } from '../../modules/auth/auth.constants';
 import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
@@ -35,26 +37,23 @@ import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/a
 import { PriceAlert } from '../../domain/alerts/price-alert';
 import { AlertCondition } from '../../domain/alerts/alert-condition';
 import { QuotationService } from '../quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../auth/user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/admin/dto/simulation-result.dto';
-
-interface BotConfig {
-  email: string;
-  username: string;
-}
-
-const DEFAULT_BOTS: BotConfig[] = [
-  { email: 'bot_liquidity_1@desapp.com', username: 'LiquidityBot' },
-  { email: 'bot_trader_2@desapp.com', username: 'AlphaTraderBot' },
-  { email: 'bot_whale_3@desapp.com', username: 'WhaleInvestorBot' },
-];
-
-function buildDateHelper(): (daysAgo: number) => Date {
-  const now = Date.now();
-  const dayMs = 24 * 60 * 60 * 1000;
-  return (daysAgo: number) => new Date(now - daysAgo * dayMs);
-}
+import {
+  ADMIN_ORDER_PLANS,
+  BOT_INITIAL_HOLDING,
+  buildDateHelper,
+  buildTradePlans,
+  DEFAULT_BOTS,
+  DEMO_ALERT_ABOVE_FACTOR,
+  DEMO_ALERT_BELOW_FACTOR,
+  FALLBACK_REFERENCE_PRICE,
+  MARKET_BOOK_LEVELS,
+  MAX_SIMULATED_PLAYERS,
+  MIN_REFERENCE_PRICE,
+  QUOTE_HISTORY_STEPS,
+} from './simulation-plans';
 
 @Injectable()
 export class MarketSimulationService {
@@ -74,6 +73,8 @@ export class MarketSimulationService {
     private readonly strategyProvisioning: UserStrategyProvisioningService,
     private readonly config: ConfigService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   async simulate(targetEmail?: string): Promise<SimulationResultDto> {
@@ -100,11 +101,11 @@ export class MarketSimulationService {
       };
     }
 
-    const simPlayers = activePlayers.slice(0, Math.min(6, activePlayers.length));
+    const simPlayers = activePlayers.slice(0, Math.min(MAX_SIMULATED_PLAYERS, activePlayers.length));
     const refPrices = await this.buildRefPrices(admin.id, activePlayers);
     const alertsCreated = await this.ensureDemoAlerts(admin.id, simPlayers, refPrices);
 
-    const tDate = buildDateHelper();
+    const tDate = buildDateHelper(this.clock.now());
 
     const { transactionsCount, holdingsCount, adminOrdersCount, marketOrdersCount } =
       await this.seedMarketActivityIfNeeded(admin, bots, simPlayers, refPrices, tDate);
@@ -135,9 +136,9 @@ export class MarketSimulationService {
     for (const player of players) {
       try {
         const val = await this.quotation.valuate(adminId, player.id);
-        refPrices.set(player.id, Math.max(5, roundToTwoDecimals(val.value)));
+        refPrices.set(player.id, Math.max(MIN_REFERENCE_PRICE, roundToTwoDecimals(val.value)));
       } catch {
-        refPrices.set(player.id, 20.0);
+        refPrices.set(player.id, FALLBACK_REFERENCE_PRICE);
       }
     }
     return refPrices;
@@ -169,37 +170,7 @@ export class MarketSimulationService {
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
   ): Promise<{ transactionsCount: number; holdingsCount: number }> {
-    interface TxPlan {
-      playerIdx: number;
-      type: TokenTransactionType;
-      quantity: number;
-      priceFactor: number;
-      daysAgo: number;
-      botIdx: number;
-    }
-
-    const txPlans: TxPlan[] = [
-      { playerIdx: 0, type: TokenTransactionType.CREDIT, quantity: 30, priceFactor: 0.9, daysAgo: 13, botIdx: 0 },
-      { playerIdx: 0, type: TokenTransactionType.DEBIT, quantity: 10, priceFactor: 1.05, daysAgo: 4, botIdx: 1 },
-      { playerIdx: 0, type: TokenTransactionType.CREDIT, quantity: 5, priceFactor: 1.0, daysAgo: 0, botIdx: 2 },
-      { playerIdx: 1, type: TokenTransactionType.CREDIT, quantity: 40, priceFactor: 0.85, daysAgo: 11, botIdx: 1 },
-      { playerIdx: 1, type: TokenTransactionType.DEBIT, quantity: 10, priceFactor: 1.1, daysAgo: 6, botIdx: 0 },
-      { playerIdx: 2, type: TokenTransactionType.CREDIT, quantity: 25, priceFactor: 0.92, daysAgo: 9, botIdx: 0 },
-      { playerIdx: 2, type: TokenTransactionType.CREDIT, quantity: 15, priceFactor: 1.02, daysAgo: 3, botIdx: 2 },
-      { playerIdx: 3, type: TokenTransactionType.CREDIT, quantity: 35, priceFactor: 0.88, daysAgo: 8, botIdx: 2 },
-      { playerIdx: 3, type: TokenTransactionType.DEBIT, quantity: 10, priceFactor: 1.15, daysAgo: 2, botIdx: 1 },
-    ];
-    if (simPlayers.length > 4) {
-      txPlans.push(
-        { playerIdx: 4, type: TokenTransactionType.CREDIT, quantity: 20, priceFactor: 0.95, daysAgo: 5, botIdx: 0 },
-        { playerIdx: 4, type: TokenTransactionType.CREDIT, quantity: 10, priceFactor: 1.05, daysAgo: 1, botIdx: 1 },
-      );
-    }
-    if (simPlayers.length > 5) {
-      txPlans.push(
-        { playerIdx: 5, type: TokenTransactionType.CREDIT, quantity: 15, priceFactor: 0.94, daysAgo: 7, botIdx: 2 },
-      );
-    }
+    const txPlans = buildTradePlans(simPlayers.length);
 
     const adminHoldingsQty = new Map<string, number>();
     let transactionsCount = 0;
@@ -207,20 +178,20 @@ export class MarketSimulationService {
     for (const plan of txPlans) {
       const player = simPlayers[plan.playerIdx];
       const bot = bots[plan.botIdx % bots.length];
-      const price = roundToTwoDecimals((refPrices.get(player.id) ?? 20.0) * plan.priceFactor);
+      const price = roundToTwoDecimals((refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE) * plan.priceFactor);
       const createdAt = tDate(plan.daysAgo);
-      const orderId = randomUUID();
-      const counterpartOrderId = randomUUID();
+      const orderId = this.ids.generate();
+      const counterpartOrderId = this.ids.generate();
       const adminSide = plan.type === TokenTransactionType.CREDIT ? OrderSide.BUY : OrderSide.SELL;
 
-      await this.orders.save(Order.restore({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
-      await this.orders.save(Order.restore({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
+      await this.orders.save(Order.seed({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
+      await this.orders.save(Order.seed({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
 
-      await this.tokenTransactions.save(TokenTransaction.create({ id: randomUUID(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt }));
+      await this.tokenTransactions.save(TokenTransaction.create({ id: this.ids.generate(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt }));
       transactionsCount++;
 
       const botTxType = plan.type === TokenTransactionType.CREDIT ? TokenTransactionType.DEBIT : TokenTransactionType.CREDIT;
-      await this.tokenTransactions.save(TokenTransaction.create({ id: randomUUID(), userId: bot.id, type: botTxType, playerId: player.id, quantity: plan.quantity, price, orderId: counterpartOrderId, counterpartOrderId: orderId, createdAt }));
+      await this.tokenTransactions.save(TokenTransaction.create({ id: this.ids.generate(), userId: bot.id, type: botTxType, playerId: player.id, quantity: plan.quantity, price, orderId: counterpartOrderId, counterpartOrderId: orderId, createdAt }));
 
       const current = adminHoldingsQty.get(player.id) ?? 0;
       adminHoldingsQty.set(player.id, Math.max(0, plan.type === TokenTransactionType.CREDIT ? current + plan.quantity : current - plan.quantity));
@@ -229,8 +200,7 @@ export class MarketSimulationService {
     let holdingsCount = 0;
     for (const [playerId, quantity] of adminHoldingsQty.entries()) {
       if (quantity > 0) {
-        const existing = await this.holdings.findByUserAndPlayer(admin.id, playerId);
-        await this.holdings.save(TokenHolding.restore({ id: existing?.id ?? randomUUID(), userId: admin.id, playerId, quantity, updatedAt: new Date() }));
+        await this.saveHoldingQuantity(admin.id, playerId, quantity);
         holdingsCount++;
       }
     }
@@ -244,12 +214,21 @@ export class MarketSimulationService {
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
   ): Promise<number> {
-    const orders = [
-      Order.restore({ id: randomUUID(), userId: adminId, playerId: simPlayers.at(-1)!.id, side: OrderSide.BUY, quantity: 15, remainingQuantity: 15, price: roundToTwoDecimals((refPrices.get(simPlayers.at(-1)!.id) ?? 20) * 0.95), createdAt: tDate(1), status: OrderStatus.PENDING }),
-      Order.restore({ id: randomUUID(), userId: adminId, playerId: simPlayers[0].id, side: OrderSide.SELL, quantity: 10, remainingQuantity: 5, price: roundToTwoDecimals((refPrices.get(simPlayers[0].id) ?? 20) * 1.12), createdAt: tDate(2), status: OrderStatus.PARTIALLY_FILLED }),
-      Order.restore({ id: randomUUID(), userId: adminId, playerId: simPlayers[1].id, side: OrderSide.BUY, quantity: 40, remainingQuantity: 0, price: roundToTwoDecimals((refPrices.get(simPlayers[1].id) ?? 20) * 0.85), createdAt: tDate(11), status: OrderStatus.COMPLETED }),
-      Order.restore({ id: randomUUID(), userId: adminId, playerId: simPlayers[2].id, side: OrderSide.SELL, quantity: 10, remainingQuantity: 10, price: roundToTwoDecimals((refPrices.get(simPlayers[2].id) ?? 20) * 1.3), createdAt: tDate(7), status: OrderStatus.CANCELLED }),
-    ];
+    const orders = ADMIN_ORDER_PLANS.map((plan) => {
+      const player = plan.playerIdx < 0 ? simPlayers.at(plan.playerIdx)! : simPlayers[plan.playerIdx];
+      const referencePrice = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
+      return Order.seed({
+        id: this.ids.generate(),
+        userId: adminId,
+        playerId: player.id,
+        side: plan.side,
+        quantity: plan.quantity,
+        remainingQuantity: plan.remainingQuantity,
+        price: roundToTwoDecimals(referencePrice * plan.priceFactor),
+        createdAt: tDate(plan.daysAgo),
+        status: plan.status,
+      });
+    });
     for (const o of orders) {
       await this.orders.save(o);
     }
@@ -263,26 +242,27 @@ export class MarketSimulationService {
     tDate: (daysAgo: number) => Date,
   ): Promise<number> {
     let count = 0;
-    const [bot1, bot2, bot3] = bots;
-
     for (const player of simPlayers) {
-      const base = refPrices.get(player.id) ?? 20.0;
+      const base = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
 
       for (const bot of bots) {
-        const existing = await this.holdings.findByUserAndPlayer(bot.id, player.id);
-        await this.holdings.save(TokenHolding.restore({ id: existing?.id ?? randomUUID(), userId: bot.id, playerId: player.id, quantity: 250, updatedAt: new Date() }));
+        await this.saveHoldingQuantity(bot.id, player.id, BOT_INITIAL_HOLDING);
       }
 
-      const levels = [
-        { bot: bot1, side: OrderSide.BUY, qty: 20, price: roundToTwoDecimals(base * 0.98), age: 3 },
-        { bot: bot2, side: OrderSide.BUY, qty: 35, price: roundToTwoDecimals(base * 0.95), age: 4 },
-        { bot: bot3, side: OrderSide.BUY, qty: 50, price: roundToTwoDecimals(base * 0.91), age: 5 },
-        { bot: bot1, side: OrderSide.SELL, qty: 15, price: roundToTwoDecimals(base * 1.02), age: 2 },
-        { bot: bot2, side: OrderSide.SELL, qty: 30, price: roundToTwoDecimals(base * 1.06), age: 3 },
-        { bot: bot3, side: OrderSide.SELL, qty: 60, price: roundToTwoDecimals(base * 1.1), age: 4 },
-      ];
-      for (const lvl of levels) {
-        await this.orders.save(Order.restore({ id: randomUUID(), userId: lvl.bot.id, playerId: player.id, side: lvl.side, quantity: lvl.qty, remainingQuantity: lvl.qty, price: lvl.price, createdAt: tDate(lvl.age), status: OrderStatus.PENDING }));
+      for (const level of MARKET_BOOK_LEVELS) {
+        await this.orders.save(
+          Order.seed({
+            id: this.ids.generate(),
+            userId: bots[level.botIdx].id,
+            playerId: player.id,
+            side: level.side,
+            quantity: level.quantity,
+            remainingQuantity: level.quantity,
+            price: roundToTwoDecimals(base * level.priceFactor),
+            createdAt: tDate(level.daysAgo),
+            status: OrderStatus.PENDING,
+          }),
+        );
         count++;
       }
     }
@@ -299,25 +279,18 @@ export class MarketSimulationService {
 
     const adminStrategies = await this.strategies.findByUserId(adminId);
     const selectedStrategy = adminStrategies.find((s) => s.isSelected) ?? adminStrategies[0];
-    const strategyId = selectedStrategy ? selectedStrategy.id : randomUUID();
+    const strategyId = selectedStrategy ? selectedStrategy.id : this.ids.generate();
 
     const quotesToSave: PlayerQuote[] = [];
     const quotesSummary: SimulatedQuoteDto[] = [];
     const latestQuoteByPlayer: PlayerQuote[] = [];
-    const intervals = [
-      { daysAgo: 25, factor: 0.82 },
-      { daysAgo: 20, factor: 0.87 },
-      { daysAgo: 15, factor: 0.91 },
-      { daysAgo: 10, factor: 0.96 },
-      { daysAgo: 5, factor: 0.99 },
-    ];
 
     for (const player of activePlayers) {
-      const currentPrice = refPrices.get(player.id) ?? 20.0;
+      const currentPrice = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
       let latestQuote: PlayerQuote | null = null;
-      for (const step of intervals) {
+      for (const step of QUOTE_HISTORY_STEPS) {
         const quoteValue = roundToTwoDecimals(currentPrice * step.factor);
-        const quote = PlayerQuote.create({ id: randomUUID(), userId: adminId, playerId: player.id, strategyId, weightSnapshot: { rating: 1.0, goals: 1.0 }, factorEscalaSnapshot: 1.0, score: roundToTwoDecimals(quoteValue / 10), value: quoteValue, calculatedAt: tDate(step.daysAgo), appliedPosition: player.position });
+        const quote = PlayerQuote.create({ id: this.ids.generate(), userId: adminId, playerId: player.id, strategyId, weightSnapshot: { rating: 1.0, goals: 1.0 }, factorEscalaSnapshot: 1.0, score: roundToTwoDecimals(quoteValue / 10), value: quoteValue, calculatedAt: tDate(step.daysAgo), appliedPosition: player.position });
         quotesToSave.push(quote);
         latestQuote = quote;
       }
@@ -354,30 +327,30 @@ export class MarketSimulationService {
       return 0;
     }
 
-    const now = new Date();
+    const now = this.clock.now();
     const belowPlayer = simPlayers[0];
-    const belowPrice = refPrices.get(belowPlayer.id) ?? 20.0;
+    const belowPrice = refPrices.get(belowPlayer.id) ?? FALLBACK_REFERENCE_PRICE;
     const alertsToCreate: PriceAlert[] = [
       PriceAlert.create({
-        id: randomUUID(),
+        id: this.ids.generate(),
         userId: adminId,
         playerId: belowPlayer.id,
         condition: AlertCondition.PRICE_BELOW,
-        targetValue: roundToTwoDecimals(belowPrice * 1.05),
+        targetValue: roundToTwoDecimals(belowPrice * DEMO_ALERT_BELOW_FACTOR),
         createdAt: now,
       }),
     ];
 
     if (simPlayers.length > 1) {
       const abovePlayer = simPlayers[1];
-      const abovePrice = refPrices.get(abovePlayer.id) ?? 20.0;
+      const abovePrice = refPrices.get(abovePlayer.id) ?? FALLBACK_REFERENCE_PRICE;
       alertsToCreate.push(
         PriceAlert.create({
-          id: randomUUID(),
+          id: this.ids.generate(),
           userId: adminId,
           playerId: abovePlayer.id,
           condition: AlertCondition.PRICE_ABOVE,
-          targetValue: roundToTwoDecimals(abovePrice * 0.9),
+          targetValue: roundToTwoDecimals(abovePrice * DEMO_ALERT_ABOVE_FACTOR),
           createdAt: now,
         }),
       );
@@ -389,6 +362,13 @@ export class MarketSimulationService {
     return alertsToCreate.length;
   }
 
+  /** Fija la cantidad de un holding (idempotente): reutiliza el existente o abre uno nuevo. */
+  private async saveHoldingQuantity(userId: string, playerId: string, quantity: number): Promise<void> {
+    const existing = await this.holdings.findByUserAndPlayer(userId, playerId);
+    const holding = existing ?? TokenHolding.createEmpty(userId, playerId);
+    await this.holdings.save(holding.withQuantity(quantity));
+  }
+
   private async ensureAdminUser(emailStr: string): Promise<User> {
     const email = Email.create(emailStr);
     let admin = await this.users.findByEmail(email);
@@ -396,7 +376,7 @@ export class MarketSimulationService {
     if (!admin) {
       const rawPassword = this.config.get<string>('ADMIN_PASSWORD') ?? 'Abrilrz1!';
       const hash = await this.hasher.hash(rawPassword);
-      admin = User.register(randomUUID(), email, hash, new Date(), UserRole.ADMIN, 'admin');
+      admin = User.register(this.ids.generate(), email, hash, this.clock.now(), UserRole.ADMIN, 'admin');
       await this.users.save(admin);
       await this.strategyProvisioning.provisionDefaultStrategiesFor(admin.id);
     }
@@ -413,7 +393,7 @@ export class MarketSimulationService {
       const email = Email.create(cfg.email);
       let bot = await this.users.findByEmail(email);
       if (!bot) {
-        bot = User.register(randomUUID(), email, botPasswordHash, new Date(), UserRole.USER, cfg.username);
+        bot = User.register(this.ids.generate(), email, botPasswordHash, this.clock.now(), UserRole.USER, cfg.username);
         await this.users.save(bot);
         await this.strategyProvisioning.provisionDefaultStrategiesFor(bot.id);
       }

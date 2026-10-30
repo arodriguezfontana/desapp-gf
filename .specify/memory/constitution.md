@@ -1,6 +1,33 @@
 <!--
 Sync Impact Report
 ==================
+Version change: 1.10.1 → 1.11.0
+Rationale: MINOR. Se elimina del Principio II la exigencia específica sobre las estrategias
+de valuación (implementarlas con Strategy pattern y registrar la versión de la estrategia
+en cada cotización). Esa exigencia no se pedía en el enunciado y no coincidía con lo
+implementado: la estrategia de valuación es un objeto de dominio parametrizado
+(ValuationStrategy) y el cálculo es un único algoritmo de dominio puro, sin jerarquía de
+clases, y "versión de la estrategia" nunca existió como número (cada cotización guarda el id
+de la estrategia y un snapshot de sus parámetros). El Principio II conserva su regla
+central: la lógica de negocio MUST vivir en clases de dominio. Es una relajación
+compatible hacia atrás: todo lo que cumplía antes sigue cumpliendo.
+
+Modified principles:
+  - II. Modelo de dominio rico (se elimina el párrafo de estrategias de valuación y se
+    ajusta su Rationale)
+
+Modified sections: ninguna otra.
+Added sections: none
+Removed sections: none
+Renumbered principles: none
+
+Follow-up TODOs: esta enmienda debe ser aprobada por el resto del grupo antes de
+integrarse (Governance → Enmiendas).
+-->
+
+<!--
+Sync Impact Report (enmienda anterior)
+==================
 Version change: 1.10.0 → 1.10.1
 Rationale: PATCH. Corrección de redacción: el título de la constitución decía "DesApp"
 pero el nombre real del proyecto es "FútVal". No cambia ningún principio, regla ni
@@ -214,12 +241,8 @@ La lógica de negocio (cálculo de score de valuación, validación de si una ve
 posible, cálculo de ganancia/pérdida de una posición, reglas de compra/venta de tokens)
 MUST vivir en clases de dominio, nunca en Controllers, Services ni Repositories.
 
-Las estrategias de valuación MUST implementarse con Strategy pattern: una interfaz
-común, implementaciones intercambiables y configurables en runtime. Cada cotización
-MUST registrar la versión de la estrategia que la produjo.
-
 **Rationale**: Un dominio rico concentra las decisiones de negocio en un solo lugar
-verificable; versionar la estrategia hace auditable y reproducible cada cotización.
+verificable y testeable sin infraestructura.
 
 ### III. Cada validación en su nivel
 
@@ -466,4 +489,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.10.1 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-22
+**Version**: 1.11.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-26

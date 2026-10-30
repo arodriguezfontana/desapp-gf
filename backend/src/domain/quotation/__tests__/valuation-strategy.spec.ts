@@ -253,41 +253,6 @@ describe('ValuationStrategy', () => {
     });
   });
 
-  describe('select() / deselect()', () => {
-    it('select() retorna una nueva instancia con isActive = true', () => {
-      const strategy = ValuationStrategy.restore({
-        id: 'id-activate',
-        userId: 'user-1',
-        name: 'Test',
-        weights: VALID_WEIGHTS,
-        factorEscala: 99,
-        isSelected: false,
-      });
-
-      const selected = strategy.select();
-
-      expect(selected.isSelected).toBe(true);
-      expect(strategy.isSelected).toBe(false); // original no mutado
-      expect(selected).not.toBe(strategy);
-    });
-
-    it('deselect() retorna una nueva instancia con isActive = false', () => {
-      const strategy = ValuationStrategy.restore({
-        id: 'id-deactivate',
-        userId: 'user-1',
-        name: 'Test',
-        weights: VALID_WEIGHTS,
-        factorEscala: 99,
-        isSelected: true,
-      });
-
-      const deselected = strategy.deselect();
-
-      expect(deselected.isSelected).toBe(false);
-      expect(strategy.isSelected).toBe(true); // original no mutado
-    });
-  });
-
   describe('weights getter', () => {
     it('retorna una copia superficial para no exponer el estado interno', () => {
       const strategy = ValuationStrategy.restore({

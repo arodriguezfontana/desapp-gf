@@ -1,5 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
 import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } from '../../modules/orders/orders.constants';
 import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
@@ -9,9 +11,9 @@ import { Order } from '../../domain/orders/order';
 import { OrderBook } from '../../domain/orders/order-book';
 import { oppositeSide, OrderSide } from '../../domain/orders/order-side';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
-import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
 import { matchOrder } from '../../domain/orders/match-order';
-import { InsufficientHoldingError } from '../../domain/portfolio/errors/insufficient-holding.error';
+import { involvedUserIdsInLockOrder, settleFills } from '../../domain/orders/settle-fills';
+import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
@@ -25,6 +27,7 @@ import { TransactionManager } from '../../repositories/shared/transaction-manage
 
 import { QuotationService } from '../quotation/quotation.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
+import { WithPlayerName, withPlayerName } from '../../shared/with-player-name';
 
 export interface OrderCreationResult {
   order: Order;
@@ -52,6 +55,8 @@ export class OrdersService {
     @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
     @Inject(TRANSACTION_MANAGER) private readonly transactionManager: TransactionManager,
     private readonly quotation: QuotationService,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /**
@@ -75,22 +80,20 @@ export class OrdersService {
     if (side === OrderSide.SELL) {
       const holding = await this.holdings.findByUserAndPlayer(userId, playerId);
       const pendingSell = await this.orders.sumPendingSellQuantity(userId, playerId);
-      if ((holding?.quantity ?? 0) < quantity + pendingSell) {
-        throw new InsufficientHoldingError();
-      }
+      TokenHolding.assertCanSell(holding, quantity, pendingSell);
     }
 
     const valuation = await this.quotation.valuate(userId, playerId);
     const price = roundToTwoDecimals(valuation.value);
 
     const newOrder = Order.create({
-      id: randomUUID(),
+      id: this.ids.generate(),
       userId,
       playerId,
       side,
       quantity,
       price,
-      createdAt: new Date(),
+      createdAt: this.clock.now(),
     });
 
     const plan = await this.transactionManager.run(async (tx) => {
@@ -109,34 +112,15 @@ export class OrdersService {
       // ascendente, antes de aplicar ningun credito/debito — asi dos
       // POST /orders concurrentes que afectan a los mismos dos usuarios en
       // direcciones opuestas nunca se deadlockean entre si.
-      const involvedUserIdSet = new Set<string>();
-      for (const fill of matchPlan.fills) {
-        involvedUserIdSet.add(fill.buyerUserId);
-        involvedUserIdSet.add(fill.sellerUserId);
-      }
-      const involvedUserIds = Array.from(involvedUserIdSet).sort((a, b) => a.localeCompare(b));
-
       const lockedEntries = await Promise.all(
-        involvedUserIds.map(async (uid) => [uid, await this.holdings.lockForUpdate(tx, uid, playerId)] as const),
+        involvedUserIdsInLockOrder(matchPlan.fills).map(
+          async (uid) => [uid, await this.holdings.lockForUpdate(tx, uid, playerId)] as const,
+        ),
       );
-      const lockedHoldings = new Map<string, Awaited<ReturnType<typeof this.holdings.lockForUpdate>>>(lockedEntries);
-
-      // Nota: si `buyerUserId === sellerUserId` (auto-match, spec Edge Cases —
-      // "no se distingue si ambas puntas pertenecen al mismo usuario"), el
-      // credito y el debito son sobre EL MISMO holding. Por eso cada
-      // operacion se lee de `lockedHoldings` recien antes de aplicarse (no
-      // antes), para que el debito parta del estado YA acreditado y el saldo
-      // neto quede correcto (sin cambio, en el caso de auto-match).
-      for (const fill of matchPlan.fills) {
-        const buyerHolding = lockedHoldings.get(fill.buyerUserId)!;
-        lockedHoldings.set(fill.buyerUserId, buyerHolding.credit(fill.quantity));
-
-        const sellerHolding = lockedHoldings.get(fill.sellerUserId)!;
-        lockedHoldings.set(fill.sellerUserId, sellerHolding.debit(fill.quantity));
-      }
+      const settledHoldings = settleFills(matchPlan.fills, new Map(lockedEntries));
 
       await Promise.all(
-        Array.from(lockedHoldings.values()).map((h) => this.holdings.saveInTransaction(tx, h)),
+        Array.from(settledHoldings.values()).map((h) => this.holdings.saveInTransaction(tx, h)),
       );
 
       await Promise.all([
@@ -144,42 +128,15 @@ export class OrdersService {
         this.orders.saveInTransaction(tx, matchPlan.newOrderFinal),
       ]);
 
-      const executedAt = new Date();
+      const executedAt = this.clock.now();
       await Promise.all(
         matchPlan.fills.flatMap((fill) => {
           this.logger.log(
             `Fill ejecutado: BUY ${fill.buyOrderId} x SELL ${fill.sellOrderId}, cantidad ${fill.quantity}, precio ${fill.price}`,
           );
-          return [
-            this.tokenTransactions.saveInTransaction(
-              tx,
-              TokenTransaction.create({
-                id: randomUUID(),
-                userId: fill.buyerUserId,
-                type: TokenTransactionType.CREDIT,
-                playerId,
-                quantity: fill.quantity,
-                price: fill.price,
-                orderId: fill.buyOrderId,
-                counterpartOrderId: fill.sellOrderId,
-                createdAt: executedAt,
-              }),
-            ),
-            this.tokenTransactions.saveInTransaction(
-              tx,
-              TokenTransaction.create({
-                id: randomUUID(),
-                userId: fill.sellerUserId,
-                type: TokenTransactionType.DEBIT,
-                playerId,
-                quantity: fill.quantity,
-                price: fill.price,
-                orderId: fill.sellOrderId,
-                counterpartOrderId: fill.buyOrderId,
-                createdAt: executedAt,
-              }),
-            ),
-          ];
+          return TokenTransaction.pairFromFill(fill, playerId, executedAt, () => this.ids.generate()).map((entry) =>
+            this.tokenTransactions.saveInTransaction(tx, entry),
+          );
         }),
       );
 
@@ -227,23 +184,25 @@ export class OrdersService {
    * Obtiene todas las órdenes emitidas por un usuario ordenadas por fecha descendente,
    * enriquecidas con el nombre del jugador correspondiente.
    */
-  async getUserOrders(userId: string): Promise<Array<Order & { playerName: string }>> {
+  async getUserOrders(userId: string): Promise<Array<WithPlayerName<Order>>> {
     const orders = await this.orders.findByUserId(userId);
     if (orders.length === 0) return [];
 
-    const allPlayers = await this.players.findAllActive();
-    const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
-    return orders.map((o) => Object.assign(o, { playerName: nameMap.get(o.playerId) ?? '' }));
+    const nameMap = await this.loadPlayerNames();
+    return orders.map((o) => withPlayerName(o, nameMap.get(o.playerId) ?? ''));
   }
 
-  async getHistory(userId: string): Promise<Array<TokenTransaction & { playerName: string }>> {
+  async getHistory(userId: string): Promise<Array<WithPlayerName<TokenTransaction>>> {
     const transactions = await this.tokenTransactions.findByUserId(userId);
     if (transactions.length === 0) return [];
 
-    const allPlayers = await this.players.findAllActive();
-    const nameMap = new Map(allPlayers.map((p) => [p.id, p.name]));
+    const nameMap = await this.loadPlayerNames();
+    return transactions.map((tx) => withPlayerName(tx, nameMap.get(tx.playerId) ?? tx.playerId));
+  }
 
-    return transactions.map((tx) => Object.assign(tx, { playerName: nameMap.get(tx.playerId) ?? tx.playerId }));
+  private async loadPlayerNames(): Promise<Map<string, string>> {
+    const allPlayers = await this.players.findAllActive();
+    return new Map(allPlayers.map((p) => [p.id, p.name]));
   }
 
   /**

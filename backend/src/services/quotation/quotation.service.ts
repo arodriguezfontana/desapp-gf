@@ -1,6 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { randomUUID } from 'node:crypto';
+import { Cron } from '@nestjs/schedule';
 import { calculatePlayerValue } from '../../domain/quotation/calculate-player-value';
 import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
@@ -32,10 +35,18 @@ export interface ValuationResult {
 }
 
 /**
+ * Domingos a las 03:00. Los jobs de sincronización de jugadores y de partidos
+ * corren los domingos a las 00:00 (`CronExpression.EVERY_WEEK`); el recálculo
+ * va unas horas después para valuar con las métricas ya sincronizadas y no
+ * con las de la semana anterior.
+ */
+export const QUOTATION_RECALCULATION_CRON = '0 3 * * 0';
+
+/**
  * Orquesta las operaciones sobre las estrategias propias de cada usuario y el
- * recálculo manual de cotizaciones (019-per-user-valuation-strategies,
- * reemplaza el modelo de estrategia única de sistema de
- * 012-valuation-strategies).
+ * recálculo de cotizaciones, manual (admin) o semanal con `@Cron`
+ * (019-per-user-valuation-strategies, reemplaza el modelo de estrategia única
+ * de sistema de 012-valuation-strategies).
  *
  * El lock de recálculo es en memoria a nivel sistema: solo puede haber un
  * recálculo global corriendo a la vez (409 si ya hay uno en curso).
@@ -53,6 +64,8 @@ export class QuotationService {
     @Inject(PLAYER_REPOSITORY)
     private readonly playerRepository: PlayerRepository,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /** Las dos estrategias propias del usuario (spec FR-004). */
@@ -131,7 +144,7 @@ export class QuotationService {
         const { score, value, appliedPosition, weightsUsed } = calculatePlayerValue(player, strategy);
         quotes.push(
           PlayerQuote.create({
-            id: randomUUID(),
+            id: this.ids.generate(),
             userId,
             playerId: player.id,
             strategyId: strategy.id,
@@ -139,7 +152,7 @@ export class QuotationService {
             factorEscalaSnapshot: strategy.factorEscala,
             score,
             value,
-            calculatedAt: new Date(),
+            calculatedAt: this.clock.now(),
             appliedPosition,
           }),
         );
@@ -243,6 +256,36 @@ export class QuotationService {
       return { recalculated, skipped };
     } finally {
       this.recalculationInProgress = false;
+    }
+  }
+
+  /**
+   * Recálculo semanal automático (019, FR-016). `waitForCompletion: true`: evita
+   * que el scheduler dispare una corrida nueva mientras la anterior sigue
+   * corriendo. Si el lock ya está tomado (p. ej. un recálculo manual de un
+   * administrador), se salta esta ejecución y loguea una advertencia, igual que
+   * los crons de sincronización de jugadores y de partidos. Un error inesperado
+   * se registra en el log y no se propaga al scheduler.
+   */
+  @Cron(QUOTATION_RECALCULATION_CRON, { waitForCompletion: true })
+  async handleCron(): Promise<void> {
+    if (this.recalculationInProgress) {
+      this.logger.warn(
+        'El @Cron de recálculo de cotizaciones se salta porque ya hay un recálculo en curso (spec 019, FR-016).',
+      );
+      return;
+    }
+    try {
+      this.logger.log('Iniciando el recálculo semanal de cotizaciones...');
+      const result = await this.recalculateAll();
+      this.logger.log(
+        `Recálculo semanal completado: ${result.recalculated.length} cotizaciones, ${result.skipped.length} salteadas.`,
+      );
+    } catch (error) {
+      this.logger.error(
+        'El recálculo semanal de cotizaciones falló con un error inesperado.',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 }

@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { RuntimeModule } from '../runtime/runtime.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from '../auth/auth.module';
@@ -12,7 +13,7 @@ import { ApiKeyService } from '../../services/api-key/api-key.service';
 
 @Module({
   // AuthModule: el controller de emisión necesita AuthService para resolver el User emisor (spec 008, R2).
-  imports: [TypeOrmModule.forFeature([ApiKeyEntity]), forwardRef(() => AuthModule)],
+  imports: [RuntimeModule, TypeOrmModule.forFeature([ApiKeyEntity]), forwardRef(() => AuthModule)],
   controllers: [ApiKeyController],
   providers: [
     ApiKeyService,

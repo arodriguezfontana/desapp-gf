@@ -1,4 +1,5 @@
 import { ConfigModule } from '@nestjs/config';
+import { RuntimeModule } from '../../modules/runtime/runtime.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -46,6 +47,7 @@ describe('PlayerSyncService — startManualRun (integración, spec 009)', () => 
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        RuntimeModule,
         DatabaseModule,
         TypeOrmModule.forFeature([PlayerEntity]),
       ],

@@ -64,7 +64,9 @@ export class FootballDataSyncService {
   /**
    * `waitForCompletion: true`: evita que el scheduler dispare una corrida nueva
    * mientras la anterior sigue corriendo. Si el lock manual ya está tomado,
-   * se salta esta ejecución y loguea una advertencia (FR-015).
+   * se salta esta ejecución y loguea una advertencia (FR-015). Un error
+   * inesperado se registra en el log y no se propaga al scheduler, igual que
+   * en los crons de WhoScored y de recálculo de cotizaciones.
    */
   @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async handleCron(): Promise<void> {
@@ -79,6 +81,11 @@ export class FootballDataSyncService {
       this.logger.log('Starting scheduled Football-Data synchronization...');
       await this.syncAllLeagues();
       this.logger.log('Scheduled Football-Data synchronization finished.');
+    } catch (error) {
+      this.logger.error(
+        'La sincronización programada de Football-Data falló con un error inesperado.',
+        error instanceof Error ? error.stack : String(error),
+      );
     } finally {
       this.isRunning = false;
     }

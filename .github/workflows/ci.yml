@@ -164,10 +164,14 @@ jobs:
         run: pnpm build
 
   sonarqube:
-    name: SonarCloud
+    name: SonarCloud (suite completa con cobertura — PR a main o push a main)
     runs-on: ubuntu-latest
+    # Corre la suite completa (unit + integración + e2e), así que sigue la misma
+    # separación de perfiles que backend-heavy y frontend-heavy: en pushes a ramas
+    # y PRs a dev solo corren los jobs unitarios (spec 022, FR-005).
+    if: (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
-    # Igual que el job backend: Testcontainers levanta el Postgres efímero.
+    # Igual que backend-heavy: Testcontainers levanta el Postgres efímero.
     env:
       NODE_ENV: test
       JWT_SECRET: ci-test-secret-not-a-real-secret

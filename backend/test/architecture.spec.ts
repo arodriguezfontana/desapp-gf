@@ -1,4 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 import 'tsarch/dist/jest';
 import { filesOfProject } from 'tsarch';
 
@@ -140,5 +142,27 @@ describe('Arquitectura en capas (Principio I)', () => {
       .dependOnFiles()
       .matchingPattern(pattern);
     await expect(rule).toPassAsync();
+  });
+
+  /**
+   * tsarch no resuelve los modulos built-in de Node (`node:crypto`), asi que esta
+   * regla no se puede expresar con `dependOnFiles`: se verifica leyendo los
+   * imports de cada archivo de `services/`. La aleatoriedad (UUID) se pide al
+   * puerto `IdGenerator` y la hora al puerto `Clock`; `node:crypto` solo puede
+   * aparecer detras de un Adapter (Principio I).
+   */
+  it('el Service no importa node:crypto directo, la aleatoriedad vive detrás de IdGenerator', () => {
+    const listSources = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) return listSources(path);
+        return entry.name.endsWith('.ts') && !/\.spec\.ts$/.test(entry.name) ? [path] : [];
+      });
+
+    const offenders = listSources(join(__dirname, '..', 'src', 'services')).filter((file) =>
+      /from\s+['"](node:)?crypto['"]/.test(readFileSync(file, 'utf8')),
+    );
+
+    expect(offenders).toEqual([]);
   });
 });

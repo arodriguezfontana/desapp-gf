@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { RuntimeModule } from '../runtime/runtime.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlayerModule } from '../player/player.module';
 import { AlertsController } from '../../controllers/alerts/alerts.controller';
@@ -15,7 +16,7 @@ import { PRICE_ALERT_REPOSITORY } from './alerts.constants';
  * conocer el módulo de notificaciones (spec FR-021).
  */
 @Module({
-  imports: [forwardRef(() => PlayerModule), TypeOrmModule.forFeature([PriceAlertEntity])],
+  imports: [RuntimeModule, forwardRef(() => PlayerModule), TypeOrmModule.forFeature([PriceAlertEntity])],
   controllers: [AlertsController],
   providers: [
     AlertsService,

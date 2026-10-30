@@ -31,7 +31,7 @@ Esta feature no tiene prerequisitos bloqueantes. El trabajo comienza directament
 
 ## Phase 3: User Story 1 + 2 — Separación de perfiles en CI (Priority: P1) 🎯 MVP
 
-**Goal**: Dividir el job `backend` de `ci.yml` en `backend-unit` (todo push) y `backend-heavy` (solo PR a main), y agregar `test:integration` del frontend al job pesado.
+**Goal**: Dividir el job `backend` de `ci.yml` en `backend-unit` (todo push) y `backend-heavy` (PR a main o push a main), agregar la integración del frontend como job pesado (`frontend-heavy`) y condicionar `sonarqube` con la misma regla.
 
 **Independent Test**: Hacer push a una rama feature y verificar que solo corre `backend-unit`; abrir un PR a main y verificar que corren `backend-unit` + `backend-heavy` + frontend integration.
 
@@ -40,8 +40,8 @@ Esta feature no tiene prerequisitos bloqueantes. El trabajo comienza directament
 ### Implementación
 
 - [x] T005 [US1] [US2] En `.github/workflows/ci.yml`: renombrar el job `backend` a `backend-unit` y eliminar los steps `Test (integration)` y `Test (e2e)` de ese job
-- [x] T006 [US1] [US2] En `.github/workflows/ci.yml`: agregar el job `backend-heavy` con condición `if: github.event_name == 'pull_request' && github.base_ref == 'main'`, incluyendo los steps de checkout, pnpm, node, install, `pnpm test:integration` y `pnpm test:e2e` (working-directory: backend)
-- [x] T007 [US2] En `.github/workflows/ci.yml`: agregar el step `pnpm test:integration` (working-directory: frontend) dentro del job `backend-heavy`, después de los steps de e2e
+- [x] T006 [US1] [US2] En `.github/workflows/ci.yml`: agregar el job `backend-heavy` con condición de PR a main (ampliada después a push a main, commit `9ad1990`), incluyendo los steps de checkout, pnpm, node, install, `pnpm test:integration` y `pnpm test:e2e` (working-directory: backend)
+- [x] T007 [US2] En `.github/workflows/ci.yml`: agregar `pnpm test:integration` del frontend (working-directory: frontend); quedó finalmente en su propio job `frontend-heavy` (commits `60eeb2c` y `8e8a543`)
 
 **Checkpoint**: `ci.yml` actualizado. US1 y US2 completas — verificar con quickstart.md escenarios 1 y 2.
 
@@ -68,6 +68,15 @@ Esta feature no tiene prerequisitos bloqueantes. El trabajo comienza directament
 - [x] T011 [P] Correr `pnpm test:integration` en `backend/` localmente y confirmar que Testcontainers levanta y destruye el Postgres (quickstart.md escenario local 2)
 - [x] T012 [P] Correr `pnpm test:e2e` en `backend/` localmente y confirmar que pasa (quickstart.md escenario local 3)
 - [x] T013 Actualizar `research.md` si el estado final difiere de lo documentado (no hubo desviaciones — scripts de frontend ya correctos)
+
+---
+
+## Phase 6: Ajustes posteriores a la implementación inicial
+
+- [x] T014 En `.github/workflows/ci.yml`: ampliar la condición de los jobs pesados a push a `main` (commit `9ad1990`)
+- [x] T015 En `.github/workflows/ci.yml`: extraer la integración del frontend a su propio job `frontend-heavy`, con build previo del backend (commits `60eeb2c` y `8e8a543`)
+- [x] T016 En `.github/workflows/ci.yml`: condicionar el job `sonarqube` con la misma `if:` que los jobs pesados, para que un push a una rama solo corra los perfiles unitarios (FR-005, FR-010)
+- [x] T017 Actualizar `spec.md`, `plan.md`, `research.md`, `data-model.md` y `quickstart.md` para que reflejen el estado real del workflow
 
 ---
 

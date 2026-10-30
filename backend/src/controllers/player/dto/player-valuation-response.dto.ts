@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Position } from '../../../domain/player/enums/position';
 import { ValuationResult } from '../../../services/quotation/quotation.service';
+import { roundToSixDecimals, roundToTwoDecimals } from '../../../shared/numbers/round2';
 
 export class PlayerValuationResponseDto {
   @ApiProperty() playerId!: string;
@@ -19,8 +20,9 @@ export class PlayerValuationResponseDto {
     const dto = new PlayerValuationResponseDto();
     dto.playerId = result.playerId;
     dto.strategyId = result.strategyId;
-    dto.score = result.score;
-    dto.value = result.value;
+    // Misma precision que una cotizacion persistida (score DECIMAL(8,6), valor DECIMAL(10,2)).
+    dto.score = roundToSixDecimals(result.score);
+    dto.value = roundToTwoDecimals(result.value);
     dto.appliedPosition = result.appliedPosition;
     return dto;
   }

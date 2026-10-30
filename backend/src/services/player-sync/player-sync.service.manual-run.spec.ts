@@ -1,4 +1,6 @@
 import { PlayerSyncService } from './player-sync.service';
+import { SystemClock } from '../../adapters/runtime/system-clock';
+import { UuidIdGenerator } from '../../adapters/runtime/uuid-id-generator';
 import {
   WhoScoredAdapter,
   WhoScoredLeagueTeams,
@@ -31,7 +33,7 @@ describe('PlayerSyncService — disparo manual (spec 009)', () => {
       applyTeamRosterSync: jest.fn().mockResolvedValue(undefined),
       findAllActive: jest.fn(),
     };
-    service = new PlayerSyncService(whoScored, players);
+    service = new PlayerSyncService(whoScored, players, new SystemClock(), new UuidIdGenerator());
   });
 
   describe('startManualRun()', () => {

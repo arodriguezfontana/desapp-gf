@@ -4,6 +4,8 @@
 
 **Input**: Feature specification from `/specs/025-player-price-alerts/spec.md`
 
+> **Actualización (2026-10-27):** se eliminó el envío de emails de alertas (historia 4, FR-019 a FR-021 en su parte de email). El aviso queda solo en la bandeja de notificaciones, con push en vivo por SSE. Los módulos de mail, el adaptador de Nodemailer y las variables `MAIL_*` ya no existen; las referencias al email que siguen en este documento son registro histórico de la decisión original.
+
 ## Summary
 
 Un usuario autenticado crea alertas de precio (`PriceAlert`) sobre un jugador puntual,

@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { RuntimeModule } from '../runtime/runtime.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { PlayerModule } from '../player/player.module';
@@ -27,6 +28,7 @@ import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } f
  */
 @Module({
   imports: [
+    RuntimeModule,
     TypeOrmModule.forFeature([OrderEntity, TokenTransactionEntity]),
     forwardRef(() => PlayerModule),
     forwardRef(() => QuotationModule),

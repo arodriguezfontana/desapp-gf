@@ -33,6 +33,13 @@ export const NORMALIZATION_BOUNDS: Readonly<Record<string, number>> = {
   redCards: 5,
 } as const;
 
+/**
+ * Valor mínimo de un jugador: el score no puede llevar el precio por debajo de
+ * este piso. Un precio negativo o cero no se puede operar en el mercado
+ * (reemplaza el riesgo aceptado de 012-valuation-strategies, FR-010).
+ */
+export const MIN_PLAYER_VALUE = 1;
+
 /** Obtiene el valor bruto de una métrica del jugador dado su nombre de campo. */
 function getMetric(player: Player, key: string): number | null {
   const map: Record<string, number | null> = {
@@ -67,10 +74,10 @@ function getMetric(player: Player, key: string): number | null {
  * Algoritmo:
  *   normalizada_i = clamp(metrica_i ?? 0, 0, bound_i) / bound_i
  *   score = Σ(peso_i × normalizada_i)
- *   value = 1 + (score × factorEscala)
+ *   value = max(MIN_PLAYER_VALUE, 1 + (score × factorEscala))
  *
- * El value puede ser negativo si el score es muy negativo (pesos negativos en
- * métricas disciplinarias). Se persiste sin clamp — riesgo aceptado (spec FR-010).
+ * El score puede ser negativo (pesos negativos en métricas disciplinarias), pero
+ * el value nunca baja de `MIN_PLAYER_VALUE`.
  */
 export function calculatePlayerValue(
   player: Player,
@@ -97,6 +104,6 @@ export function calculatePlayerValue(
     score += weight * normalized;
   }
 
-  const value = 1 + score * strategy.factorEscala;
+  const value = Math.max(MIN_PLAYER_VALUE, 1 + score * strategy.factorEscala);
   return { score, value, appliedPosition, weightsUsed };
 }

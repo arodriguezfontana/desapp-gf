@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
 import { API_KEY_REPOSITORY, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
@@ -18,6 +20,8 @@ export class ApiKeyService {
   constructor(
     @Inject(API_KEY_REPOSITORY) private readonly apiKeys: ApiKeyRepository,
     @Inject(TOKEN_HASHER) private readonly hasher: TokenHasher,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /**
@@ -30,11 +34,11 @@ export class ApiKeyService {
   async issueApiKey(user: User): Promise<IssuedApiKey> {
     const rawApiKey = generateRawApiKey();
     const keyHash = this.hasher.hash(rawApiKey);
-    const newKey = ApiKey.issue(randomUUID(), user.id, keyHash, new Date(), user.role);
+    const newKey = ApiKey.issue(this.ids.generate(), user.id, keyHash, this.clock.now(), user.role);
 
     const previousKey = await this.apiKeys.findActiveByUserId(user.id);
     if (previousKey) {
-      previousKey.revoke(new Date());
+      previousKey.revoke(this.clock.now());
       await this.apiKeys.saveWithRevocation(newKey, previousKey);
     } else {
       await this.apiKeys.save(newKey);

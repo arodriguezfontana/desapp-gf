@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { Logger } from '@nestjs/common';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
@@ -7,7 +8,7 @@ import { User } from '../../domain/auth/user';
 import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { AdminSeedService } from './admin-seed.service';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 
 describe('AdminSeedService', () => {
   const PASSWORD = 'Admin1234!';
@@ -42,7 +43,14 @@ describe('AdminSeedService', () => {
     strategyProvisioning = {
       provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
     } as unknown as jest.Mocked<UserStrategyProvisioningService>;
-    service = new AdminSeedService(users, hasher, config, strategyProvisioning);
+    service = new AdminSeedService(
+      users,
+      hasher,
+      config,
+      strategyProvisioning,
+      new FixedClock(),
+      new SequentialIdGenerator('admin'),
+    );
     warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     log = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
   });

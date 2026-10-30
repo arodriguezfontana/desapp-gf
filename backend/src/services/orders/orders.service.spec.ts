@@ -1,4 +1,5 @@
 import { OrdersService } from './orders.service';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { Order } from '../../domain/orders/order';
 import { OrderBook } from '../../domain/orders/order-book';
 import { OrderSide } from '../../domain/orders/order-side';
@@ -6,6 +7,9 @@ import { OrderStatus } from '../../domain/orders/order-status';
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
+import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
+import { InsufficientHoldingError } from '../../domain/portfolio/errors/insufficient-holding.error';
+import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import type { Player } from '../../domain/player/player';
 import type { OrderRepository } from '../../repositories/orders/order.repository';
@@ -94,7 +98,70 @@ describe('OrdersService', () => {
       playerRepoMock as PlayerRepository,
       txManagerMock as TransactionManager,
       quotationMock as QuotationService,
+      new FixedClock(),
+      new SequentialIdGenerator('order'),
     );
+  });
+
+  describe('createOrder', () => {
+    const fixedNow = new Date('2026-10-26T12:00:00.000Z');
+    const fakePlayer = { id: 'player-1', name: 'Lionel Messi' } as unknown as Player;
+
+    beforeEach(() => {
+      (playerRepoMock.findById as jest.Mock).mockResolvedValue(fakePlayer);
+      (quotationMock.valuate as jest.Mock).mockResolvedValue({ value: 25 });
+      (orderRepoMock.sumPendingSellQuantity as jest.Mock).mockResolvedValue(0);
+      (orderRepoMock.lockCompatibleCandidates as jest.Mock).mockResolvedValue([]);
+    });
+
+    it('toma el id y la hora de la orden nueva del IdGenerator y el Clock inyectados', async () => {
+      const result = await service.createOrder('buyer', 'player-1', OrderSide.BUY, 4);
+
+      expect(result.order.id).toBe('order-1');
+      expect(result.order.createdAt).toEqual(fixedNow);
+      expect(result.order.price).toBe(25);
+      expect(result.order.status).toBe(OrderStatus.PENDING);
+      expect(result.fills).toEqual([]);
+    });
+
+    it('genera los asientos de auditoria de cada fill con ids del IdGenerator y la hora del Clock', async () => {
+      const candidate = createFakeOrder({
+        id: 'candidate-1',
+        userId: 'seller',
+        side: OrderSide.SELL,
+        quantity: 4,
+        price: 25,
+        createdAt: new Date('2026-10-20T10:00:00.000Z'),
+      });
+      (orderRepoMock.lockCompatibleCandidates as jest.Mock).mockResolvedValue([candidate]);
+      const holdings = {
+        buyer: TokenHolding.restore({ id: 'h-buyer', userId: 'buyer', playerId: 'player-1', quantity: 0, updatedAt: createdAt }),
+        seller: TokenHolding.restore({ id: 'h-seller', userId: 'seller', playerId: 'player-1', quantity: 10, updatedAt: createdAt }),
+      };
+      (holdingRepoMock.lockForUpdate as jest.Mock).mockImplementation(async (_tx, userId: 'buyer' | 'seller') => holdings[userId]);
+
+      const result = await service.createOrder('buyer', 'player-1', OrderSide.BUY, 4);
+
+      expect(result.fills).toEqual([{ counterpartOrderId: 'candidate-1', quantity: 4, price: 25 }]);
+      const saved = (tokenTxRepoMock.saveInTransaction as jest.Mock).mock.calls.map(([, entry]) => entry);
+      expect(saved.map((entry) => entry.id)).toEqual(['order-2', 'order-3']);
+      expect(saved.map((entry) => entry.type)).toEqual([TokenTransactionType.CREDIT, TokenTransactionType.DEBIT]);
+      expect(saved.map((entry) => entry.userId)).toEqual(['buyer', 'seller']);
+      expect(saved.every((entry) => entry.createdAt.getTime() === fixedNow.getTime())).toBe(true);
+    });
+
+    it('rechaza una venta sin tokens suficientes (regla de venta del dominio)', async () => {
+      (holdingRepoMock.findByUserAndPlayer as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.createOrder('seller', 'player-1', OrderSide.SELL, 1)).rejects.toThrow(InsufficientHoldingError);
+      expect(txManagerMock.run).not.toHaveBeenCalled();
+    });
+
+    it('lanza PlayerNotFoundError si el jugador no existe', async () => {
+      (playerRepoMock.findById as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.createOrder('buyer', 'player-1', OrderSide.BUY, 1)).rejects.toThrow(PlayerNotFoundError);
+    });
   });
 
   describe('cancelOrder', () => {

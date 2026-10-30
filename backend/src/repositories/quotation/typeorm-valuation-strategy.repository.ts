@@ -21,11 +21,6 @@ export class TypeOrmValuationStrategyRepository implements ValuationStrategyRepo
     return entities.map((entity) => this.mapper.toDomain(entity));
   }
 
-  async findByIdAndUserId(id: string, userId: string): Promise<ValuationStrategy | null> {
-    const entity = await this.repo.findOne({ where: { id, userId } });
-    return entity ? this.mapper.toDomain(entity) : null;
-  }
-
   async findById(id: string): Promise<ValuationStrategy | null> {
     const entity = await this.repo.findOne({ where: { id } });
     return entity ? this.mapper.toDomain(entity) : null;
@@ -60,12 +55,6 @@ export class TypeOrmValuationStrategyRepository implements ValuationStrategyRepo
     }
   }
 
-  /**
-   * Desmarca la estrategia seleccionada previa del usuario y marca la
-   * indicada, en una única transacción acotada por `userId` (spec FR-005,
-   * research.md D1 — mismo patrón que el `activateStrategy` global anterior,
-   * ahora `WHERE user_id = :userId`).
-   */
   async findAllUserIds(): Promise<string[]> {
     const rows = await this.repo
       .createQueryBuilder('s')
@@ -74,6 +63,12 @@ export class TypeOrmValuationStrategyRepository implements ValuationStrategyRepo
     return rows.map((r) => r.userId);
   }
 
+  /**
+   * Desmarca la estrategia seleccionada previa del usuario y marca la
+   * indicada, en una única transacción acotada por `userId` (spec FR-005,
+   * research.md D1 — mismo patrón que el `activateStrategy` global anterior,
+   * ahora `WHERE user_id = :userId`).
+   */
   async selectStrategy(userId: string, id: string): Promise<ValuationStrategy> {
     const qr = this.dataSource.createQueryRunner();
     await qr.connect();

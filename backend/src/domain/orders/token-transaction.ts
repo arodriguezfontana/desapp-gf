@@ -1,3 +1,4 @@
+import { Fill } from './match-order';
 import { TokenTransactionType } from './token-transaction-type';
 
 /**
@@ -43,6 +44,38 @@ export class TokenTransaction {
       props.counterpartOrderId,
       props.createdAt,
     );
+  }
+
+  /**
+   * Asientos de auditoria de un fill (Principio V): CREDIT para el comprador y
+   * DEBIT para el vendedor, cada uno apuntando a la orden contraparte.
+   * `newId` se inyecta para mantener el dominio sin dependencias de infraestructura.
+   */
+  static pairFromFill(fill: Fill, playerId: string, createdAt: Date, newId: () => string): TokenTransaction[] {
+    return [
+      TokenTransaction.create({
+        id: newId(),
+        userId: fill.buyerUserId,
+        type: TokenTransactionType.CREDIT,
+        playerId,
+        quantity: fill.quantity,
+        price: fill.price,
+        orderId: fill.buyOrderId,
+        counterpartOrderId: fill.sellOrderId,
+        createdAt,
+      }),
+      TokenTransaction.create({
+        id: newId(),
+        userId: fill.sellerUserId,
+        type: TokenTransactionType.DEBIT,
+        playerId,
+        quantity: fill.quantity,
+        price: fill.price,
+        orderId: fill.sellOrderId,
+        counterpartOrderId: fill.buyOrderId,
+        createdAt,
+      }),
+    ];
   }
 
   get id(): string {

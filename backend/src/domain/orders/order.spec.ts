@@ -1,6 +1,7 @@
 import { Order } from './order';
 import { OrderSide } from './order-side';
 import { OrderStatus } from './order-status';
+import { InconsistentOrderStatusError } from './errors/inconsistent-order-status.error';
 import { OrderOverfillError } from './errors/order-overfill.error';
 import { InvalidOrderQuantityError } from './errors/invalid-order-quantity.error';
 import { OrderNotCancellableError } from './errors/order-not-cancellable.error';
@@ -176,6 +177,84 @@ describe('Order', () => {
       const buy = build({ side: OrderSide.BUY, playerId: 'p1', price: 15.0 });
       const sell = build({ id: 'order-2', side: OrderSide.SELL, playerId: 'p1', price: 12.5 }).cancel();
       expect(buy.isCompatibleWith(sell)).toBe(false);
+    });
+  });
+
+  describe('seed', () => {
+    const base = {
+      id: 'order-1',
+      userId: 'user-1',
+      playerId: 'player-1',
+      side: OrderSide.BUY,
+      quantity: 10,
+      price: 12.5,
+      createdAt,
+    };
+
+    it.each([
+      { remainingQuantity: 10, status: OrderStatus.PENDING },
+      { remainingQuantity: 4, status: OrderStatus.PARTIALLY_FILLED },
+      { remainingQuantity: 0, status: OrderStatus.COMPLETED },
+    ])('siembra una orden $status con cantidad pendiente $remainingQuantity', ({ remainingQuantity, status }) => {
+      const order = Order.seed({ ...base, remainingQuantity, status });
+      expect(order.status).toBe(status);
+      expect(order.remainingQuantity).toBe(remainingQuantity);
+      expect(order.createdAt).toBe(createdAt);
+    });
+
+    it('siembra una orden CANCELLED conservando la cantidad pendiente', () => {
+      const order = Order.seed({ ...base, remainingQuantity: 10, status: OrderStatus.CANCELLED });
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.remainingQuantity).toBe(10);
+    });
+
+    it('rechaza una cantidad pendiente mayor a la total', () => {
+      expect(() => Order.seed({ ...base, remainingQuantity: 11 })).toThrow(OrderOverfillError);
+    });
+
+    it('rechaza una cantidad total invalida', () => {
+      expect(() => Order.seed({ ...base, quantity: 0, remainingQuantity: 0 })).toThrow(InvalidOrderQuantityError);
+    });
+  });
+
+  describe('coherencia entre status y remainingQuantity al reconstruir', () => {
+    const base = {
+      id: 'order-1',
+      userId: 'user-1',
+      playerId: 'player-1',
+      side: OrderSide.BUY,
+      quantity: 10,
+      price: 12.5,
+      createdAt,
+    };
+
+    it.each([
+      { remainingQuantity: 5, status: OrderStatus.COMPLETED },
+      { remainingQuantity: 5, status: OrderStatus.PENDING },
+      { remainingQuantity: 10, status: OrderStatus.PARTIALLY_FILLED },
+      { remainingQuantity: 0, status: OrderStatus.PENDING },
+    ])('rechaza status $status con cantidad pendiente $remainingQuantity', ({ remainingQuantity, status }) => {
+      expect(() => Order.restore({ ...base, remainingQuantity, status })).toThrow(InconsistentOrderStatusError);
+    });
+
+    it('acepta CANCELLED con cualquier cantidad pendiente', () => {
+      for (const remainingQuantity of [0, 4, 10]) {
+        const order = Order.restore({ ...base, remainingQuantity, status: OrderStatus.CANCELLED });
+        expect(order.status).toBe(OrderStatus.CANCELLED);
+      }
+    });
+
+    it('sin status informado deriva el estado de la cantidad pendiente', () => {
+      expect(Order.restore({ ...base, remainingQuantity: 0 }).status).toBe(OrderStatus.COMPLETED);
+      expect(Order.restore({ ...base, remainingQuantity: 3 }).status).toBe(OrderStatus.PARTIALLY_FILLED);
+      expect(Order.restore({ ...base, remainingQuantity: 10 }).status).toBe(OrderStatus.PENDING);
+    });
+
+    it('una orden cancelada sigue cancelada tras un restore y mantiene su cantidad pendiente', () => {
+      const cancelled = build().fill(4).cancel();
+      const restored = Order.restore({ ...base, remainingQuantity: cancelled.remainingQuantity, status: cancelled.status });
+      expect(restored.status).toBe(OrderStatus.CANCELLED);
+      expect(restored.remainingQuantity).toBe(6);
     });
   });
 

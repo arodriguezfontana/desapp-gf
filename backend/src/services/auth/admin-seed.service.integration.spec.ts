@@ -1,4 +1,5 @@
 import { ConfigModule } from '@nestjs/config';
+import { RuntimeModule } from '../../modules/runtime/runtime.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -13,7 +14,7 @@ import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repo
 import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
 import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { AdminSeedService } from './admin-seed.service';
 
 describe('AdminSeedService.run (integración contra Postgres real)', () => {
@@ -27,6 +28,7 @@ describe('AdminSeedService.run (integración contra Postgres real)', () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        RuntimeModule,
         DatabaseModule,
         TypeOrmModule.forFeature([UserEntity, ValuationStrategyEntity]),
       ],

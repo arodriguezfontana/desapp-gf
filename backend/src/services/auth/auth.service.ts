@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { Clock } from '../../adapters/runtime/clock';
+import { IdGenerator } from '../../adapters/runtime/id-generator';
+import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
 import {
   PASSWORD_HASHER,
@@ -15,7 +17,7 @@ import { User } from '../../domain/auth/user';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { UserRepository } from '../../repositories/auth/user.repository';
-import { UserStrategyProvisioningService } from './user-strategy-provisioning.service';
+import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +26,8 @@ export class AuthService {
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     @Inject(TOKEN_ISSUER) private readonly tokens: TokenIssuer,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /**
@@ -50,7 +54,7 @@ export class AuthService {
     }
 
     const passwordHash = await this.hasher.hash(password.value());
-    const user = User.register(randomUUID(), email, passwordHash, new Date(), undefined, username.value());
+    const user = User.register(this.ids.generate(), email, passwordHash, this.clock.now(), undefined, username.value());
     await this.users.save(user);
     await this.strategyProvisioning.provisionDefaultStrategiesFor(user.id);
     return user;

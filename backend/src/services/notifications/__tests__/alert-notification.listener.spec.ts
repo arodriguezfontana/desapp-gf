@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { SequentialIdGenerator } from '../../../adapters/runtime/fake-runtime';
 import { AlertCondition } from '../../../domain/alerts/alert-condition';
 import { AlertTriggeredEvent } from '../../../domain/alerts/events/alert-triggered.event';
 import { Notification } from '../../../domain/notifications/notification';
@@ -14,7 +15,10 @@ describe('AlertNotificationListener (unit, con dobles, sin Nest ni DB)', () => {
       persist: jest.fn(async (n: Notification) => n),
       pushToStream: jest.fn(),
     };
-    listener = new AlertNotificationListener(notifications as unknown as NotificationsService);
+    listener = new AlertNotificationListener(
+      notifications as unknown as NotificationsService,
+      new SequentialIdGenerator('notification'),
+    );
   });
 
   it('persiste una Notification construida a partir del AlertTriggeredEvent', async () => {
