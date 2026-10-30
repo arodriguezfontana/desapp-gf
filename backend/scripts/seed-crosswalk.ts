@@ -7,7 +7,6 @@
  * Requiere en .env: DATABASE_URL, FOOTBALL_DATA_API_TOKEN
  */
 import 'dotenv/config';
-import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as pg from 'pg';
@@ -19,48 +18,41 @@ import { TeamEntity } from '../src/repositories/competition/entities/team.entity
 import { TeamNameException } from '../src/domain/competition/team-name-exception';
 import { Standing } from '../src/domain/competition/standing';
 import { resolveTeam } from '../src/domain/competition/resolve-team';
+import { HttpFootballDataAdapter } from '../src/adapters/competition/http-football-data-adapter';
 
 const LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
-const BASE_URL = 'https://api.football-data.org/v4';
 const DELAY_MS = 7000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchStandingsFromApi(token: string): Promise<Standing[]> {
+async function fetchStandingsFromApi(): Promise<Standing[]> {
+  const adapter = new HttpFootballDataAdapter();
   const all: Standing[] = [];
   for (const code of LEAGUES) {
     try {
-      const response = await axios.get(
-        `${BASE_URL}/competitions/${code}/standings`,
-        { headers: { 'X-Auth-Token': token } },
-      );
-      const table = (response.data.standings as Array<{ type: string; table: Array<{ team: { id: number; name: string; crest?: string | null }; position: number; playedGames: number; won: number; draw: number; lost: number; points: number; goalsFor: number; goalsAgainst: number; goalDifference: number; form: string | null }> }>)?.find(
-        (s) => s.type === 'TOTAL' || s.type === 'REGULAR_SEASON',
-      );
-      if (table) {
-        for (const row of table.table) {
-          all.push(
-            Standing.create({
-              externalTeamId: row.team.id,
-              teamName: row.team.name,
-              leagueCode: code,
-              season: new Date().getFullYear(),
-              position: row.position,
-              playedGames: row.playedGames,
-              won: row.won,
-              draw: row.draw,
-              lost: row.lost,
-              points: row.points,
-              goalsFor: row.goalsFor,
-              goalsAgainst: row.goalsAgainst,
-              goalDifference: row.goalDifference,
-              form: row.form ?? null,
-              crestUrl: row.team.crest ?? null,
-            }),
-          );
-        }
+      const rows = await adapter.fetchStandings(code);
+      for (const row of rows) {
+        all.push(
+          Standing.create({
+            externalTeamId: row.teamId,
+            teamName: row.teamName,
+            leagueCode: code,
+            season: new Date().getFullYear(),
+            position: row.position,
+            playedGames: row.playedGames,
+            won: row.won,
+            draw: row.draw,
+            lost: row.lost,
+            points: row.points,
+            goalsFor: row.goalsFor,
+            goalsAgainst: row.goalsAgainst,
+            goalDifference: row.goalDifference,
+            form: row.form,
+            crestUrl: row.crestUrl,
+          }),
+        );
       }
     } catch (err) {
       console.error(`Error al obtener standings para ${code}:`, (err as Error).message);
@@ -112,7 +104,7 @@ async function main(): Promise<void> {
     );
 
     console.log(`\nObteniendo standings de Football-Data para ${LEAGUES.length} ligas...`);
-    const standings = await fetchStandingsFromApi(token);
+    const standings = await fetchStandingsFromApi();
     console.log(`Standings obtenidos: ${standings.length} equipos en total.\n`);
 
     let resolvedByNormalization = 0;

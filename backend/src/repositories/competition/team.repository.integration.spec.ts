@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import { DatabaseModule } from '../../database/database.module';
-import { Team } from '../../domain/competition/team';
 import { TeamEntity } from './entities/team.entity';
 import { TeamMapper } from './mappers/team.mapper';
 import { TeamRepository } from './team.repository';
@@ -82,45 +81,6 @@ describe('TeamRepository (integración)', () => {
 
       expect(team).not.toBeNull();
       expect(team!.crestUrl).toBeNull();
-    });
-  });
-
-  describe('upsertTeams', () => {
-    it('inserta un equipo nuevo', async () => {
-      const team = Team.create({ whoScoredName: 'Test FC Barcelona', footballDataTeamId: 81, footballDataTeamName: 'FC Barcelona', leagueCode: 'PD', crestUrl: null });
-
-      await repo.upsertTeams([team]);
-
-      const found = await repo.findByWhoScoredName('Test FC Barcelona');
-      expect(found).not.toBeNull();
-      expect(found!.footballDataTeamId).toBe(81);
-    });
-
-    it('actualiza el equipo existente sin duplicar (upsert por whoScoredName)', async () => {
-      await insertTeam('Test Atletico Madrid', { footballDataTeamId: 78 });
-
-      const updated = Team.create({ whoScoredName: 'Test Atletico Madrid', footballDataTeamId: 78, footballDataTeamName: 'Club Atlético de Madrid', leagueCode: 'PD', crestUrl: null });
-      await repo.upsertTeams([updated]);
-
-      const all = await dataSource.getRepository(TeamEntity).find({ where: { whoScoredName: 'Test Atletico Madrid' } });
-      expect(all).toHaveLength(1);
-      expect(all[0].footballDataTeamName).toBe('Club Atlético de Madrid');
-    });
-
-    it('inserta múltiples equipos en una sola llamada', async () => {
-      const teams = [
-        Team.create({ whoScoredName: 'Test Sevilla', footballDataTeamId: 559, footballDataTeamName: 'Sevilla FC', leagueCode: 'PD', crestUrl: null }),
-        Team.create({ whoScoredName: 'Test Valencia', footballDataTeamId: 95, footballDataTeamName: 'Valencia CF', leagueCode: 'PD', crestUrl: null }),
-      ];
-
-      await repo.upsertTeams(teams);
-
-      expect(await repo.findByWhoScoredName('Test Sevilla')).not.toBeNull();
-      expect(await repo.findByWhoScoredName('Test Valencia')).not.toBeNull();
-    });
-
-    it('no falla con array vacío', async () => {
-      await expect(repo.upsertTeams([])).resolves.toBeUndefined();
     });
   });
 });

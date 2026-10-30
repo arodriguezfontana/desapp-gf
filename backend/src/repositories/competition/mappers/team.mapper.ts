@@ -13,14 +13,4 @@ export class TeamMapper {
       crestUrl: entity.crestUrl,
     });
   }
-
-  toEntity(domain: Team): Partial<TeamEntity> {
-    return {
-      whoScoredName: domain.whoScoredName,
-      footballDataTeamId: domain.footballDataTeamId,
-      footballDataTeamName: domain.footballDataTeamName,
-      leagueCode: domain.leagueCode,
-      crestUrl: domain.crestUrl,
-    };
-  }
 }

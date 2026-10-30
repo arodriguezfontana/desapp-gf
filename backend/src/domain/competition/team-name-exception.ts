@@ -7,22 +7,12 @@ export interface TeamNameExceptionProps {
 
 export class TeamNameException {
   private constructor(
-    private readonly _id: string | null,
+    private readonly _id: string,
     private readonly _whoScoredRawName: string,
     private readonly _footballDataTeamId: number,
     private readonly _footballDataTeamName: string,
     private readonly _leagueCode: string,
   ) {}
-
-  static create(props: TeamNameExceptionProps): TeamNameException {
-    return new TeamNameException(
-      null,
-      props.whoScoredRawName,
-      props.footballDataTeamId,
-      props.footballDataTeamName,
-      props.leagueCode,
-    );
-  }
 
   static restore(id: string, props: TeamNameExceptionProps): TeamNameException {
     return new TeamNameException(
@@ -34,7 +24,7 @@ export class TeamNameException {
     );
   }
 
-  get id(): string | null {
+  get id(): string {
     return this._id;
   }
 
