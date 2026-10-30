@@ -13,10 +13,9 @@ import { OrderMapper } from '../../repositories/orders/mappers/order.mapper';
 import { TokenTransactionMapper } from '../../repositories/orders/mappers/token-transaction.mapper';
 import { OrderRepository } from '../../repositories/orders/order.repository';
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
-import { TypeOrmTransactionManager } from '../../repositories/shared/typeorm-transaction-manager';
+import { TransactionManager } from '../../repositories/shared/transaction-manager';
 import { OrdersService } from '../../services/orders/orders.service';
 
-import { TRANSACTION_MANAGER } from './orders.constants';
 
 /**
  * 020-order-matching-engine. `forwardRef` hacia `PlayerModule`/`QuotationModule`/
@@ -41,7 +40,7 @@ import { TRANSACTION_MANAGER } from './orders.constants';
     TokenTransactionMapper,
     OrderRepository,
     TokenTransactionRepository,
-    { provide: TRANSACTION_MANAGER, useClass: TypeOrmTransactionManager },
+    TransactionManager,
   ],
   exports: [OrdersService, OrderRepository, TokenTransactionRepository],
 })

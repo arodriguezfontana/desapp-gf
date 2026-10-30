@@ -3,7 +3,6 @@ import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
-import { TRANSACTION_MANAGER } from '../../modules/orders/orders.constants';
 
 import { Order } from '../../domain/orders/order';
 import { OrderBook } from '../../domain/orders/order-book';
@@ -51,7 +50,7 @@ export class OrdersService {
     private readonly tokenTransactions: TokenTransactionRepository,
     private readonly holdings: TokenHoldingRepository,
     private readonly players: PlayerRepository,
-    @Inject(TRANSACTION_MANAGER) private readonly transactionManager: TransactionManager,
+    private readonly transactionManager: TransactionManager,
     private readonly quotation: QuotationService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,

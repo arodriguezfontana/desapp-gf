@@ -9,7 +9,7 @@ import { Order } from '../../domain/orders/order';
 import { OrderSide } from '../../domain/orders/order-side';
 import { OrderStatus } from '../../domain/orders/order-status';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
-import { TypeOrmTransactionManager } from '../shared/typeorm-transaction-manager';
+import { TransactionManager } from '../shared/transaction-manager';
 import { UserEntity } from '../auth/entities/user.entity';
 import { PlayerEntity } from '../player/entities/player.entity';
 import { OrderEntity } from './entities/order.entity';
@@ -26,7 +26,7 @@ import { OrderRepository } from './order.repository';
 describe('OrderRepository — cancelación (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
   let repository: OrderRepository;
-  let transactionManager: TypeOrmTransactionManager;
+  let transactionManager: TransactionManager;
   let dataSource: DataSource;
   let userId: string;
   let playerId: string;
@@ -38,11 +38,11 @@ describe('OrderRepository — cancelación (integración contra Postgres real)',
         DatabaseModule,
         TypeOrmModule.forFeature([OrderEntity, PlayerEntity, UserEntity]),
       ],
-      providers: [OrderMapper, OrderRepository, TypeOrmTransactionManager],
+      providers: [OrderMapper, OrderRepository, TransactionManager],
     }).compile();
 
     repository = moduleRef.get(OrderRepository);
-    transactionManager = moduleRef.get(TypeOrmTransactionManager);
+    transactionManager = moduleRef.get(TransactionManager);
     dataSource = moduleRef.get(DataSource);
   });
 
