@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { AlertCondition } from '../../../domain/alerts/alert-condition';
-import { PriceAlert } from '../../../domain/alerts/price-alert';
-import { QuoteRecalculatedEvent } from '../../../domain/alerts/events/quote-recalculated.event';
-import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../../domain/alerts/events/alert-triggered.event';
-import { PriceAlertRepository } from '../../../repositories/alerts/price-alert.repository';
-import { QuoteRecalculatedListener } from '../quote-recalculated.listener';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
+import { PriceAlert } from '../../domain/alerts/price-alert';
+import { QuoteRecalculatedEvent } from '../../domain/alerts/events/quote-recalculated.event';
+import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../domain/alerts/events/alert-triggered.event';
+import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
+import { QuoteRecalculatedListener } from './quote-recalculated.listener';
 
 describe('QuoteRecalculatedListener (unit, con dobles, sin Nest ni DB)', () => {
   const userId = randomUUID();

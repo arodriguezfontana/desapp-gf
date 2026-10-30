@@ -7,7 +7,7 @@ import { DataSource, IsNull } from 'typeorm';
 import { DatabaseModule } from '../../database/database.module';
 import { League } from '../../domain/player/enums/league';
 import { Position } from '../../domain/player/enums/position';
-import { PlayerSyncInput } from '../../domain/player/player-sync-input';
+import { PlayerSyncInput } from '../../domain/sync/player-sync-input';
 import { PlayerQuoteEntity } from '../quotation/entities/player-quote.entity';
 import { ValuationStrategyEntity } from '../quotation/entities/valuation-strategy.entity';
 import { UserEntity } from '../auth/entities/user.entity';

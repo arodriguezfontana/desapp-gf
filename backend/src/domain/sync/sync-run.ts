@@ -1,4 +1,4 @@
-import { League } from './enums/league';
+import { League } from '../player/enums/league';
 
 export type SyncRunStatus = 'running' | 'completed' | 'failed';
 

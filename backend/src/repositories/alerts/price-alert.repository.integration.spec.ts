@@ -4,14 +4,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
-import { DatabaseModule } from '../../../database/database.module';
-import { AlertCondition } from '../../../domain/alerts/alert-condition';
-import { AlertStatus, PriceAlert } from '../../../domain/alerts/price-alert';
-import { UserEntity } from '../../auth/entities/user.entity';
-import { PlayerEntity } from '../../player/entities/player.entity';
-import { PriceAlertEntity } from '../entities/price-alert.entity';
-import { PriceAlertMapper } from '../price-alert.mapper';
-import { PriceAlertRepository } from '../price-alert.repository';
+import { DatabaseModule } from '../../database/database.module';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
+import { AlertStatus, PriceAlert } from '../../domain/alerts/price-alert';
+import { UserEntity } from '../auth/entities/user.entity';
+import { PlayerEntity } from '../player/entities/player.entity';
+import { PriceAlertEntity } from './entities/price-alert.entity';
+import { PriceAlertMapper } from './price-alert.mapper';
+import { PriceAlertRepository } from './price-alert.repository';
 
 describe('PriceAlertRepository (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;

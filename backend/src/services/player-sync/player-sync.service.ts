@@ -10,15 +10,15 @@ import {
   WhoScoredTeamRef,
 } from '../../adapters/player-sync/whoscored-adapter';
 import { League } from '../../domain/player/enums/league';
-import { computePlayersToRemove } from '../../domain/player/team-roster-sync';
-import { mapWhoScoredPosition } from '../../domain/player/whoscored-position-mapping';
-import { PlayerSyncInput } from '../../domain/player/player-sync-input';
+import { computePlayersToRemove } from '../../domain/sync/team-roster-sync';
+import { mapWhoScoredPosition } from '../../domain/sync/whoscored-position-mapping';
+import { PlayerSyncInput } from '../../domain/sync/player-sync-input';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import {
   SyncFailedUnit,
   SyncRunState,
   WhoScoredSyncSummary,
-} from '../../domain/player/sync-run';
+} from '../../domain/sync/sync-run';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
 
 const MAX_RETAINED_RUNS = 20;

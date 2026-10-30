@@ -10,7 +10,7 @@ import {
   PlayerRankingPage,
   RankedPlayerQuote,
 } from '../../domain/player/player-ranking';
-import { PlayerSyncInput } from '../../domain/player/player-sync-input';
+import { PlayerSyncInput } from '../../domain/sync/player-sync-input';
 import { isPostgresErrorCode } from '../../shared/errors/postgres-error';
 import { PlayerEntity } from './entities/player.entity';
 import { PlayerMapper } from './mappers/player.mapper';

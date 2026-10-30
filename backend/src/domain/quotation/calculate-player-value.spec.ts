@@ -1,12 +1,12 @@
-import { League } from '../../player/enums/league';
-import { Position } from '../../player/enums/position';
-import { Player } from '../../player/player';
+import { League } from '../player/enums/league';
+import { Position } from '../player/enums/position';
+import { Player } from '../player/player';
 import {
   calculatePlayerValue,
   MIN_PLAYER_VALUE,
   NORMALIZATION_BOUNDS,
-} from '../calculate-player-value';
-import { ValuationStrategy } from '../valuation-strategy';
+} from './calculate-player-value';
+import { ValuationStrategy } from './valuation-strategy';
 
 const STRATEGY_1_WEIGHTS = {
   goals: 0.25,

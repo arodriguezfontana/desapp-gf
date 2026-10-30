@@ -11,7 +11,7 @@ import { User } from '../../domain/auth/user';
 import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
 /** Username fijo del admin seedeado (020-order-matching-engine): sin esto,
  *  `User.register` usaría el default `''` y el admin quedaría con un
@@ -37,7 +37,7 @@ export class AdminSeedService {
     private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     private readonly config: ConfigService,
-    private readonly strategyProvisioning: UserStrategyProvisioningService,
+    private readonly strategyProvisioning: StrategyProvisioningService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}

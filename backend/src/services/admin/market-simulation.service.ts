@@ -32,7 +32,7 @@ import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/a
 import { PriceAlert } from '../../domain/alerts/price-alert';
 import { AlertCondition } from '../../domain/alerts/alert-condition';
 import { QuotationService } from '../quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/admin/dto/simulation-result.dto';
 import {
@@ -65,7 +65,7 @@ export class MarketSimulationService {
     private readonly strategies: ValuationStrategyRepository,
     private readonly priceAlerts: PriceAlertRepository,
     private readonly quotation: QuotationService,
-    private readonly strategyProvisioning: UserStrategyProvisioningService,
+    private readonly strategyProvisioning: StrategyProvisioningService,
     private readonly config: ConfigService,
     private readonly eventEmitter: EventEmitter2,
     @Inject(CLOCK) private readonly clock: Clock,

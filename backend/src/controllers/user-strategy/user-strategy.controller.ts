@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { parsePosition } from '../../domain/player/enums/position';
-import { QuotationService } from '../../services/quotation/quotation.service';
+import { StrategyService } from '../../services/quotation/strategy.service';
 import { UserStrategyListResponseDto, UserStrategyResponseDto } from './dto/user-strategy-response.dto';
 import { EditWeightsRequestDto } from './dto/edit-weights-request.dto';
 import { EditPositionWeightsRequestDto } from './dto/edit-position-weights-request.dto';
@@ -18,14 +18,14 @@ import { EditPositionWeightsRequestDto } from './dto/edit-position-weights-reque
 @ApiBearerAuth()
 @Controller('users/me/strategies')
 export class UserStrategyController {
-  constructor(private readonly quotationService: QuotationService) {}
+  constructor(private readonly strategyService: StrategyService) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar mis dos estrategias propias' })
   @ApiResponse({ status: 200, type: UserStrategyListResponseDto })
   @ApiResponse({ status: 401, description: 'No autenticado' })
   async list(@CurrentUser() userId: string): Promise<UserStrategyListResponseDto> {
-    const strategies = await this.quotationService.listStrategies(userId);
+    const strategies = await this.strategyService.listStrategies(userId);
     return UserStrategyListResponseDto.fromDomain(strategies);
   }
 
@@ -40,7 +40,7 @@ export class UserStrategyController {
     @Param('id') id: string,
     @CurrentUser() userId: string,
   ): Promise<UserStrategyResponseDto> {
-    const strategy = await this.quotationService.selectStrategy(userId, id);
+    const strategy = await this.strategyService.selectStrategy(userId, id);
     return UserStrategyResponseDto.fromDomain(strategy);
   }
 
@@ -57,7 +57,7 @@ export class UserStrategyController {
     @CurrentUser() userId: string,
     @Body() body: EditWeightsRequestDto,
   ): Promise<UserStrategyResponseDto> {
-    const strategy = await this.quotationService.editWeights(userId, id, body.weights);
+    const strategy = await this.strategyService.editWeights(userId, id, body.weights);
     return UserStrategyResponseDto.fromDomain(strategy);
   }
 
@@ -76,7 +76,7 @@ export class UserStrategyController {
     @CurrentUser() userId: string,
     @Body() body: EditPositionWeightsRequestDto,
   ): Promise<UserStrategyResponseDto> {
-    const strategy = await this.quotationService.editPositionWeights(
+    const strategy = await this.strategyService.editPositionWeights(
       userId,
       id,
       parsePosition(position),

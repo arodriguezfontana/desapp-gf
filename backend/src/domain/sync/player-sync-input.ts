@@ -1,4 +1,4 @@
-import { Position } from './enums/position';
+import { Position } from '../player/enums/position';
 
 /** Métricas de rendimiento y estadísticas de la temporada en curso. */
 export interface PlayerMetrics {

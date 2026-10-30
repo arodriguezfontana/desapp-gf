@@ -1,5 +1,5 @@
-import { InvalidStrategyWeightsError } from '../errors/invalid-strategy-weights.error';
-import { ValuationStrategy } from '../valuation-strategy';
+import { InvalidStrategyWeightsError } from './errors/invalid-strategy-weights.error';
+import { ValuationStrategy } from './valuation-strategy';
 
 const VALID_WEIGHTS = {
   goals: 0.25,

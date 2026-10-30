@@ -9,12 +9,12 @@ import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/a
 import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { Position } from '../../domain/player/enums/position';
-import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
+import { StrategyService } from './strategy.service';
 
 export interface RecalculateResult {
   recalculated: Array<{ userId: string; playerId: string; value: number; score: number }>;
@@ -38,10 +38,11 @@ export interface ValuationResult {
 export const QUOTATION_RECALCULATION_CRON = '0 3 * * 0';
 
 /**
- * Orquesta las operaciones sobre las estrategias propias de cada usuario y el
- * recálculo de cotizaciones, manual (admin) o semanal con `@Cron`
+ * Orquesta el cálculo de cotizaciones: valuación puntual, recálculo global
+ * manual (admin) o semanal con `@Cron`, e historial de cotizaciones
  * (019-per-user-valuation-strategies, reemplaza el modelo de estrategia única
- * de sistema de 012-valuation-strategies).
+ * de sistema de 012-valuation-strategies). Las operaciones sobre las
+ * estrategias del usuario viven en `StrategyService`.
  *
  * El lock de recálculo es en memoria a nivel sistema: solo puede haber un
  * recálculo global corriendo a la vez (409 si ya hay uno en curso).
@@ -58,50 +59,8 @@ export class QuotationService {
     private readonly eventEmitter: EventEmitter2,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    private readonly strategies: StrategyService,
   ) {}
-
-  /** Las dos estrategias propias del usuario. */
-  async listStrategies(userId: string): Promise<ValuationStrategy[]> {
-    return this.strategyRepository.findByUserId(userId);
-  }
-
-  private async getOwnedStrategyOrThrow(id: string, userId: string): Promise<ValuationStrategy> {
-    const strategy = await this.strategyRepository.findById(id);
-    if (!strategy) {
-      throw new StrategyNotFoundError(id);
-    }
-    strategy.assertOwnedBy(userId);
-    return strategy;
-  }
-
-  /** Marca `strategyId` como seleccionada, desmarcando la otra del mismo usuario */
-  async selectStrategy(userId: string, strategyId: string): Promise<ValuationStrategy> {
-    await this.getOwnedStrategyOrThrow(strategyId, userId);
-    return this.strategyRepository.selectStrategy(userId, strategyId);
-  }
-
-  /** Reemplazo completo de los pesos generales de una estrategia propia. */
-  async editWeights(
-    userId: string,
-    strategyId: string,
-    weights: Record<string, number>,
-  ): Promise<ValuationStrategy> {
-    const strategy = await this.getOwnedStrategyOrThrow(strategyId, userId);
-    const updated = strategy.withWeights(weights);
-    return this.strategyRepository.save(updated);
-  }
-
-  /** Reemplazo completo del perfil de una posición de una estrategia propia (spec FR-007, FR-008). */
-  async editPositionWeights(
-    userId: string,
-    strategyId: string,
-    position: Position,
-    weights: Record<string, number>,
-  ): Promise<ValuationStrategy> {
-    const strategy = await this.getOwnedStrategyOrThrow(strategyId, userId);
-    const updated = strategy.withPositionWeights(position, weights);
-    return this.strategyRepository.save(updated);
-  }
 
   /**
    * Calcula al vuelo el valor de un jugador, sin persistir nada (spec FR-010).
@@ -116,8 +75,8 @@ export class QuotationService {
     }
 
     const strategy = strategyId
-      ? await this.getOwnedStrategyOrThrow(strategyId, userId)
-      : await this.getSelectedStrategyOrThrow(userId);
+      ? await this.strategies.getOwnedStrategyOrThrow(strategyId, userId)
+      : await this.strategies.getSelectedStrategyOrThrow(userId);
 
     const { score, value, appliedPosition } = calculatePlayerValue(player, strategy);
     return { playerId, strategyId: strategy.id, score, value, appliedPosition };
@@ -161,15 +120,6 @@ export class QuotationService {
         });
       }
     }
-  }
-
-  private async getSelectedStrategyOrThrow(userId: string): Promise<ValuationStrategy> {
-    const strategies = await this.strategyRepository.findByUserId(userId);
-    const selected = strategies.find((s) => s.isSelected);
-    if (!selected) {
-      throw new StrategyNotFoundError(userId);
-    }
-    return selected;
   }
 
   /**

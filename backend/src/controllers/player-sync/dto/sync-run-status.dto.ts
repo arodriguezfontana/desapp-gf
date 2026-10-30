@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SyncRunState, SyncFailedUnit } from '../../../domain/player/sync-run';
+import { SyncRunState, SyncFailedUnit } from '../../../domain/sync/sync-run';
 
 class SyncFailedUnitDto {
   @ApiProperty()

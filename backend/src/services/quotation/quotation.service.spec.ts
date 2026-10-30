@@ -1,20 +1,20 @@
-import { QuotationService } from '../quotation.service';
-import { FixedClock, SequentialIdGenerator } from '../../../adapters/runtime/fake-runtime';
-import { ValuationStrategyRepository } from '../../../repositories/quotation/valuation-strategy.repository';
-import { PlayerQuoteRepository } from '../../../repositories/quotation/player-quote.repository';
-import { PlayerRepository } from '../../../repositories/player/player.repository';
-import { ValuationStrategy } from '../../../domain/quotation/valuation-strategy';
-import { RecalculationInProgressError } from '../../../domain/quotation/errors/recalculation-in-progress.error';
-import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy-not-found.error';
-import { StrategyOwnershipError } from '../../../domain/quotation/errors/strategy-ownership.error';
+import { QuotationService } from './quotation.service';
+import { StrategyService } from './strategy.service';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
+import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
+import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
+import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
+import { StrategyOwnershipError } from '../../domain/quotation/errors/strategy-ownership.error';
 
-import { League } from '../../../domain/player/enums/league';
-import { Position } from '../../../domain/player/enums/position';
-import { Player } from '../../../domain/player/player';
-import { PlayerNotFoundError } from '../../../domain/player/errors/player-not-found.error';
-import { PlayerQuote } from '../../../domain/quotation/player-quote';
-import * as calculatePlayerValueModule from '../../../domain/quotation/calculate-player-value';
-import { QUOTE_RECALCULATED_EVENT } from '../../../domain/alerts/events/quote-recalculated.event';
+import { League } from '../../domain/player/enums/league';
+import { Position } from '../../domain/player/enums/position';
+import { Player } from '../../domain/player/player';
+import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
+import { PlayerQuote } from '../../domain/quotation/player-quote';
+import * as calculatePlayerValueModule from '../../domain/quotation/calculate-player-value';
+import { QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 
 const USER_ID = 'user-1';
 const OTHER_USER_ID = 'user-2';
@@ -75,86 +75,8 @@ describe('QuotationService', () => {
       eventEmitter as never,
       new FixedClock(),
       new SequentialIdGenerator('quote'),
+      new StrategyService(strategyRepo),
     );
-  });
-
-  // ---- listStrategies ----------------------------------------------------------
-
-  describe('listStrategies()', () => {
-    it('delega en strategyRepository.findByUserId', async () => {
-      const strategies = [makeStrategy({ id: 's-1' }), makeStrategy({ id: 's-2', isSelected: false })];
-      strategyRepo.findByUserId.mockResolvedValue(strategies);
-
-      const result = await service.listStrategies(USER_ID);
-
-      expect(strategyRepo.findByUserId).toHaveBeenCalledWith(USER_ID);
-      expect(result).toBe(strategies);
-    });
-  });
-
-  // ---- selectStrategy ------------------------------------------------------------
-
-  describe('selectStrategy()', () => {
-    it('selecciona la estrategia propia indicada', async () => {
-      strategyRepo.findById.mockResolvedValue(makeStrategy());
-      const selected = makeStrategy({ isSelected: true });
-      strategyRepo.selectStrategy.mockResolvedValue(selected);
-
-      const result = await service.selectStrategy(USER_ID, 's-1');
-
-      expect(strategyRepo.selectStrategy).toHaveBeenCalledWith(USER_ID, 's-1');
-      expect(result).toBe(selected);
-    });
-
-    it('lanza StrategyNotFoundError si la estrategia no existe', async () => {
-      strategyRepo.findById.mockResolvedValue(null);
-
-      await expect(service.selectStrategy(USER_ID, 's-999')).rejects.toBeInstanceOf(StrategyNotFoundError);
-      expect(strategyRepo.selectStrategy).not.toHaveBeenCalled();
-    });
-
-    it('lanza StrategyOwnershipError si la estrategia es de otro usuario', async () => {
-      strategyRepo.findById.mockResolvedValue(makeStrategy({ userId: OTHER_USER_ID }));
-
-      await expect(service.selectStrategy(USER_ID, 's-1')).rejects.toBeInstanceOf(StrategyOwnershipError);
-      expect(strategyRepo.selectStrategy).not.toHaveBeenCalled();
-    });
-  });
-
-  // ---- editWeights / editPositionWeights ------------------------------------------
-
-  describe('editWeights()', () => {
-    it('reemplaza los pesos generales y persiste la estrategia actualizada', async () => {
-      strategyRepo.findById.mockResolvedValue(makeStrategy());
-      strategyRepo.save.mockImplementation(async (s) => s);
-
-      const newWeights = { goals: 0.5, assists: 0.5 };
-      const result = await service.editWeights(USER_ID, 's-1', newWeights);
-
-      expect(result.weights).toEqual(newWeights);
-      expect(strategyRepo.save).toHaveBeenCalled();
-    });
-
-    it('lanza StrategyOwnershipError si la estrategia es de otro usuario', async () => {
-      strategyRepo.findById.mockResolvedValue(makeStrategy({ userId: OTHER_USER_ID }));
-
-      await expect(
-        service.editWeights(USER_ID, 's-1', { goals: 0.5, assists: 0.5 }),
-      ).rejects.toBeInstanceOf(StrategyOwnershipError);
-      expect(strategyRepo.save).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('editPositionWeights()', () => {
-    it('reemplaza el perfil de una posición y persiste la estrategia actualizada', async () => {
-      strategyRepo.findById.mockResolvedValue(makeStrategy());
-      strategyRepo.save.mockImplementation(async (s) => s);
-
-      const fwProfile = { goals: 0.45, shots: 0.25, assists: 0.15, rating: 0.15 };
-      const result = await service.editPositionWeights(USER_ID, 's-1', Position.FW, fwProfile);
-
-      expect(result.positionWeights.FW).toEqual(fwProfile);
-    });
   });
 
   // ---- valuate -------------------------------------------------------------------

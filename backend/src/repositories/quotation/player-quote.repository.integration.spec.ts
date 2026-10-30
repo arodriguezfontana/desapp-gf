@@ -3,12 +3,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
-import { DatabaseModule } from '../../../database/database.module';
-import { PlayerQuote } from '../../../domain/quotation/player-quote';
-import { PlayerQuoteEntity } from '../entities/player-quote.entity';
-import { PlayerQuoteMapper } from '../player-quote.mapper';
-import { PlayerQuoteRepository } from '../player-quote.repository';
-import { UserEntity } from '../../../repositories/auth/entities/user.entity';
+import { DatabaseModule } from '../../database/database.module';
+import { PlayerQuote } from '../../domain/quotation/player-quote';
+import { PlayerQuoteEntity } from './entities/player-quote.entity';
+import { PlayerQuoteMapper } from './player-quote.mapper';
+import { PlayerQuoteRepository } from './player-quote.repository';
+import { UserEntity } from '../auth/entities/user.entity';
 
 const PLAYER_ID = randomUUID();
 const STRATEGY_ID = randomUUID();

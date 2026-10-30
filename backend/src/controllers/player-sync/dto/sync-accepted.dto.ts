@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SyncRunState } from '../../../domain/player/sync-run';
+import { SyncRunState } from '../../../domain/sync/sync-run';
 
 export class SyncAcceptedDto {
   @ApiProperty({ example: '3f9a1c7e-1b2d-4e5f-8a9b-0c1d2e3f4a5b' })

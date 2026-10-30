@@ -13,7 +13,8 @@ import { PlayerQuoteMapper } from '../../repositories/quotation/player-quote.map
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { QuotationService } from '../../services/quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../../services/quotation/user-strategy-provisioning.service';
+import { StrategyService } from '../../services/quotation/strategy.service';
+import { StrategyProvisioningService } from '../../services/quotation/strategy-provisioning.service';
 
 /**
  * Estrategias de valuación propias por usuario y recálculo de cotizaciones
@@ -33,7 +34,8 @@ import { UserStrategyProvisioningService } from '../../services/quotation/user-s
   controllers: [QuotationController, UserStrategyController],
   providers: [
     QuotationService,
-    UserStrategyProvisioningService,
+    StrategyService,
+    StrategyProvisioningService,
     ValuationStrategyMapper,
     PlayerQuoteMapper,
     ValuationStrategyRepository,
@@ -41,7 +43,7 @@ import { UserStrategyProvisioningService } from '../../services/quotation/user-s
   ],
   exports: [
     QuotationService,
-    UserStrategyProvisioningService,
+    StrategyProvisioningService,
     PlayerQuoteRepository,
     ValuationStrategyRepository,
   ],

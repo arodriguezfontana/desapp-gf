@@ -1,8 +1,8 @@
-import { League } from '../../player/enums/league';
-import { Position } from '../../player/enums/position';
-import { Player } from '../../player/player';
-import { calculatePlayerValue, MIN_PLAYER_VALUE } from '../calculate-player-value';
-import { ValuationStrategy } from '../valuation-strategy';
+import { League } from '../player/enums/league';
+import { Position } from '../player/enums/position';
+import { Player } from '../player/player';
+import { calculatePlayerValue, MIN_PLAYER_VALUE } from './calculate-player-value';
+import { ValuationStrategy } from './valuation-strategy';
 
 const makeStrategy = (weights: Record<string, number>): ValuationStrategy =>
   ValuationStrategy.restore({

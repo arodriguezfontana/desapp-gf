@@ -14,7 +14,7 @@ import { UserRepository } from '../../repositories/auth/user.repository';
 import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService.register (integración contra Postgres real)', () => {
@@ -34,7 +34,7 @@ describe('AuthService.register (integración contra Postgres real)', () => {
         AuthService,
         UserMapper,
         ValuationStrategyMapper,
-        UserStrategyProvisioningService,
+        StrategyProvisioningService,
         UserRepository,
         { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
         ValuationStrategyRepository,

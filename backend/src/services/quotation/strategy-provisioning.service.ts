@@ -63,7 +63,7 @@ const FACTOR_ESCALA = 99.0;
  * (plan.md, Constitution Check, Principio VI).
  */
 @Injectable()
-export class UserStrategyProvisioningService {
+export class StrategyProvisioningService {
   constructor(
     private readonly strategyRepository: ValuationStrategyRepository,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,

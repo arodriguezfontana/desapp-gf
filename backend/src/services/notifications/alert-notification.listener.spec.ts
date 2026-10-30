@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { SequentialIdGenerator } from '../../../adapters/runtime/fake-runtime';
-import { AlertCondition } from '../../../domain/alerts/alert-condition';
-import { AlertTriggeredEvent } from '../../../domain/alerts/events/alert-triggered.event';
-import { Notification } from '../../../domain/notifications/notification';
-import { NotificationsService } from '../notifications.service';
-import { AlertNotificationListener } from '../alert-notification.listener';
+import { SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
+import { AlertTriggeredEvent } from '../../domain/alerts/events/alert-triggered.event';
+import { Notification } from '../../domain/notifications/notification';
+import { NotificationsService } from './notifications.service';
+import { AlertNotificationListener } from './alert-notification.listener';
 
 describe('AlertNotificationListener (unit, con dobles, sin Nest ni DB)', () => {
   let notifications: jest.Mocked<Pick<NotificationsService, 'persist' | 'pushToStream'>>;

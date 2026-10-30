@@ -10,13 +10,13 @@ import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-creden
 import { InvalidEmailError } from '../../domain/auth/errors/invalid-email.error';
 import { InvalidPasswordError } from '../../domain/auth/errors/invalid-password.error';
 import { UserRole } from '../../domain/auth/user-role';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
 describe('AuthService', () => {
   let users: jest.Mocked<UserRepository>;
   let hasher: jest.Mocked<PasswordHasher>;
   let tokens: jest.Mocked<TokenIssuer>;
-  let strategyProvisioning: jest.Mocked<UserStrategyProvisioningService>;
+  let strategyProvisioning: jest.Mocked<StrategyProvisioningService>;
   let service: AuthService;
 
   const existingUser = User.register(
@@ -38,7 +38,7 @@ describe('AuthService', () => {
     tokens = { issue: jest.fn(), verify: jest.fn() };
     strategyProvisioning = {
       provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
-    } as unknown as jest.Mocked<UserStrategyProvisioningService>;
+    } as unknown as jest.Mocked<StrategyProvisioningService>;
     service = new AuthService(users, hasher, tokens, strategyProvisioning, new FixedClock(), new SequentialIdGenerator('user'));
   });
 

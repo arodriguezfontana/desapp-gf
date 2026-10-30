@@ -1,31 +1,31 @@
 import { randomUUID } from 'node:crypto';
-import { RuntimeModule } from '../../../modules/runtime/runtime.module';
+import { RuntimeModule } from '../../modules/runtime/runtime.module';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
-import { DatabaseModule } from '../../../database/database.module';
+import { DatabaseModule } from '../../database/database.module';
 
-import { PriceAlertEntity } from '../../../repositories/alerts/entities/price-alert.entity';
-import { PlayerEntity } from '../../../repositories/player/entities/player.entity';
-import { UserEntity } from '../../../repositories/auth/entities/user.entity';
+import { PriceAlertEntity } from '../../repositories/alerts/entities/price-alert.entity';
+import { PlayerEntity } from '../../repositories/player/entities/player.entity';
+import { UserEntity } from '../../repositories/auth/entities/user.entity';
 
-import { PriceAlertMapper } from '../../../repositories/alerts/price-alert.mapper';
-import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
+import { PriceAlertMapper } from '../../repositories/alerts/price-alert.mapper';
+import { PlayerMapper } from '../../repositories/player/mappers/player.mapper';
 
-import { PriceAlertRepository } from '../../../repositories/alerts/price-alert.repository';
-import { PlayerRepository } from '../../../repositories/player/player.repository';
+import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 
-import { AlertCondition } from '../../../domain/alerts/alert-condition';
-import { AlertStatus } from '../../../domain/alerts/price-alert';
-import { InvalidAlertThresholdError } from '../../../domain/alerts/errors/invalid-alert-threshold.error';
-import { InvalidAlertConditionError } from '../../../domain/alerts/errors/invalid-alert-condition.error';
-import { AlertNotFoundError } from '../../../domain/alerts/errors/alert-not-found.error';
-import { DuplicateAlertError } from '../../../domain/alerts/errors/duplicate-alert.error';
-import { PlayerNotFoundError } from '../../../domain/player/errors/player-not-found.error';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
+import { AlertStatus } from '../../domain/alerts/price-alert';
+import { InvalidAlertThresholdError } from '../../domain/alerts/errors/invalid-alert-threshold.error';
+import { InvalidAlertConditionError } from '../../domain/alerts/errors/invalid-alert-condition.error';
+import { AlertNotFoundError } from '../../domain/alerts/errors/alert-not-found.error';
+import { DuplicateAlertError } from '../../domain/alerts/errors/duplicate-alert.error';
+import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 
-import { AlertsService } from '../alerts.service';
+import { AlertsService } from './alerts.service';
 
 describe('AlertsService (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;

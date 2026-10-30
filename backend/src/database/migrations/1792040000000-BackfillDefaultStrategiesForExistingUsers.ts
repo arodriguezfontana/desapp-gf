@@ -3,9 +3,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Provisiona las dos estrategias default a todo usuario que ya existía
  * antes de 019-per-user-valuation-strategies y por lo tanto nunca pasó por
- * `UserStrategyProvisioningService` (ese servicio solo corre en el alta y en
+ * `StrategyProvisioningService` (ese servicio solo corre en el alta y en
  * el seed del admin, no retroactivamente). Mismos valores exactos que
- * `UserStrategyProvisioningService` (data-model.md §Datos seed por usuario).
+ * `StrategyProvisioningService` (data-model.md §Datos seed por usuario).
  *
  * Idempotente: solo inserta para usuarios con 0 filas en valuation_strategies.
  */

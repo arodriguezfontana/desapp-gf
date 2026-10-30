@@ -1,9 +1,10 @@
 import { Logger } from '@nestjs/common';
-import { QuotationService, QUOTATION_RECALCULATION_CRON } from '../quotation.service';
-import { FixedClock, SequentialIdGenerator } from '../../../adapters/runtime/fake-runtime';
-import { ValuationStrategyRepository } from '../../../repositories/quotation/valuation-strategy.repository';
-import { PlayerQuoteRepository } from '../../../repositories/quotation/player-quote.repository';
-import { PlayerRepository } from '../../../repositories/player/player.repository';
+import { QuotationService, QUOTATION_RECALCULATION_CRON } from './quotation.service';
+import { StrategyService } from './strategy.service';
+import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
+import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 
 describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', () => {
   let service: QuotationService;
@@ -38,6 +39,7 @@ describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', 
       { emit: jest.fn(), emitAsync: jest.fn() } as never,
       new FixedClock(),
       new SequentialIdGenerator('quote'),
+      new StrategyService(strategyRepo),
     );
     warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);

@@ -12,7 +12,7 @@ import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { QuotationService } from '../quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { User } from '../../domain/auth/user';
 import { Email } from '../../domain/auth/email';
 import { UserRole } from '../../domain/auth/user-role';
@@ -36,7 +36,7 @@ describe('MarketSimulationService', () => {
   let strategies: jest.Mocked<ValuationStrategyRepository>;
   let priceAlerts: jest.Mocked<PriceAlertRepository>;
   let quotation: jest.Mocked<QuotationService>;
-  let strategyProvisioning: jest.Mocked<UserStrategyProvisioningService>;
+  let strategyProvisioning: jest.Mocked<StrategyProvisioningService>;
   let config: jest.Mocked<ConfigService>;
   let eventEmitter: jest.Mocked<EventEmitter2>;
 
@@ -184,7 +184,7 @@ describe('MarketSimulationService', () => {
 
     strategyProvisioning = {
       provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
-    } as unknown as jest.Mocked<UserStrategyProvisioningService>;
+    } as unknown as jest.Mocked<StrategyProvisioningService>;
 
     config = {
       get: jest.fn().mockImplementation((key: string) => {

@@ -16,7 +16,7 @@ import { User } from '../../domain/auth/user';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { UserRepository } from '../../repositories/auth/user.repository';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +24,7 @@ export class AuthService {
     private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     @Inject(TOKEN_ISSUER) private readonly tokens: TokenIssuer,
-    private readonly strategyProvisioning: UserStrategyProvisioningService,
+    private readonly strategyProvisioning: StrategyProvisioningService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}

@@ -3,12 +3,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
-import { DatabaseModule } from '../../../database/database.module';
-import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy-not-found.error';
-import { ValuationStrategyMapper } from '../valuation-strategy.mapper';
-import { ValuationStrategyRepository } from '../valuation-strategy.repository';
-import { ValuationStrategyEntity } from '../entities/valuation-strategy.entity';
-import { UserEntity } from '../../../repositories/auth/entities/user.entity';
+import { DatabaseModule } from '../../database/database.module';
+import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
+import { ValuationStrategyMapper } from './valuation-strategy.mapper';
+import { ValuationStrategyRepository } from './valuation-strategy.repository';
+import { ValuationStrategyEntity } from './entities/valuation-strategy.entity';
+import { UserEntity } from '../auth/entities/user.entity';
 
 const WEIGHTS_A = { goals: 0.5, assists: 0.3, rating: 0.2 };
 const WEIGHTS_B = { totalTackles: 0.6, interceptions: 0.4 };
@@ -264,7 +264,7 @@ describe('ValuationStrategyRepository (integración, 019-per-user-valuation-stra
   });
 
   it('saveMany() persiste el par de estrategias como una unidad atómica', async () => {
-    const { ValuationStrategy } = await import('../../../domain/quotation/valuation-strategy');
+    const { ValuationStrategy } = await import('../../domain/quotation/valuation-strategy');
     const a = ValuationStrategy.create({
       id: randomUUID(), userId: userIdA, name: 'Par A', weights: { goals: 1 }, factorEscala: 10, isSelected: true,
     });

@@ -1,37 +1,39 @@
 import { ConfigModule } from '@nestjs/config';
-import { RuntimeModule } from '../../../modules/runtime/runtime.module';
+import { RuntimeModule } from '../../modules/runtime/runtime.module';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 
-import { DatabaseModule } from '../../../database/database.module';
+import { DatabaseModule } from '../../database/database.module';
 
-import { ValuationStrategyEntity } from '../../../repositories/quotation/entities/valuation-strategy.entity';
-import { PlayerQuoteEntity } from '../../../repositories/quotation/entities/player-quote.entity';
-import { PlayerEntity } from '../../../repositories/player/entities/player.entity';
-import { UserEntity } from '../../../repositories/auth/entities/user.entity';
+import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
+import { PlayerQuoteEntity } from '../../repositories/quotation/entities/player-quote.entity';
+import { PlayerEntity } from '../../repositories/player/entities/player.entity';
+import { UserEntity } from '../../repositories/auth/entities/user.entity';
 
-import { ValuationStrategyMapper } from '../../../repositories/quotation/valuation-strategy.mapper';
-import { PlayerQuoteMapper } from '../../../repositories/quotation/player-quote.mapper';
-import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
+import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
+import { PlayerQuoteMapper } from '../../repositories/quotation/player-quote.mapper';
+import { PlayerMapper } from '../../repositories/player/mappers/player.mapper';
 
-import { ValuationStrategyRepository } from '../../../repositories/quotation/valuation-strategy.repository';
-import { PlayerQuoteRepository } from '../../../repositories/quotation/player-quote.repository';
-import { PlayerRepository } from '../../../repositories/player/player.repository';
+import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 
-import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy-not-found.error';
-import { StrategyOwnershipError } from '../../../domain/quotation/errors/strategy-ownership.error';
-import { PlayerNotFoundError } from '../../../domain/player/errors/player-not-found.error';
+import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
+import { StrategyOwnershipError } from '../../domain/quotation/errors/strategy-ownership.error';
+import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 
-import { QuotationService } from '../quotation.service';
+import { QuotationService } from './quotation.service';
+import { StrategyService } from './strategy.service';
 
 const WEIGHTS_GOALS_ONLY = { goals: 1 };
 
 describe('QuotationService (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
   let service: QuotationService;
+  let strategyService: StrategyService;
   let dataSource: DataSource;
   let userIdA: string;
   let userIdB: string;
@@ -48,6 +50,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       ],
       providers: [
         QuotationService,
+        StrategyService,
         ValuationStrategyMapper,
         PlayerQuoteMapper,
         PlayerMapper,
@@ -58,6 +61,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
     }).compile();
 
     service = moduleRef.get(QuotationService);
+    strategyService = moduleRef.get(StrategyService);
     dataSource = moduleRef.get(DataSource);
     eventEmitter = moduleRef.get(EventEmitter2);
   });
@@ -130,7 +134,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
 
   describe('listStrategies()', () => {
     it('devuelve array vacío cuando el usuario no tiene estrategias persistidas', async () => {
-      const strategies = await service.listStrategies(userIdA);
+      const strategies = await strategyService.listStrategies(userIdA);
       expect(strategies).toEqual([]);
     });
 
@@ -139,7 +143,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertStrategy({ userId: userIdA, name: 'Test B', weights: WEIGHTS_GOALS_ONLY, factorEscala: 20, isSelected: false });
       await insertStrategy({ userId: userIdB, name: 'De otro usuario', weights: WEIGHTS_GOALS_ONLY, factorEscala: 30, isSelected: true });
 
-      const strategies = await service.listStrategies(userIdA);
+      const strategies = await strategyService.listStrategies(userIdA);
 
       expect(strategies).toHaveLength(2);
       expect(strategies.find((s) => s.name === 'Test A')!.isSelected).toBe(true);
@@ -152,22 +156,22 @@ describe('QuotationService (integración contra Postgres real)', () => {
       const idA = await insertStrategy({ userId: userIdA, name: 'Test A', weights: WEIGHTS_GOALS_ONLY, factorEscala: 10, isSelected: true });
       const idB = await insertStrategy({ userId: userIdA, name: 'Test B', weights: WEIGHTS_GOALS_ONLY, factorEscala: 20, isSelected: false });
 
-      const selected = await service.selectStrategy(userIdA, idB);
+      const selected = await strategyService.selectStrategy(userIdA, idB);
 
       expect(selected.isSelected).toBe(true);
-      const strategies = await service.listStrategies(userIdA);
+      const strategies = await strategyService.listStrategies(userIdA);
       expect(strategies.find((s) => s.id === idA)!.isSelected).toBe(false);
       expect(strategies.find((s) => s.id === idB)!.isSelected).toBe(true);
     });
 
     it('lanza StrategyNotFoundError para un id inexistente', async () => {
-      await expect(service.selectStrategy(userIdA, randomUUID())).rejects.toBeInstanceOf(StrategyNotFoundError);
+      await expect(strategyService.selectStrategy(userIdA, randomUUID())).rejects.toBeInstanceOf(StrategyNotFoundError);
     });
 
     it('lanza StrategyOwnershipError al intentar seleccionar una estrategia de otro usuario', async () => {
       const idOfB = await insertStrategy({ userId: userIdB, name: 'De B', weights: WEIGHTS_GOALS_ONLY, factorEscala: 10, isSelected: true });
 
-      await expect(service.selectStrategy(userIdA, idOfB)).rejects.toBeInstanceOf(StrategyOwnershipError);
+      await expect(strategyService.selectStrategy(userIdA, idOfB)).rejects.toBeInstanceOf(StrategyOwnershipError);
     });
   });
 

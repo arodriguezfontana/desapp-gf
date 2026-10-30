@@ -23,7 +23,7 @@ import { TokenHoldingRepository } from '../../repositories/portfolio/token-holdi
 
 import { QuotationService } from '../quotation/quotation.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
 const SUPERUSER_USERNAME = 'superuser';
 const INITIAL_HOLDING_QUANTITY = 100;
@@ -55,7 +55,7 @@ export class SuperuserSeedService {
     private readonly orders: OrderRepository,
     private readonly holdings: TokenHoldingRepository,
     private readonly config: ConfigService,
-    private readonly strategyProvisioning: UserStrategyProvisioningService,
+    private readonly strategyProvisioning: StrategyProvisioningService,
     private readonly quotation: QuotationService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,

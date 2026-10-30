@@ -4,27 +4,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
-import { DatabaseModule } from '../../../database/database.module';
+import { DatabaseModule } from '../../database/database.module';
 
-import { NotificationEntity } from '../../../repositories/notifications/entities/notification.entity';
-import { PriceAlertEntity } from '../../../repositories/alerts/entities/price-alert.entity';
-import { PlayerEntity } from '../../../repositories/player/entities/player.entity';
-import { UserEntity } from '../../../repositories/auth/entities/user.entity';
+import { NotificationEntity } from '../../repositories/notifications/entities/notification.entity';
+import { PriceAlertEntity } from '../../repositories/alerts/entities/price-alert.entity';
+import { PlayerEntity } from '../../repositories/player/entities/player.entity';
+import { UserEntity } from '../../repositories/auth/entities/user.entity';
 
-import { NotificationMapper } from '../../../repositories/notifications/notification.mapper';
-import { PriceAlertMapper } from '../../../repositories/alerts/price-alert.mapper';
-import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
+import { NotificationMapper } from '../../repositories/notifications/notification.mapper';
+import { PriceAlertMapper } from '../../repositories/alerts/price-alert.mapper';
+import { PlayerMapper } from '../../repositories/player/mappers/player.mapper';
 
-import { NotificationRepository } from '../../../repositories/notifications/notification.repository';
-import { PriceAlertRepository } from '../../../repositories/alerts/price-alert.repository';
-import { PlayerRepository } from '../../../repositories/player/player.repository';
+import { NotificationRepository } from '../../repositories/notifications/notification.repository';
+import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 
-import { AlertCondition } from '../../../domain/alerts/alert-condition';
-import { PriceAlert } from '../../../domain/alerts/price-alert';
-import { Notification } from '../../../domain/notifications/notification';
-import { NotificationNotFoundError } from '../../../domain/notifications/errors/notification-not-found.error';
+import { AlertCondition } from '../../domain/alerts/alert-condition';
+import { PriceAlert } from '../../domain/alerts/price-alert';
+import { Notification } from '../../domain/notifications/notification';
+import { NotificationNotFoundError } from '../../domain/notifications/errors/notification-not-found.error';
 
-import { NotificationsService } from '../notifications.service';
+import { NotificationsService } from './notifications.service';
 
 describe('NotificationsService (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
