@@ -43,7 +43,7 @@ export class AdminAccessGuard implements CanActivate {
       const hash = this.hasher.hash(rawApiKey.trim());
       const apiKey = await this.apiKeys.findByHash(hash);
 
-      if (!apiKey || !apiKey.isActive()) {
+      if (!apiKey?.isActive()) {
         throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
       }
 

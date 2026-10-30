@@ -21,13 +21,14 @@ export class QuoteRecalculatedListener {
   async handle(event: QuoteRecalculatedEvent): Promise<void> {
     const activeAlerts = await this.alerts.findActiveByUserIdAndPlayerId(event.userId, event.playerId);
 
-    for (const alert of activeAlerts) {
-      if (alert.matches(event.value)) {
-        // emitAsync (no emit): espera a que los listeners de alert.triggered
-        // (persistencia de Notification + envío de mail) terminen antes de
-        // resolver, para que quote.recalculated solo se considere procesado
-        // cuando la notificación ya quedó visible (spec SC-003).
-        await this.eventEmitter.emitAsync(
+    const triggered = activeAlerts.filter((alert) => alert.matches(event.value));
+    // emitAsync (no emit): espera a que los listeners de alert.triggered
+    // (persistencia de Notification) terminen antes de resolver, para que
+    // quote.recalculated solo se considere procesado cuando la notificación
+    // ya quedó visible (spec SC-003).
+    await Promise.all(
+      triggered.map((alert) =>
+        this.eventEmitter.emitAsync(
           ALERT_TRIGGERED_EVENT,
           new AlertTriggeredEvent(
             alert.id,
@@ -37,8 +38,8 @@ export class QuoteRecalculatedListener {
             event.value,
             event.occurredAt,
           ),
-        );
-      }
-    }
+        ),
+      ),
+    );
   }
 }

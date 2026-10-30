@@ -160,15 +160,17 @@ export class SuperuserSeedService {
       return;
     }
 
-    let provisioned = 0;
-    for (const player of catalogPlayers) {
-      try {
-        const added = await this.provisionPlayer(userId, player.id);
-        if (added) provisioned++;
-      } catch (err) {
-        this.logger.warn(`Error provisionando liquidez para jugador ${player.id}: ${String(err)}`);
-      }
-    }
+    const results = await Promise.all(
+      catalogPlayers.map(async (player) => {
+        try {
+          return await this.provisionPlayer(userId, player.id);
+        } catch (err) {
+          this.logger.warn(`Error provisionando liquidez para jugador ${player.id}: ${String(err)}`);
+          return false;
+        }
+      }),
+    );
+    const provisioned = results.filter(Boolean).length;
 
     this.logger.log(`Liquidez inicial provisionada en ${provisioned} jugador(es).`);
   }

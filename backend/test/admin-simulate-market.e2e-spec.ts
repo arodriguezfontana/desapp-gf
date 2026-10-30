@@ -90,7 +90,7 @@ describe('POST /admin/simulate-market (e2e)', () => {
     expect(sim.status).toBe(200);
     expect(sim.body.success).toBe(true);
     expect(sim.body.alertsCreated).toBe(2);
-    expect(sim.body.quotes.length).toBe(players.length);
+    expect(sim.body.quotes).toHaveLength(players.length);
     expect(sim.body.quotesCreated).toBe(players.length * 5);
 
     // Las alertas de demo quedaron activas y visibles para el admin.
@@ -122,7 +122,7 @@ describe('POST /admin/simulate-market (e2e)', () => {
       .get(`/players/${players[7].id}/quotes`)
       .set('Authorization', `Bearer ${token}`);
     expect(historyOutsideDemo.status).toBe(200);
-    expect(historyOutsideDemo.body.length).toBe(5);
+    expect(historyOutsideDemo.body).toHaveLength(5);
   });
 
   it('una segunda corrida no vuelve a sembrar alertas de demo (idempotente)', async () => {

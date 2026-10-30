@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface StrategyCompositionChartProps {
   weights: Record<string, number>;
@@ -44,11 +44,7 @@ export const StrategyCompositionChart: React.FC<StrategyCompositionChartProps> =
               contentStyle={{ backgroundColor: '#0b3332', border: '1px solid #1a6866', borderRadius: 8 }}
               labelStyle={{ color: '#fff', fontWeight: 700 }}
             />
-            <Bar dataKey="weight" isAnimationActive={false}>
-              {data.map((entry) => (
-                <Cell key={entry.factor} fill={BAR_COLOR} />
-              ))}
-            </Bar>
+            <Bar dataKey="weight" fill={BAR_COLOR} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>

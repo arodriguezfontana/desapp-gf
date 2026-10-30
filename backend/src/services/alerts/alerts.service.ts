@@ -69,7 +69,7 @@ export class AlertsService {
 
   private async getOwnedAlertOrThrow(alertId: string, userId: string): Promise<PriceAlert> {
     const alert = await this.alerts.findById(alertId);
-    if (!alert || !alert.isOwnedBy(userId)) {
+    if (!alert?.isOwnedBy(userId)) {
       throw new AlertNotFoundError();
     }
     return alert;

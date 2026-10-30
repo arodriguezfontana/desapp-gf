@@ -127,16 +127,17 @@ export class MarketSimulationService {
   }
 
   private async buildRefPrices(adminId: string, players: Player[]): Promise<Map<string, number>> {
-    const refPrices = new Map<string, number>();
-    for (const player of players) {
-      try {
-        const val = await this.quotation.valuate(adminId, player.id);
-        refPrices.set(player.id, Math.max(MIN_REFERENCE_PRICE, roundToTwoDecimals(val.value)));
-      } catch {
-        refPrices.set(player.id, FALLBACK_REFERENCE_PRICE);
-      }
-    }
-    return refPrices;
+    const entries = await Promise.all(
+      players.map(async (player): Promise<[string, number]> => {
+        try {
+          const val = await this.quotation.valuate(adminId, player.id);
+          return [player.id, Math.max(MIN_REFERENCE_PRICE, roundToTwoDecimals(val.value))];
+        } catch {
+          return [player.id, FALLBACK_REFERENCE_PRICE];
+        }
+      }),
+    );
+    return new Map(entries);
   }
 
   private async seedMarketActivityIfNeeded(
@@ -168,6 +169,8 @@ export class MarketSimulationService {
     const txPlans = buildTradePlans(simPlayers.length);
 
     const adminHoldingsQty = new Map<string, number>();
+    const ordersToSave: Order[] = [];
+    const transactionsToSave: TokenTransaction[] = [];
     let transactionsCount = 0;
 
     for (const plan of txPlans) {
@@ -179,28 +182,29 @@ export class MarketSimulationService {
       const counterpartOrderId = this.ids.generate();
       const adminSide = plan.type === TokenTransactionType.CREDIT ? OrderSide.BUY : OrderSide.SELL;
 
-      await this.orders.save(Order.seed({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
-      await this.orders.save(Order.seed({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
+      ordersToSave.push(Order.seed({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
+      ordersToSave.push(Order.seed({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
 
-      await this.tokenTransactions.save(TokenTransaction.create({ id: this.ids.generate(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt }));
+      transactionsToSave.push(TokenTransaction.create({ id: this.ids.generate(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt }));
       transactionsCount++;
 
       const botTxType = plan.type === TokenTransactionType.CREDIT ? TokenTransactionType.DEBIT : TokenTransactionType.CREDIT;
-      await this.tokenTransactions.save(TokenTransaction.create({ id: this.ids.generate(), userId: bot.id, type: botTxType, playerId: player.id, quantity: plan.quantity, price, orderId: counterpartOrderId, counterpartOrderId: orderId, createdAt }));
+      transactionsToSave.push(TokenTransaction.create({ id: this.ids.generate(), userId: bot.id, type: botTxType, playerId: player.id, quantity: plan.quantity, price, orderId: counterpartOrderId, counterpartOrderId: orderId, createdAt }));
 
       const current = adminHoldingsQty.get(player.id) ?? 0;
       adminHoldingsQty.set(player.id, Math.max(0, plan.type === TokenTransactionType.CREDIT ? current + plan.quantity : current - plan.quantity));
     }
 
-    let holdingsCount = 0;
-    for (const [playerId, quantity] of adminHoldingsQty.entries()) {
-      if (quantity > 0) {
-        await this.saveHoldingQuantity(admin.id, playerId, quantity);
-        holdingsCount++;
-      }
-    }
+    // Las transacciones referencian a las órdenes (FK): primero las órdenes.
+    await Promise.all(ordersToSave.map((order) => this.orders.save(order)));
+    await Promise.all(transactionsToSave.map((tx) => this.tokenTransactions.save(tx)));
 
-    return { transactionsCount, holdingsCount };
+    const holdingsToSave = [...adminHoldingsQty.entries()].filter(([, quantity]) => quantity > 0);
+    await Promise.all(
+      holdingsToSave.map(([playerId, quantity]) => this.saveHoldingQuantity(admin.id, playerId, quantity)),
+    );
+
+    return { transactionsCount, holdingsCount: holdingsToSave.length };
   }
 
   private async seedAdminOrders(
@@ -224,9 +228,7 @@ export class MarketSimulationService {
         status: plan.status,
       });
     });
-    for (const o of orders) {
-      await this.orders.save(o);
-    }
+    await Promise.all(orders.map((order) => this.orders.save(order)));
     return orders.length;
   }
 
@@ -236,32 +238,29 @@ export class MarketSimulationService {
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
   ): Promise<number> {
-    let count = 0;
-    for (const player of simPlayers) {
+    const holdings = simPlayers.flatMap((player) => bots.map((bot) => ({ botId: bot.id, playerId: player.id })));
+    const orders = simPlayers.flatMap((player) => {
       const base = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
+      return MARKET_BOOK_LEVELS.map((level) =>
+        Order.seed({
+          id: this.ids.generate(),
+          userId: bots[level.botIdx].id,
+          playerId: player.id,
+          side: level.side,
+          quantity: level.quantity,
+          remainingQuantity: level.quantity,
+          price: roundToTwoDecimals(base * level.priceFactor),
+          createdAt: tDate(level.daysAgo),
+          status: OrderStatus.PENDING,
+        }),
+      );
+    });
 
-      for (const bot of bots) {
-        await this.saveHoldingQuantity(bot.id, player.id, BOT_INITIAL_HOLDING);
-      }
-
-      for (const level of MARKET_BOOK_LEVELS) {
-        await this.orders.save(
-          Order.seed({
-            id: this.ids.generate(),
-            userId: bots[level.botIdx].id,
-            playerId: player.id,
-            side: level.side,
-            quantity: level.quantity,
-            remainingQuantity: level.quantity,
-            price: roundToTwoDecimals(base * level.priceFactor),
-            createdAt: tDate(level.daysAgo),
-            status: OrderStatus.PENDING,
-          }),
-        );
-        count++;
-      }
-    }
-    return count;
+    await Promise.all(
+      holdings.map(({ botId, playerId }) => this.saveHoldingQuantity(botId, playerId, BOT_INITIAL_HOLDING)),
+    );
+    await Promise.all(orders.map((order) => this.orders.save(order)));
+    return orders.length;
   }
 
   private async seedQuotes(
@@ -294,12 +293,14 @@ export class MarketSimulationService {
     }
     await this.playerQuotes.saveMany(quotesToSave);
 
-    for (const quote of latestQuoteByPlayer) {
-      await this.eventEmitter.emitAsync(
-        QUOTE_RECALCULATED_EVENT,
-        new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
-      );
-    }
+    await Promise.all(
+      latestQuoteByPlayer.map((quote) =>
+        this.eventEmitter.emitAsync(
+          QUOTE_RECALCULATED_EVENT,
+          new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
+        ),
+      ),
+    );
 
     return { quotesCount: quotesToSave.length, quotesSummary };
   }
@@ -351,9 +352,7 @@ export class MarketSimulationService {
       );
     }
 
-    for (const alert of alertsToCreate) {
-      await this.priceAlerts.save(alert);
-    }
+    await Promise.all(alertsToCreate.map((alert) => this.priceAlerts.save(alert)));
     return alertsToCreate.length;
   }
 
@@ -380,22 +379,21 @@ export class MarketSimulationService {
   }
 
   private async ensureBots(): Promise<User[]> {
-    const bots: User[] = [];
     const botPassword = this.config.get<string>('BOT_PASSWORD') ?? 'BotSecurePass123!';
     const botPasswordHash = await this.hasher.hash(botPassword);
 
-    for (const cfg of DEFAULT_BOTS) {
-      const email = Email.create(cfg.email);
-      let bot = await this.users.findByEmail(email);
-      if (!bot) {
-        bot = User.register(this.ids.generate(), email, botPasswordHash, this.clock.now(), UserRole.USER, cfg.username);
-        await this.users.save(bot);
-        await this.strategyProvisioning.provisionDefaultStrategiesFor(bot.id);
-      }
-      bots.push(bot);
-    }
-
-    return bots;
+    return Promise.all(
+      DEFAULT_BOTS.map(async (cfg) => {
+        const email = Email.create(cfg.email);
+        let bot = await this.users.findByEmail(email);
+        if (!bot) {
+          bot = User.register(this.ids.generate(), email, botPasswordHash, this.clock.now(), UserRole.USER, cfg.username);
+          await this.users.save(bot);
+          await this.strategyProvisioning.provisionDefaultStrategiesFor(bot.id);
+        }
+        return bot;
+      }),
+    );
   }
 }
 

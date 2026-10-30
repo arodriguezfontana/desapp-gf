@@ -35,9 +35,7 @@ export class PlayerQuoteRepository {
   async saveMany(quotes: PlayerQuote[]): Promise<void> {
     if (quotes.length === 0) return;
     const entities = quotes.map((q) => this.mapper.toPersistence(q));
-    for (const batch of chunk(entities, INSERT_BATCH_SIZE)) {
-      await this.repo.insert(batch);
-    }
+    await Promise.all(chunk(entities, INSERT_BATCH_SIZE).map((batch) => this.repo.insert(batch)));
   }
 
   async findAllByPlayerIdAndUserId(playerId: string, userId: string): Promise<PlayerQuote[]> {

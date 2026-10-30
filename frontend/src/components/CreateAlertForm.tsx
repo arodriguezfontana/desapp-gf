@@ -19,7 +19,7 @@ export const CreateAlertForm: React.FC<CreateAlertFormProps> = ({ playerId, onCr
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);

@@ -38,22 +38,18 @@ export class NotificationsService {
 
   async listOwn(userId: string, unreadOnly = false): Promise<NotificationWithPlayerName[]> {
     const notifications = await this.notifications.findAllByUserId(userId, unreadOnly);
-    const nameCache = new Map<string, string>();
-    const enriched: NotificationWithPlayerName[] = [];
-    for (const notification of notifications) {
-      let playerName = nameCache.get(notification.playerId);
-      if (playerName === undefined) {
-        playerName = await this.resolvePlayerName(notification.playerId);
-        nameCache.set(notification.playerId, playerName);
-      }
-      enriched.push(withPlayerName(notification, playerName));
-    }
-    return enriched;
+    const playerIds = [...new Set(notifications.map((notification) => notification.playerId))];
+    const names = new Map(
+      await Promise.all(
+        playerIds.map(async (playerId): Promise<[string, string]> => [playerId, await this.resolvePlayerName(playerId)]),
+      ),
+    );
+    return notifications.map((notification) => withPlayerName(notification, names.get(notification.playerId)!));
   }
 
   async markAsRead(userId: string, notificationId: string): Promise<Notification> {
     const notification = await this.notifications.findById(notificationId);
-    if (!notification || !notification.isOwnedBy(userId)) {
+    if (!notification?.isOwnedBy(userId)) {
       throw new NotificationNotFoundError();
     }
     return this.notifications.save(notification.markAsRead());

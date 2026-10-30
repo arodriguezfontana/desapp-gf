@@ -157,9 +157,12 @@ export class QuotationService {
       const recalculated: RecalculateResult['recalculated'] = [];
       const skipped: RecalculateResult['skipped'] = [];
 
-      for (const userId of userIds) {
-        const strategies = await this.strategyRepository.findByUserId(userId);
-        const strategy = strategies.find((s) => s.isSelected);
+      const strategiesByUser = await Promise.all(
+        userIds.map((userId) => this.strategyRepository.findByUserId(userId)),
+      );
+
+      for (const [index, userId] of userIds.entries()) {
+        const strategy = strategiesByUser[index].find((s) => s.isSelected);
         if (!strategy) {
           skipped.push(...players.map((p) => ({
             userId,
@@ -184,12 +187,14 @@ export class QuotationService {
       // los listeners de alert.triggered entre sí (FR-021): cada uno sigue
       // corriendo su propia lógica sin conocer al otro, solo se espera a que
       // ambos conjuntos de listeners terminen antes de responder.
-      for (const quote of quotes) {
-        await this.eventEmitter.emitAsync(
-          QUOTE_RECALCULATED_EVENT,
-          new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
-        );
-      }
+      await Promise.all(
+        quotes.map((quote) =>
+          this.eventEmitter.emitAsync(
+            QUOTE_RECALCULATED_EVENT,
+            new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
+          ),
+        ),
+      );
 
       this.logger.log(
         `Recálculo global completado: ${recalculated.length} procesados, ${skipped.length} salteados`,
