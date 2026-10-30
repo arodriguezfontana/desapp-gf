@@ -7,8 +7,6 @@ import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../../database/database.module';
-import { VALUATION_STRATEGY_REPOSITORY, PLAYER_QUOTE_REPOSITORY } from '../../../modules/quotation/quotation.constants';
-import { PLAYER_REPOSITORY } from '../../../modules/player/player.constants';
 
 import { ValuationStrategyEntity } from '../../../repositories/quotation/entities/valuation-strategy.entity';
 import { PlayerQuoteEntity } from '../../../repositories/quotation/entities/player-quote.entity';
@@ -19,9 +17,9 @@ import { ValuationStrategyMapper } from '../../../repositories/quotation/valuati
 import { PlayerQuoteMapper } from '../../../repositories/quotation/player-quote.mapper';
 import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
 
-import { TypeOrmValuationStrategyRepository } from '../../../repositories/quotation/typeorm-valuation-strategy.repository';
-import { TypeOrmPlayerQuoteRepository } from '../../../repositories/quotation/typeorm-player-quote.repository';
-import { TypeOrmPlayerRepository } from '../../../repositories/player/typeorm-player.repository';
+import { ValuationStrategyRepository } from '../../../repositories/quotation/valuation-strategy.repository';
+import { PlayerQuoteRepository } from '../../../repositories/quotation/player-quote.repository';
+import { PlayerRepository } from '../../../repositories/player/player.repository';
 
 import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy-not-found.error';
 import { StrategyOwnershipError } from '../../../domain/quotation/errors/strategy-ownership.error';
@@ -53,9 +51,9 @@ describe('QuotationService (integración contra Postgres real)', () => {
         ValuationStrategyMapper,
         PlayerQuoteMapper,
         PlayerMapper,
-        { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
-        { provide: PLAYER_QUOTE_REPOSITORY, useClass: TypeOrmPlayerQuoteRepository },
-        { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
+        ValuationStrategyRepository,
+        PlayerQuoteRepository,
+        PlayerRepository,
       ],
     }).compile();
 

@@ -33,7 +33,7 @@ describe('AuthService', () => {
       save: jest.fn(),
       findById: jest.fn(),
       existsByUsername: jest.fn(),
-    };
+    } as unknown as typeof users;
     hasher = { hash: jest.fn(), compare: jest.fn(), timingSafeDummyHash: 'dummy-hash-para-test' };
     tokens = { issue: jest.fn(), verify: jest.fn() };
     strategyProvisioning = {

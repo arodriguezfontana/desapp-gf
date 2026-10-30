@@ -11,19 +11,19 @@ import { OrderEntity } from '../../repositories/orders/entities/order.entity';
 import { TokenTransactionEntity } from '../../repositories/orders/entities/token-transaction.entity';
 import { OrderMapper } from '../../repositories/orders/mappers/order.mapper';
 import { TokenTransactionMapper } from '../../repositories/orders/mappers/token-transaction.mapper';
-import { TypeOrmOrderRepository } from '../../repositories/orders/typeorm-order.repository';
-import { TypeOrmTokenTransactionRepository } from '../../repositories/orders/typeorm-token-transaction.repository';
+import { OrderRepository } from '../../repositories/orders/order.repository';
+import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
 import { TypeOrmTransactionManager } from '../../repositories/shared/typeorm-transaction-manager';
 import { OrdersService } from '../../services/orders/orders.service';
 
-import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } from './orders.constants';
+import { TRANSACTION_MANAGER } from './orders.constants';
 
 /**
  * 020-order-matching-engine. `forwardRef` hacia `PlayerModule`/`QuotationModule`/
  * `PortfolioModule` porque esos modulos (via `AuthModule`) terminan
  * necesitando referenciar este mismo modulo de forma indirecta
- * (`SuperuserSeedService` vive en `AuthModule` y necesita `ORDER_REPOSITORY`/
- * `TOKEN_HOLDING_REPOSITORY`) — mismo patron de ciclos ya resuelto en el
+ * (`SuperuserSeedService` vive en `AuthModule` y necesita `OrderRepository`/
+ * `TokenHoldingRepository`) — mismo patron de ciclos ya resuelto en el
  * resto del codebase (p. ej. `AuthModule` <-> `QuotationModule`).
  */
 @Module({
@@ -39,10 +39,10 @@ import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } f
     OrdersService,
     OrderMapper,
     TokenTransactionMapper,
-    { provide: ORDER_REPOSITORY, useClass: TypeOrmOrderRepository },
-    { provide: TOKEN_TRANSACTION_REPOSITORY, useClass: TypeOrmTokenTransactionRepository },
+    OrderRepository,
+    TokenTransactionRepository,
     { provide: TRANSACTION_MANAGER, useClass: TypeOrmTransactionManager },
   ],
-  exports: [OrdersService, ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY],
+  exports: [OrdersService, OrderRepository, TokenTransactionRepository],
 })
 export class OrdersModule {}

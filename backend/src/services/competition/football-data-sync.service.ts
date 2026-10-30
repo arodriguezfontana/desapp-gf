@@ -5,8 +5,6 @@ import { MatchRepository } from '../../repositories/competition/match.repository
 import { StandingRepository } from '../../repositories/competition/standing.repository';
 import {
   FOOTBALL_DATA_ADAPTER,
-  MATCH_REPOSITORY,
-  STANDING_REPOSITORY,
 } from '../../modules/competition/football-data-sync.constants';
 import { classifyMatchStatus } from '../../domain/competition/match-status-classifier';
 import { Match } from '../../domain/competition/match';
@@ -28,9 +26,7 @@ export class FootballDataSyncService {
   constructor(
     @Inject(FOOTBALL_DATA_ADAPTER)
     private readonly adapter: FootballDataAdapter,
-    @Inject(MATCH_REPOSITORY)
     private readonly matchRepository: MatchRepository,
-    @Inject(STANDING_REPOSITORY)
     private readonly standingRepository: StandingRepository,
   ) {}
 

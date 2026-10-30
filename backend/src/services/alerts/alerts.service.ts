@@ -9,8 +9,6 @@ import { PriceAlert } from '../../domain/alerts/price-alert';
 import { AlertNotFoundError } from '../../domain/alerts/errors/alert-not-found.error';
 import { DuplicateAlertError } from '../../domain/alerts/errors/duplicate-alert.error';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
-import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 
 /**
  * Orquesta la creación, consulta y cancelación de alertas de precio
@@ -20,8 +18,8 @@ import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 @Injectable()
 export class AlertsService {
   constructor(
-    @Inject(PRICE_ALERT_REPOSITORY) private readonly alerts: PriceAlertRepository,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    private readonly alerts: PriceAlertRepository,
+    private readonly players: PlayerRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}

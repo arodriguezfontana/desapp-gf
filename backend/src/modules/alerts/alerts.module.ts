@@ -5,10 +5,9 @@ import { PlayerModule } from '../player/player.module';
 import { AlertsController } from '../../controllers/alerts/alerts.controller';
 import { PriceAlertEntity } from '../../repositories/alerts/entities/price-alert.entity';
 import { PriceAlertMapper } from '../../repositories/alerts/price-alert.mapper';
-import { TypeOrmPriceAlertRepository } from '../../repositories/alerts/typeorm-price-alert.repository';
+import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { AlertsService } from '../../services/alerts/alerts.service';
 import { QuoteRecalculatedListener } from '../../services/alerts/quote-recalculated.listener';
-import { PRICE_ALERT_REPOSITORY } from './alerts.constants';
 
 /**
  * Módulo de alertas de precio (025-player-price-alerts). El listener de
@@ -22,8 +21,8 @@ import { PRICE_ALERT_REPOSITORY } from './alerts.constants';
     AlertsService,
     PriceAlertMapper,
     QuoteRecalculatedListener,
-    { provide: PRICE_ALERT_REPOSITORY, useClass: TypeOrmPriceAlertRepository },
+    PriceAlertRepository,
   ],
-  exports: [PRICE_ALERT_REPOSITORY],
+  exports: [PriceAlertRepository],
 })
 export class AlertsModule {}

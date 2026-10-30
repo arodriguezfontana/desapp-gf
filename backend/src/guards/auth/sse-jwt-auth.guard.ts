@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { TOKEN_ISSUER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
+import { TOKEN_ISSUER } from '../../modules/auth/auth.constants';
 import { TokenIssuer } from '../../adapters/auth/token-issuer';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { UNAUTHENTICATED_MESSAGE } from '../../shared/errors/messages';
@@ -16,7 +16,7 @@ import { AuthenticatedRequest } from './authenticated-request';
 export class SseJwtAuthGuard implements CanActivate {
   constructor(
     @Inject(TOKEN_ISSUER) private readonly tokens: TokenIssuer,
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

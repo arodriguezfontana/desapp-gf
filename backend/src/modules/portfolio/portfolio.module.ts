@@ -7,9 +7,8 @@ import { QuotationModule } from '../quotation/quotation.module';
 import { PortfolioController } from '../../controllers/portfolio/portfolio.controller';
 import { TokenHoldingEntity } from '../../repositories/portfolio/entities/token-holding.entity';
 import { TokenHoldingMapper } from '../../repositories/portfolio/mappers/token-holding.mapper';
-import { TypeOrmTokenHoldingRepository } from '../../repositories/portfolio/typeorm-token-holding.repository';
+import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
 import { PortfolioService } from '../../services/portfolio/portfolio.service';
-import { TOKEN_HOLDING_REPOSITORY } from './portfolio.constants';
 
 @Module({
   imports: [
@@ -23,8 +22,8 @@ import { TOKEN_HOLDING_REPOSITORY } from './portfolio.constants';
   providers: [
     PortfolioService,
     TokenHoldingMapper,
-    { provide: TOKEN_HOLDING_REPOSITORY, useClass: TypeOrmTokenHoldingRepository },
+    TokenHoldingRepository,
   ],
-  exports: [PortfolioService, TOKEN_HOLDING_REPOSITORY],
+  exports: [PortfolioService, TokenHoldingRepository],
 })
 export class PortfolioModule {}

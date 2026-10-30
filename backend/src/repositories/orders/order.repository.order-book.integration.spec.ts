@@ -11,7 +11,7 @@ import { UserEntity } from '../auth/entities/user.entity';
 import { PlayerEntity } from '../player/entities/player.entity';
 import { OrderEntity } from './entities/order.entity';
 import { OrderMapper } from './mappers/order.mapper';
-import { TypeOrmOrderRepository } from './typeorm-order.repository';
+import { OrderRepository } from './order.repository';
 
 /**
  * Integración (024-player-order-book) contra Postgres real: cubre la query
@@ -19,9 +19,9 @@ import { TypeOrmOrderRepository } from './typeorm-order.repository';
  * `getOrderBook`, la parte más riesgosa de la feature y la única que los
  * unit tests con mocks no pueden probar.
  */
-describe('TypeOrmOrderRepository — getOrderBook (integración contra Postgres real)', () => {
+describe('OrderRepository — getOrderBook (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
-  let repository: TypeOrmOrderRepository;
+  let repository: OrderRepository;
   let dataSource: DataSource;
   let userId: string;
   let otherUserId: string;
@@ -34,10 +34,10 @@ describe('TypeOrmOrderRepository — getOrderBook (integración contra Postgres 
         DatabaseModule,
         TypeOrmModule.forFeature([OrderEntity, PlayerEntity, UserEntity]),
       ],
-      providers: [OrderMapper, TypeOrmOrderRepository],
+      providers: [OrderMapper, OrderRepository],
     }).compile();
 
-    repository = moduleRef.get(TypeOrmOrderRepository);
+    repository = moduleRef.get(OrderRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

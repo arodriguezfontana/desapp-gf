@@ -6,11 +6,11 @@ import { DatabaseModule } from '../../database/database.module';
 import { Match } from '../../domain/competition/match';
 import { MatchEntity } from './entities/match.entity';
 import { MatchMapper } from './mappers/match.mapper';
-import { TypeOrmMatchRepository } from './typeorm-match.repository';
+import { MatchRepository } from './match.repository';
 
-describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
+describe('MatchRepository (Integration against Postgres)', () => {
   let moduleRef: TestingModule;
-  let repository: TypeOrmMatchRepository;
+  let repository: MatchRepository;
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -20,10 +20,10 @@ describe('TypeOrmMatchRepository (Integration against Postgres)', () => {
         DatabaseModule,
         TypeOrmModule.forFeature([MatchEntity]),
       ],
-      providers: [TypeOrmMatchRepository, MatchMapper],
+      providers: [MatchRepository, MatchMapper],
     }).compile();
 
-    repository = moduleRef.get(TypeOrmMatchRepository);
+    repository = moduleRef.get(MatchRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

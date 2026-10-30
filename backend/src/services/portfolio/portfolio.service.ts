@@ -1,8 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
-import { TOKEN_TRANSACTION_REPOSITORY } from '../../modules/orders/orders.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 
 import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
@@ -21,9 +18,9 @@ import { roundToTwoDecimals } from '../../shared/numbers/round2';
 export class PortfolioService {
   constructor(
     private readonly authService: AuthService,
-    @Inject(TOKEN_HOLDING_REPOSITORY) private readonly holdings: TokenHoldingRepository,
-    @Inject(TOKEN_TRANSACTION_REPOSITORY) private readonly transactions: TokenTransactionRepository,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    private readonly holdings: TokenHoldingRepository,
+    private readonly transactions: TokenTransactionRepository,
+    private readonly players: PlayerRepository,
     private readonly quotation: QuotationService,
   ) {}
 

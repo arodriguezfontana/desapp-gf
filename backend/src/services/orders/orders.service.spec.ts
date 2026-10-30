@@ -12,10 +12,10 @@ import { InsufficientHoldingError } from '../../domain/portfolio/errors/insuffic
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import type { Player } from '../../domain/player/player';
-import type { OrderRepository } from '../../repositories/orders/order.repository';
-import type { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
-import type { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
-import type { PlayerRepository } from '../../repositories/player/player.repository';
+import { OrderRepository } from '../../repositories/orders/order.repository';
+import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
+import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 import type { TransactionManager } from '../../repositories/shared/transaction-manager';
 import type { QuotationService } from '../quotation/quotation.service';
 import type { Transaction } from '../../repositories/shared/transaction';

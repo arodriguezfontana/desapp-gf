@@ -4,10 +4,7 @@ import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ConfigService } from '@nestjs/config';
 
-import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
-import { ORDER_REPOSITORY } from '../../modules/orders/orders.constants';
-import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
+import { PASSWORD_HASHER } from '../../modules/auth/auth.constants';
 
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
@@ -52,11 +49,11 @@ export class SuperuserSeedService {
   private readonly logger = new Logger(SuperuserSeedService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
-    @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
-    @Inject(TOKEN_HOLDING_REPOSITORY) private readonly holdings: TokenHoldingRepository,
+    private readonly players: PlayerRepository,
+    private readonly orders: OrderRepository,
+    private readonly holdings: TokenHoldingRepository,
     private readonly config: ConfigService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
     private readonly quotation: QuotationService,

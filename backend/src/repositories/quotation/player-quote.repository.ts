@@ -1,23 +1,54 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { PlayerQuote } from '../../domain/quotation/player-quote';
+import { PlayerQuoteEntity } from './entities/player-quote.entity';
+import { PlayerQuoteMapper } from './player-quote.mapper';
 
 /**
- * Puerto de dominio para la persistencia de PlayerQuote.
- * Token: PLAYER_QUOTE_REPOSITORY (modules/quotation/quotation.constants.ts).
- *
- * El historial de cotizaciones es por usuario, no global
- * (019-per-user-valuation-strategies, spec DD-002): toda consulta de
- * historial está acotada por `userId`.
+ * Postgres rechaza un INSERT con más de 65535 parámetros bindeados en total
+ * (columnas × filas): con el catálogo y la base de usuarios crecidos, un
+ * único `insert()` sobre todas las combinaciones usuario+jugador de un
+ * recálculo global supera ese límite y el driver falla con un error de
+ * protocolo (bind message). `PlayerQuoteEntity` tiene 10 columnas, así que
+ * 500 filas por lote deja un margen amplio (5000 parámetros) sin acercarse
+ * al límite ni generar lotes excesivamente chicos.
  */
-export interface PlayerQuoteRepository {
-  saveMany(quotes: PlayerQuote[]): Promise<void>;
-  findAllByPlayerIdAndUserId(playerId: string, userId: string): Promise<PlayerQuote[]>;
+const INSERT_BATCH_SIZE = 500;
 
-  /**
-   * Borra todas las cotizaciones de `userId` (cualquier jugador). Usado por
-   * la simulación de mercado (admin) para reemplazar su historial de demo
-   * en cada corrida en vez de acumularlo sin límite — PlayerQuote no es un
-   * log de auditoría append-only (a diferencia de TokenTransaction,
-   * Principio V de la constitución), así que reemplazarlo es seguro.
-   */
-  deleteAllByUserId(userId: string): Promise<void>;
+function chunk<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    batches.push(items.slice(i, i + size));
+  }
+  return batches;
+}
+
+@Injectable()
+export class PlayerQuoteRepository {
+  constructor(
+    @InjectRepository(PlayerQuoteEntity)
+    private readonly repo: Repository<PlayerQuoteEntity>,
+    private readonly mapper: PlayerQuoteMapper,
+  ) {}
+
+  async saveMany(quotes: PlayerQuote[]): Promise<void> {
+    if (quotes.length === 0) return;
+    const entities = quotes.map((q) => this.mapper.toPersistence(q));
+    for (const batch of chunk(entities, INSERT_BATCH_SIZE)) {
+      await this.repo.insert(batch);
+    }
+  }
+
+  async findAllByPlayerIdAndUserId(playerId: string, userId: string): Promise<PlayerQuote[]> {
+    const entities = await this.repo.find({
+      where: { playerId, userId },
+      order: { calculatedAt: 'ASC' },
+    });
+    return entities.map((entity) => this.mapper.toDomain(entity));
+  }
+
+  async deleteAllByUserId(userId: string): Promise<void> {
+    await this.repo.delete({ userId });
+  }
 }

@@ -8,11 +8,11 @@ import { DatabaseModule } from '../../database/database.module';
 import { UserRole } from '../../domain/auth/user-role';
 import { ApiKeyEntity } from './entities/api-key.entity';
 import { ApiKeyMapper } from './mappers/api-key.mapper';
-import { TypeOrmApiKeyRepository } from './typeorm-api-key.repository';
+import { ApiKeyRepository } from './api-key.repository';
 
-describe('TypeOrmApiKeyRepository.findByHash (integración, spec 008 US4)', () => {
+describe('ApiKeyRepository.findByHash (integración, spec 008 US4)', () => {
   let moduleRef: TestingModule;
-  let repo: TypeOrmApiKeyRepository;
+  let repo: ApiKeyRepository;
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -22,10 +22,10 @@ describe('TypeOrmApiKeyRepository.findByHash (integración, spec 008 US4)', () =
         DatabaseModule,
         TypeOrmModule.forFeature([ApiKeyEntity]),
       ],
-      providers: [ApiKeyMapper, TypeOrmApiKeyRepository],
+      providers: [ApiKeyMapper, ApiKeyRepository],
     }).compile();
 
-    repo = moduleRef.get(TypeOrmApiKeyRepository);
+    repo = moduleRef.get(ApiKeyRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

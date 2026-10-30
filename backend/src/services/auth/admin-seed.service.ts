@@ -4,7 +4,7 @@ import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ConfigService } from '@nestjs/config';
 
-import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
+import { PASSWORD_HASHER } from '../../modules/auth/auth.constants';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { User } from '../../domain/auth/user';
@@ -34,7 +34,7 @@ export class AdminSeedService {
   private readonly logger = new Logger(AdminSeedService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     private readonly config: ConfigService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,

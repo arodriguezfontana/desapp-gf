@@ -33,7 +33,7 @@ describe('AdminApiKeyGuard', () => {
       findByHash: jest.fn(),
       save: jest.fn(),
       saveWithRevocation: jest.fn(),
-    };
+    } as unknown as typeof apiKeys;
     guard = new AdminApiKeyGuard(hasher, apiKeys);
   });
 

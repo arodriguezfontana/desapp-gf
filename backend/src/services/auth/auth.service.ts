@@ -6,7 +6,6 @@ import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import {
   PASSWORD_HASHER,
   TOKEN_ISSUER,
-  USER_REPOSITORY,
 } from '../../modules/auth/auth.constants';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { TokenIssuer } from '../../adapters/auth/token-issuer';
@@ -22,7 +21,7 @@ import { UserStrategyProvisioningService } from '../quotation/user-strategy-prov
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     @Inject(TOKEN_ISSUER) private readonly tokens: TokenIssuer,
     private readonly strategyProvisioning: UserStrategyProvisioningService,

@@ -26,7 +26,7 @@ describe('ApiKeyGuard', () => {
       findByHash: jest.fn(),
       save: jest.fn(),
       saveWithRevocation: jest.fn(),
-    };
+    } as unknown as typeof apiKeys;
     guard = new ApiKeyGuard(hasher, apiKeys);
   });
 

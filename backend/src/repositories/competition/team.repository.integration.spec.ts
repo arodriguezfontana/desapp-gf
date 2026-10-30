@@ -7,7 +7,7 @@ import { DatabaseModule } from '../../database/database.module';
 import { Team } from '../../domain/competition/team';
 import { TeamEntity } from './entities/team.entity';
 import { TeamMapper } from './mappers/team.mapper';
-import { TypeOrmTeamRepository } from './typeorm-team.repository';
+import { TeamRepository } from './team.repository';
 
 const BASE_PROPS = {
   footballDataTeamId: 86,
@@ -16,9 +16,9 @@ const BASE_PROPS = {
   crestUrl: 'https://crests.football-data.org/86.png',
 };
 
-describe('TypeOrmTeamRepository (integración)', () => {
+describe('TeamRepository (integración)', () => {
   let moduleRef: TestingModule;
-  let repo: TypeOrmTeamRepository;
+  let repo: TeamRepository;
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -28,10 +28,10 @@ describe('TypeOrmTeamRepository (integración)', () => {
         DatabaseModule,
         TypeOrmModule.forFeature([TeamEntity]),
       ],
-      providers: [TeamMapper, TypeOrmTeamRepository],
+      providers: [TeamMapper, TeamRepository],
     }).compile();
 
-    repo = moduleRef.get(TypeOrmTeamRepository);
+    repo = moduleRef.get(TeamRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

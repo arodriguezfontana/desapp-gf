@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
 import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../domain/alerts/events/alert-triggered.event';
 import { QUOTE_RECALCULATED_EVENT, QuoteRecalculatedEvent } from '../../domain/alerts/events/quote-recalculated.event';
@@ -14,7 +13,7 @@ import { QUOTE_RECALCULATED_EVENT, QuoteRecalculatedEvent } from '../../domain/a
 @Injectable()
 export class QuoteRecalculatedListener {
   constructor(
-    @Inject(PRICE_ALERT_REPOSITORY) private readonly alerts: PriceAlertRepository,
+    private readonly alerts: PriceAlertRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 

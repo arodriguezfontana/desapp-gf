@@ -6,11 +6,11 @@ import { DatabaseModule } from '../../database/database.module';
 import { Standing } from '../../domain/competition/standing';
 import { StandingEntity } from './entities/standing.entity';
 import { StandingMapper } from './mappers/standing.mapper';
-import { TypeOrmStandingRepository } from './typeorm-standing.repository';
+import { StandingRepository } from './standing.repository';
 
-describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
+describe('StandingRepository (Integration against Postgres)', () => {
   let moduleRef: TestingModule;
-  let repository: TypeOrmStandingRepository;
+  let repository: StandingRepository;
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -20,10 +20,10 @@ describe('TypeOrmStandingRepository (Integration against Postgres)', () => {
         DatabaseModule,
         TypeOrmModule.forFeature([StandingEntity]),
       ],
-      providers: [TypeOrmStandingRepository, StandingMapper],
+      providers: [StandingRepository, StandingMapper],
     }).compile();
 
-    repository = moduleRef.get(TypeOrmStandingRepository);
+    repository = moduleRef.get(StandingRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

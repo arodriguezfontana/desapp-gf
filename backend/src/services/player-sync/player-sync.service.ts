@@ -4,7 +4,6 @@ import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WHOSCORED_ADAPTER } from '../../modules/player-sync/player-sync.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import {
   WhoScoredAdapter,
   WhoScoredRawPlayer,
@@ -41,7 +40,7 @@ export class PlayerSyncService {
 
   constructor(
     @Inject(WHOSCORED_ADAPTER) private readonly whoScored: WhoScoredAdapter,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    private readonly players: PlayerRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}

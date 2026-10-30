@@ -15,11 +15,6 @@ import { ValuationStrategyRepository } from '../../repositories/quotation/valuat
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
-import {
-  VALUATION_STRATEGY_REPOSITORY,
-  PLAYER_QUOTE_REPOSITORY,
-} from '../../modules/quotation/quotation.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 
 export interface RecalculateResult {
   recalculated: Array<{ userId: string; playerId: string; value: number; score: number }>;
@@ -57,18 +52,15 @@ export class QuotationService {
   private recalculationInProgress = false;
 
   constructor(
-    @Inject(VALUATION_STRATEGY_REPOSITORY)
     private readonly strategyRepository: ValuationStrategyRepository,
-    @Inject(PLAYER_QUOTE_REPOSITORY)
     private readonly quoteRepository: PlayerQuoteRepository,
-    @Inject(PLAYER_REPOSITORY)
     private readonly playerRepository: PlayerRepository,
     private readonly eventEmitter: EventEmitter2,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
-  /** Las dos estrategias propias del usuario (spec FR-004). */
+  /** Las dos estrategias propias del usuario. */
   async listStrategies(userId: string): Promise<ValuationStrategy[]> {
     return this.strategyRepository.findByUserId(userId);
   }
@@ -82,13 +74,13 @@ export class QuotationService {
     return strategy;
   }
 
-  /** Marca `strategyId` como seleccionada, desmarcando la otra del mismo usuario (spec FR-005). */
+  /** Marca `strategyId` como seleccionada, desmarcando la otra del mismo usuario */
   async selectStrategy(userId: string, strategyId: string): Promise<ValuationStrategy> {
     await this.getOwnedStrategyOrThrow(strategyId, userId);
     return this.strategyRepository.selectStrategy(userId, strategyId);
   }
 
-  /** Reemplazo completo de los pesos generales de una estrategia propia (spec FR-006, FR-008). */
+  /** Reemplazo completo de los pesos generales de una estrategia propia. */
   async editWeights(
     userId: string,
     strategyId: string,

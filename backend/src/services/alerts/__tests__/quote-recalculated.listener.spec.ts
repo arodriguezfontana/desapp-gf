@@ -20,7 +20,7 @@ describe('QuoteRecalculatedListener (unit, con dobles, sin Nest ni DB)', () => {
       findById: jest.fn(),
       findActiveByUserIdAndPlayerId: jest.fn(),
       findAllByUserId: jest.fn(),
-    };
+    } as unknown as typeof alertsRepo;
     eventEmitter = { emit: jest.fn(), emitAsync: jest.fn() };
     listener = new QuoteRecalculatedListener(alertsRepo, eventEmitter as never);
   });

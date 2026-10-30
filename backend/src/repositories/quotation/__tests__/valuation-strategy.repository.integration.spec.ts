@@ -6,16 +6,16 @@ import { DataSource } from 'typeorm';
 import { DatabaseModule } from '../../../database/database.module';
 import { StrategyNotFoundError } from '../../../domain/quotation/errors/strategy-not-found.error';
 import { ValuationStrategyMapper } from '../valuation-strategy.mapper';
-import { TypeOrmValuationStrategyRepository } from '../typeorm-valuation-strategy.repository';
+import { ValuationStrategyRepository } from '../valuation-strategy.repository';
 import { ValuationStrategyEntity } from '../entities/valuation-strategy.entity';
 import { UserEntity } from '../../../repositories/auth/entities/user.entity';
 
 const WEIGHTS_A = { goals: 0.5, assists: 0.3, rating: 0.2 };
 const WEIGHTS_B = { totalTackles: 0.6, interceptions: 0.4 };
 
-describe('TypeOrmValuationStrategyRepository (integración, 019-per-user-valuation-strategies)', () => {
+describe('ValuationStrategyRepository (integración, 019-per-user-valuation-strategies)', () => {
   let moduleRef: TestingModule;
-  let repo: TypeOrmValuationStrategyRepository;
+  let repo: ValuationStrategyRepository;
   let dataSource: DataSource;
   let userIdA: string;
   let userIdB: string;
@@ -27,10 +27,10 @@ describe('TypeOrmValuationStrategyRepository (integración, 019-per-user-valuati
         DatabaseModule,
         TypeOrmModule.forFeature([ValuationStrategyEntity, UserEntity]),
       ],
-      providers: [ValuationStrategyMapper, TypeOrmValuationStrategyRepository],
+      providers: [ValuationStrategyMapper, ValuationStrategyRepository],
     }).compile();
 
-    repo = moduleRef.get(TypeOrmValuationStrategyRepository);
+    repo = moduleRef.get(ValuationStrategyRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

@@ -20,12 +20,12 @@ describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', 
       saveMany: jest.fn(),
       selectStrategy: jest.fn(),
       findAllUserIds: jest.fn().mockResolvedValue([]),
-    };
+    } as unknown as typeof strategyRepo;
     const quoteRepo: jest.Mocked<PlayerQuoteRepository> = {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findAllByPlayerIdAndUserId: jest.fn(),
       deleteAllByUserId: jest.fn(),
-    };
+    } as unknown as typeof quoteRepo;
     const playerRepo = {
       findAllActive: jest.fn().mockResolvedValue([]),
       findById: jest.fn(),

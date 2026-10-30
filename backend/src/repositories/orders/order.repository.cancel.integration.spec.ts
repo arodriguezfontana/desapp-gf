@@ -14,7 +14,7 @@ import { UserEntity } from '../auth/entities/user.entity';
 import { PlayerEntity } from '../player/entities/player.entity';
 import { OrderEntity } from './entities/order.entity';
 import { OrderMapper } from './mappers/order.mapper';
-import { TypeOrmOrderRepository } from './typeorm-order.repository';
+import { OrderRepository } from './order.repository';
 
 /**
  * Integración (023-cancel-order) contra Postgres real: cubre el camino que
@@ -23,9 +23,9 @@ import { TypeOrmOrderRepository } from './typeorm-order.repository';
  * los cómputos de disponibilidad (`sumPendingSellQuantity`,
  * `findCompatibleCandidates`) a nivel de base de datos.
  */
-describe('TypeOrmOrderRepository — cancelación (integración contra Postgres real)', () => {
+describe('OrderRepository — cancelación (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
-  let repository: TypeOrmOrderRepository;
+  let repository: OrderRepository;
   let transactionManager: TypeOrmTransactionManager;
   let dataSource: DataSource;
   let userId: string;
@@ -38,10 +38,10 @@ describe('TypeOrmOrderRepository — cancelación (integración contra Postgres 
         DatabaseModule,
         TypeOrmModule.forFeature([OrderEntity, PlayerEntity, UserEntity]),
       ],
-      providers: [OrderMapper, TypeOrmOrderRepository, TypeOrmTransactionManager],
+      providers: [OrderMapper, OrderRepository, TypeOrmTransactionManager],
     }).compile();
 
-    repository = moduleRef.get(TypeOrmOrderRepository);
+    repository = moduleRef.get(OrderRepository);
     transactionManager = moduleRef.get(TypeOrmTransactionManager);
     dataSource = moduleRef.get(DataSource);
   });

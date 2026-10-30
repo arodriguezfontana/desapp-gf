@@ -19,13 +19,13 @@ describe('FootballDataSyncService', () => {
       upsertMatches: jest.fn().mockResolvedValue(undefined),
       findByExternalId: jest.fn(),
       findByLeagueCode: jest.fn(),
-    };
+    } as unknown as typeof mockMatchRepository;
 
     mockStandingRepository = {
       upsertStandings: jest.fn().mockResolvedValue(undefined),
       findByTeamAndLeague: jest.fn(),
       findByLeagueCode: jest.fn(),
-    };
+    } as unknown as typeof mockStandingRepository;
 
     service = new FootballDataSyncService(
       mockAdapter,

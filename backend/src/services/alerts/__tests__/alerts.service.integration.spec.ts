@@ -6,8 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../../database/database.module';
-import { PRICE_ALERT_REPOSITORY } from '../../../modules/alerts/alerts.constants';
-import { PLAYER_REPOSITORY } from '../../../modules/player/player.constants';
 
 import { PriceAlertEntity } from '../../../repositories/alerts/entities/price-alert.entity';
 import { PlayerEntity } from '../../../repositories/player/entities/player.entity';
@@ -16,8 +14,8 @@ import { UserEntity } from '../../../repositories/auth/entities/user.entity';
 import { PriceAlertMapper } from '../../../repositories/alerts/price-alert.mapper';
 import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
 
-import { TypeOrmPriceAlertRepository } from '../../../repositories/alerts/typeorm-price-alert.repository';
-import { TypeOrmPlayerRepository } from '../../../repositories/player/typeorm-player.repository';
+import { PriceAlertRepository } from '../../../repositories/alerts/price-alert.repository';
+import { PlayerRepository } from '../../../repositories/player/player.repository';
 
 import { AlertCondition } from '../../../domain/alerts/alert-condition';
 import { AlertStatus } from '../../../domain/alerts/price-alert';
@@ -49,8 +47,8 @@ describe('AlertsService (integración contra Postgres real)', () => {
         AlertsService,
         PriceAlertMapper,
         PlayerMapper,
-        { provide: PRICE_ALERT_REPOSITORY, useClass: TypeOrmPriceAlertRepository },
-        { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
+        PriceAlertRepository,
+        PlayerRepository,
       ],
     }).compile();
 

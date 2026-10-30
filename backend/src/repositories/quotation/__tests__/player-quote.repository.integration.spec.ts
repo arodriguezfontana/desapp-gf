@@ -7,16 +7,16 @@ import { DatabaseModule } from '../../../database/database.module';
 import { PlayerQuote } from '../../../domain/quotation/player-quote';
 import { PlayerQuoteEntity } from '../entities/player-quote.entity';
 import { PlayerQuoteMapper } from '../player-quote.mapper';
-import { TypeOrmPlayerQuoteRepository } from '../typeorm-player-quote.repository';
+import { PlayerQuoteRepository } from '../player-quote.repository';
 import { UserEntity } from '../../../repositories/auth/entities/user.entity';
 
 const PLAYER_ID = randomUUID();
 const STRATEGY_ID = randomUUID();
 const WEIGHTS = { goals: 0.25, assists: 0.15, rating: 0.20 };
 
-describe('TypeOrmPlayerQuoteRepository (integración, 019-per-user-valuation-strategies)', () => {
+describe('PlayerQuoteRepository (integración, 019-per-user-valuation-strategies)', () => {
   let moduleRef: TestingModule;
-  let repo: TypeOrmPlayerQuoteRepository;
+  let repo: PlayerQuoteRepository;
   let dataSource: DataSource;
   let userIdA: string;
   let userIdB: string;
@@ -28,10 +28,10 @@ describe('TypeOrmPlayerQuoteRepository (integración, 019-per-user-valuation-str
         DatabaseModule,
         TypeOrmModule.forFeature([PlayerQuoteEntity, UserEntity]),
       ],
-      providers: [PlayerQuoteMapper, TypeOrmPlayerQuoteRepository],
+      providers: [PlayerQuoteMapper, PlayerQuoteRepository],
     }).compile();
 
-    repo = moduleRef.get(TypeOrmPlayerQuoteRepository);
+    repo = moduleRef.get(PlayerQuoteRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

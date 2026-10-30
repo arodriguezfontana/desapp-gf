@@ -3,7 +3,6 @@ import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
-import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
 
 /**
  * Pesos seed de las dos estrategias que todo usuario recibe al alta
@@ -66,7 +65,6 @@ const FACTOR_ESCALA = 99.0;
 @Injectable()
 export class UserStrategyProvisioningService {
   constructor(
-    @Inject(VALUATION_STRATEGY_REPOSITORY)
     private readonly strategyRepository: ValuationStrategyRepository,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}

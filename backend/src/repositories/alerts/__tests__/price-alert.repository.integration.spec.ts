@@ -11,11 +11,11 @@ import { UserEntity } from '../../auth/entities/user.entity';
 import { PlayerEntity } from '../../player/entities/player.entity';
 import { PriceAlertEntity } from '../entities/price-alert.entity';
 import { PriceAlertMapper } from '../price-alert.mapper';
-import { TypeOrmPriceAlertRepository } from '../typeorm-price-alert.repository';
+import { PriceAlertRepository } from '../price-alert.repository';
 
-describe('TypeOrmPriceAlertRepository (integración contra Postgres real)', () => {
+describe('PriceAlertRepository (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
-  let repository: TypeOrmPriceAlertRepository;
+  let repository: PriceAlertRepository;
   let dataSource: DataSource;
   let userId: string;
   let playerId: string;
@@ -27,10 +27,10 @@ describe('TypeOrmPriceAlertRepository (integración contra Postgres real)', () =
         DatabaseModule,
         TypeOrmModule.forFeature([PriceAlertEntity, PlayerEntity, UserEntity]),
       ],
-      providers: [PriceAlertMapper, TypeOrmPriceAlertRepository],
+      providers: [PriceAlertMapper, PriceAlertRepository],
     }).compile();
 
-    repository = moduleRef.get(TypeOrmPriceAlertRepository);
+    repository = moduleRef.get(PriceAlertRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

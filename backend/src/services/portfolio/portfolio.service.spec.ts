@@ -2,9 +2,9 @@ import { PortfolioService } from './portfolio.service';
 import { AuthService } from '../auth/auth.service';
 import { User } from '../../domain/auth/user';
 import { Email } from '../../domain/auth/email';
-import type { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
-import type { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
-import type { PlayerRepository } from '../../repositories/player/player.repository';
+import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
+import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 import type { QuotationService } from '../quotation/quotation.service';
 
 describe('PortfolioService', () => {

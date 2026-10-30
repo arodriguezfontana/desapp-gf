@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 
-import { API_KEY_HEADER, API_KEY_REPOSITORY, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
+import { API_KEY_HEADER, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
 import { ApiKey } from '../../domain/api-key/api-key';
 import { ApiKeyRepository } from '../../repositories/api-key/api-key.repository';
@@ -27,7 +27,7 @@ import { UNAUTHENTICATED_MESSAGE } from '../../shared/errors/messages';
 export class ApiKeyGuard implements CanActivate {
   constructor(
     @Inject(TOKEN_HASHER) private readonly hasher: TokenHasher,
-    @Inject(API_KEY_REPOSITORY) private readonly apiKeys: ApiKeyRepository,
+    private readonly apiKeys: ApiKeyRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

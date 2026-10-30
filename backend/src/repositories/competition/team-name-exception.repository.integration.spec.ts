@@ -5,11 +5,11 @@ import { DataSource } from 'typeorm';
 import { DatabaseModule } from '../../database/database.module';
 import { TeamNameExceptionEntity } from './entities/team-name-exception.entity';
 import { TeamNameExceptionMapper } from './mappers/team-name-exception.mapper';
-import { TypeOrmTeamNameExceptionRepository } from './typeorm-team-name-exception.repository';
+import { TeamNameExceptionRepository } from './team-name-exception.repository';
 
-describe('TypeOrmTeamNameExceptionRepository (Integration against Postgres)', () => {
+describe('TeamNameExceptionRepository (Integration against Postgres)', () => {
   let moduleRef: TestingModule;
-  let repository: TypeOrmTeamNameExceptionRepository;
+  let repository: TeamNameExceptionRepository;
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -19,10 +19,10 @@ describe('TypeOrmTeamNameExceptionRepository (Integration against Postgres)', ()
         DatabaseModule,
         TypeOrmModule.forFeature([TeamNameExceptionEntity]),
       ],
-      providers: [TypeOrmTeamNameExceptionRepository, TeamNameExceptionMapper],
+      providers: [TeamNameExceptionRepository, TeamNameExceptionMapper],
     }).compile();
 
-    repository = moduleRef.get(TypeOrmTeamNameExceptionRepository);
+    repository = moduleRef.get(TeamNameExceptionRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

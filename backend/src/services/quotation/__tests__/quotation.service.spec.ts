@@ -53,12 +53,12 @@ describe('QuotationService', () => {
       saveMany: jest.fn(),
       selectStrategy: jest.fn(),
       findAllUserIds: jest.fn(),
-    };
+    } as unknown as typeof strategyRepo;
     quoteRepo = {
       saveMany: jest.fn().mockResolvedValue(undefined),
       findAllByPlayerIdAndUserId: jest.fn(),
       deleteAllByUserId: jest.fn().mockResolvedValue(undefined),
-    };
+    } as unknown as typeof quoteRepo;
     playerRepo = {
       findPage: jest.fn(),
       findById: jest.fn(),
@@ -66,7 +66,7 @@ describe('QuotationService', () => {
       findActiveExternalIdsByTeam: jest.fn(),
       applyTeamRosterSync: jest.fn(),
       findAllActive: jest.fn(),
-    };
+    } as unknown as typeof playerRepo;
     eventEmitter = { emit: jest.fn(), emitAsync: jest.fn() };
     service = new QuotationService(
       strategyRepo,

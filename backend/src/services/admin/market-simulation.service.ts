@@ -5,12 +5,7 @@ import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { USER_REPOSITORY, PASSWORD_HASHER } from '../../modules/auth/auth.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
-import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY } from '../../modules/orders/orders.constants';
-import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
-import { PLAYER_QUOTE_REPOSITORY, VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
-import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
+import { PASSWORD_HASHER } from '../../modules/auth/auth.constants';
 
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
@@ -60,15 +55,15 @@ export class MarketSimulationService {
   private readonly logger = new Logger(MarketSimulationService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
-    @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
-    @Inject(TOKEN_HOLDING_REPOSITORY) private readonly holdings: TokenHoldingRepository,
-    @Inject(TOKEN_TRANSACTION_REPOSITORY) private readonly tokenTransactions: TokenTransactionRepository,
-    @Inject(PLAYER_QUOTE_REPOSITORY) private readonly playerQuotes: PlayerQuoteRepository,
-    @Inject(VALUATION_STRATEGY_REPOSITORY) private readonly strategies: ValuationStrategyRepository,
-    @Inject(PRICE_ALERT_REPOSITORY) private readonly priceAlerts: PriceAlertRepository,
+    private readonly players: PlayerRepository,
+    private readonly orders: OrderRepository,
+    private readonly holdings: TokenHoldingRepository,
+    private readonly tokenTransactions: TokenTransactionRepository,
+    private readonly playerQuotes: PlayerQuoteRepository,
+    private readonly strategies: ValuationStrategyRepository,
+    private readonly priceAlerts: PriceAlertRepository,
     private readonly quotation: QuotationService,
     private readonly strategyProvisioning: UserStrategyProvisioningService,
     private readonly config: ConfigService,

@@ -5,16 +5,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
-import { PASSWORD_HASHER, TOKEN_ISSUER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
-import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
+import { PASSWORD_HASHER, TOKEN_ISSUER } from '../../modules/auth/auth.constants';
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
-import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
+import { UserRepository } from '../../repositories/auth/user.repository';
 import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
-import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
+import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { AuthService } from './auth.service';
 
@@ -36,9 +35,9 @@ describe('AuthService.register (integración contra Postgres real)', () => {
         UserMapper,
         ValuationStrategyMapper,
         UserStrategyProvisioningService,
-        { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
+        UserRepository,
         { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
-        { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
+        ValuationStrategyRepository,
         {
           provide: TOKEN_ISSUER,
           useValue: { issue: () => 'x', verify: () => ({ userId: 'x' }) },

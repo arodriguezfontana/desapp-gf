@@ -22,12 +22,12 @@ describe('FootballDataSyncService — disparo manual (spec 009)', () => {
       upsertMatches: jest.fn().mockResolvedValue(undefined),
       findByLeagueCode: jest.fn(),
       findByExternalId: jest.fn(),
-    };
+    } as unknown as typeof matchRepo;
     standingRepo = {
       upsertStandings: jest.fn().mockResolvedValue(undefined),
       findByLeagueCode: jest.fn(),
       findByTeamAndLeague: jest.fn(),
-    };
+    } as unknown as typeof standingRepo;
     service = new FootballDataSyncService(adapter, matchRepo, standingRepo);
     service.setRequestDelay(0);
   });

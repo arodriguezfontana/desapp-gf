@@ -3,9 +3,7 @@ import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
-import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } from '../../modules/orders/orders.constants';
-import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
+import { TRANSACTION_MANAGER } from '../../modules/orders/orders.constants';
 
 import { Order } from '../../domain/orders/order';
 import { OrderBook } from '../../domain/orders/order-book';
@@ -49,10 +47,10 @@ export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
   constructor(
-    @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
-    @Inject(TOKEN_TRANSACTION_REPOSITORY) private readonly tokenTransactions: TokenTransactionRepository,
-    @Inject(TOKEN_HOLDING_REPOSITORY) private readonly holdings: TokenHoldingRepository,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    private readonly orders: OrderRepository,
+    private readonly tokenTransactions: TokenTransactionRepository,
+    private readonly holdings: TokenHoldingRepository,
+    private readonly players: PlayerRepository,
     @Inject(TRANSACTION_MANAGER) private readonly transactionManager: TransactionManager,
     private readonly quotation: QuotationService,
     @Inject(CLOCK) private readonly clock: Clock,

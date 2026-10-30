@@ -6,14 +6,13 @@ import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
-import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
-import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
+import { PASSWORD_HASHER } from '../../modules/auth/auth.constants';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
-import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
+import { UserRepository } from '../../repositories/auth/user.repository';
 import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
-import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
+import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
 import { AdminSeedService } from './admin-seed.service';
 
@@ -37,9 +36,9 @@ describe('AdminSeedService.run (integración contra Postgres real)', () => {
         UserMapper,
         ValuationStrategyMapper,
         UserStrategyProvisioningService,
-        { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
+        UserRepository,
         { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
-        { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
+        ValuationStrategyRepository,
       ],
     }).compile();
 

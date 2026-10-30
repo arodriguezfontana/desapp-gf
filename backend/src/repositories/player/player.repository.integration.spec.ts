@@ -13,11 +13,11 @@ import { ValuationStrategyEntity } from '../quotation/entities/valuation-strateg
 import { UserEntity } from '../auth/entities/user.entity';
 import { PlayerEntity } from './entities/player.entity';
 import { PlayerMapper } from './mappers/player.mapper';
-import { TypeOrmPlayerRepository } from './typeorm-player.repository';
+import { PlayerRepository } from './player.repository';
 
-describe('TypeOrmPlayerRepository — sincronización (integración contra Postgres real)', () => {
+describe('PlayerRepository — sincronización (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
-  let repository: TypeOrmPlayerRepository;
+  let repository: PlayerRepository;
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -27,10 +27,10 @@ describe('TypeOrmPlayerRepository — sincronización (integración contra Postg
         DatabaseModule,
         TypeOrmModule.forFeature([PlayerEntity, PlayerQuoteEntity, ValuationStrategyEntity, UserEntity]),
       ],
-      providers: [PlayerMapper, TypeOrmPlayerRepository],
+      providers: [PlayerMapper, PlayerRepository],
     }).compile();
 
-    repository = moduleRef.get(TypeOrmPlayerRepository);
+    repository = moduleRef.get(PlayerRepository);
     dataSource = moduleRef.get(DataSource);
   });
 

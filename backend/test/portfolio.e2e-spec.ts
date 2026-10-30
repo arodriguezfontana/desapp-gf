@@ -2,6 +2,7 @@ import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
 import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
 import { TokenHoldingEntity } from '../src/repositories/portfolio/entities/token-holding.entity';
+import { OrderEntity } from '../src/repositories/orders/entities/order.entity';
 import { TokenTransactionEntity } from '../src/repositories/orders/entities/token-transaction.entity';
 import { createTestApp, TestContext } from './test-app';
 
@@ -43,7 +44,25 @@ describe('GET /users/:id/portfolio (e2e)', () => {
     });
   };
 
+  const insertCompletedOrder = async (userId: string, playerId: string, side: 'BUY' | 'SELL', quantity: number, price: number) => {
+    const id = randomUUID();
+    await ctx.dataSource.getRepository(OrderEntity).insert({
+      id,
+      userId,
+      playerId,
+      side,
+      quantity,
+      remainingQuantity: 0,
+      price: price.toFixed(2),
+      status: 'COMPLETED',
+      createdAt: new Date(),
+    });
+    return id;
+  };
+
   const insertCreditTx = async (userId: string, playerId: string, quantity: number, price: number) => {
+    const orderId = await insertCompletedOrder(userId, playerId, 'BUY', quantity, price);
+    const counterpartOrderId = await insertCompletedOrder(userId, playerId, 'SELL', quantity, price);
     await ctx.dataSource.getRepository(TokenTransactionEntity).insert({
       id: randomUUID(),
       userId,
@@ -51,8 +70,8 @@ describe('GET /users/:id/portfolio (e2e)', () => {
       playerId,
       quantity,
       price: price.toFixed(2),
-      orderId: randomUUID(),
-      counterpartOrderId: randomUUID(),
+      orderId,
+      counterpartOrderId,
       createdAt: new Date(),
     });
   };

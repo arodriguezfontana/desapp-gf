@@ -5,9 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../../database/database.module';
-import { NOTIFICATION_REPOSITORY } from '../../../modules/notifications/notifications.constants';
-import { PRICE_ALERT_REPOSITORY } from '../../../modules/alerts/alerts.constants';
-import { PLAYER_REPOSITORY } from '../../../modules/player/player.constants';
 
 import { NotificationEntity } from '../../../repositories/notifications/entities/notification.entity';
 import { PriceAlertEntity } from '../../../repositories/alerts/entities/price-alert.entity';
@@ -18,9 +15,9 @@ import { NotificationMapper } from '../../../repositories/notifications/notifica
 import { PriceAlertMapper } from '../../../repositories/alerts/price-alert.mapper';
 import { PlayerMapper } from '../../../repositories/player/mappers/player.mapper';
 
-import { TypeOrmNotificationRepository } from '../../../repositories/notifications/typeorm-notification.repository';
-import { TypeOrmPriceAlertRepository } from '../../../repositories/alerts/typeorm-price-alert.repository';
-import { TypeOrmPlayerRepository } from '../../../repositories/player/typeorm-player.repository';
+import { NotificationRepository } from '../../../repositories/notifications/notification.repository';
+import { PriceAlertRepository } from '../../../repositories/alerts/price-alert.repository';
+import { PlayerRepository } from '../../../repositories/player/player.repository';
 
 import { AlertCondition } from '../../../domain/alerts/alert-condition';
 import { PriceAlert } from '../../../domain/alerts/price-alert';
@@ -50,9 +47,9 @@ describe('NotificationsService (integración contra Postgres real)', () => {
         NotificationMapper,
         PriceAlertMapper,
         PlayerMapper,
-        { provide: NOTIFICATION_REPOSITORY, useClass: TypeOrmNotificationRepository },
-        { provide: PRICE_ALERT_REPOSITORY, useClass: TypeOrmPriceAlertRepository },
-        { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
+        NotificationRepository,
+        PriceAlertRepository,
+        PlayerRepository,
       ],
     }).compile();
 
@@ -93,7 +90,7 @@ describe('NotificationsService (integración contra Postgres real)', () => {
       position: 'FW',
     });
 
-    const alertsRepo = moduleRef.get<TypeOrmPriceAlertRepository>(PRICE_ALERT_REPOSITORY);
+    const alertsRepo = moduleRef.get<PriceAlertRepository>(PriceAlertRepository);
     const alert = await alertsRepo.save(
       PriceAlert.create({
         id: randomUUID(),

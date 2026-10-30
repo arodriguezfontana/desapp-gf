@@ -1,5 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { TEAM_REPOSITORY } from '../../modules/player/player-enrichment.constants';
+import { Injectable } from '@nestjs/common';
 import { Player } from '../../domain/player/player';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPagination } from '../../domain/player/player-page';
@@ -21,7 +20,7 @@ export interface PlayerPageWithCrests {
 export class PlayerEnrichmentService {
   constructor(
     private readonly playerService: PlayerService,
-    @Inject(TEAM_REPOSITORY) private readonly teams: TeamRepository,
+    private readonly teams: TeamRepository,
   ) {}
 
   async listPlayersWithCrests(

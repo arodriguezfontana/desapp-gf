@@ -1,11 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Subject } from 'rxjs';
 import { Notification } from '../../domain/notifications/notification';
 import { NotificationNotFoundError } from '../../domain/notifications/errors/notification-not-found.error';
 import { NotificationRepository } from '../../repositories/notifications/notification.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
-import { NOTIFICATION_REPOSITORY } from '../../modules/notifications/notifications.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import { WithPlayerName, withPlayerName } from '../../shared/with-player-name';
 
 /** Notificación enriquecida con el nombre del jugador, resuelto al vuelo (no se denormaliza en la tabla). */
@@ -23,8 +21,8 @@ export class NotificationsService {
   private readonly streams = new Map<string, Subject<NotificationWithPlayerName>>();
 
   constructor(
-    @Inject(NOTIFICATION_REPOSITORY) private readonly notifications: NotificationRepository,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    private readonly notifications: NotificationRepository,
+    private readonly players: PlayerRepository,
   ) {}
 
   /**

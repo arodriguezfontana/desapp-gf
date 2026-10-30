@@ -74,7 +74,7 @@ describe('PlayerSyncService', () => {
       findActiveExternalIdsByTeam: jest.fn().mockResolvedValue([]),
       applyTeamRosterSync: jest.fn().mockResolvedValue(undefined),
       findAllActive: jest.fn(),
-    };
+    } as unknown as typeof players;
     service = new PlayerSyncService(whoScored, players, new FixedClock(), new SequentialIdGenerator('run'));
   });
 

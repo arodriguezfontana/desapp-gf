@@ -7,8 +7,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { API_KEY_REPOSITORY, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
-import { TOKEN_ISSUER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
+import { TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
+import { TOKEN_ISSUER } from '../../modules/auth/auth.constants';
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
 import { TokenIssuer } from '../../adapters/auth/token-issuer';
 import { UserRole } from '../../domain/auth/user-role';
@@ -29,9 +29,9 @@ import { AuthenticatedRequest } from './authenticated-request';
 export class AdminAccessGuard implements CanActivate {
   constructor(
     @Inject(TOKEN_HASHER) private readonly hasher: TokenHasher,
-    @Inject(API_KEY_REPOSITORY) private readonly apiKeys: ApiKeyRepository,
+    private readonly apiKeys: ApiKeyRepository,
     @Inject(TOKEN_ISSUER) private readonly tokenIssuer: TokenIssuer,
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
