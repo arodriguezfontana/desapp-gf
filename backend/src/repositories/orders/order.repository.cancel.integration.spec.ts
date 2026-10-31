@@ -21,7 +21,7 @@ import { OrderRepository } from './order.repository';
  * los unit tests con mocks no pueden probar — el lock pesimista real
  * (`SELECT ... FOR UPDATE`) y la exclusión efectiva de órdenes CANCELLED de
  * los cómputos de disponibilidad (`sumPendingSellQuantity`,
- * `findCompatibleCandidates`) a nivel de base de datos.
+ * `lockCompatibleCandidates`) a nivel de base de datos.
  */
 describe('OrderRepository — cancelación (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
@@ -194,7 +194,7 @@ describe('OrderRepository — cancelación (integración contra Postgres real)',
   });
 
   describe('exclusión de órdenes CANCELLED del libro de candidatas', () => {
-    it('findCompatibleCandidates ignora una orden cancelada aunque el precio y jugador coincidan', async () => {
+    it('lockCompatibleCandidates ignora una orden cancelada aunque el precio y jugador coincidan', async () => {
       const counterpartUserId = randomUUID();
       await dataSource.getRepository(UserEntity).insert({
         id: counterpartUserId,
@@ -214,7 +214,9 @@ describe('OrderRepository — cancelación (integración contra Postgres real)',
       });
       await persistOrder(sellOrder.cancel());
 
-      const candidates = await repository.findCompatibleCandidates(playerId, OrderSide.SELL, 100, userId);
+      const candidates = await transactionManager.run((tx) =>
+        repository.lockCompatibleCandidates(tx, playerId, OrderSide.SELL, 100, userId),
+      );
 
       expect(candidates).toHaveLength(0);
 

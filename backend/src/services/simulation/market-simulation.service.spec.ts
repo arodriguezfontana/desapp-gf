@@ -124,7 +124,6 @@ describe('MarketSimulationService', () => {
       save: jest.fn().mockImplementation((o) => Promise.resolve(o)),
       findById: jest.fn(),
       findByUserId: jest.fn(),
-      findCompatibleCandidates: jest.fn(),
       sumPendingSellQuantity: jest.fn(),
       findByIdWithLock: jest.fn(),
       lockCompatibleCandidates: jest.fn(),

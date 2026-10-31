@@ -1,6 +1,29 @@
 <!--
 Sync Impact Report
 ==================
+Version change: 1.11.0 → 1.11.1
+Rationale: PATCH. Corrección de redacción en el Principio VI: el ejemplo de operación
+atómica mencionaba un "saldo" (y un "saldo cobrado" en el Rationale), pero el sistema no
+maneja saldo monetario: una compra o venta de tokens sólo mueve cantidades de tokens entre
+la posición del vendedor y la del comprador, actualiza las órdenes involucradas y registra
+los asientos de auditoría. Se reemplaza la referencia al saldo por los estados que
+realmente se modifican. No cambia ninguna regla: la exigencia de atomicidad es la misma.
+
+Modified principles:
+  - VI. Integridad transaccional (ejemplo y Rationale, sin cambio de regla)
+
+Modified sections: ninguna otra.
+Added sections: none
+Removed sections: none
+Renumbered principles: none
+
+Follow-up TODOs: esta enmienda debe ser aprobada por el resto del grupo antes de
+integrarse (Governance → Enmiendas).
+-->
+
+<!--
+Sync Impact Report
+==================
 Version change: 1.10.1 → 1.11.0
 Rationale: MINOR. Se elimina del Principio II la exigencia específica sobre las estrategias
 de valuación (implementarlas con Strategy pattern y registrar la versión de la estrategia
@@ -304,15 +327,15 @@ evita reconstrucciones ambiguas y sobrevive a cambios de esquema en el estado.
 ### VI. Integridad transaccional
 
 Cuando una operación modifica más de un estado a la vez —por ejemplo comprar o vender
-tokens, que altera la disponibilidad de tokens, la posición del usuario, el saldo y el
-registro de auditoría— todos esos cambios MUST aplicarse como una unidad atómica: o se
+tokens, que altera la posición del vendedor, la del comprador, el estado de las
+órdenes involucradas y el registro de auditoría— todos esos cambios MUST aplicarse como una unidad atómica: o se
 confirman todos o no se aplica ninguno. Una operación de este tipo MUST NOT quedar
 parcialmente aplicada ante un error, dejando el sistema a mitad de camino. La lógica que
 define qué cambios forman la unidad y que garantiza que se confirmen o se descarten
 juntos MUST vivir en el dominio, no en el Service.
 
-**Rationale**: Un estado a medio camino (tokens descontados sin registrar la posición,
-saldo cobrado sin asiento de auditoría) corrompe la fuente de verdad y es irreconciliable
+**Rationale**: Un estado a medio camino (tokens descontados al vendedor sin acreditarse
+al comprador, o una orden ejecutada sin su asiento de auditoría) corrompe la fuente de verdad y es irreconciliable
 con la auditoría inmutable; concentrar la regla de atomicidad en el dominio la hace
 testeable sin infraestructura y evita que cada Service reinvente el manejo de
 consistencia.
@@ -489,4 +512,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.11.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-26
+**Version**: 1.11.1 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-30

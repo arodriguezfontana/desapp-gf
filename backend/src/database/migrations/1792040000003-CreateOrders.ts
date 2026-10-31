@@ -4,7 +4,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Crea `orders` (020-order-matching-engine, data-model.md). El indice
  * compuesto `(player_id, side, price, status, created_at)` es exactamente el
  * criterio de busqueda de candidatas del motor de matching (mismo jugador,
- * lado opuesto, precio exacto, status pendiente, FIFO por created_at).
+ * lado opuesto, precio cruzado, status pendiente, mejor precio primero y FIFO
+ * por created_at).
  */
 export class CreateOrders1792040000003 implements MigrationInterface {
   name = 'CreateOrders1792040000003';

@@ -64,7 +64,6 @@ describe('OrdersService', () => {
       findById: jest.fn(),
       findByIdWithLock: jest.fn(),
       findByUserId: jest.fn(),
-      findCompatibleCandidates: jest.fn(),
       sumPendingSellQuantity: jest.fn(),
       save: jest.fn(),
       saveInTransaction: jest.fn().mockImplementation((_tx, order) => Promise.resolve(order)),

@@ -8,8 +8,8 @@ import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
  * `status` se persiste como columna propia (aunque el dominio lo deriva
  * siempre de `remainingQuantity` vs `quantity`) porque es parte del indice
  * compuesto que resuelve exactamente la busqueda de candidatas del matching
- * (mismo jugador, lado opuesto, precio exacto, status pendiente, FIFO por
- * created_at).
+ * (mismo jugador, lado opuesto, precio cruzado, status pendiente, mejor
+ * precio primero y FIFO por created_at).
  */
 @Entity('orders')
 @Index('idx_orders_matching', ['playerId', 'side', 'price', 'status', 'createdAt'])

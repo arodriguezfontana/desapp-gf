@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Order } from '../../domain/orders/order';
 import { OrderBook, PriceLevel } from '../../domain/orders/order-book';
 import { OrderSide } from '../../domain/orders/order-side';
@@ -30,18 +30,6 @@ export class OrderRepository {
       order: { createdAt: 'DESC' },
     });
     return entities.map((e) => this.mapper.toDomain(e));
-  }
-
-  async findCompatibleCandidates(playerId: string, side: OrderSide, price: number, excludeUserId: string): Promise<Order[]> {
-    const priceFilter = side === OrderSide.SELL
-      ? LessThanOrEqual(price.toFixed(2))
-      : MoreThanOrEqual(price.toFixed(2));
-    const priceOrder = side === OrderSide.SELL ? ('ASC' as const) : ('DESC' as const);
-    const entities = await this.repo.find({
-      where: { playerId, side, price: priceFilter, status: In(OPEN_STATUSES) },
-      order: { price: priceOrder, createdAt: 'ASC', id: 'ASC' },
-    });
-    return entities.filter((e) => e.userId !== excludeUserId).map((e) => this.mapper.toDomain(e));
   }
 
   async sumPendingSellQuantity(userId: string, playerId: string): Promise<number> {
