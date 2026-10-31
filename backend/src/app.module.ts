@@ -14,7 +14,7 @@ import { TeamCrosswalkModule } from './modules/competition/team-crosswalk.module
 import { QuotationModule } from './modules/quotation/quotation.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { OrdersModule } from './modules/orders/orders.module';
-import { AdminModule } from './modules/admin/admin.module';
+import { SimulationModule } from './modules/simulation/simulation.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
@@ -33,7 +33,7 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     QuotationModule,
     PortfolioModule,
     OrdersModule,
-    AdminModule,
+    SimulationModule,
     AlertsModule,
     NotificationsModule,
   ],

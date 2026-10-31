@@ -9,7 +9,7 @@ import {
 
 import { Public } from '../../guards/public.decorator';
 import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
-import { MarketSimulationService } from '../../services/admin/market-simulation.service';
+import { MarketSimulationService } from '../../services/simulation/market-simulation.service';
 import { SimulationResultDto } from './dto/simulation-result.dto';
 
 /**
@@ -22,7 +22,7 @@ import { SimulationResultDto } from './dto/simulation-result.dto';
 @Public()
 @UseGuards(AdminAccessGuard)
 @Controller('admin')
-export class AdminSimulationController {
+export class SimulationController {
   constructor(private readonly simulationService: MarketSimulationService) {}
 
   @Post('simulate-market')

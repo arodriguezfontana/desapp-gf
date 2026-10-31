@@ -7,8 +7,8 @@ import { OrdersModule } from '../orders/orders.module';
 import { PortfolioModule } from '../portfolio/portfolio.module';
 import { QuotationModule } from '../quotation/quotation.module';
 import { AlertsModule } from '../alerts/alerts.module';
-import { AdminSimulationController } from '../../controllers/admin/admin-simulation.controller';
-import { MarketSimulationService } from '../../services/admin/market-simulation.service';
+import { SimulationController } from '../../controllers/simulation/simulation.controller';
+import { MarketSimulationService } from '../../services/simulation/market-simulation.service';
 import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
 
 @Module({
@@ -22,9 +22,9 @@ import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
     forwardRef(() => QuotationModule),
     forwardRef(() => AlertsModule),
   ],
-  controllers: [AdminSimulationController],
+  controllers: [SimulationController],
   providers: [MarketSimulationService, AdminAccessGuard],
   exports: [MarketSimulationService],
 })
-export class AdminModule {}
+export class SimulationModule {}
 

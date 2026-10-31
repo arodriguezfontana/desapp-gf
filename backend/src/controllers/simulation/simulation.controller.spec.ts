@@ -1,9 +1,9 @@
-import { AdminSimulationController } from './admin-simulation.controller';
-import { MarketSimulationService } from '../../services/admin/market-simulation.service';
+import { SimulationController } from './simulation.controller';
+import { MarketSimulationService } from '../../services/simulation/market-simulation.service';
 import { SimulationResultDto } from './dto/simulation-result.dto';
 
-describe('AdminSimulationController', () => {
-  let controller: AdminSimulationController;
+describe('SimulationController', () => {
+  let controller: SimulationController;
   let service: jest.Mocked<MarketSimulationService>;
 
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('AdminSimulationController', () => {
       simulate: jest.fn(),
     } as unknown as jest.Mocked<MarketSimulationService>;
 
-    controller = new AdminSimulationController(service);
+    controller = new SimulationController(service);
   });
 
   it('invoca a MarketSimulationService.simulate y retorna el resultado', async () => {

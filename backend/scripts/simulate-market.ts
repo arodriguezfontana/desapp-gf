@@ -5,7 +5,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import { MarketSimulationService } from '../src/services/admin/market-simulation.service';
+import { MarketSimulationService } from '../src/services/simulation/market-simulation.service';
 
 async function main() {
   console.log('🚀 Iniciando contexto de aplicación para simulación de mercado...');
