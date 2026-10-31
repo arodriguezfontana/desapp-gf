@@ -9,6 +9,25 @@ const BASE_PROPS: TeamProps = {
 };
 
 describe('Team', () => {
+  describe('create', () => {
+    it('crea un equipo sin id (id es null)', () => {
+      const team = Team.create(BASE_PROPS);
+
+      expect(team.id).toBeNull();
+      expect(team.whoScoredName).toBe('Real Madrid');
+      expect(team.footballDataTeamId).toBe(86);
+      expect(team.footballDataTeamName).toBe('Real Madrid CF');
+      expect(team.leagueCode).toBe('PD');
+      expect(team.crestUrl).toBe('https://crests.football-data.org/86.png');
+    });
+
+    it('acepta crestUrl null', () => {
+      const team = Team.create({ ...BASE_PROPS, crestUrl: null });
+
+      expect(team.crestUrl).toBeNull();
+    });
+  });
+
   describe('restore', () => {
     it('restaura un equipo con id', () => {
       const team = Team.restore('team-uuid-1', BASE_PROPS);

@@ -17,4 +17,10 @@ export class TeamRepository {
     const entity = await this.repository.findOne({ where: { whoScoredName: name } });
     return entity ? this.mapper.toDomain(entity) : null;
   }
+
+  async upsertTeams(teams: Team[]): Promise<void> {
+    if (teams.length === 0) return;
+    const entities = teams.map((t) => this.mapper.toEntity(t));
+    await this.repository.upsert(entities, ['whoScoredName']);
+  }
 }

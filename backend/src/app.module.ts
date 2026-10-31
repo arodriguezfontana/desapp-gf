@@ -11,6 +11,7 @@ import { PlayerModule } from './modules/player/player.module';
 import { PlayerSyncModule } from './modules/player-sync/player-sync.module';
 import { FootballDataSyncModule } from './modules/competition/football-data-sync.module';
 import { TeamCrosswalkModule } from './modules/competition/team-crosswalk.module';
+import { TeamCrosswalkSyncModule } from './modules/competition/team-crosswalk-sync.module';
 import { QuotationModule } from './modules/quotation/quotation.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -30,6 +31,7 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     PlayerSyncModule,
     FootballDataSyncModule,
     TeamCrosswalkModule,
+    TeamCrosswalkSyncModule,
     QuotationModule,
     PortfolioModule,
     OrdersModule,

@@ -15,6 +15,8 @@
 
 ## §2 ¿`ts-node` o `tsx` están disponibles para el script standalone?
 
+> **Reemplazado**: el script standalone se eliminó; el crosswalk pasó a ser `TeamCrosswalkSyncService` (cron semanal dentro de la app). Esta sección queda como registro histórico.
+
 **Decision**: Usar `ts-node`. Ya está en devDependencies.
 
 **Findings**:
@@ -82,6 +84,8 @@
 ---
 
 ## §7 Script `seed-crosswalk.ts` — acceso a la DB
+
+> **Reemplazado**: el servicio de sincronización usa los repositorios de Nest (`PlayerRepository`, `StandingRepository`, `TeamNameExceptionRepository`, `TeamRepository`) y las standings ya persistidas por la feature 007, sin DataSource standalone ni llamadas a la API. Esta sección queda como registro histórico.
 
 **Decision**: El script crea su propio `DataSource` TypeORM standalone (patrón de `playerCatalogDataSource`), sin levantar la app NestJS.
 

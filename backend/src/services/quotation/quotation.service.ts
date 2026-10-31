@@ -181,12 +181,9 @@ export class QuotationService {
       // módulo de alertas evalúe sus alertas activas sin que este Service
       // lo conozca (025-player-price-alerts, spec FR-011, FR-021).
       // emitAsync (no emit): espera a que los listeners async (evaluación de
-      // alertas, persistencia de notificación, envío de mail) terminen antes
-      // de resolver, para que la notificación ya esté visible al terminar
-      // este mismo recálculo (spec SC-003). No afecta la independencia entre
-      // los listeners de alert.triggered entre sí (FR-021): cada uno sigue
-      // corriendo su propia lógica sin conocer al otro, solo se espera a que
-      // ambos conjuntos de listeners terminen antes de responder.
+      // alertas y persistencia de la notificación) terminen antes de resolver,
+      // para que la notificación ya esté visible al terminar este mismo
+      // recálculo (spec SC-003).
       await Promise.all(
         quotes.map((quote) =>
           this.eventEmitter.emitAsync(

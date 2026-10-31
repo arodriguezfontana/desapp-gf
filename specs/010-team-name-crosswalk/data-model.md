@@ -207,18 +207,13 @@ export const TEAM_NAME_EXCEPTION_REPOSITORY = 'TEAM_NAME_EXCEPTION_REPOSITORY';
 
 ---
 
-## Script standalone
+## Servicio de sincronización
 
-`backend/scripts/seed-crosswalk.ts`
+`backend/src/services/competition/team-crosswalk-sync.service.ts` (`TeamCrosswalkSyncService`), registrado en `TeamCrosswalkSyncModule`.
 
-Flujo (no levanta NestJS):
-1. Crea `DataSource` con `DATABASE_URL` del env y registra `PlayerEntity`, `StandingEntity`, `TeamNameExceptionEntity`.
-2. Llama `GET /competitions/{code}/standings` de Football-Data (con `axios` + `FOOTBALL_DATA_API_TOKEN`) para las 5 ligas → obtiene lista de `Standing`-like objects (`{ externalTeamId, teamName }`).
-3. Consulta `SELECT DISTINCT team FROM players WHERE removed_at IS NULL` vía TypeORM.
-4. Carga `TeamNameException[]` de la tabla `team_name_exception`.
-5. Para cada `team` distinto, llama `resolveTeam(team, standings, exceptions)`.
-6. Imprime resumen: total evaluados, resueltos por normalización, resueltos por excepción, sin resolver.
-7. Si hay sin resolver → escribe `team_crosswalk_unresolved.txt` en la raíz de `backend/`.
-8. Sale con `process.exit(0)` o `process.exit(1)` si hubo error de conexión/API.
-
-Invocación: `npm run seed:crosswalk` desde `backend/`.
+Flujo (corre dentro de la app, sin llamar a ninguna API externa):
+1. `@Cron('0 6 * * 0')` (domingos a las 06:00, después de los crons de WhoScored y Football-Data de las 00:00). Si ya hay una corrida en curso, se salta; un error inesperado se registra y no se propaga al scheduler.
+2. Lee en paralelo los `Player.team` distintos de jugadores activos (`PlayerRepository.findActiveTeamNames()`), todas las standings persistidas (`StandingRepository.findAll()`) y las excepciones (`TeamNameExceptionRepository.findAll()`).
+3. Para cada equipo llama `resolveTeam(team, standings, exceptions)`.
+4. Los resueltos se convierten en `Team` y se guardan con `TeamRepository.upsertTeams()` (clave: `whoscored_name`).
+5. Registra en el log el resumen (resueltos / sin resolver) y, si hay sin resolver, un `warn` con sus nombres para cargar la excepción manual correspondiente.

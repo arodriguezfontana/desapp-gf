@@ -214,6 +214,17 @@ export class PlayerRepository {
     }
   }
 
+  /** Nombres de equipo (tal cual los trae WhoScored) de los jugadores activos, sin repetidos. */
+  async findActiveTeamNames(): Promise<string[]> {
+    const rows = await this.repo
+      .createQueryBuilder('player')
+      .select('DISTINCT player.team', 'team')
+      .where('player.removedAt IS NULL')
+      .getRawMany<{ team: string }>();
+
+    return rows.map((row) => row.team).filter(Boolean);
+  }
+
   async findActiveExternalIdsByTeam(
     league: League,
     team: string,

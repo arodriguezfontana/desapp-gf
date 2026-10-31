@@ -28,6 +28,11 @@ export class StandingRepository {
     return entity ? this.mapper.toDomain(entity) : null;
   }
 
+  async findAll(): Promise<Standing[]> {
+    const entities = await this.repository.find();
+    return entities.map((entity) => this.mapper.toDomain(entity));
+  }
+
   async findByLeagueCode(leagueCode: string): Promise<Standing[]> {
     const entities = await this.repository.find({
       where: { leagueCode },

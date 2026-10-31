@@ -41,6 +41,7 @@ describe('PlayerEnrichmentService', () => {
 
     teams = {
       findByWhoScoredName: jest.fn(),
+      upsertTeams: jest.fn(),
     } as unknown as typeof teams;
 
     service = new PlayerEnrichmentService(playerService, teams);

@@ -36,21 +36,22 @@ npm run test -- --testPathPattern="architecture"
 
 **Esperado**: sigue en verde. Las nuevas funciones en `domain/competition/` no importan NestJS ni TypeORM — el test de tsarch lo verifica automáticamente.
 
-## 4. Script de cobertura
+## 4. Sincronización del crosswalk
+
+El crosswalk corre solo los domingos a las 06:00 (`TeamCrosswalkSyncService`), después de las sincronizaciones de WhoScored y de Football-Data. Para probar la lógica sin esperar al cron:
 
 ```bash
 cd backend
-npm run seed:crosswalk
+npm run test -- --testPathPattern="team-crosswalk-sync"
 ```
 
-**Esperado**:
-- Salida en consola: total de equipos distintos en `players`, cuántos resuelven por normalización, cuántos no
-- Si hay equipos sin resolver: se crea `backend/team_crosswalk_unresolved.txt` con sus nombres
-- El script termina sin error (exit 0) si la conexión a DB y la API de Football-Data son exitosas
+**Esperado**: suite en verde (resolución por normalización, por excepción, equipos sin resolver y manejo de errores del cron).
 
-**Interpretación del resultado**:
-- Si el 90%+ resuelven por normalización → SC-001 cumplido
-- Los nombres en `team_crosswalk_unresolved.txt` son candidatos a agregar como excepciones manuales en la tabla `team_name_exception`
+**En la app corriendo**: revisar el log de la corrida semanal:
+- `Crosswalk de equipos: N resueltos, M sin resolver.`
+- Si hay sin resolver, un `warn` con sus nombres: son candidatos a agregar como excepciones manuales en la tabla `team_name_exception`.
+
+**Interpretación del resultado**: si el 90%+ resuelven por normalización → SC-001 cumplido.
 
 ## 5. Agregar una excepción manual (validación de SC-004)
 
@@ -60,8 +61,7 @@ INSERT INTO team_name_exception (whoscored_raw_name, football_data_team_id, foot
 VALUES ('Lyon', 1234, 'Olympique Lyonnais', 'FL1');
 ```
 
-Volver a correr `npm run seed:crosswalk` → "Lyon" ya no aparece en `team_crosswalk_unresolved.txt`.
-
+En la siguiente corrida del servicio, "Lyon" ya no aparece en el `warn` de sin resolver y tiene su fila en `teams`.
 ## 6. Build completo
 
 ```bash

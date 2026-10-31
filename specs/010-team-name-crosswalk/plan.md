@@ -6,21 +6,21 @@
 
 ## Summary
 
-Infraestructura de mapeo que permite, dado un nombre de equipo de WhoScored, encontrar el `Standing` correspondiente en Football-Data. Se compone de dos funciones puras de dominio (`normalizeTeamName`, `resolveTeam`), una entidad persistida de excepciones manuales (`TeamNameException`) y un script standalone de verificación de cobertura (`npm run seed:crosswalk`). No expone ningún endpoint HTTP.
+Infraestructura de mapeo que permite, dado un nombre de equipo de WhoScored, encontrar el `Standing` correspondiente en Football-Data. Se compone de dos funciones puras de dominio (`normalizeTeamName`, `resolveTeam`), una entidad persistida de excepciones manuales (`TeamNameException`) y un servicio de sincronización semanal (`TeamCrosswalkSyncService`) que puebla la tabla `teams`. No expone ningún endpoint HTTP.
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5.7 / Node.js 20
 
-**Primary Dependencies**: NestJS 11, TypeORM (ya configurados). `ts-node ^10.9.2` disponible en devDependencies para el script standalone.
+**Primary Dependencies**: NestJS 11, TypeORM (ya configurados). `@nestjs/schedule` para el cron semanal del crosswalk.
 
 **Storage**: PostgreSQL. Nueva tabla `team_name_exception`. `synchronize: true` en dev/test la crea sola al bootear; migration explícita para producción.
 
 **Testing**: Jest (unit sin NestJS/DB; integration con Testcontainers + PostgreSQL efímero). Suite existente no se toca.
 
-**Target Platform**: Servidor Node.js (backend NestJS). Script standalone ejecutable localmente.
+**Target Platform**: Servidor Node.js (backend NestJS). El crosswalk corre dentro de la app como cron semanal.
 
-**Project Type**: Web service (backend) + script de operación interna.
+**Project Type**: Web service (backend).
 
 **Performance Goals**: No aplica — función pura sobre listas de ~20 equipos por liga. Sin requisitos de latencia.
 
@@ -80,12 +80,11 @@ backend/
 │   ├── modules/competition/
 │   │   ├── team-crosswalk.constants.ts     ← token DI (nuevo)
 │   │   └── team-crosswalk.module.ts        ← módulo NestJS (nuevo)
+│   ├── services/competition/
+│   │   ├── team-crosswalk-sync.service.ts      ← cron semanal del crosswalk (nuevo)
+│   │   └── team-crosswalk-sync.service.spec.ts ← unit tests (nuevo)
 │   └── database/migrations/
 │       └── 1791158400000-CreateTeamNameExceptionTable.ts  ← migración (nueva)
-└── scripts/
-    └── seed-crosswalk.ts                   ← script standalone ts-node (nuevo)
-
-package.json                                ← agrega "seed:crosswalk" en scripts
 ```
 
 **Structure Decision**: Sigue el patrón existente de `007-football-data-integration` (Standing): dominio en `src/domain/competition/`, persistencia en `src/repositories/competition/`, módulo en `src/modules/competition/`. Sin frontend ni controller nuevos.

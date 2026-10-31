@@ -20,7 +20,7 @@
 
 **Propósito**: Única modificación de configuración que habilita el script standalone.
 
-- [x] T001 Agregar script `"seed:crosswalk": "ts-node scripts/seed-crosswalk.ts"` en `package.json` (sección `scripts`)
+- [x] ~~T001~~ *(revertida, ver Phase 6)* Agregar script `"seed:crosswalk": "ts-node scripts/seed-crosswalk.ts"` en `package.json` (sección `scripts`)
 
 ---
 
@@ -75,9 +75,22 @@
 
 ### Implementación
 
-- [x] T015 [US2] Implementar `scripts/seed-crosswalk.ts` — crea `DataSource` standalone con `DATABASE_URL`, llama `GET /competitions/{code}/standings` con `axios` para las 5 ligas (`PL`, `BL1`, `PD`, `SA`, `FL1`), lee `SELECT DISTINCT team FROM players WHERE removed_at IS NULL`, carga `team_name_exception` vía TypeORM, corre `resolveTeam` por cada equipo distinto, imprime resumen (total / por normalización / por excepción / sin resolver), escribe `team_crosswalk_unresolved.txt` si hay sin resolver, sale con `process.exit(0)`/`process.exit(1)` según resultado (depende de T001, T012, T009)
+- [x] ~~T015~~ *(reemplazada por T018–T023)* [US2] Implementar `scripts/seed-crosswalk.ts` — crea `DataSource` standalone con `DATABASE_URL`, llama `GET /competitions/{code}/standings` con `axios` para las 5 ligas (`PL`, `BL1`, `PD`, `SA`, `FL1`), lee `SELECT DISTINCT team FROM players WHERE removed_at IS NULL`, carga `team_name_exception` vía TypeORM, corre `resolveTeam` por cada equipo distinto, imprime resumen (total / por normalización / por excepción / sin resolver), escribe `team_crosswalk_unresolved.txt` si hay sin resolver, sale con `process.exit(0)`/`process.exit(1)` según resultado (depende de T001, T012, T009)
 
 **Checkpoint**: `npm run seed:crosswalk` corre sin error de compilación ni de conexión. User Story 2 completa.
+
+---
+
+## Phase 6: Sincronización semanal (reemplaza al script de la User Story 2)
+
+**Goal**: el crosswalk corre solo cada semana, después de las sincronizaciones de WhoScored y Football-Data, sin script manual ni llamadas a la API.
+
+- [x] T018 [US2] Agregar `PlayerRepository.findActiveTeamNames()` y `StandingRepository.findAll()`
+- [x] T019 [US2] Implementar `TeamCrosswalkSyncService` en `src/services/competition/team-crosswalk-sync.service.ts` con `@Cron('0 6 * * 0')`, `sync()`, lock `isRunning` y manejo de errores sin propagar al scheduler
+- [x] T020 [US2] Crear `TeamCrosswalkSyncModule` (importa `PlayerModule`, `FootballDataSyncModule` y `TeamCrosswalkModule`) y registrarlo en `AppModule`
+- [x] T021 [US2] Escribir `team-crosswalk-sync.service.spec.ts`: resolución por normalización, por excepción, equipos sin resolver y manejo de errores del cron
+- [x] T022 [US2] Eliminar `scripts/seed-crosswalk.ts`, el script `seed:crosswalk` de `package.json` y `team_crosswalk_unresolved.txt`
+- [x] T023 [US2] Actualizar spec, plan, data-model, quickstart, research y tasks
 
 ---
 
