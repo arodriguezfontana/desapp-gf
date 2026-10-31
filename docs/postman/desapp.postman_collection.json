@@ -96,6 +96,18 @@
     {
       "key": "notificationIdToMark",
       "value": ""
+    },
+    {
+      "key": "buyOrderIdB",
+      "value": ""
+    },
+    {
+      "key": "partialOrderIdB",
+      "value": ""
+    },
+    {
+      "key": "partialPriceB",
+      "value": ""
     }
   ],
   "item": [
@@ -227,6 +239,308 @@
               "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"password\",\n  \"username\": \"inversor\"\n}"
             },
             "description": "'password' no tiene mayúscula, dígito ni carácter especial -> 400 (error de dominio, InvalidPasswordError)."
+          }
+        },
+        {
+          "name": "Register — password con menos de 8 caracteres (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Ab1!xyz\",\n  \"username\": \"inversor\"\n}"
+            },
+            "description": "Política: 8 a 16 caracteres, con al menos una mayúscula, una minúscula, un número y un carácter especial."
+          }
+        },
+        {
+          "name": "Register — password con más de 16 caracteres (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!Abcd1234\",\n  \"username\": \"inversor\"\n}"
+            },
+            "description": "Política: 8 a 16 caracteres, con al menos una mayúscula, una minúscula, un número y un carácter especial."
+          }
+        },
+        {
+          "name": "Register — password sin mayúscula (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"abcd1234!\",\n  \"username\": \"inversor\"\n}"
+            },
+            "description": "Política: 8 a 16 caracteres, con al menos una mayúscula, una minúscula, un número y un carácter especial."
+          }
+        },
+        {
+          "name": "Register — password sin minúscula (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"ABCD1234!\",\n  \"username\": \"inversor\"\n}"
+            },
+            "description": "Política: 8 a 16 caracteres, con al menos una mayúscula, una minúscula, un número y un carácter especial."
+          }
+        },
+        {
+          "name": "Register — password sin número (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcdefgh!\",\n  \"username\": \"inversor\"\n}"
+            },
+            "description": "Política: 8 a 16 caracteres, con al menos una mayúscula, una minúscula, un número y un carácter especial."
+          }
+        },
+        {
+          "name": "Register — password sin carácter especial (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd12345\",\n  \"username\": \"inversor\"\n}"
+            },
+            "description": "Política: 8 a 16 caracteres, con al menos una mayúscula, una minúscula, un número y un carácter especial."
+          }
+        },
+        {
+          "name": "Register — username vacío (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"username\": \"\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register — body vacío (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
           }
         },
         {
@@ -561,6 +875,80 @@
               "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
             },
             "description": "Falta 'password' -> 400 de forma (class-validator, DTO)."
+          }
+        },
+        {
+          "name": "Login — email con formato inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"no-es-un-email\",\n  \"password\": \"Abcd1234!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login — password vacío (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"\"\n}"
+            }
           }
         },
         {
@@ -1257,6 +1645,166 @@
                 {
                   "key": "page",
                   "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar — page no numérico (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players?page=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "abc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar — pageSize igual a 0 (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players?pageSize=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar — pageSize igual a 50, el máximo permitido (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('pageSize=50 y no más de 50 items', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.pageSize).to.eql(50);",
+                  "  pm.expect(b.items.length).to.be.at.most(50);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players?pageSize=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar — filtro por equipo sin distinguir mayúsculas ni coincidencia parcial (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('todo item devuelto contiene el término, sin importar mayúsculas', function () {",
+                  "  pm.response.json().items.forEach((p) => pm.expect(p.team.toLowerCase()).to.include('united'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players?team=UNITED",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "team",
+                  "value": "UNITED"
                 }
               ]
             }
@@ -2099,6 +2647,40 @@
               ]
             },
             "description": "202 Accepted. Guarda el runId en la variable syncRunId para consultar el estado después."
+          }
+        },
+        {
+          "name": "POST /sync/whoscored — segundo disparo mientras corre el primero (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 si la corrida anterior sigue en curso, 202 si ya terminó', function () { pm.expect([202, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{adminApiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/whoscored",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "whoscored"
+              ]
+            },
+            "description": "Solo puede haber una corrida de WhoScored a la vez. Mientras la anterior sigue en curso responde 409; si la anterior ya terminó (por ejemplo, porque falló al instante) arranca una nueva y responde 202."
           }
         },
         {
@@ -3089,6 +3671,198 @@
           }
         },
         {
+          "name": "Editar pesos generales con pesos negativos que suman 1.0 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('los pesos negativos se guardan tal cual', function () {",
+                  "  pm.expect(pm.response.json().weights).to.eql({ rating: 1.2, redCards: -0.2 });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/weights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "weights"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 1.2,\n    \"redCards\": -0.2\n  }\n}"
+            },
+            "description": "Se admiten pesos negativos (métricas disciplinarias) mientras la suma algebraica sea 1.0 (tolerancia ±0.001)."
+          }
+        },
+        {
+          "name": "Editar perfil de posición FW con suma 1.0 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('se actualiza el perfil FW', function () {",
+                  "  pm.expect(pm.response.json().positionWeights.FW).to.eql({ rating: 0.6, goals: 0.4 });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/position-weights/FW",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "position-weights",
+                "FW"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 0.6,\n    \"goals\": 0.4\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar perfil de posición MF con suma 1.0 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('se actualiza el perfil MF', function () {",
+                  "  pm.expect(pm.response.json().positionWeights.MF).to.eql({ rating: 0.6, goals: 0.4 });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/position-weights/MF",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "position-weights",
+                "MF"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 0.6,\n    \"goals\": 0.4\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar perfil de posición DF con suma 1.0 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('se actualiza el perfil DF', function () {",
+                  "  pm.expect(pm.response.json().positionWeights.DF).to.eql({ rating: 0.6, goals: 0.4 });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/position-weights/DF",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "position-weights",
+                "DF"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 0.6,\n    \"goals\": 0.4\n  }\n}"
+            }
+          }
+        },
+        {
           "name": "Editar perfil de posición GK con suma 1.0 (200)",
           "event": [
             {
@@ -3225,6 +3999,137 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"weights\": {\n    \"rating\": 0.5\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar perfil de posición con una métrica desconocida (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable Entity', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/position-weights/GK",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "position-weights",
+                "GK"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"golesInventados\": 1\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar perfil de posición de una estrategia inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/00000000-0000-0000-0000-000000000000/position-weights/GK",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "00000000-0000-0000-0000-000000000000",
+                "position-weights",
+                "GK"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 1\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar perfil de posición — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/position-weights/GK",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "position-weights",
+                "GK"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 1\n  }\n}"
             }
           }
         },
@@ -3856,7 +4761,7 @@
     },
     {
       "name": "Feature 20 — Superusuario y órdenes de mercado",
-      "description": "username reservado (\"superuser\") y POST /orders (020-order-matching-engine). El precio nunca lo envía el cliente: se calcula con la estrategia seleccionada del usuario. Las validaciones usan al usuario A; el matching usa al usuario B (estrategias por defecto, sin tokens) contra la venta del superusuario: B compra 1 token con liquidez del superusuario (COMPLETED con fill) y después publica la venta de ese token (PENDING). Requiere Setup y SUPERUSER_EMAIL / SUPERUSER_PASSWORD configurados con liquidez provisionada.",
+      "description": "username reservado (\"superuser\") y POST /orders (020-order-matching-engine). El precio nunca lo envía el cliente: se calcula con la estrategia seleccionada del usuario. Las validaciones usan al usuario A; el matching usa al usuario B (estrategias por defecto, sin tokens) contra la venta del superusuario: B compra 1 token con liquidez del superusuario (COMPLETED con fill) y después publica la venta de ese token (PENDING). Requiere Setup y SUPERUSER_EMAIL / SUPERUSER_PASSWORD configurados con liquidez provisionada. Después B compra más de lo que hay disponible (150 contra 100 ofrecidos): la orden queda PARTIALLY_FILLED con el remanente abierto en el libro (se usa en los folders de libro de órdenes y cancelación).",
       "item": [
         {
           "name": "Register — username reservado \"superuser\" (409)",
@@ -4268,7 +5173,10 @@
                   "  pm.expect(body.fills).to.have.lengthOf(1);",
                   "  ['counterpartOrderId', 'quantity', 'price'].forEach((k) => pm.expect(body.fills[0]).to.have.property(k));",
                   "  pm.expect(body.fills[0].quantity).to.eql(1);",
-                  "});"
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('buyOrderIdB', pm.response.json().id);",
+                  "}"
                 ]
               }
             }
@@ -4392,6 +5300,59 @@
             },
             "description": "B tiene 1 token y ya lo ofreció en la venta pendiente: los tokens comprometidos no se pueden volver a ofrecer."
           }
+        },
+        {
+          "name": "POST /orders — usuario B: BUY por más tokens de los disponibles (201, PARTIALLY_FILLED)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('PARTIALLY_FILLED: ejecutó una parte y el resto queda pendiente', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('PARTIALLY_FILLED');",
+                  "  pm.expect(body.remainingQuantity).to.be.above(0);",
+                  "  pm.expect(body.fills.length).to.be.at.least(1);",
+                  "  const filled = body.fills.reduce((acc, f) => acc + f.quantity, 0);",
+                  "  pm.expect(filled + body.remainingQuantity).to.eql(150);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('partialOrderIdB', pm.response.json().id);",
+                  "  pm.collectionVariables.set('partialPriceB', pm.response.json().price);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 150\n}"
+            },
+            "description": "El superusuario ofrece 100 tokens por jugador. Una compra de 150 ejecuta lo disponible (fill parcial, FIFO) y el resto queda abierto en el libro como compra pendiente: la orden queda PARTIALLY_FILLED. Si la liquidez del superusuario se agotó por completo, la orden queda PENDING sin fills."
+          }
         }
       ]
     },
@@ -4432,6 +5393,10 @@
                   "pm.test('incluye la venta pendiente del usuario B en los asks', function () {",
                   "  const price = Number(pm.collectionVariables.get('sellPriceB'));",
                   "  pm.expect(json.asks.some((l) => Number(l.price) === price && l.totalQuantity >= 1)).to.eql(true);",
+                  "});",
+                  "pm.test('incluye la compra parcial remanente del usuario B en los bids', function () {",
+                  "  const price = Number(pm.collectionVariables.get('partialPriceB'));",
+                  "  pm.expect(json.bids.some((l) => Number(l.price) === price && l.totalQuantity >= 1)).to.eql(true);",
                   "});"
                 ]
               }
@@ -4562,7 +5527,7 @@
     },
     {
       "name": "Feature 23 - Consulta, historial y cancelación de órdenes",
-      "description": "GET /orders, GET /orders/history y DELETE /orders/:id (020 / 023-cancel-order). Se prueba con la venta PENDING del usuario B (sellOrderIdB, Feature 20). Se puede cancelar una orden propia PENDING o PARTIALLY_FILLED (200); una ya cancelada o completada da 409, una de otro usuario 403 y una inexistente 404.",
+      "description": "GET /orders, GET /orders/history y DELETE /orders/:id (020 / 023-cancel-order). Se prueba con la venta PENDING del usuario B (sellOrderIdB, Feature 20). Se puede cancelar una orden propia PENDING o PARTIALLY_FILLED (200); una ya cancelada o completada da 409, una de otro usuario 403 y una inexistente 404. Cubre las tres situaciones de estado: COMPLETED (no cancelable, 409), PARTIALLY_FILLED (se cancela solo el remanente) y PENDING.",
       "item": [
         {
           "name": "GET /orders — órdenes propias del usuario B (200, incluye la venta PENDING)",
@@ -4586,6 +5551,14 @@
                   "  pm.expect(sell).to.not.be.undefined;",
                   "  pm.expect(sell.status).to.eql('PENDING');",
                   "  pm.expect(sell.side).to.eql('SELL');",
+                  "});",
+                  "pm.test('incluye la compra COMPLETED y la compra PARTIALLY_FILLED de B', function () {",
+                  "  const orders = pm.response.json();",
+                  "  const completed = orders.find((o) => o.id === pm.collectionVariables.get('buyOrderIdB'));",
+                  "  const partial = orders.find((o) => o.id === pm.collectionVariables.get('partialOrderIdB'));",
+                  "  pm.expect(completed.status).to.eql('COMPLETED');",
+                  "  pm.expect(partial.status).to.eql('PARTIALLY_FILLED');",
+                  "  pm.expect(partial.remainingQuantity).to.be.above(0);",
                   "});"
                 ]
               }
@@ -4688,10 +5661,10 @@
                   "  const dates = json.map((t) => new Date(t.createdAt).getTime());",
                   "  pm.expect(dates).to.eql(dates.slice().sort((a, b) => b - a));",
                   "});",
-                  "pm.test('la compra de B quedó registrada como CREDIT de 1 token', function () {",
-                  "  const credit = pm.response.json().find((t) => t.type === 'CREDIT' && t.playerId === pm.collectionVariables.get('playerId'));",
-                  "  pm.expect(credit).to.not.be.undefined;",
-                  "  pm.expect(credit.quantity).to.eql(1);",
+                  "pm.test('las compras de B quedaron registradas como CREDIT, incluida la de 1 token', function () {",
+                  "  const credits = pm.response.json().filter((t) => t.type === 'CREDIT' && t.playerId === pm.collectionVariables.get('playerId'));",
+                  "  pm.expect(credits.length).to.be.at.least(2);",
+                  "  pm.expect(credits.some((t) => t.quantity === 1)).to.eql(true);",
                   "});"
                 ]
               }
@@ -4873,6 +5846,79 @@
           }
         },
         {
+          "name": "DELETE /orders/:id - Orden ya COMPLETED (409 Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{buyOrderIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{buyOrderIdB}}"
+              ]
+            },
+            "description": "La compra del usuario B que cruzó con el superusuario ya se ejecutó por completo: no hay remanente que cancelar."
+          }
+        },
+        {
+          "name": "DELETE /orders/:id - Cancelar orden PARTIALLY_FILLED propia (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('queda CANCELLED y conserva lo ya ejecutado', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('CANCELLED');",
+                  "  pm.expect(json.remainingQuantity).to.be.below(json.quantity);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{partialOrderIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{partialOrderIdB}}"
+              ]
+            },
+            "description": "Cancela solo el remanente: lo ya ejecutado no se revierte."
+          }
+        },
+        {
           "name": "DELETE /orders/:id - Cancelar orden propia (200 OK)",
           "event": [
             {
@@ -4941,6 +5987,45 @@
               ]
             }
           }
+        },
+        {
+          "name": "GET /orders — las órdenes canceladas figuran como CANCELLED (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('la venta y la compra parcial cancelada figuran como CANCELLED', function () {",
+                  "  const orders = pm.response.json();",
+                  "  ['sellOrderIdB', 'partialOrderIdB'].forEach((v) => {",
+                  "    const o = orders.find((x) => x.id === pm.collectionVariables.get(v));",
+                  "    pm.expect(o.status).to.eql('CANCELLED');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          }
         }
       ]
     },
@@ -4965,7 +6050,7 @@
                   "pm.test('holding del jugador comprado con sus campos', function () {",
                   "  const h = pm.response.json().holdings.find((x) => x.playerId === pm.collectionVariables.get('playerId'));",
                   "  pm.expect(h).to.not.be.undefined;",
-                  "  pm.expect(h.tokenQuantity).to.eql(1);",
+                  "  pm.expect(h.tokenQuantity).to.be.at.least(1);",
                   "  ['playerName', 'averageBuyPrice', 'currentPrice', 'totalProfitLoss'].forEach((k) => pm.expect(h).to.have.property(k));",
                   "});",
                   "pm.test('el total invertido es mayor a cero', function () { pm.expect(pm.response.json().summary.totalInvested).to.be.above(0); });"
@@ -5389,6 +6474,46 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_BELOW\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /alerts - targetValue no numérico (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_BELOW\",\n  \"targetValue\": \"abc\"\n}"
             }
           }
         },
