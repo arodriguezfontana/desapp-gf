@@ -15,6 +15,7 @@ import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { StrategyService } from './strategy.service';
+import { RunLock } from '../../shared/run-lock';
 
 export interface RecalculateResult {
   recalculated: Array<{ userId: string; playerId: string; value: number; score: number }>;
@@ -50,7 +51,7 @@ export const QUOTATION_RECALCULATION_CRON = '0 3 * * 0';
 @Injectable()
 export class QuotationService {
   private readonly logger = new Logger(QuotationService.name);
-  private recalculationInProgress = false;
+  private readonly recalculationLock = new RunLock();
 
   constructor(
     private readonly strategyRepository: ValuationStrategyRepository,
@@ -143,61 +144,59 @@ export class QuotationService {
    * qué se salteó.
    */
   async recalculateAll(): Promise<RecalculateResult> {
-    if (this.recalculationInProgress) {
-      throw new RecalculationInProgressError();
-    }
-    this.recalculationInProgress = true;
+    return this.recalculationLock.runExclusive(
+      () => this.runRecalculation(),
+      () => new RecalculationInProgressError(),
+    );
+  }
 
-    try {
-      const userIds = await this.strategyRepository.findAllUserIds();
-      const players = await this.playerRepository.findAllActive();
+  private async runRecalculation(): Promise<RecalculateResult> {
+    const userIds = await this.strategyRepository.findAllUserIds();
+    const players = await this.playerRepository.findAllActive();
 
-      const quotes: PlayerQuote[] = [];
-      const recalculated: RecalculateResult['recalculated'] = [];
-      const skipped: RecalculateResult['skipped'] = [];
+    const quotes: PlayerQuote[] = [];
+    const recalculated: RecalculateResult['recalculated'] = [];
+    const skipped: RecalculateResult['skipped'] = [];
 
-      const strategiesByUser = await Promise.all(
-        userIds.map((userId) => this.strategyRepository.findByUserId(userId)),
-      );
+    const strategiesByUser = await Promise.all(
+      userIds.map((userId) => this.strategyRepository.findByUserId(userId)),
+    );
 
-      for (const [index, userId] of userIds.entries()) {
-        const strategy = strategiesByUser[index].find((s) => s.isSelected);
-        if (!strategy) {
-          skipped.push(...players.map((p) => ({
-            userId,
-            playerId: p.id,
-            reason: 'Sin estrategia seleccionada',
-          })));
-          continue;
-        }
-        this.processUserPlayers(userId, strategy, players, quotes, recalculated, skipped);
+    for (const [index, userId] of userIds.entries()) {
+      const strategy = strategiesByUser[index].find((s) => s.isSelected);
+      if (!strategy) {
+        skipped.push(...players.map((p) => ({
+          userId,
+          playerId: p.id,
+          reason: 'Sin estrategia seleccionada',
+        })));
+        continue;
       }
-
-      await this.quoteRepository.saveMany(quotes);
-
-      // Emite quote.recalculated una vez por cada PlayerQuote efectivamente
-      // persistida (nunca por las salteadas en `skipped`), para que el
-      // módulo de alertas evalúe sus alertas activas sin que este Service lo conozca.
-      // emitAsync (no emit): espera a que los listeners async (evaluación de
-      // alertas y persistencia de la notificación) terminen antes de resolver,
-      // para que la notificación ya esté visible al terminar este mismo recálculo.
-      await Promise.all(
-        quotes.map((quote) =>
-          this.eventEmitter.emitAsync(
-            QUOTE_RECALCULATED_EVENT,
-            new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
-          ),
-        ),
-      );
-
-      this.logger.log(
-        `Recálculo global completado: ${recalculated.length} procesados, ${skipped.length} salteados`,
-      );
-
-      return { recalculated, skipped };
-    } finally {
-      this.recalculationInProgress = false;
+      this.processUserPlayers(userId, strategy, players, quotes, recalculated, skipped);
     }
+
+    await this.quoteRepository.saveMany(quotes);
+
+    // Emite quote.recalculated una vez por cada PlayerQuote efectivamente
+    // persistida (nunca por las salteadas en `skipped`), para que el
+    // módulo de alertas evalúe sus alertas activas sin que este Service lo conozca.
+    // emitAsync (no emit): espera a que los listeners async (evaluación de
+    // alertas y persistencia de la notificación) terminen antes de resolver,
+    // para que la notificación ya esté visible al terminar este mismo recálculo.
+    await Promise.all(
+      quotes.map((quote) =>
+        this.eventEmitter.emitAsync(
+          QUOTE_RECALCULATED_EVENT,
+          new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
+        ),
+      ),
+    );
+
+    this.logger.log(
+      `Recálculo global completado: ${recalculated.length} procesados, ${skipped.length} salteados`,
+    );
+
+    return { recalculated, skipped };
   }
 
   /**
@@ -210,7 +209,7 @@ export class QuotationService {
    */
   @Cron(QUOTATION_RECALCULATION_CRON, { waitForCompletion: true })
   async handleCron(): Promise<void> {
-    if (this.recalculationInProgress) {
+    if (this.recalculationLock.isLocked) {
       this.logger.warn(
         'El @Cron de recálculo de cotizaciones se salta porque ya hay un recálculo en curso (spec 019, FR-016).',
       );

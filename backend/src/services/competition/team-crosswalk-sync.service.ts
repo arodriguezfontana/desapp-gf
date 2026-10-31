@@ -6,6 +6,7 @@ import { PlayerRepository } from '../../repositories/player/player.repository';
 import { StandingRepository } from '../../repositories/competition/standing.repository';
 import { TeamNameExceptionRepository } from '../../repositories/competition/team-name-exception.repository';
 import { TeamRepository } from '../../repositories/competition/team.repository';
+import { RunLock } from '../../shared/run-lock';
 
 /** Domingos a las 06:00: despues de los crons semanales de WhoScored y Football-Data (domingos a las 00:00). */
 export const TEAM_CROSSWALK_CRON = '0 6 * * 0';
@@ -23,7 +24,7 @@ export interface TeamCrosswalkSummary {
 @Injectable()
 export class TeamCrosswalkSyncService {
   private readonly logger = new Logger(TeamCrosswalkSyncService.name);
-  private isRunning = false;
+  private readonly runLock = new RunLock();
 
   constructor(
     private readonly players: PlayerRepository,
@@ -38,20 +39,18 @@ export class TeamCrosswalkSyncService {
    */
   @Cron(TEAM_CROSSWALK_CRON, { waitForCompletion: true })
   async handleCron(): Promise<void> {
-    if (this.isRunning) {
+    const ran = await this.runLock.runIfFree(async () => {
+      try {
+        await this.sync();
+      } catch (error) {
+        this.logger.error(
+          'El crosswalk de equipos fallo con un error inesperado.',
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    });
+    if (!ran) {
       this.logger.warn('El @Cron del crosswalk de equipos se salta porque ya hay una corrida en curso.');
-      return;
-    }
-    this.isRunning = true;
-    try {
-      await this.sync();
-    } catch (error) {
-      this.logger.error(
-        'El crosswalk de equipos fallo con un error inesperado.',
-        error instanceof Error ? error.stack : String(error),
-      );
-    } finally {
-      this.isRunning = false;
     }
   }
 

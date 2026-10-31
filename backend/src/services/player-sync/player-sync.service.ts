@@ -20,6 +20,7 @@ import {
   WhoScoredSyncSummary,
 } from '../../domain/sync/sync-run';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
+import { RunLock } from '../../shared/run-lock';
 
 const MAX_RETAINED_RUNS = 20;
 const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error inesperado.';
@@ -27,7 +28,7 @@ const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error ine
 /**
  * Sincroniza el catálogo con datos reales de WhoScored (006-whoscored-catalog-sync).
  * Spec 009 agrega el disparo manual: `startManualRun()` / `getRun()`, lock en memoria
- * (`activeRunId`) y registro de corridas (`runs`). El método `sync()` del `@Cron` conserva
+ * (`runLock`) y registro de corridas (`runs`). El método `sync()` del `@Cron` conserva
  * su firma `Promise<void>` para no romper los tests existentes.
  */
 @Injectable()
@@ -35,7 +36,7 @@ export class PlayerSyncService {
   private readonly logger = new Logger(PlayerSyncService.name);
   private readonly manualReviewLogger = new Logger('PlayerSyncManualReview');
 
-  private activeRunId: string | null = null;
+  private readonly runLock = new RunLock();
   private readonly runs = new Map<string, SyncRunState>();
 
   constructor(
@@ -47,15 +48,15 @@ export class PlayerSyncService {
 
   /**
    * Comprueba el lock y, si está libre, genera un runId, registra la corrida
-   * y la arranca en background. Lanza `SyncInProgressError(activeRunId)` si el lock
+   * y la arranca en background. Lanza `SyncInProgressError(runId)` si el lock
    * ya está tomado.
    */
   startManualRun(): string {
-    if (this.activeRunId !== null) {
-      throw new SyncInProgressError(this.activeRunId);
+    if (this.runLock.isLocked) {
+      throw new SyncInProgressError(this.runLock.currentRunId ?? undefined);
     }
     const runId = this.ids.generate();
-    this.activeRunId = runId;
+    this.runLock.tryAcquire(runId);
     this.runs.set(runId, {
       runId,
       status: 'running',
@@ -79,14 +80,14 @@ export class PlayerSyncService {
    */
   @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async sync(): Promise<void> {
-    if (this.activeRunId !== null) {
+    if (this.runLock.isLocked) {
       this.logger.warn(
         'El @Cron de WhoScored se salta porque ya hay una corrida en curso (spec 009, FR-015).',
       );
       return;
     }
     const runId = this.ids.generate();
-    this.activeRunId = runId;
+    this.runLock.tryAcquire(runId);
     this.runs.set(runId, {
       runId,
       status: 'running',
@@ -133,7 +134,7 @@ export class PlayerSyncService {
         errorMessage: FATAL_ERROR_MESSAGE,
       });
     } finally {
-      this.activeRunId = null;
+      this.runLock.release();
     }
   }
 

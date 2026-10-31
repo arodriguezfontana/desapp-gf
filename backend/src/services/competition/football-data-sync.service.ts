@@ -14,6 +14,7 @@ import {
   LeagueSyncResult,
 } from '../../domain/competition/sync-summary';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
+import { RunLock } from '../../shared/run-lock';
 
 export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
 
@@ -21,7 +22,7 @@ export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
 export class FootballDataSyncService {
   private readonly logger = new Logger(FootballDataSyncService.name);
   private requestDelayMs = 7000;
-  private isRunning = false;
+  private readonly runLock = new RunLock();
 
   constructor(
     @Inject(FOOTBALL_DATA_ADAPTER)
@@ -46,15 +47,10 @@ export class FootballDataSyncService {
    * no tiene estado de corrida) si ya hay una corrida en curso.
    */
   async triggerManualRun(): Promise<FootballDataSyncSummary> {
-    if (this.isRunning) {
-      throw new SyncInProgressError();
-    }
-    this.isRunning = true;
-    try {
-      return await this.syncAllLeagues();
-    } finally {
-      this.isRunning = false;
-    }
+    return this.runLock.runExclusive(
+      () => this.syncAllLeagues(),
+      () => new SyncInProgressError(),
+    );
   }
 
   /**
@@ -66,24 +62,22 @@ export class FootballDataSyncService {
    */
   @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async handleCron(): Promise<void> {
-    if (this.isRunning) {
+    const ran = await this.runLock.runIfFree(async () => {
+      try {
+        this.logger.log('Starting scheduled Football-Data synchronization...');
+        await this.syncAllLeagues();
+        this.logger.log('Scheduled Football-Data synchronization finished.');
+      } catch (error) {
+        this.logger.error(
+          'La sincronización programada de Football-Data falló con un error inesperado.',
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    });
+    if (!ran) {
       this.logger.warn(
         'El @Cron de Football-Data se salta porque ya hay una corrida en curso (spec 009, FR-015).',
       );
-      return;
-    }
-    this.isRunning = true;
-    try {
-      this.logger.log('Starting scheduled Football-Data synchronization...');
-      await this.syncAllLeagues();
-      this.logger.log('Scheduled Football-Data synchronization finished.');
-    } catch (error) {
-      this.logger.error(
-        'La sincronización programada de Football-Data falló con un error inesperado.',
-        error instanceof Error ? error.stack : String(error),
-      );
-    } finally {
-      this.isRunning = false;
     }
   }
 
