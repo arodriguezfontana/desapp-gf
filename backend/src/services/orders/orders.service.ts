@@ -6,7 +6,7 @@ import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
 import { Order } from '../../domain/orders/order';
 import { OrderBook } from '../../domain/orders/order-book';
-import { oppositeSide, OrderSide } from '../../domain/orders/order-side';
+import { oppositeSide, OrderSide } from '../../domain/orders/enums/order-side';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { matchOrder } from '../../domain/orders/match-order';
 import { involvedUserIdsInLockOrder, settleFills } from '../../domain/orders/settle-fills';

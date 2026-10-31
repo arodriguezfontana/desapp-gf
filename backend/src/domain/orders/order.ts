@@ -1,5 +1,5 @@
-import { OrderSide } from './order-side';
-import { OrderStatus } from './order-status';
+import { OrderSide } from './enums/order-side';
+import { OrderStatus } from './enums/order-status';
 import { InvalidOrderQuantityError } from './errors/invalid-order-quantity.error';
 import { InconsistentOrderStatusError } from './errors/inconsistent-order-status.error';
 import { OrderOverfillError } from './errors/order-overfill.error';

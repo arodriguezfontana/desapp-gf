@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PortfolioSummary } from '../../../domain/portfolio/portfolio-summary';
+import { PortfolioSummary } from '../../../domain/portfolio/portfolio';
 
 export class PortfolioSummaryResponseDto {
   @ApiProperty({ example: 1205.0 })

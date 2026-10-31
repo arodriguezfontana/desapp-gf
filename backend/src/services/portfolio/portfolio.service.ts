@@ -8,9 +8,7 @@ import { PlayerRepository } from '../../repositories/player/player.repository';
 import { AuthService } from '../auth/auth.service';
 import { QuotationService } from '../quotation/quotation.service';
 
-import { Holding } from '../../domain/portfolio/holding';
-import { Portfolio } from '../../domain/portfolio/portfolio';
-import { PortfolioSummary } from '../../domain/portfolio/portfolio-summary';
+import { Holding, Portfolio, PortfolioSummary } from '../../domain/portfolio/portfolio';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 
@@ -52,8 +50,6 @@ export class PortfolioService {
     );
 
     const holdingDtos: Holding[] = [];
-    let totalInvested = 0;
-    let totalCurrentValue = 0;
 
     for (const h of activeHoldings) {
       if (!playerIds.has(h.playerId)) continue;
@@ -68,18 +64,9 @@ export class PortfolioService {
       holdingDtos.push(
         new Holding(h.playerId, playerName, h.quantity, avgBuyPrice, currentPrice, totalProfitLoss),
       );
-
-      totalInvested += avgBuyPrice * h.quantity;
-      totalCurrentValue += currentPrice * h.quantity;
     }
 
-    const summary = new PortfolioSummary(
-      roundToTwoDecimals(totalInvested),
-      roundToTwoDecimals(totalCurrentValue),
-      roundToTwoDecimals(totalCurrentValue - totalInvested),
-    );
-
-    return new Portfolio(userId, holdingDtos, summary);
+    return new Portfolio(userId, holdingDtos, PortfolioSummary.fromHoldings(holdingDtos));
   }
 
   private computeAvgBuyPriceByPlayer(credits: TokenTransaction[]): Map<string, number> {

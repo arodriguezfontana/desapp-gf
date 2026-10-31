@@ -6,8 +6,8 @@ import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
 import { Order } from '../../domain/orders/order';
-import { OrderSide } from '../../domain/orders/order-side';
-import { OrderStatus } from '../../domain/orders/order-status';
+import { OrderSide } from '../../domain/orders/enums/order-side';
+import { OrderStatus } from '../../domain/orders/enums/order-status';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
 import { TransactionManager } from '../shared/transaction-manager';
 import { UserEntity } from '../auth/entities/user.entity';

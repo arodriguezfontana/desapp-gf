@@ -1,5 +1,5 @@
-import { OrderStatus } from '../../domain/orders/order-status';
-import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
+import { OrderStatus } from '../../domain/orders/enums/order-status';
+import { TokenTransactionType } from '../../domain/orders/enums/token-transaction-type';
 import {
   ADMIN_ORDER_PLANS,
   buildDateHelper,

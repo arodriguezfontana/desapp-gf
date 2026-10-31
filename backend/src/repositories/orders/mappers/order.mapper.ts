@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Order } from '../../../domain/orders/order';
-import { OrderSide } from '../../../domain/orders/order-side';
-import { OrderStatus } from '../../../domain/orders/order-status';
+import { OrderSide } from '../../../domain/orders/enums/order-side';
+import { OrderStatus } from '../../../domain/orders/enums/order-status';
 import { OrderEntity } from '../entities/order.entity';
 
 /** Conversion dominio <-> persistencia. Sin logica de negocio. */

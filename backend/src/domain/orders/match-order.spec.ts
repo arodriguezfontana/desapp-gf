@@ -1,7 +1,7 @@
 import { matchOrder } from './match-order';
 import { Order } from './order';
-import { OrderSide } from './order-side';
-import { OrderStatus } from './order-status';
+import { OrderSide } from './enums/order-side';
+import { OrderStatus } from './enums/order-status';
 
 describe('matchOrder', () => {
   const t = (secondsFromEpoch: number) => new Date(secondsFromEpoch * 1000);

@@ -13,7 +13,7 @@ import { User } from '../../domain/auth/user';
 import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';
 import { Order } from '../../domain/orders/order';
-import { OrderSide } from '../../domain/orders/order-side';
+import { OrderSide } from '../../domain/orders/enums/order-side';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 
 import { UserRepository } from '../../repositories/auth/user.repository';

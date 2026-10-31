@@ -1,6 +1,6 @@
-import { OrderSide } from '../../domain/orders/order-side';
-import { OrderStatus } from '../../domain/orders/order-status';
-import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
+import { OrderSide } from '../../domain/orders/enums/order-side';
+import { OrderStatus } from '../../domain/orders/enums/order-status';
+import { TokenTransactionType } from '../../domain/orders/enums/token-transaction-type';
 
 /**
  * Datos de configuracion de la simulacion de mercado (admin). Son plantillas

@@ -1,5 +1,5 @@
 import { Order } from './order';
-import { OrderSide } from './order-side';
+import { OrderSide } from './enums/order-side';
 
 /**
  * Una porcion ejecutada entre la orden nueva y una candidata. `buyOrderId`/`sellOrderId` identifican siempre la

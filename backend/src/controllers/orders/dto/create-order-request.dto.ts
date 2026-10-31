@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsUUID, Min } from 'class-validator';
-import { OrderSide } from '../../../domain/orders/order-side';
+import { OrderSide } from '../../../domain/orders/enums/order-side';
 
 /**
  * Body de POST /orders (020-order-matching-engine, contracts/orders-api.md).

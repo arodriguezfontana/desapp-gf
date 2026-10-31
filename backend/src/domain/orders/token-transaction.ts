@@ -1,5 +1,5 @@
 import { Fill } from './match-order';
-import { TokenTransactionType } from './token-transaction-type';
+import { TokenTransactionType } from './enums/token-transaction-type';
 
 /**
  * Entidad de dominio TokenTransaction (020-order-matching-engine,

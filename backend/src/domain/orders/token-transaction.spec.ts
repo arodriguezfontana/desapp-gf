@@ -1,6 +1,6 @@
 import { Fill } from './match-order';
 import { TokenTransaction } from './token-transaction';
-import { TokenTransactionType } from './token-transaction-type';
+import { TokenTransactionType } from './enums/token-transaction-type';
 
 describe('TokenTransaction.pairFromFill', () => {
   const fill: Fill = {

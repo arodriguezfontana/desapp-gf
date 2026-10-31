@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
 import { Order } from '../../domain/orders/order';
-import { OrderSide } from '../../domain/orders/order-side';
+import { OrderSide } from '../../domain/orders/enums/order-side';
 import { UserEntity } from '../auth/entities/user.entity';
 import { PlayerEntity } from '../player/entities/player.entity';
 import { OrderEntity } from './entities/order.entity';
