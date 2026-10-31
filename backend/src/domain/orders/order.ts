@@ -6,11 +6,8 @@ import { OrderOverfillError } from './errors/order-overfill.error';
 import { OrderNotCancellableError } from './errors/order-not-cancellable.error';
 
 /**
- * Entidad de dominio Order (020-order-matching-engine, data-model.md). Sin
- * decoradores de TypeORM ni conocimiento de HTTP o base de datos (constitucion,
- * Principio I). `price` se calcula una unica vez al crearse (nunca lo indica
- * quien publica la orden) y es inmutable (spec DD-003): no existe ningun
- * metodo que lo modifique.
+ * Entidad de dominio Order. `price` se calcula una unica vez al crearse (nunca lo indica
+ * quien publica la orden) y es inmutable: no existe ningun metodo que lo modifique.
  */
 /** Estado completo de una Order; `cancelled` es lo unico del estado que se almacena (el resto se deriva). */
 interface OrderState {

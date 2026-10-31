@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "DesApp — Autenticación y Catálogo",
-    "description": "Alta, login, ApiKey y catálogo de jugadores de prueba. Casos positivos y negativos completos para testear el back a mano o con el Collection Runner / newman. Correr en orden (folder por folder, request por request): varias requests dependen de variables que setean las anteriores (userEmail, accessToken, apiKey, previousApiKey, playerId). Ver specs/001-user-auth/, specs/002-api-key-issuance/ y specs/004-player-catalog/.",
+    "name": "DesApp — API completa",
+    "description": "Casos positivos y negativos de toda la API del backend (auth, ApiKey, catálogo, sincronizaciones, estrategias de valuación, cotizaciones, mercado de tokens, portfolio, alertas y simulación) para testear a mano o con el Collection Runner / newman. Correr en orden (folder por folder, request por request): varias requests dependen de variables que setean las anteriores (userEmail, accessToken, apiKey, playerId, accessTokenB, adminApiKey, etc.). Antes de correr, completar las variables de colección adminEmail y adminPassword con ADMIN_EMAIL y ADMIN_PASSWORD del .env del backend. El matching de órdenes (Feature 20) requiere además SUPERUSER_EMAIL y SUPERUSER_PASSWORD configurados y el catálogo de jugadores ya sincronizado antes de arrancar el backend: el superusuario publica una venta de 100 tokens por jugador que sirve de contraparte. Autenticación por endpoint: JWT (Authorization: Bearer) para todo lo ligado a un usuario; ApiKey (x-api-key) para el catálogo público; ApiKey de ADMIN para las sincronizaciones manuales y el recálculo global de cotizaciones; ApiKey o JWT de ADMIN para la simulación de mercado. Ver specs/001-user-auth/ a specs/025-player-price-alerts/. Los mantenimientos del crosswalk de equipos (specs/010-team-name-crosswalk/) y los crons semanales no tienen endpoint HTTP.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -34,10 +34,6 @@
       "value": ""
     },
     {
-      "key": "inactiveStrategyId",
-      "value": ""
-    },
-    {
       "key": "myStrategyId",
       "value": ""
     },
@@ -46,7 +42,59 @@
       "value": ""
     },
     {
-      "key": "orderId",
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "adminAccessToken",
+      "value": ""
+    },
+    {
+      "key": "adminApiKey",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "userEmailB",
+      "value": ""
+    },
+    {
+      "key": "accessTokenB",
+      "value": ""
+    },
+    {
+      "key": "userIdB",
+      "value": ""
+    },
+    {
+      "key": "strategyIdB",
+      "value": ""
+    },
+    {
+      "key": "sellOrderIdB",
+      "value": ""
+    },
+    {
+      "key": "sellPriceB",
+      "value": ""
+    },
+    {
+      "key": "alertIdToCancel",
+      "value": ""
+    },
+    {
+      "key": "alertIdAbove",
+      "value": ""
+    },
+    {
+      "key": "notificationIdToMark",
       "value": ""
     }
   ],
@@ -311,6 +359,44 @@
           }
         },
         {
+          "name": "Register — falta el campo username (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\"\n}"
+            },
+            "description": "username es obligatorio (no vacío). Sin él, la validación del body rechaza el alta."
+          }
+        },
+        {
           "name": "Login — credenciales válidas (200, guarda jwt)",
           "event": [
             {
@@ -493,7 +579,8 @@
                   "});",
                   "pm.test('devuelve role (spec 008): una cuenta nueva es user', function () {",
                   "  pm.expect(pm.response.json().role).to.eql('user');",
-                  "});"
+                  "});",
+                  "pm.collectionVariables.set('userId', pm.response.json().id);"
                 ]
               }
             }
@@ -770,7 +857,7 @@
     },
     {
       "name": "Feature 3 — Catálogo de jugadores",
-      "description": "Requiere haber corrido Feature 1 (Login) y Feature 2 (Emitir ApiKey x2) antes, para tener accessToken, apiKey y previousApiKey. Desde 006-whoscored-catalog-sync los datos ya NO vienen de un seed fijo de 20 jugadores: el catálogo refleja la última sincronización exitosa con WhoScored, así que el contenido (cantidad, ligas, equipos) varía según cuándo corrió el scheduler — estos tests validan el contrato (forma, filtros, paginación, auth), no cantidades exactas. Cada jugador ahora también expone 4 métricas de rendimiento (passesCompleted/shots/interceptions/rating), con valor o null.",
+      "description": "Requiere haber corrido Feature 1 (Login) y Feature 2 (Emitir ApiKey x2) antes, para tener accessToken, apiKey y previousApiKey. Desde 006-whoscored-catalog-sync los datos ya NO vienen de un seed fijo de 20 jugadores: el catálogo refleja la última sincronización exitosa con WhoScored, así que el contenido (cantidad, ligas, equipos) varía según cuándo corrió el scheduler — estos tests validan el contrato (forma, filtros, paginación, auth), no cantidades exactas. Cada jugador ahora también expone 4 métricas de rendimiento (passesCompleted/shots/interceptions/rating), con valor o null. El historial de cotizaciones de un jugador (GET /players/:id/quotes) se prueba en el folder de Cotizaciones.",
       "item": [
         {
           "name": "Listar — sin filtros (200, page=1, pageSize=10, defaults)",
@@ -1634,9 +1721,133 @@
             },
             "description": "Mismo criterio que el listado: GET /players/:id también exige ApiKeyGuard y está marcado @Public() respecto de JwtAuthGuard, así que un JWT válido solo no alcanza."
           }
+        }
+      ]
+    },
+    {
+      "name": "Setup — admin y segundo usuario",
+      "description": "Prepara las credenciales que usan los folders siguientes: (1) el admin del seed (ADMIN_EMAIL / ADMIN_PASSWORD del .env del backend, cargados en las variables adminEmail y adminPassword) con su JWT y su ApiKey de rol admin, y (2) un segundo usuario \"B\", con estrategias por defecto, que sirve de contraparte y de \"usuario ajeno\" para los casos 403/404. Correr después de Feature 3.",
+      "item": [
+        {
+          "name": "Admin — login con adminEmail / adminPassword (200, guarda adminAccessToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK (si falla: completar adminEmail y adminPassword en las variables de la colección)', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('adminAccessToken', pm.response.json().accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "description": "Requiere completar las variables adminEmail y adminPassword con ADMIN_EMAIL y ADMIN_PASSWORD del .env del backend."
+          }
         },
         {
-          "name": "Historial completo de cotizaciones (200 ordenado ascendente, [] o 404)",
+          "name": "Admin — emitir ApiKey de admin (201, guarda adminApiKey)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('adminApiKey', pm.response.json().apiKey);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/api-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "api-key"
+              ]
+            },
+            "description": "La ApiKey copia el rol del usuario que la emite: esta es la clave que abre las sincronizaciones, el recálculo global y la simulación."
+          }
+        },
+        {
+          "name": "Usuario B — register (201, guarda userEmailB)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('userEmailB', pm.response.json().email);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Abcd1234!\",\n  \"username\": \"trader\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Usuario B — login (200, guarda accessTokenB)",
           "event": [
             {
               "listen": "test",
@@ -1644,18 +1855,50 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('es un array ordenado ascendente por calculatedAt', function () {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body).to.be.an('array');",
-                  "  for (let i = 1; i < body.length; i++) {",
-                  "    const prev = new Date(body[i - 1].calculatedAt).getTime();",
-                  "    const curr = new Date(body[i].calculatedAt).getTime();",
-                  "    pm.expect(curr).to.be.at.least(prev);",
-                  "  }",
-                  "  if (body.length > 0) {",
-                  "    pm.expect(body[0]).to.have.property('appliedPosition');",
-                  "  }",
-                  "});"
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('accessTokenB', pm.response.json().accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmailB}}\",\n  \"password\": \"Abcd1234!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Usuario B — me (200, guarda userIdB)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('es un usuario común', function () { pm.expect(pm.response.json().role).to.eql('user'); });",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('userIdB', pm.response.json().id);",
+                  "}"
                 ]
               }
             }
@@ -1665,29 +1908,159 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "value": "Bearer {{accessTokenB}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/quotes",
+              "raw": "{{baseUrl}}/auth/me",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "players",
-                "{{playerId}}",
-                "quotes"
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Usuario B — listar estrategias (200, guarda strategyIdB)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('strategyIdB', pm.response.json().strategies[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies"
               ]
             },
-            "description": "019-per-user-valuation-strategies: ahora requiere JWT (no ApiKey) y devuelve solo las cotizaciones generadas por recálculos del usuario autenticado para este jugador."
+            "description": "strategyIdB es una estrategia ajena para el usuario A: se usa en los casos 403 de estrategias y valuaciones."
           }
         }
       ]
     },
     {
       "name": "Feature 9 — Sincronización manual",
-      "description": "Disparo manual de sincronización de WhoScored (asincrónico: 202 + GET de estado) y Football-Data (sincrónico: ~70 s). Todos los endpoints exigen x-api-key; los JWT no alcanzan. Correr después de Feature 2 para tener apiKey seteada.",
+      "description": "Disparo manual de sincronización de WhoScored (asincrónico: 202 + GET de estado) y Football-Data (sincrónico: ~70 s). Todos los endpoints exigen una x-api-key de ADMIN ({{adminApiKey}}, del folder Setup): una ApiKey de usuario común da 403 y un JWT no alcanza (401). Ambas sincronizaciones corren además solas, una vez por semana. Con los datos ya sincronizados, un tercer cron semanal (domingos 06:00) cruza los equipos de WhoScored con los de Football-Data para completar los escudos; ese cruce no tiene endpoint.",
       "item": [
+        {
+          "name": "POST /sync/whoscored — sin ApiKey (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sync/whoscored",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "whoscored"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /sync/whoscored — ApiKey de usuario común (403, exige rol admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/whoscored",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "whoscored"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /sync/whoscored — sólo JWT (401, un JWT no alcanza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/whoscored",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "whoscored"
+              ]
+            }
+          }
+        },
         {
           "name": "POST /sync/whoscored — disparo manual (202)",
           "event": [
@@ -1712,7 +2085,7 @@
             "header": [
               {
                 "key": "x-api-key",
-                "value": "{{apiKey}}"
+                "value": "{{adminApiKey}}"
               }
             ],
             "url": {
@@ -1752,7 +2125,7 @@
             "header": [
               {
                 "key": "x-api-key",
-                "value": "{{apiKey}}"
+                "value": "{{adminApiKey}}"
               }
             ],
             "url": {
@@ -1767,6 +2140,101 @@
               ]
             },
             "description": "Consultar hasta que status sea completed o failed. Requiere syncRunId seteado por el POST anterior."
+          }
+        },
+        {
+          "name": "GET /sync/whoscored/:runId — runId inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{adminApiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/whoscored/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "whoscored",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /sync/football-data — sin ApiKey (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sync/football-data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "football-data"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /sync/football-data — ApiKey de usuario común (403, exige rol admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sync/football-data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "football-data"
+              ]
+            }
           }
         },
         {
@@ -1792,7 +2260,7 @@
             "header": [
               {
                 "key": "x-api-key",
-                "value": "{{apiKey}}"
+                "value": "{{adminApiKey}}"
               }
             ],
             "url": {
@@ -1811,196 +2279,8 @@
       ]
     },
     {
-      "name": "Feature 16 — Ranking de jugadores por cotización vigente",
-      "description": "GET /players/ranking — listado de jugadores ordenados descendentemente según su cotización vigente (valor) bajo la estrategia activa o más reciente. Requiere apiKey. Ver specs/016-player-ranking-endpoint/.",
-      "item": [
-        {
-          "name": "Ranking general — 200 OK",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('estructura paginada de ranking', function () {",
-                  "  const b = pm.response.json();",
-                  "  pm.expect(b).to.have.property('items');",
-                  "  pm.expect(b).to.have.property('total');",
-                  "  pm.expect(b).to.have.property('page');",
-                  "  pm.expect(b).to.have.property('pageSize');",
-                  "  if (b.items.length > 0) {",
-                  "    pm.expect(b.items[0]).to.have.property('rank');",
-                  "    pm.expect(b.items[0]).to.have.property('valor');",
-                  "    pm.expect(b.items[0]).to.have.property('score');",
-                  "    pm.expect(b.items[0]).to.have.property('strategyName');",
-                  "  }",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "x-api-key",
-                "value": "{{apiKey}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/players/ranking?page=1&pageSize=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "players",
-                "ranking"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "10"
-                }
-              ]
-            },
-            "description": "Consulta el ranking general de jugadores ordenados descendentemente por valor."
-          }
-        },
-        {
-          "name": "Ranking filtrado por liga y posición — 200 OK",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('items cumplen los filtros de liga y posición', function () {",
-                  "  const b = pm.response.json();",
-                  "  b.items.forEach(item => {",
-                  "    pm.expect(item.league).to.equal('La Liga');",
-                  "    pm.expect(item.position).to.equal('FW');",
-                  "  });",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "x-api-key",
-                "value": "{{apiKey}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/players/ranking?league=La%20Liga&position=FW",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "players",
-                "ranking"
-              ],
-              "query": [
-                {
-                  "key": "league",
-                  "value": "La Liga"
-                },
-                {
-                  "key": "position",
-                  "value": "FW"
-                }
-              ]
-            },
-            "description": "Filtra el ranking por liga La Liga y posición FW."
-          }
-        },
-        {
-          "name": "Ranking sin coincidencias — 200 OK con lista vacía",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('items vacío y total 0', function () {",
-                  "  const b = pm.response.json();",
-                  "  pm.expect(b.items).to.be.an('array').that.is.empty;",
-                  "  pm.expect(b.total).to.equal(0);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "x-api-key",
-                "value": "{{apiKey}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/players/ranking?team=EquipoInexistente",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "players",
-                "ranking"
-              ],
-              "query": [
-                {
-                  "key": "team",
-                  "value": "EquipoInexistente"
-                }
-              ]
-            },
-            "description": "Filtro sin coincidencias retorna 200 OK con items: [] y total: 0."
-          }
-        },
-        {
-          "name": "Ranking sin ApiKey — 401 Unauthorized",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/players/ranking",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "players",
-                "ranking"
-              ]
-            },
-            "description": "Rechazo 401 ante solicitud sin cabecera x-api-key."
-          }
-        }
-      ]
-    },
-    {
       "name": "Feature 19 — Estrategias de valuación por usuario",
-      "description": "019-per-user-valuation-strategies: reemplaza la estrategia única de sistema por dos estrategias fijas y propias de cada usuario, creadas automáticamente al alta. Todos los endpoints requieren JWT (Bearer {{accessToken}}). Correr después de Feature 1 (Login) para tener accessToken seteado.",
+      "description": "019-per-user-valuation-strategies (con perfiles por posición de 014): cada usuario tiene dos estrategias fijas y propias, creadas automáticamente al alta, y exactamente una está seleccionada. Todos los endpoints requieren JWT. Los casos 403 usan una estrategia del usuario B (strategyIdB, folder Setup); un id inexistente da 404. Correr después de Setup.",
       "item": [
         {
           "name": "Listar mis estrategias (200, exactamente 2, una seleccionada)",
@@ -2078,6 +2358,274 @@
           }
         },
         {
+          "name": "Valuación con mi estrategia seleccionada (200, no persiste)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('devuelve playerId, score, value y la estrategia seleccionada', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.playerId).to.eql(pm.collectionVariables.get('playerId'));",
+                  "  pm.expect(body).to.have.property('score');",
+                  "  pm.expect(body).to.have.property('value');",
+                  "  pm.expect(body.value).to.be.at.least(1);",
+                  "  pm.expect(body.strategyId).to.eql(pm.collectionVariables.get('myStrategyId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/valuation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "valuation"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Valuación con strategyId puntual propio (200, usa esa estrategia)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('usa la estrategia indicada, no la seleccionada', function () {",
+                  "  pm.expect(pm.response.json().strategyId).to.eql(pm.collectionVariables.get('myOtherStrategyId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/valuation?strategyId={{myOtherStrategyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "valuation"
+              ],
+              "query": [
+                {
+                  "key": "strategyId",
+                  "value": "{{myOtherStrategyId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Valuación con strategyId de otro usuario (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/valuation?strategyId={{strategyIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "valuation"
+              ],
+              "query": [
+                {
+                  "key": "strategyId",
+                  "value": "{{strategyIdB}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Valuación con strategyId inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/valuation?strategyId=00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "valuation"
+              ],
+              "query": [
+                {
+                  "key": "strategyId",
+                  "value": "00000000-0000-0000-0000-000000000000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Valuación con strategyId que no es UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/valuation?strategyId=no-es-un-uuid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "valuation"
+              ],
+              "query": [
+                {
+                  "key": "strategyId",
+                  "value": "no-es-un-uuid"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Valuación — jugador inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/00000000-0000-0000-0000-000000000000/valuation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "00000000-0000-0000-0000-000000000000",
+                "valuation"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Valuación — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/valuation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "valuation"
+              ]
+            }
+          }
+        },
+        {
           "name": "Seleccionar mi otra estrategia (200)",
           "event": [
             {
@@ -2085,16 +2633,20 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (!pm.collectionVariables.get('myOtherStrategyId')) {",
+                  "const other = pm.collectionVariables.get('myOtherStrategyId');",
+                  "if (!other) {",
                   "  pm.test.skip('200 OK', function () {});",
                   "  console.warn('myOtherStrategyId no seteado: correr antes \"Listar mis estrategias\".');",
                   "} else {",
                   "  pm.test('200 OK', function () { pm.response.to.have.status(200); });",
                   "  pm.test('queda seleccionada', function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.id).to.eql(pm.collectionVariables.get('myOtherStrategyId'));",
+                  "    pm.expect(body.id).to.eql(other);",
                   "    pm.expect(body.isSelected).to.eql(true);",
                   "  });",
+                  "  // la recién seleccionada pasa a ser \"mi estrategia seleccionada\" para los pasos siguientes",
+                  "  pm.collectionVariables.set('myOtherStrategyId', pm.collectionVariables.get('myStrategyId'));",
+                  "  pm.collectionVariables.set('myStrategyId', other);",
                   "}"
                 ]
               }
@@ -2154,6 +2706,73 @@
                 "me",
                 "strategies",
                 "00000000-0000-0000-0000-000000000000",
+                "select"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Seleccionar una estrategia de otro usuario (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{strategyIdB}}/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{strategyIdB}}",
+                "select"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Seleccionar — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
                 "select"
               ]
             }
@@ -2254,7 +2873,95 @@
           }
         },
         {
-          "name": "Editar pesos de una estrategia ajena (403)",
+          "name": "Editar pesos generales con una métrica desconocida (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable Entity', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/weights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "weights"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"golesInventados\": 1\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar pesos generales sin el campo weights (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/weights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "weights"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Editar pesos de una estrategia de otro usuario (403)",
           "event": [
             {
               "listen": "test",
@@ -2269,6 +2976,54 @@
           "request": {
             "method": "PATCH",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{strategyIdB}}/weights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{strategyIdB}}",
+                "weights"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"goals\": 0.5,\n    \"assists\": 0.5\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar pesos de una estrategia inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
@@ -2289,14 +3044,48 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"weights\": {\n    \"goals\": 0.5,\n    \"assists\": 0.5\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+              "raw": "{\n  \"weights\": {\n    \"goals\": 0.5,\n    \"assists\": 0.5\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar pesos — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
               }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/weights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "weights"
+              ]
             },
-            "description": "Un id que no es ninguna de las dos estrategias propias del usuario autenticado da 403 (no 404), para no filtrar si el id existe y es de otro usuario."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"goals\": 0.5,\n    \"assists\": 0.5\n  }\n}"
+            }
           }
         },
         {
@@ -2395,97 +3184,52 @@
           }
         },
         {
-          "name": "Valuación al vuelo con mi estrategia seleccionada (200, no persiste)",
+          "name": "Editar perfil de posición GK con suma inválida (422)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('devuelve score, value y strategyId', function () {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body).to.have.property('score');",
-                  "  pm.expect(body).to.have.property('value');",
-                  "  pm.expect(body.strategyId).to.eql(pm.collectionVariables.get('myStrategyId'));",
-                  "});"
+                  "pm.test('422 Unprocessable Entity', function () { pm.response.to.have.status(422); });"
                 ]
               }
             }
           ],
           "request": {
-            "method": "GET",
+            "method": "PATCH",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/valuation?strategyId={{myOtherStrategyId}}",
+              "raw": "{{baseUrl}}/users/me/strategies/{{myStrategyId}}/position-weights/GK",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "players",
-                "{{playerId}}",
-                "valuation"
-              ],
-              "query": [
-                {
-                  "key": "strategyId",
-                  "value": "{{myOtherStrategyId}}"
-                }
+                "users",
+                "me",
+                "strategies",
+                "{{myStrategyId}}",
+                "position-weights",
+                "GK"
               ]
             },
-            "description": "FR-010: calcula al vuelo con la estrategia seleccionada, sin persistir ningún registro."
-          }
-        },
-        {
-          "name": "Valuación con strategyId puntual propio (200, usa esa estrategia)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('usa la estrategia indicada, no la seleccionada', function () {",
-                  "  pm.expect(pm.response.json().strategyId).to.eql(pm.collectionVariables.get('myOtherStrategyId'));",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/valuation?strategyId=00000000-0000-0000-0000-000000000000",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "players",
-                "{{playerId}}",
-                "valuation"
-              ],
-              "query": [
-                {
-                  "key": "strategyId",
-                  "value": "00000000-0000-0000-0000-000000000000"
-                }
-              ]
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 0.5\n  }\n}"
             }
           }
         },
         {
-          "name": "Valuación con strategyId ajeno (403)",
+          "name": "Editar perfil de posición de una estrategia de otro usuario (403)",
           "event": [
             {
               "listen": "test",
@@ -2498,28 +3242,139 @@
             }
           ],
           "request": {
-            "method": "GET",
+            "method": "PATCH",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/valuation",
+              "raw": "{{baseUrl}}/users/me/strategies/{{strategyIdB}}/position-weights/GK",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "players",
-                "{{playerId}}",
-                "valuation"
+                "users",
+                "me",
+                "strategies",
+                "{{strategyIdB}}",
+                "position-weights",
+                "GK"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weights\": {\n    \"rating\": 1\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature 15 — Cotizaciones: recálculo global (admin) e historial",
+      "description": "POST /quotes/recalculate (012 / 019) recalcula y persiste una cotización por cada combinación usuario × jugador del sistema, con la estrategia seleccionada de cada usuario; solo lo dispara el admin (ApiKey de admin) y también corre solo los domingos a las 03:00. GET /players/:id/quotes (015) devuelve el historial propio con JWT: [] si el usuario nunca fue recalculado. Correr después de Feature 19 y Setup.",
+      "item": [
+        {
+          "name": "POST /quotes/recalculate — sin ApiKey (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/recalculate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "quotes",
+                "recalculate"
               ]
             }
           }
         },
         {
-          "name": "Recalcular mis cotizaciones — jugador puntual (200)",
+          "name": "POST /quotes/recalculate — ApiKey de usuario común (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/recalculate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "quotes",
+                "recalculate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /quotes/recalculate — sólo JWT (401, un JWT no alcanza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/recalculate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "quotes",
+                "recalculate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /quotes/recalculate — ApiKey de admin (200, recalcula usuario × jugador)",
           "event": [
             {
               "listen": "test",
@@ -2527,9 +3382,17 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('recalculated incluye el playerId indicado', function () {",
+                  "pm.test('devuelve recalculated y skipped', function () {",
                   "  const body = pm.response.json();",
-                  "  pm.expect(body.recalculated.map((r) => r.playerId)).to.include(pm.collectionVariables.get('playerId'));",
+                  "  pm.expect(body.recalculated).to.be.an('array');",
+                  "  pm.expect(body.skipped).to.be.an('array');",
+                  "  if (body.recalculated.length > 0) {",
+                  "    ['userId', 'playerId', 'value', 'score'].forEach((k) => pm.expect(body.recalculated[0]).to.have.property(k));",
+                  "  }",
+                  "});",
+                  "pm.test('incluye cotizaciones del usuario autenticado', function () {",
+                  "  const me = pm.collectionVariables.get('userId');",
+                  "  pm.expect(pm.response.json().recalculated.some((r) => r.userId === me)).to.eql(true);",
                   "});"
                 ]
               }
@@ -2539,80 +3402,25 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "key": "x-api-key",
+                "value": "{{adminApiKey}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/users/me/quotes/recalculate",
+              "raw": "{{baseUrl}}/quotes/recalculate",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "users",
-                "me",
                 "quotes",
                 "recalculate"
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"playerId\": \"{{playerId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "description": "FR-013/FR-014: síncrono, persiste una PlayerQuote inmutable asociada a este usuario y a su estrategia seleccionada en este momento."
+            "description": "Puede tardar según la cantidad de usuarios y jugadores. Responde 409 si ya hay un recálculo global en curso."
           }
         },
         {
-          "name": "Recalcular — playerId inexistente (404)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/me/quotes/recalculate",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "me",
-                "quotes",
-                "recalculate"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"playerId\": \"00000000-0000-0000-0000-000000000000\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Mi historial de cotizaciones del jugador recalculado (200, incluye la última entrada)",
+          "name": "Mi historial de cotizaciones del jugador (200, ordenado ascendente, con entradas tras el recálculo)",
           "event": [
             {
               "listen": "test",
@@ -2620,11 +3428,14 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
-                  "pm.test('ordenado ascendente y con al menos una entrada propia', function () {",
+                  "pm.test('ordenado ascendente por calculatedAt y con al menos una entrada propia', function () {",
                   "  const body = pm.response.json();",
+                  "  pm.expect(body).to.be.an('array');",
                   "  pm.expect(body.length).to.be.at.least(1);",
                   "  const dates = body.map((q) => new Date(q.calculatedAt).getTime());",
                   "  pm.expect(dates).to.eql(dates.slice().sort((a, b) => a - b));",
+                  "  pm.expect(body[0]).to.have.property('appliedPosition');",
+                  "  pm.expect(body[0]).to.have.property('strategyId');",
                   "});"
                 ]
               }
@@ -2648,15 +3459,404 @@
                 "{{playerId}}",
                 "quotes"
               ]
-            },
-            "description": "FR-017/FR-018: solo las cotizaciones que generó este usuario con sus propios recálculos, ordenadas de más antigua a más reciente."
+            }
+          }
+        },
+        {
+          "name": "Historial de cotizaciones — jugador inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/00000000-0000-0000-0000-000000000000/quotes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "00000000-0000-0000-0000-000000000000",
+                "quotes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historial de cotizaciones — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quotes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "quotes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historial de cotizaciones — sólo ApiKey (401, una ApiKey no alcanza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/quotes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "quotes"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature 16 — Ranking de jugadores por cotización vigente",
+      "description": "GET /players/ranking — MI ranking personal: jugadores ordenados descendentemente por mi cotización vigente (valor desc, score desc, id asc), según las cotizaciones que generé con mi propia estrategia (019). Requiere JWT; una ApiKey no alcanza. Solo incluye jugadores con al menos una cotización propia, por eso corre después del recálculo global. Ver specs/016-player-ranking-endpoint/ y specs/019-per-user-valuation-strategies/.",
+      "item": [
+        {
+          "name": "Mi ranking general (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('estructura paginada de ranking', function () {",
+                  "  const b = pm.response.json();",
+                  "  ['items', 'total', 'page', 'pageSize'].forEach((k) => pm.expect(b).to.have.property(k));",
+                  "  if (b.items.length > 0) {",
+                  "    ['rank', 'valor', 'score', 'strategyName', 'crestUrl'].forEach((k) => pm.expect(b.items[0]).to.have.property(k));",
+                  "  }",
+                  "});",
+                  "pm.test('ranking numerado desde 1 y ordenado por valor descendente', function () {",
+                  "  const items = pm.response.json().items;",
+                  "  if (items.length > 0) pm.expect(items[0].rank).to.eql(1);",
+                  "  for (let i = 1; i < items.length; i++) pm.expect(items[i].valor).to.be.at.most(items[i - 1].valor);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ranking filtrado por liga y posición (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('items cumplen los filtros de liga y posición', function () {",
+                  "  pm.response.json().items.forEach((item) => {",
+                  "    pm.expect(item.league).to.equal('La Liga');",
+                  "    pm.expect(item.position).to.equal('FW');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?league=La%20Liga&position=FW",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ],
+              "query": [
+                {
+                  "key": "league",
+                  "value": "La%20Liga"
+                },
+                {
+                  "key": "position",
+                  "value": "FW"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ranking sin coincidencias (200 con lista vacía)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('items vacío y total 0', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.items).to.be.an('array').that.is.empty;",
+                  "  pm.expect(b.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?team=EquipoInexistente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ],
+              "query": [
+                {
+                  "key": "team",
+                  "value": "EquipoInexistente"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ranking — page menor a 1 (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?page=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ranking — pageSize por encima de 50 (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking?pageSize=51",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "51"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ranking — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ranking — sólo ApiKey (401, una ApiKey no alcanza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ]
+            }
           }
         }
       ]
     },
     {
       "name": "Feature 20 — Superusuario y órdenes de mercado",
-      "description": "username reservado (\"superuser\") y POST /orders (020-order-matching-engine). Requiere haber corrido antes Feature 1 (Auth, para accessToken) y Feature 3 (Catálogo, para playerId) en esta misma corrida de la colección.",
+      "description": "username reservado (\"superuser\") y POST /orders (020-order-matching-engine). El precio nunca lo envía el cliente: se calcula con la estrategia seleccionada del usuario. Las validaciones usan al usuario A; el matching usa al usuario B (estrategias por defecto, sin tokens) contra la venta del superusuario: B compra 1 token con liquidez del superusuario (COMPLETED con fill) y después publica la venta de ese token (PENDING). Requiere Setup y SUPERUSER_EMAIL / SUPERUSER_PASSWORD configurados con liquidez provisionada.",
       "item": [
         {
           "name": "Register — username reservado \"superuser\" (409)",
@@ -2697,23 +3897,14 @@
           }
         },
         {
-          "name": "POST /orders — BUY sin contraparte (201, PENDING)",
+          "name": "POST /orders — sin JWT (401)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
-                  "pm.test('precio calculado automáticamente, status PENDING, sin fills', function () {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body.status).to.eql('PENDING');",
-                  "  pm.expect(body.fills).to.eql([]);",
-                  "  pm.expect(body).to.have.property('price');",
-                  "});",
-                  "if (pm.response.code === 201) {",
-                  "  pm.collectionVariables.set('orderId', pm.response.json().id);",
-                  "}"
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
                 ]
               }
             }
@@ -2724,10 +3915,6 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
@@ -2742,49 +3929,7 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
-            },
-            "description": "No se envía price: el servidor lo calcula con la estrategia seleccionada del usuario autenticado (spec FR-008/FR-009). Sin ninguna orden SELL compatible en el libro, queda PENDING íntegra."
-          }
-        },
-        {
-          "name": "POST /orders — SELL con holding insuficiente (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
-                ]
-              }
             }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/orders",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"side\": \"SELL\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 999999\n}"
-            },
-            "description": "El usuario autenticado no tiene (todavía) 999999 tokens de este jugador en su holding (spec FR-010): se rechaza sin crear ninguna orden."
           }
         },
         {
@@ -2824,45 +3969,7 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"00000000-0000-0000-0000-000000000000\",\n  \"quantity\": 1\n}"
-            },
-            "description": "Id bien formado pero inexistente en el catálogo."
-          }
-        },
-        {
-          "name": "POST /orders — sin JWT (401)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
-                ]
-              }
             }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/orders",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
-            },
-            "description": "Sin header Authorization: el JwtAuthGuard global rechaza con 401."
           }
         },
         {
@@ -2902,35 +4009,29 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1,\n  \"price\": 999\n}"
-            },
-            "description": "`price` no está declarado en CreateOrderRequestDto: `forbidNonWhitelisted` global lo rechaza (spec FR-008: el precio nunca lo indica quien publica la orden)."
+            }
           }
-        }
-      ]
-    },
-    {
-      "name": "Feature 23 - Cancelación y consulta de órdenes",
-      "description": "GET /orders y DELETE /orders/:id (023-cancel-order). Permite listar órdenes propias y cancelar órdenes abiertas (PENDING o PARTIALLY_FILLED).",
-      "item": [
+        },
         {
-          "name": "GET /orders - Consulta órdenes propias (200 OK)",
+          "name": "POST /orders — side inválido (400)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"200 OK\", function () { pm.response.to.have.status(200); });",
-                  "var json = pm.response.json();",
-                  "pm.test(\"Array de órdenes\", function () { pm.expect(Array.isArray(json)).to.be.true; });",
-                  "if (json.length > 0) { pm.environment.set(\"orderIdToCancel\", json[0].id); }"
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
           ],
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
@@ -2945,146 +4046,358 @@
                 "orders"
               ]
             },
-            "description": "Devuelve las órdenes del usuario autenticado ordenadas por fecha descendente."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"HOLD\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
+            }
           }
         },
         {
-          "name": "DELETE /orders/:id - Cancelar orden propia (200 OK)",
+          "name": "POST /orders — quantity cero (400)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"200 OK\", function () { pm.response.to.have.status(200); });",
-                  "var json = pm.response.json();",
-                  "pm.test(\"Estado CANCELLED\", function () { pm.expect(json.status).to.eql(\"CANCELLED\"); });"
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
           ],
           "request": {
-            "method": "DELETE",
+            "method": "POST",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orders/{{orderIdToCancel}}",
+              "raw": "{{baseUrl}}/orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders",
-                "{{orderIdToCancel}}"
+                "orders"
               ]
             },
-            "description": "Cancela una orden propia en estado PENDING o PARTIALLY_FILLED."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 0\n}"
+            }
           }
         },
         {
-          "name": "DELETE /orders/:id - Orden inexistente (404 Not Found)",
+          "name": "POST /orders — quantity decimal (400)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"404 Not Found\", function () { pm.response.to.have.status(404); });"
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
           ],
           "request": {
-            "method": "DELETE",
+            "method": "POST",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orders/00000000-0000-0000-0000-000000000000",
+              "raw": "{{baseUrl}}/orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders",
-                "00000000-0000-0000-0000-000000000000"
+                "orders"
               ]
             },
-            "description": "Intento de cancelar una orden que no existe en el sistema."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1.5\n}"
+            }
           }
         },
         {
-          "name": "DELETE /orders/:id - Orden ya terminal (409 Conflict)",
+          "name": "POST /orders — playerId que no es UUID (400)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"409 Conflict\", function () { pm.response.to.have.status(409); });"
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
           ],
           "request": {
-            "method": "DELETE",
+            "method": "POST",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/orders/{{orderIdToCancel}}",
+              "raw": "{{baseUrl}}/orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders",
-                "{{orderIdToCancel}}"
+                "orders"
               ]
             },
-            "description": "Reintento de cancelación de una orden ya cancelada o completada."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"no-es-un-uuid\",\n  \"quantity\": 1\n}"
+            }
           }
         },
         {
-          "name": "DELETE /orders/:id - Sin JWT (401 Unauthorized)",
+          "name": "POST /orders — falta quantity (400)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"401 Unauthorized\", function () { pm.response.to.have.status(401); });"
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
           ],
           "request": {
-            "method": "DELETE",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/orders/00000000-0000-0000-0000-000000000000",
+              "raw": "{{baseUrl}}/orders",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "orders",
-                "00000000-0000-0000-0000-000000000000"
+                "orders"
               ]
             },
-            "description": "Sin header Authorization: rechazado con 401."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /orders — SELL con holding insuficiente (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"SELL\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 999999\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /orders — usuario B: BUY que cruza con la venta del superusuario (201, COMPLETED con fill)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('queda COMPLETED con un fill contra la orden del superusuario', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('COMPLETED');",
+                  "  pm.expect(body.remainingQuantity).to.eql(0);",
+                  "  pm.expect(body.fills).to.have.lengthOf(1);",
+                  "  ['counterpartOrderId', 'quantity', 'price'].forEach((k) => pm.expect(body.fills[0]).to.have.property(k));",
+                  "  pm.expect(body.fills[0].quantity).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"BUY\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
+            },
+            "description": "El usuario B tiene las estrategias por defecto, igual que el superusuario, así que su precio de compra iguala (o supera) al de la venta del superusuario y se cruzan. Ejecuta al precio de la orden de venta. Si falla: revisar SUPERUSER_EMAIL / SUPERUSER_PASSWORD y que el catálogo estuviera sincronizado al arrancar el backend."
+          }
+        },
+        {
+          "name": "POST /orders — usuario B: SELL del token comprado (201, PENDING sin fills)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('precio calculado automáticamente, PENDING y sin fills', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('PENDING');",
+                  "  pm.expect(body.fills).to.eql([]);",
+                  "  pm.expect(body).to.have.property('price');",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('sellOrderIdB', pm.response.json().id);",
+                  "  pm.collectionVariables.set('sellPriceB', pm.response.json().price);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"SELL\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
+            },
+            "description": "B ahora posee 1 token. Sin ninguna compra compatible en el libro, la venta queda PENDING íntegra. Guarda el id y el precio para los folders siguientes."
+          }
+        },
+        {
+          "name": "POST /orders — usuario B: SELL de un token ya comprometido en otra venta pendiente (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"SELL\",\n  \"playerId\": \"{{playerId}}\",\n  \"quantity\": 1\n}"
+            },
+            "description": "B tiene 1 token y ya lo ofreció en la venta pendiente: los tokens comprometidos no se pueden volver a ofrecer."
           }
         }
       ]
     },
     {
       "name": "Feature 24 - Libro de órdenes por jugador",
-      "description": "GET /players/:id/order-book (024-player-order-book). Devuelve las órdenes activas (PENDING y PARTIALLY_FILLED) de un jugador separadas en bids y asks, agrupadas por nivel de precio con orden canónico y estricto anonimato de mercado.",
+      "description": "GET /players/:id/order-book (024-player-order-book). Devuelve las órdenes activas (PENDING y PARTIALLY_FILLED) de un jugador separadas en bids y asks, agrupadas por nivel de precio con orden canónico y estricto anonimato de mercado. Corre antes de la cancelación (Feature 23) para ver la venta pendiente del usuario B.",
       "item": [
         {
           "name": "GET /players/:id/order-book - Consulta de profundidad de mercado (200 OK)",
@@ -3106,6 +4419,19 @@
                   "pm.test(\"Anonimato estricto\", function () {",
                   "  pm.expect(json.userId).to.be.undefined;",
                   "  pm.expect(json.orderId).to.be.undefined;",
+                  "});",
+                  "pm.test('asks ordenados de menor a mayor precio y bids de mayor a menor', function () {",
+                  "  const asks = json.asks.map((l) => Number(l.price));",
+                  "  const bids = json.bids.map((l) => Number(l.price));",
+                  "  pm.expect(asks).to.eql(asks.slice().sort((a, b) => a - b));",
+                  "  pm.expect(bids).to.eql(bids.slice().sort((a, b) => b - a));",
+                  "});",
+                  "pm.test('cada nivel solo expone price y totalQuantity', function () {",
+                  "  json.asks.concat(json.bids).forEach((l) => pm.expect(Object.keys(l).sort()).to.eql(['price', 'totalQuantity']));",
+                  "});",
+                  "pm.test('incluye la venta pendiente del usuario B en los asks', function () {",
+                  "  const price = Number(pm.collectionVariables.get('sellPriceB'));",
+                  "  pm.expect(json.asks.some((l) => Number(l.price) === price && l.totalQuantity >= 1)).to.eql(true);",
                   "});"
                 ]
               }
@@ -3235,8 +4561,547 @@
       ]
     },
     {
-      "name": "Feature 25 - Alertas de precio por estrategia personal",
-      "description": "POST/GET /alerts, DELETE /alerts/:id, GET /notifications, PATCH /notifications/:id/read, PATCH /notifications/read-all (025-player-price-alerts). Alertas comparadas contra la cotizacion personal del usuario; notificaciones generadas por el evento alert.triggered al recalcular.",
+      "name": "Feature 23 - Consulta, historial y cancelación de órdenes",
+      "description": "GET /orders, GET /orders/history y DELETE /orders/:id (020 / 023-cancel-order). Se prueba con la venta PENDING del usuario B (sellOrderIdB, Feature 20). Se puede cancelar una orden propia PENDING o PARTIALLY_FILLED (200); una ya cancelada o completada da 409, una de otro usuario 403 y una inexistente 404.",
+      "item": [
+        {
+          "name": "GET /orders — órdenes propias del usuario B (200, incluye la venta PENDING)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('array ordenado por fecha descendente con los campos de la orden', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('array');",
+                  "  pm.expect(json.length).to.be.at.least(2);",
+                  "  [\"id\",\"playerId\",\"side\",\"quantity\",\"remainingQuantity\",\"price\",\"status\",\"createdAt\"].forEach((k) => pm.expect(json[0]).to.have.property(k));",
+                  "  const dates = json.map((o) => new Date(o.createdAt).getTime());",
+                  "  pm.expect(dates).to.eql(dates.slice().sort((a, b) => b - a));",
+                  "});",
+                  "pm.test('incluye la venta PENDING publicada por B', function () {",
+                  "  const sell = pm.response.json().find((o) => o.id === pm.collectionVariables.get('sellOrderIdB'));",
+                  "  pm.expect(sell).to.not.be.undefined;",
+                  "  pm.expect(sell.status).to.eql('PENDING');",
+                  "  pm.expect(sell.side).to.eql('SELL');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /orders — no incluye órdenes de otro usuario (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('el usuario A no ve la orden de B', function () {",
+                  "  pm.expect(pm.response.json().some((o) => o.id === pm.collectionVariables.get('sellOrderIdB'))).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /orders — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /orders/history — historial de transacciones de B (200, CREDIT de la compra)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('array con campos de auditoría, ordenado por fecha descendente', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.length).to.be.at.least(1);",
+                  "  ['id', 'type', 'playerId', 'playerName', 'quantity', 'price', 'orderId', 'counterpartOrderId', 'createdAt'].forEach((k) => pm.expect(json[0]).to.have.property(k));",
+                  "  const dates = json.map((t) => new Date(t.createdAt).getTime());",
+                  "  pm.expect(dates).to.eql(dates.slice().sort((a, b) => b - a));",
+                  "});",
+                  "pm.test('la compra de B quedó registrada como CREDIT de 1 token', function () {",
+                  "  const credit = pm.response.json().find((t) => t.type === 'CREDIT' && t.playerId === pm.collectionVariables.get('playerId'));",
+                  "  pm.expect(credit).to.not.be.undefined;",
+                  "  pm.expect(credit.quantity).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /orders/history — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /orders/:id — orden de otro usuario (403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{sellOrderIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{sellOrderIdB}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /orders/:id — id que no es UUID (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/no-es-un-uuid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "no-es-un-uuid"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /orders/:id - Orden inexistente (404 Not Found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /orders/:id - Sin JWT (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{sellOrderIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{sellOrderIdB}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /orders/:id - Cancelar orden propia (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test('Estado CANCELLED', function () { pm.expect(json.status).to.eql('CANCELLED'); });",
+                  "pm.test('es la misma orden', function () { pm.expect(json.id).to.eql(pm.collectionVariables.get('sellOrderIdB')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{sellOrderIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{sellOrderIdB}}"
+              ]
+            },
+            "description": "Cancela la venta PENDING del usuario B: se retira del libro y libera los tokens retenidos."
+          }
+        },
+        {
+          "name": "DELETE /orders/:id - Orden ya cancelada (409 Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{sellOrderIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{sellOrderIdB}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature 17/18 — Portfolio de tokens",
+      "description": "GET /users/:id/portfolio (017-buy-tokens / 018-frontend-portfolio): tenencias del usuario con precio promedio de compra, precio actual (según su estrategia) y ganancia o pérdida. Solo se puede consultar el propio portfolio (403 si el id es de otro usuario). Corre después de la compra del usuario B (Feature 20).",
+      "item": [
+        {
+          "name": "Portfolio propio del usuario B (200, con el token comprado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('tiene holdings y summary', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.holdings).to.be.an('array');",
+                  "  ['totalInvested', 'totalCurrentValue', 'netProfitLoss'].forEach((k) => pm.expect(b.summary).to.have.property(k));",
+                  "});",
+                  "pm.test('holding del jugador comprado con sus campos', function () {",
+                  "  const h = pm.response.json().holdings.find((x) => x.playerId === pm.collectionVariables.get('playerId'));",
+                  "  pm.expect(h).to.not.be.undefined;",
+                  "  pm.expect(h.tokenQuantity).to.eql(1);",
+                  "  ['playerName', 'averageBuyPrice', 'currentPrice', 'totalProfitLoss'].forEach((k) => pm.expect(h).to.have.property(k));",
+                  "});",
+                  "pm.test('el total invertido es mayor a cero', function () { pm.expect(pm.response.json().summary.totalInvested).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userIdB}}/portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userIdB}}",
+                "portfolio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Portfolio propio del usuario A sin tokens (200, vacío)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('tiene holdings y summary', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.holdings).to.be.an('array');",
+                  "  ['totalInvested', 'totalCurrentValue', 'netProfitLoss'].forEach((k) => pm.expect(b.summary).to.have.property(k));",
+                  "});",
+                  "pm.test('sin tenencias', function () { pm.expect(pm.response.json().holdings).to.have.lengthOf(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "portfolio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Portfolio de otro usuario (403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userIdB}}/portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userIdB}}",
+                "portfolio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Portfolio — sin JWT (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userIdB}}/portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userIdB}}",
+                "portfolio"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature 25 - Alertas de precio y notificaciones",
+      "description": "POST/GET /alerts, DELETE /alerts/:id, GET /notifications, PATCH /notifications/:id/read, PATCH /notifications/read-all y GET /notifications/stream (025-player-price-alerts). Las alertas se comparan contra la cotización personal del usuario cada vez que se recalculan las cotizaciones; al cumplirse generan una notificación. Una alerta idéntica activa (mismo jugador, condición y umbral) da 409. El stream en vivo (SSE) se autentica con ?token=<jwt> porque EventSource no admite headers; solo se prueba el rechazo, ya que el caso feliz mantiene la conexión abierta.",
       "item": [
         {
           "name": "POST /alerts - Crear alerta valida (201)",
@@ -3246,9 +5111,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"201 Created\", function () { pm.response.to.have.status(201); });",
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
                   "var json = pm.response.json();",
-                  "pm.test(\"Queda ACTIVE\", function () { pm.expect(json.status).to.eql(\"ACTIVE\"); });"
+                  "pm.test('Queda ACTIVE', function () { pm.expect(json.status).to.eql('ACTIVE'); });",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('alertIdToCancel', json.id);",
+                  "}"
                 ]
               }
             }
@@ -3257,12 +5125,12 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
@@ -3274,7 +5142,90 @@
                 "alerts"
               ]
             },
-            "description": "Crea una alerta de precio sobre un jugador existente del usuario autenticado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_BELOW\",\n  \"targetValue\": 10\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /alerts - Alerta PRICE_ABOVE con umbral bajo, se dispara en el próximo recálculo (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('alertIdAbove', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_ABOVE\",\n  \"targetValue\": 0.01\n}"
+            },
+            "description": "Toda cotización vale al menos 1, así que esta alerta se cumple en el siguiente recálculo y genera una notificación."
+          }
+        },
+        {
+          "name": "POST /alerts - Alerta activa idéntica (409 Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_BELOW\",\n  \"targetValue\": 10\n}"
@@ -3289,7 +5240,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"400 Bad Request\", function () { pm.response.to.have.status(400); });"
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
@@ -3298,12 +5249,12 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
@@ -3315,7 +5266,6 @@
                 "alerts"
               ]
             },
-            "description": "Umbral no positivo rechazado por el DTO.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_BELOW\",\n  \"targetValue\": -5\n}"
@@ -3330,7 +5280,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"400 Bad Request\", function () { pm.response.to.have.status(400); });"
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
@@ -3339,12 +5289,12 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
@@ -3356,10 +5306,89 @@
                 "alerts"
               ]
             },
-            "description": "Condicion fuera del enum soportado rechazada por el DTO.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"NOT_A_CONDITION\",\n  \"targetValue\": 10\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /alerts - playerId que no es UUID (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"no-es-un-uuid\",\n  \"condition\": \"PRICE_BELOW\",\n  \"targetValue\": 10\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /alerts - Falta targetValue (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_BELOW\"\n}"
             }
           }
         },
@@ -3371,7 +5400,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"404 Not Found\", function () { pm.response.to.have.status(404); });"
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
                 ]
               }
             }
@@ -3380,12 +5409,12 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
               }
             ],
             "url": {
@@ -3397,7 +5426,6 @@
                 "alerts"
               ]
             },
-            "description": "Jugador inexistente rechazado por el Service.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"playerId\": \"00000000-0000-0000-0000-000000000000\",\n  \"condition\": \"PRICE_BELOW\",\n  \"targetValue\": 10\n}"
@@ -3412,7 +5440,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"401 Unauthorized\", function () { pm.response.to.have.status(401); });"
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
                 ]
               }
             }
@@ -3420,10 +5448,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -3438,7 +5462,6 @@
                 "alerts"
               ]
             },
-            "description": "Peticion sin token JWT rechazada con 401.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"condition\": \"PRICE_BELOW\",\n  \"targetValue\": 10\n}"
@@ -3453,9 +5476,15 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"200 OK\", function () { pm.response.to.have.status(200); });",
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
                   "var json = pm.response.json();",
-                  "pm.test(\"Es un array\", function () { pm.expect(Array.isArray(json)).to.be.true; });"
+                  "pm.test('Es un array con las alertas creadas', function () {",
+                  "  pm.expect(Array.isArray(json)).to.be.true;",
+                  "  const ids = json.map((a) => a.id);",
+                  "  pm.expect(ids).to.include(pm.collectionVariables.get('alertIdToCancel'));",
+                  "  pm.expect(ids).to.include(pm.collectionVariables.get('alertIdAbove'));",
+                  "  ['id', 'playerId', 'condition', 'targetValue', 'status', 'createdAt'].forEach((k) => pm.expect(json[0]).to.have.property(k));",
+                  "});"
                 ]
               }
             }
@@ -3476,8 +5505,7 @@
               "path": [
                 "alerts"
               ]
-            },
-            "description": "Lista unicamente las alertas creadas por el usuario autenticado."
+            }
           }
         },
         {
@@ -3488,19 +5516,14 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"401 Unauthorized\", function () { pm.response.to.have.status(401); });"
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
                 ]
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/alerts",
               "host": [
@@ -3509,19 +5532,51 @@
               "path": [
                 "alerts"
               ]
-            },
-            "description": "Peticion sin token JWT rechazada con 401."
+            }
           }
         },
         {
-          "name": "DELETE /alerts/:id - Cancelar alerta propia (204 No Content)",
+          "name": "DELETE /alerts/:id - Alerta de otro usuario (404 Not Found)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"204 No Content\", function () { pm.response.to.have.status(204); });"
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertIdAbove}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertIdAbove}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /alerts/:id - Id que no es UUID (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
                 ]
               }
             }
@@ -3535,27 +5590,26 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/alerts/{{alertIdToCancel}}",
+              "raw": "{{baseUrl}}/alerts/no-es-un-uuid",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "alerts",
-                "{{alertIdToCancel}}"
+                "no-es-un-uuid"
               ]
-            },
-            "description": "Cancela una alerta propia; deja de evaluarse en recalculos futuros. Completar alertIdToCancel con el id devuelto por el POST /alerts anterior."
+            }
           }
         },
         {
-          "name": "DELETE /alerts/:id - Alerta ajena o inexistente (404 Not Found)",
+          "name": "DELETE /alerts/:id - Alerta inexistente (404 Not Found)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"404 Not Found\", function () { pm.response.to.have.status(404); });"
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
                 ]
               }
             }
@@ -3577,8 +5631,102 @@
                 "alerts",
                 "00000000-0000-0000-0000-000000000000"
               ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /alerts/:id - Sin JWT (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertIdToCancel}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertIdToCancel}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /alerts/:id - Cancelar alerta propia (204 No Content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertIdToCancel}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertIdToCancel}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /quotes/recalculate - Recálculo global para evaluar las alertas (200, admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{adminApiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quotes/recalculate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "quotes",
+                "recalculate"
+              ]
             },
-            "description": "No revela si la alerta existe y pertenece a otro usuario: siempre 404."
+            "description": "Dispara a mano lo que el cron semanal hace solo: recalcula las cotizaciones y evalúa las alertas activas, que generan notificaciones."
           }
         },
         {
@@ -3589,9 +5737,19 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"200 OK\", function () { pm.response.to.have.status(200); });",
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
                   "var json = pm.response.json();",
-                  "pm.test(\"Es un array\", function () { pm.expect(Array.isArray(json)).to.be.true; });"
+                  "pm.test('Es un array con la notificación generada por la alerta', function () {",
+                  "  pm.expect(Array.isArray(json)).to.be.true;",
+                  "  pm.expect(json.length).to.be.at.least(1);",
+                  "  [\"id\",\"alertId\",\"playerId\",\"playerName\",\"condition\",\"triggeredValue\",\"createdAt\",\"read\"].forEach((k) => pm.expect(json[0]).to.have.property(k));",
+                  "  const dates = json.map((n) => new Date(n.createdAt).getTime());",
+                  "  pm.expect(dates).to.eql(dates.slice().sort((a, b) => b - a));",
+                  "});",
+                  "const unread = json.find((n) => n.read === false);",
+                  "if (unread) {",
+                  "  pm.collectionVariables.set('notificationIdToMark', unread.id);",
+                  "}"
                 ]
               }
             }
@@ -3612,8 +5770,48 @@
               "path": [
                 "notifications"
               ]
-            },
-            "description": "Lista las notificaciones propias generadas por disparos de alertas, mas recientes primero."
+            }
+          }
+        },
+        {
+          "name": "GET /notifications?unreadOnly=true - Solo no leidas (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('todas las notificaciones devueltas están sin leer', function () {",
+                  "  pm.response.json().forEach((n) => pm.expect(n.read).to.eql(false));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?unreadOnly=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "unreadOnly",
+                  "value": "true"
+                }
+              ]
+            }
           }
         },
         {
@@ -3624,19 +5822,14 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"401 Unauthorized\", function () { pm.response.to.have.status(401); });"
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
                 ]
               }
             }
           ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/notifications",
               "host": [
@@ -3645,8 +5838,7 @@
               "path": [
                 "notifications"
               ]
-            },
-            "description": "Peticion sin token JWT rechazada con 401."
+            }
           }
         },
         {
@@ -3657,7 +5849,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"204 No Content\", function () { pm.response.to.have.status(204); });"
+                  "pm.test('204 No Content (si falla: no se generó ninguna notificación sin leer)', function () { pm.response.to.have.status(204); });"
                 ]
               }
             }
@@ -3680,19 +5872,86 @@
                 "{{notificationIdToMark}}",
                 "read"
               ]
-            },
-            "description": "Marca una notificacion propia como leida. Completar notificationIdToMark con un id devuelto por GET /notifications."
+            }
           }
         },
         {
-          "name": "PATCH /notifications/:id/read - Notificacion ajena o inexistente (404 Not Found)",
+          "name": "PATCH /notifications/:id/read - Notificacion de otro usuario (404 Not Found)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"404 Not Found\", function () { pm.response.to.have.status(404); });"
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessTokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationIdToMark}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationIdToMark}}",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH /notifications/:id/read - Id que no es UUID (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/no-es-un-uuid/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "no-es-un-uuid",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH /notifications/:id/read - Notificacion inexistente (404 Not Found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', function () { pm.response.to.have.status(404); });"
                 ]
               }
             }
@@ -3715,8 +5974,36 @@
                 "00000000-0000-0000-0000-000000000000",
                 "read"
               ]
-            },
-            "description": "No revela si la notificacion existe y pertenece a otro usuario: siempre 404."
+            }
+          }
+        },
+        {
+          "name": "PATCH /notifications/:id/read - Sin JWT (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationIdToMark}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationIdToMark}}",
+                "read"
+              ]
+            }
           }
         },
         {
@@ -3727,7 +6014,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"204 No Content\", function () { pm.response.to.have.status(204); });"
+                  "pm.test('204 No Content', function () { pm.response.to.have.status(204); });"
                 ]
               }
             }
@@ -3749,8 +6036,345 @@
                 "notifications",
                 "read-all"
               ]
-            },
-            "description": "Marca todas las notificaciones no leidas del usuario autenticado como leidas."
+            }
+          }
+        },
+        {
+          "name": "GET /notifications?unreadOnly=true - Tras read-all no quedan no leidas (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('lista vacía', function () { pm.expect(pm.response.json()).to.have.lengthOf(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?unreadOnly=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "unreadOnly",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH /notifications/read-all - Sin JWT (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /notifications/stream - Sin token (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/stream",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "stream"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /notifications/stream - Token inválido (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/stream?token=no-es-un-jwt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "stream"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "no-es-un-jwt"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Simulación de mercado (admin)",
+      "description": "POST /admin/simulate-market: carga datos de demostración para la cuenta de administrador (bots, tenencias, historial de operaciones, órdenes en varios estados, profundidad del libro, cotizaciones y alertas de ejemplo). Acepta una ApiKey de admin (x-api-key) o el JWT de un usuario admin; un usuario común recibe 403 y sin credenciales 401. Modifica el estado del mercado, por eso es el último folder.",
+      "item": [
+        {
+          "name": "POST /admin/simulate-market — sin credenciales (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/simulate-market",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "simulate-market"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /admin/simulate-market — ApiKey de usuario común (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/simulate-market",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "simulate-market"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /admin/simulate-market — JWT de usuario común (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/simulate-market",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "simulate-market"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /admin/simulate-market — ApiKey inválida (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized (la ApiKey anterior fue revocada por la rotación)', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{previousApiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/simulate-market",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "simulate-market"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /admin/simulate-market — ApiKey de admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('simulación exitosa con datos cargados', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.eql(true);",
+                  "  ['adminEmail', 'holdingsCreated', 'transactionsCreated', 'ordersCreated', 'marketOrdersCreated', 'quotesCreated', 'alertsCreated', 'playersInvolved', 'quotes'].forEach((k) => pm.expect(b).to.have.property(k));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{adminApiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/simulate-market",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "simulate-market"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /admin/simulate-market — JWT de admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('simulación exitosa con datos cargados', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.eql(true);",
+                  "  ['adminEmail', 'holdingsCreated', 'transactionsCreated', 'ordersCreated', 'marketOrdersCreated', 'quotesCreated', 'alertsCreated', 'playersInvolved', 'quotes'].forEach((k) => pm.expect(b).to.have.property(k));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/simulate-market",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "simulate-market"
+              ]
+            }
           }
         }
       ]
