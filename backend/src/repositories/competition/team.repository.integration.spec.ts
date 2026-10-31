@@ -57,31 +57,38 @@ describe('TeamRepository (integración)', () => {
     return id;
   };
 
-  describe('findByWhoScoredName', () => {
+  describe('findByWhoScoredNames', () => {
     it('retorna el equipo cuando existe', async () => {
       await insertTeam('Test Real Madrid');
 
-      const team = await repo.findByWhoScoredName('Test Real Madrid');
+      const [team] = await repo.findByWhoScoredNames(['Test Real Madrid']);
 
-      expect(team).not.toBeNull();
-      expect(team!.whoScoredName).toBe('Test Real Madrid');
-      expect(team!.footballDataTeamId).toBe(86);
-      expect(team!.leagueCode).toBe('PD');
+      expect(team.whoScoredName).toBe('Test Real Madrid');
+      expect(team.footballDataTeamId).toBe(86);
+      expect(team.leagueCode).toBe('PD');
     });
 
-    it('retorna null cuando el equipo no existe', async () => {
-      const result = await repo.findByWhoScoredName('Test Equipo Inexistente');
+    it('retorna lista vacia cuando el equipo no existe', async () => {
+      const result = await repo.findByWhoScoredNames(['Test Equipo Inexistente']);
 
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it('retorna null con crestUrl null', async () => {
+    it('retorna el equipo con crestUrl null', async () => {
       await insertTeam('Test Sin Escudo', { crestUrl: null });
 
-      const team = await repo.findByWhoScoredName('Test Sin Escudo');
+      const [team] = await repo.findByWhoScoredNames(['Test Sin Escudo']);
 
-      expect(team).not.toBeNull();
-      expect(team!.crestUrl).toBeNull();
+      expect(team.crestUrl).toBeNull();
+    });
+
+    it('resuelve varios equipos en una sola consulta e ignora los que no existen', async () => {
+      await insertTeam('Test Real Madrid');
+      await insertTeam('Test Sevilla', { footballDataTeamId: 559 });
+
+      const result = await repo.findByWhoScoredNames(['Test Real Madrid', 'Test Sevilla', 'Test Inexistente']);
+
+      expect(result.map((t) => t.whoScoredName).sort()).toEqual(['Test Real Madrid', 'Test Sevilla']);
     });
   });
 
@@ -91,9 +98,8 @@ describe('TeamRepository (integración)', () => {
 
       await repo.upsertTeams([team]);
 
-      const found = await repo.findByWhoScoredName('Test FC Barcelona');
-      expect(found).not.toBeNull();
-      expect(found!.footballDataTeamId).toBe(81);
+      const [found] = await repo.findByWhoScoredNames(['Test FC Barcelona']);
+      expect(found.footballDataTeamId).toBe(81);
     });
 
     it('actualiza el equipo existente sin duplicar (upsert por whoScoredName)', async () => {
@@ -115,8 +121,8 @@ describe('TeamRepository (integración)', () => {
 
       await repo.upsertTeams(teams);
 
-      expect(await repo.findByWhoScoredName('Test Sevilla')).not.toBeNull();
-      expect(await repo.findByWhoScoredName('Test Valencia')).not.toBeNull();
+      const found = await repo.findByWhoScoredNames(['Test Sevilla', 'Test Valencia']);
+      expect(found).toHaveLength(2);
     });
 
     it('no falla con array vacío', async () => {

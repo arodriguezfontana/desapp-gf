@@ -57,7 +57,7 @@ export class StrategyService {
     return this.strategyRepository.save(updated);
   }
 
-  /** Reemplazo completo del perfil de una posición de una estrategia propia (spec FR-007, FR-008). */
+  /** Reemplazo completo del perfil de una posición de una estrategia propia. */
   async editPositionWeights(
     userId: string,
     strategyId: string,

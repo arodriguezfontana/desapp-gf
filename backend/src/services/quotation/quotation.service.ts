@@ -63,10 +63,9 @@ export class QuotationService {
   ) {}
 
   /**
-   * Calcula al vuelo el valor de un jugador, sin persistir nada (spec FR-010).
+   * Calcula al vuelo el valor de un jugador, sin persistir nada.
    * Sin `strategyId`, usa la estrategia seleccionada del usuario; con
-   * `strategyId`, usa esa estrategia puntual si pertenece al usuario (spec
-   * FR-011, FR-012).
+   * `strategyId`, usa esa estrategia puntual si pertenece al usuario.
    */
   async valuate(userId: string, playerId: string, strategyId?: string): Promise<ValuationResult> {
     const player = await this.playerRepository.findById(playerId);

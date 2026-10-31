@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Team } from '../../domain/competition/team';
 import { TeamEntity } from './entities/team.entity';
 import { TeamMapper } from './mappers/team.mapper';
@@ -13,9 +13,9 @@ export class TeamRepository {
     private readonly mapper: TeamMapper,
   ) {}
 
-  async findByWhoScoredName(name: string): Promise<Team | null> {
-    const entity = await this.repository.findOne({ where: { whoScoredName: name } });
-    return entity ? this.mapper.toDomain(entity) : null;
+  async findByWhoScoredNames(names: string[]): Promise<Team[]> {
+    const entities = await this.repository.find({ where: { whoScoredName: In(names) } });
+    return entities.map((entity) => this.mapper.toDomain(entity));
   }
 
   async upsertTeams(teams: Team[]): Promise<void> {

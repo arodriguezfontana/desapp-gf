@@ -40,7 +40,7 @@ describe('PlayerEnrichmentService', () => {
     } as unknown as jest.Mocked<PlayerService>;
 
     teams = {
-      findByWhoScoredName: jest.fn(),
+      findByWhoScoredNames: jest.fn(),
       upsertTeams: jest.fn(),
     } as unknown as typeof teams;
 
@@ -51,7 +51,7 @@ describe('PlayerEnrichmentService', () => {
     it('adjunta el crestUrl cuando el equipo se resuelve en la tabla teams', async () => {
       const page: PlayerPage = { items: [somePlayer], total: 1 };
       playerService.listPlayers.mockResolvedValue(page);
-      teams.findByWhoScoredName.mockResolvedValue(someTeam);
+      teams.findByWhoScoredNames.mockResolvedValue([someTeam]);
 
       const result = await service.listPlayersWithCrests({}, { page: 1, pageSize: 10 });
 
@@ -63,7 +63,7 @@ describe('PlayerEnrichmentService', () => {
     it('devuelve crestUrl null cuando el equipo no existe en la tabla teams', async () => {
       const page: PlayerPage = { items: [somePlayer], total: 1 };
       playerService.listPlayers.mockResolvedValue(page);
-      teams.findByWhoScoredName.mockResolvedValue(null);
+      teams.findByWhoScoredNames.mockResolvedValue([]);
 
       const result = await service.listPlayersWithCrests({}, { page: 1, pageSize: 10 });
 
@@ -80,7 +80,7 @@ describe('PlayerEnrichmentService', () => {
       });
       const page: PlayerPage = { items: [somePlayer], total: 1 };
       playerService.listPlayers.mockResolvedValue(page);
-      teams.findByWhoScoredName.mockResolvedValue(teamWithoutCrest);
+      teams.findByWhoScoredNames.mockResolvedValue([teamWithoutCrest]);
 
       const result = await service.listPlayersWithCrests({}, { page: 1, pageSize: 10 });
 
@@ -105,14 +105,14 @@ describe('PlayerEnrichmentService', () => {
 
       expect(result.items).toHaveLength(0);
       expect(result.total).toBe(0);
-      expect(teams.findByWhoScoredName).not.toHaveBeenCalled();
+      expect(teams.findByWhoScoredNames).not.toHaveBeenCalled();
     });
   });
 
   describe('getPlayerByIdWithCrest', () => {
     it('devuelve el jugador con su crestUrl cuando el equipo se resuelve', async () => {
       playerService.getPlayerById.mockResolvedValue(somePlayer);
-      teams.findByWhoScoredName.mockResolvedValue(someTeam);
+      teams.findByWhoScoredNames.mockResolvedValue([someTeam]);
 
       const result = await service.getPlayerByIdWithCrest('id-1');
 
@@ -122,7 +122,7 @@ describe('PlayerEnrichmentService', () => {
 
     it('devuelve crestUrl null cuando el equipo no está en la tabla teams', async () => {
       playerService.getPlayerById.mockResolvedValue(somePlayer);
-      teams.findByWhoScoredName.mockResolvedValue(null);
+      teams.findByWhoScoredNames.mockResolvedValue([]);
 
       const result = await service.getPlayerByIdWithCrest('id-1');
 
@@ -172,7 +172,7 @@ describe('PlayerEnrichmentService', () => {
         ],
         total: 10,
       });
-      teams.findByWhoScoredName.mockResolvedValue(someTeam);
+      teams.findByWhoScoredNames.mockResolvedValue([someTeam]);
 
       const result = await service.getRankingWithCrests(
         'user-1',
@@ -215,7 +215,7 @@ describe('PlayerEnrichmentService', () => {
         ],
         total: 1,
       });
-      teams.findByWhoScoredName.mockResolvedValue(null);
+      teams.findByWhoScoredNames.mockResolvedValue([]);
 
       const result = await service.getRankingWithCrests('user-1', {}, { page: 1, pageSize: 10 });
 
@@ -230,7 +230,7 @@ describe('PlayerEnrichmentService', () => {
 
       expect(result.items).toEqual([]);
       expect(result.total).toBe(0);
-      expect(teams.findByWhoScoredName).not.toHaveBeenCalled();
+      expect(teams.findByWhoScoredNames).not.toHaveBeenCalled();
     });
   });
 });

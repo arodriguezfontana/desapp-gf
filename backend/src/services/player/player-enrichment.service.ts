@@ -28,12 +28,11 @@ export class PlayerEnrichmentService {
     pagination: PlayerPagination,
   ): Promise<PlayerPageWithCrests> {
     const page = await this.playerService.listPlayers(filters, pagination);
-    const items = await Promise.all(
-      page.items.map(async (player) => ({
-        player,
-        crestUrl: await this.resolveCrest(player),
-      })),
-    );
+    const crests = await this.loadCrests(page.items);
+    const items = page.items.map((player) => ({
+      player,
+      crestUrl: crests.get(player.team) ?? null,
+    }));
     return { items, total: page.total };
   }
 
@@ -43,27 +42,30 @@ export class PlayerEnrichmentService {
     pagination: PlayerPagination,
   ): Promise<PlayerRankingPageWithCrests> {
     const page = await this.playerService.findRanking(userId, filters, pagination);
-    const items = await Promise.all(
-      page.items.map(async (item, index) => ({
-        player: item.player,
-        crestUrl: await this.resolveCrest(item.player),
-        rank: (pagination.page - 1) * pagination.pageSize + index + 1,
-        valor: item.valor,
-        score: item.score,
-        strategyName: item.strategyName,
-        calculatedAt: item.calculatedAt,
-      })),
-    );
+    const crests = await this.loadCrests(page.items.map((item) => item.player));
+    const items = page.items.map((item, index) => ({
+      player: item.player,
+      crestUrl: crests.get(item.player.team) ?? null,
+      rank: (pagination.page - 1) * pagination.pageSize + index + 1,
+      valor: item.valor,
+      score: item.score,
+      strategyName: item.strategyName,
+      calculatedAt: item.calculatedAt,
+    }));
     return { items, total: page.total };
   }
 
   async getPlayerByIdWithCrest(id: string): Promise<PlayerWithCrest> {
     const player = await this.playerService.getPlayerById(id);
-    return { player, crestUrl: await this.resolveCrest(player) };
+    const crests = await this.loadCrests([player]);
+    return { player, crestUrl: crests.get(player.team) ?? null };
   }
 
-  private async resolveCrest(player: Player): Promise<string | null> {
-    const team = await this.teams.findByWhoScoredName(player.team);
-    return team?.crestUrl ?? null;
+  /** Una sola consulta a `teams` por los equipos distintos de los jugadores: nombre WhoScored → escudo. */
+  private async loadCrests(players: Player[]): Promise<Map<string, string | null>> {
+    const teamNames = [...new Set(players.map((player) => player.team))];
+    if (teamNames.length === 0) return new Map();
+    const found = await this.teams.findByWhoScoredNames(teamNames);
+    return new Map(found.map((team) => [team.whoScoredName, team.crestUrl]));
   }
 }
