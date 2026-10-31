@@ -1,7 +1,5 @@
 import { League } from '../player/enums/league';
 
-export type SyncRunStatus = 'running' | 'completed' | 'failed';
-
 export interface SyncFailedUnit {
   league: League;
   team?: string;
@@ -16,7 +14,7 @@ export interface WhoScoredSyncSummary {
 
 export interface SyncRunState {
   runId: string;
-  status: SyncRunStatus;
+  status: 'running' | 'completed' | 'failed';
   trigger: 'manual' | 'cron';
   startedAt: Date;
   finishedAt?: Date;

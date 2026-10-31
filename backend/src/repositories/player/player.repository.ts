@@ -6,14 +6,25 @@ import { League } from '../../domain/player/enums/league';
 import { Player } from '../../domain/player/player';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPage, PlayerPagination } from '../../domain/player/player-page';
-import {
-  PlayerRankingPage,
-  RankedPlayerQuote,
-} from '../../domain/player/player-ranking';
 import { PlayerSyncInput } from '../../domain/sync/player-sync-input';
 import { isPostgresErrorCode } from '../../shared/errors/postgres-error';
 import { PlayerEntity } from './entities/player.entity';
 import { PlayerMapper } from './mappers/player.mapper';
+
+/** Jugador asociado a su cotización más reciente, producido al resolver el ranking. */
+export interface RankedPlayerQuote {
+  player: Player;
+  valor: number;
+  score: number;
+  strategyName: string;
+  calculatedAt: Date;
+}
+
+/** Página devuelta por `PlayerRepository.findRanking`. */
+export interface PlayerRankingPage {
+  items: RankedPlayerQuote[];
+  total: number;
+}
 
 /**
  * Columnas agregadas por el CTE `latest_quotes` de `findRanking` sobre las

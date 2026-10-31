@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Player } from '../../domain/player/player';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPagination } from '../../domain/player/player-page';
-import { PlayerRankingPageWithCrests } from '../../domain/player/player-ranking';
 import { TeamRepository } from '../../repositories/competition/team.repository';
 import { PlayerService } from './player.service';
 
@@ -13,6 +12,22 @@ export interface PlayerWithCrest {
 
 export interface PlayerPageWithCrests {
   items: PlayerWithCrest[];
+  total: number;
+}
+
+/** Item del ranking enriquecido con el escudo y la posición ordinal (rank 1..N). */
+export interface RankedPlayerWithCrest {
+  player: Player;
+  crestUrl: string | null;
+  rank: number;
+  valor: number;
+  score: number;
+  strategyName: string;
+  calculatedAt: Date;
+}
+
+export interface PlayerRankingPageWithCrests {
+  items: RankedPlayerWithCrest[];
   total: number;
 }
 

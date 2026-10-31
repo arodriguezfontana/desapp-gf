@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PlayerRankingResponseDto } from './player-ranking-response.dto';
-import { PlayerRankingPageWithCrests } from '../../../domain/player/player-ranking';
+import { PlayerRankingPageWithCrests } from '../../../services/player/player-enrichment.service';
 import { PlayerPagination } from '../../../domain/player/player-page';
 
 export class PlayerRankingListResponseDto {

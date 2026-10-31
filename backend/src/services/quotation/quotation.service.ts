@@ -177,12 +177,10 @@ export class QuotationService {
 
       // Emite quote.recalculated una vez por cada PlayerQuote efectivamente
       // persistida (nunca por las salteadas en `skipped`), para que el
-      // módulo de alertas evalúe sus alertas activas sin que este Service
-      // lo conozca (025-player-price-alerts, spec FR-011, FR-021).
+      // módulo de alertas evalúe sus alertas activas sin que este Service lo conozca.
       // emitAsync (no emit): espera a que los listeners async (evaluación de
       // alertas y persistencia de la notificación) terminen antes de resolver,
-      // para que la notificación ya esté visible al terminar este mismo
-      // recálculo (spec SC-003).
+      // para que la notificación ya esté visible al terminar este mismo recálculo.
       await Promise.all(
         quotes.map((quote) =>
           this.eventEmitter.emitAsync(
@@ -203,7 +201,7 @@ export class QuotationService {
   }
 
   /**
-   * Recálculo semanal automático (019, FR-016). `waitForCompletion: true`: evita
+   * Recálculo semanal automático. `waitForCompletion: true`: evita
    * que el scheduler dispare una corrida nueva mientras la anterior sigue
    * corriendo. Si el lock ya está tomado (p. ej. un recálculo manual de un
    * administrador), se salta esta ejecución y loguea una advertencia, igual que
