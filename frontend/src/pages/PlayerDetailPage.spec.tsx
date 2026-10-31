@@ -98,6 +98,98 @@ describe('PlayerDetailPage', () => {
     expect(screen.getByText('Asistencias')).toBeInTheDocument();
   });
 
+  it.each([
+    ['FW', ['Goles', 'Asistencias', 'Remates'], ['Pases clave', 'Regates', 'Entradas', 'Amarillas', 'Rojas']],
+    ['MF', ['Asistencias', 'Pases clave', 'Regates'], ['Goles', 'Entradas', 'Amarillas', 'Rojas']],
+    ['DF', ['Entradas', 'Intercepciones', 'Rating'], ['Goles', 'Asistencias', 'Pases clave', 'Regates']],
+    ['GK', ['Rating', 'Pases compl.', 'Intercepciones'], ['Goles', 'Asistencias', 'Pases clave', 'Regates']],
+  ])(
+    'destaca las 3 estadísticas más significativas de la posición %s y deja el resto como secundarias',
+    async (position, main, secondary) => {
+      apiKeyStorage.setApiKey('valid-key');
+      vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+        id: 'p-1',
+        name: 'Jugador Posicional',
+        league: 'Ligue 1',
+        team: 'PSG',
+        position,
+        rating: 7.34,
+        passesCompleted: 30.5,
+        shots: 4.2,
+        interceptions: 1.1,
+        goals: 27,
+        assists: 7,
+        keyPasses: 45,
+        dribbles: 52,
+        totalTackles: 10,
+        yellowCards: 4,
+        redCards: 1,
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/catalog/p-1']}>
+          <Routes>
+            <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Jugador Posicional')).toBeInTheDocument();
+      });
+
+      // Los bloques destacados (size lg) llevan el padding sm:p-4; los secundarios, p-2.5.
+      const isMain = (label: string) =>
+        screen.getAllByText(label).some((el) => el.parentElement?.className.includes('sm:p-4'));
+      const isSecondary = (label: string) =>
+        screen.getAllByText(label).some((el) => el.parentElement?.className.includes('p-2.5'));
+
+      for (const label of main) {
+        expect(isMain(label)).toBe(true);
+      }
+      for (const label of secondary) {
+        expect(isMain(label)).toBe(false);
+        expect(isSecondary(label)).toBe(true);
+      }
+    },
+  );
+
+  it.each(['FW', 'MF', 'DF', 'GK'])(
+    'los 3 bloques destacados de %s van en verde, amarillo y violeta, en ese orden',
+    async (position) => {
+      apiKeyStorage.setApiKey('valid-key');
+      vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({
+        id: 'p-1',
+        name: 'Jugador Colores',
+        league: 'Ligue 1',
+        team: 'PSG',
+        position,
+        rating: 7.34,
+        goals: 27,
+      });
+
+      const { container } = render(
+        <MemoryRouter initialEntries={['/catalog/p-1']}>
+          <Routes>
+            <Route path="/catalog/:id" element={<PlayerDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Jugador Colores')).toBeInTheDocument();
+      });
+
+      const mainValues = Array.from(container.querySelectorAll('span')).filter((el) =>
+        el.className.includes('text-2xl sm:text-3xl'),
+      );
+      expect(mainValues).toHaveLength(3);
+      expect(mainValues[0]).toHaveStyle({ color: '#2dd4bf' });
+      expect(mainValues[1]).toHaveStyle({ color: '#b79753' });
+      expect(mainValues[2]).toHaveStyle({ color: '#c084fc' });
+    },
+  );
+
   it('muestra el valor del token redondeado como número principal cuando hay cotización', async () => {
     apiKeyStorage.setApiKey('valid-key');
     vi.spyOn(catalogService, 'getPlayerById').mockResolvedValueOnce({

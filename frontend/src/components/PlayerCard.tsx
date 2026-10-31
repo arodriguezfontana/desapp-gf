@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { getPositionLabel, type Player } from '../types/catalog.types';
+import { formatStat, getPositionStats, getStatValue, STAT_LABELS } from '../utils/positionStats';
 
 interface PlayerCardProps {
   player: Player;
@@ -49,7 +50,7 @@ const StatPill: React.FC<{ value: number | null | undefined; label: string; colo
 }) => (
   <div className="flex flex-col items-center justify-center py-1">
     <span className="text-sm font-black tabular-nums leading-none" style={{ color }}>
-      {value ?? '—'}
+      {formatStat(value)}
     </span>
     <span className="text-[8px] font-bold uppercase tracking-widest text-white/50 mt-1">{label}</span>
   </div>
@@ -176,9 +177,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, quote }) => {
             className="mx-4 my-2 rounded-xl py-1.5 px-2.5 grid grid-cols-3 gap-1 border border-white/10"
             style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
           >
-            <StatPill value={player.goals} label="Goles" color="#b79753" />
-            <StatPill value={player.assists} label="Asis." color="#b79753" />
-            <StatPill value={player.yellowCards} label="TA" color="#b79753" />
+            {getPositionStats(player.position).map((key) => (
+              <StatPill key={key} value={getStatValue(player, key)} label={STAT_LABELS[key].short} color="#b79753" />
+            ))}
           </div>
 
           {/* ── Pie con forma de punta de escudo: espacio para el recorte del borde ── */}

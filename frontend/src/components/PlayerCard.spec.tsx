@@ -11,6 +11,7 @@ const playerMock = {
   position: 'FW',
   goals: 10,
   assists: 5,
+  shots: 3,
   yellowCards: 2,
 };
 
@@ -50,6 +51,48 @@ describe('PlayerCard', () => {
     );
 
     expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['FW', ['Goles', 'Asis.', 'Remates'], ['TA', 'Entradas']],
+    ['MF', ['Asis.', 'P. clave', 'Regates'], ['Goles', 'TA']],
+    ['DF', ['Entradas', 'Interc.', 'Rating'], ['Goles', 'TA']],
+    ['GK', ['Rating', 'Pases', 'Interc.'], ['Goles', 'Asis.', 'TA']],
+  ])('muestra las estadísticas significativas de la posición %s', (position, visible, hidden) => {
+    render(
+      <MemoryRouter>
+        <PlayerCard player={{ ...playerMock, position }} />
+      </MemoryRouter>,
+    );
+
+    for (const label of visible) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    for (const label of hidden) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument();
+    }
+  });
+
+  it('muestra los promedios con un decimal y los acumulados como enteros', () => {
+    render(
+      <MemoryRouter>
+        <PlayerCard player={{ ...playerMock, position: 'GK', rating: 7.34, passesCompleted: 28 }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('7.3')).toBeInTheDocument();
+    expect(screen.getByText('28')).toBeInTheDocument();
+  });
+
+  it('usa las estadísticas por defecto cuando la posición es desconocida', () => {
+    render(
+      <MemoryRouter>
+        <PlayerCard player={{ ...playerMock, position: 'XX' }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Goles')).toBeInTheDocument();
+    expect(screen.getByText('TA')).toBeInTheDocument();
   });
 
   it.each([

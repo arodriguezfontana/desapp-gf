@@ -203,8 +203,7 @@ export class OrdersService {
   }
 
   /**
-   * Obtiene la profundidad de mercado agregada para un jugador (024-player-order-book).
-   * @throws PlayerNotFoundError si el jugador no existe.
+   * Obtiene la profundidad de mercado agregada para un jugador.
    */
   async getOrderBook(playerId: string): Promise<OrderBook> {
     const player = await this.players.findById(playerId);
