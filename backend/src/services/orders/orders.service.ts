@@ -3,13 +3,10 @@ import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
-import { ORDER_REPOSITORY, TOKEN_TRANSACTION_REPOSITORY, TRANSACTION_MANAGER } from '../../modules/orders/orders.constants';
-import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 
 import { Order } from '../../domain/orders/order';
 import { OrderBook } from '../../domain/orders/order-book';
-import { oppositeSide, OrderSide } from '../../domain/orders/order-side';
+import { oppositeSide, OrderSide } from '../../domain/orders/enums/order-side';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { matchOrder } from '../../domain/orders/match-order';
 import { involvedUserIdsInLockOrder, settleFills } from '../../domain/orders/settle-fills';
@@ -49,11 +46,11 @@ export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
   constructor(
-    @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
-    @Inject(TOKEN_TRANSACTION_REPOSITORY) private readonly tokenTransactions: TokenTransactionRepository,
-    @Inject(TOKEN_HOLDING_REPOSITORY) private readonly holdings: TokenHoldingRepository,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
-    @Inject(TRANSACTION_MANAGER) private readonly transactionManager: TransactionManager,
+    private readonly orders: OrderRepository,
+    private readonly tokenTransactions: TokenTransactionRepository,
+    private readonly holdings: TokenHoldingRepository,
+    private readonly players: PlayerRepository,
+    private readonly transactionManager: TransactionManager,
     private readonly quotation: QuotationService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
@@ -206,8 +203,7 @@ export class OrdersService {
   }
 
   /**
-   * Obtiene la profundidad de mercado agregada para un jugador (024-player-order-book).
-   * @throws PlayerNotFoundError si el jugador no existe.
+   * Obtiene la profundidad de mercado agregada para un jugador.
    */
   async getOrderBook(playerId: string): Promise<OrderBook> {
     const player = await this.players.findById(playerId);

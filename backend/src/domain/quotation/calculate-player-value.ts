@@ -3,8 +3,7 @@ import { Position } from '../player/enums/position';
 import { ValuationStrategy } from './valuation-strategy';
 
 /**
- * Bounds máximos realistas para jugadores de élite (012-valuation-strategies,
- * data-model.md §NormalizationBounds, spec DD-002). Constante exportada para
+ * Bounds máximos realistas para jugadores de élite. Constante exportada para
  * que los tests la usen directamente y para que ValuationStrategy pueda
  * validar las claves de sus pesos.
  *
@@ -60,9 +59,6 @@ function getMetric(player: Player, key: string): number | null {
 
 /**
  * Calcula el score y el valor de un jugador según una estrategia de valuación.
- *
- * Función de dominio pura: sin acceso a base de datos ni dependencias de NestJS
- * (012-valuation-strategies, spec FR-008, constitución Principio I).
  *
  * Si la estrategia define un perfil de pesos para la posición declarada del
  * jugador, se usa ese perfil; si no, se usan los pesos generales de la

@@ -4,16 +4,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import { PlayerEntity } from '../../repositories/player/entities/player.entity';
 import { PlayerMapper } from '../../repositories/player/mappers/player.mapper';
-import { TypeOrmPlayerRepository } from '../../repositories/player/typeorm-player.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { League } from '../../domain/player/enums/league';
 import { Position } from '../../domain/player/enums/position';
 import { PlayerService } from './player.service';
 
-describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres real)', () => {
+describe('PlayerService + PlayerRepository (integración contra Postgres real)', () => {
   let moduleRef: TestingModule;
   let service: PlayerService;
   let dataSource: DataSource;
@@ -52,7 +51,7 @@ describe('PlayerService + TypeOrmPlayerRepository (integración contra Postgres 
       providers: [
         PlayerService,
         PlayerMapper,
-        { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
+        PlayerRepository,
       ],
     }).compile();
 

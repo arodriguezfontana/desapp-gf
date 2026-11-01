@@ -9,17 +9,13 @@ import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/a
 import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { Position } from '../../domain/player/enums/position';
-import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
-import {
-  VALUATION_STRATEGY_REPOSITORY,
-  PLAYER_QUOTE_REPOSITORY,
-} from '../../modules/quotation/quotation.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
+import { StrategyService } from './strategy.service';
+import { RunLock } from '../../shared/run-lock';
 
 export interface RecalculateResult {
   recalculated: Array<{ userId: string; playerId: string; value: number; score: number }>;
@@ -43,10 +39,11 @@ export interface ValuationResult {
 export const QUOTATION_RECALCULATION_CRON = '0 3 * * 0';
 
 /**
- * Orquesta las operaciones sobre las estrategias propias de cada usuario y el
- * recálculo de cotizaciones, manual (admin) o semanal con `@Cron`
+ * Orquesta el cálculo de cotizaciones: valuación puntual, recálculo global
+ * manual (admin) o semanal con `@Cron`, e historial de cotizaciones
  * (019-per-user-valuation-strategies, reemplaza el modelo de estrategia única
- * de sistema de 012-valuation-strategies).
+ * de sistema de 012-valuation-strategies). Las operaciones sobre las
+ * estrategias del usuario viven en `StrategyService`.
  *
  * El lock de recálculo es en memoria a nivel sistema: solo puede haber un
  * recálculo global corriendo a la vez (409 si ya hay uno en curso).
@@ -54,68 +51,22 @@ export const QUOTATION_RECALCULATION_CRON = '0 3 * * 0';
 @Injectable()
 export class QuotationService {
   private readonly logger = new Logger(QuotationService.name);
-  private recalculationInProgress = false;
+  private readonly recalculationLock = new RunLock();
 
   constructor(
-    @Inject(VALUATION_STRATEGY_REPOSITORY)
     private readonly strategyRepository: ValuationStrategyRepository,
-    @Inject(PLAYER_QUOTE_REPOSITORY)
     private readonly quoteRepository: PlayerQuoteRepository,
-    @Inject(PLAYER_REPOSITORY)
     private readonly playerRepository: PlayerRepository,
     private readonly eventEmitter: EventEmitter2,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    private readonly strategies: StrategyService,
   ) {}
 
-  /** Las dos estrategias propias del usuario (spec FR-004). */
-  async listStrategies(userId: string): Promise<ValuationStrategy[]> {
-    return this.strategyRepository.findByUserId(userId);
-  }
-
-  private async getOwnedStrategyOrThrow(id: string, userId: string): Promise<ValuationStrategy> {
-    const strategy = await this.strategyRepository.findById(id);
-    if (!strategy) {
-      throw new StrategyNotFoundError(id);
-    }
-    strategy.assertOwnedBy(userId);
-    return strategy;
-  }
-
-  /** Marca `strategyId` como seleccionada, desmarcando la otra del mismo usuario (spec FR-005). */
-  async selectStrategy(userId: string, strategyId: string): Promise<ValuationStrategy> {
-    await this.getOwnedStrategyOrThrow(strategyId, userId);
-    return this.strategyRepository.selectStrategy(userId, strategyId);
-  }
-
-  /** Reemplazo completo de los pesos generales de una estrategia propia (spec FR-006, FR-008). */
-  async editWeights(
-    userId: string,
-    strategyId: string,
-    weights: Record<string, number>,
-  ): Promise<ValuationStrategy> {
-    const strategy = await this.getOwnedStrategyOrThrow(strategyId, userId);
-    const updated = strategy.withWeights(weights);
-    return this.strategyRepository.save(updated);
-  }
-
-  /** Reemplazo completo del perfil de una posición de una estrategia propia (spec FR-007, FR-008). */
-  async editPositionWeights(
-    userId: string,
-    strategyId: string,
-    position: Position,
-    weights: Record<string, number>,
-  ): Promise<ValuationStrategy> {
-    const strategy = await this.getOwnedStrategyOrThrow(strategyId, userId);
-    const updated = strategy.withPositionWeights(position, weights);
-    return this.strategyRepository.save(updated);
-  }
-
   /**
-   * Calcula al vuelo el valor de un jugador, sin persistir nada (spec FR-010).
+   * Calcula al vuelo el valor de un jugador, sin persistir nada.
    * Sin `strategyId`, usa la estrategia seleccionada del usuario; con
-   * `strategyId`, usa esa estrategia puntual si pertenece al usuario (spec
-   * FR-011, FR-012).
+   * `strategyId`, usa esa estrategia puntual si pertenece al usuario.
    */
   async valuate(userId: string, playerId: string, strategyId?: string): Promise<ValuationResult> {
     const player = await this.playerRepository.findById(playerId);
@@ -124,8 +75,8 @@ export class QuotationService {
     }
 
     const strategy = strategyId
-      ? await this.getOwnedStrategyOrThrow(strategyId, userId)
-      : await this.getSelectedStrategyOrThrow(userId);
+      ? await this.strategies.getOwnedStrategyOrThrow(strategyId, userId)
+      : await this.strategies.getSelectedStrategyOrThrow(userId);
 
     const { score, value, appliedPosition } = calculatePlayerValue(player, strategy);
     return { playerId, strategyId: strategy.id, score, value, appliedPosition };
@@ -171,15 +122,6 @@ export class QuotationService {
     }
   }
 
-  private async getSelectedStrategyOrThrow(userId: string): Promise<ValuationStrategy> {
-    const strategies = await this.strategyRepository.findByUserId(userId);
-    const selected = strategies.find((s) => s.isSelected);
-    if (!selected) {
-      throw new StrategyNotFoundError(userId);
-    }
-    return selected;
-  }
-
   /**
    * Historial propio de cotizaciones de un jugador (spec FR-017/FR-018/FR-019).
    * Lanza PlayerNotFoundError si el jugador no existe; retorna [] si el
@@ -202,65 +144,63 @@ export class QuotationService {
    * qué se salteó.
    */
   async recalculateAll(): Promise<RecalculateResult> {
-    if (this.recalculationInProgress) {
-      throw new RecalculationInProgressError();
-    }
-    this.recalculationInProgress = true;
+    return this.recalculationLock.runExclusive(
+      () => this.runRecalculation(),
+      () => new RecalculationInProgressError(),
+    );
+  }
 
-    try {
-      const userIds = await this.strategyRepository.findAllUserIds();
-      const players = await this.playerRepository.findAllActive();
+  private async runRecalculation(): Promise<RecalculateResult> {
+    const userIds = await this.strategyRepository.findAllUserIds();
+    const players = await this.playerRepository.findAllActive();
 
-      const quotes: PlayerQuote[] = [];
-      const recalculated: RecalculateResult['recalculated'] = [];
-      const skipped: RecalculateResult['skipped'] = [];
+    const quotes: PlayerQuote[] = [];
+    const recalculated: RecalculateResult['recalculated'] = [];
+    const skipped: RecalculateResult['skipped'] = [];
 
-      for (const userId of userIds) {
-        const strategies = await this.strategyRepository.findByUserId(userId);
-        const strategy = strategies.find((s) => s.isSelected);
-        if (!strategy) {
-          skipped.push(...players.map((p) => ({
-            userId,
-            playerId: p.id,
-            reason: 'Sin estrategia seleccionada',
-          })));
-          continue;
-        }
-        this.processUserPlayers(userId, strategy, players, quotes, recalculated, skipped);
+    const strategiesByUser = await Promise.all(
+      userIds.map((userId) => this.strategyRepository.findByUserId(userId)),
+    );
+
+    for (const [index, userId] of userIds.entries()) {
+      const strategy = strategiesByUser[index].find((s) => s.isSelected);
+      if (!strategy) {
+        skipped.push(...players.map((p) => ({
+          userId,
+          playerId: p.id,
+          reason: 'Sin estrategia seleccionada',
+        })));
+        continue;
       }
+      this.processUserPlayers(userId, strategy, players, quotes, recalculated, skipped);
+    }
 
-      await this.quoteRepository.saveMany(quotes);
+    await this.quoteRepository.saveMany(quotes);
 
-      // Emite quote.recalculated una vez por cada PlayerQuote efectivamente
-      // persistida (nunca por las salteadas en `skipped`), para que el
-      // módulo de alertas evalúe sus alertas activas sin que este Service
-      // lo conozca (025-player-price-alerts, spec FR-011, FR-021).
-      // emitAsync (no emit): espera a que los listeners async (evaluación de
-      // alertas, persistencia de notificación, envío de mail) terminen antes
-      // de resolver, para que la notificación ya esté visible al terminar
-      // este mismo recálculo (spec SC-003). No afecta la independencia entre
-      // los listeners de alert.triggered entre sí (FR-021): cada uno sigue
-      // corriendo su propia lógica sin conocer al otro, solo se espera a que
-      // ambos conjuntos de listeners terminen antes de responder.
-      for (const quote of quotes) {
-        await this.eventEmitter.emitAsync(
+    // Emite quote.recalculated una vez por cada PlayerQuote efectivamente
+    // persistida (nunca por las salteadas en `skipped`), para que el
+    // módulo de alertas evalúe sus alertas activas sin que este Service lo conozca.
+    // emitAsync (no emit): espera a que los listeners async (evaluación de
+    // alertas y persistencia de la notificación) terminen antes de resolver,
+    // para que la notificación ya esté visible al terminar este mismo recálculo.
+    await Promise.all(
+      quotes.map((quote) =>
+        this.eventEmitter.emitAsync(
           QUOTE_RECALCULATED_EVENT,
           new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
-        );
-      }
+        ),
+      ),
+    );
 
-      this.logger.log(
-        `Recálculo global completado: ${recalculated.length} procesados, ${skipped.length} salteados`,
-      );
+    this.logger.log(
+      `Recálculo global completado: ${recalculated.length} procesados, ${skipped.length} salteados`,
+    );
 
-      return { recalculated, skipped };
-    } finally {
-      this.recalculationInProgress = false;
-    }
+    return { recalculated, skipped };
   }
 
   /**
-   * Recálculo semanal automático (019, FR-016). `waitForCompletion: true`: evita
+   * Recálculo semanal automático. `waitForCompletion: true`: evita
    * que el scheduler dispare una corrida nueva mientras la anterior sigue
    * corriendo. Si el lock ya está tomado (p. ej. un recálculo manual de un
    * administrador), se salta esta ejecución y loguea una advertencia, igual que
@@ -269,7 +209,7 @@ export class QuotationService {
    */
   @Cron(QUOTATION_RECALCULATION_CRON, { waitForCompletion: true })
   async handleCron(): Promise<void> {
-    if (this.recalculationInProgress) {
+    if (this.recalculationLock.isLocked) {
       this.logger.warn(
         'El @Cron de recálculo de cotizaciones se salta porque ya hay un recálculo en curso (spec 019, FR-016).',
       );

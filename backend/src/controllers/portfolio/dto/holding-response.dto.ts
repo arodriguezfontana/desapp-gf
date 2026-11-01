@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Holding } from '../../../domain/portfolio/holding';
+import { Holding } from '../../../domain/portfolio/portfolio';
 
 export class HoldingResponseDto {
   @ApiProperty({ example: '1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d' })

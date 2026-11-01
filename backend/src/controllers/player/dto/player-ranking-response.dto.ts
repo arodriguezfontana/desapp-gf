@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RankedPlayerWithCrest } from '../../../domain/player/player-ranking';
+import { RankedPlayerWithCrest } from '../../../services/player/player-enrichment.service';
 
 export class PlayerRankingResponseDto {
   @ApiProperty({

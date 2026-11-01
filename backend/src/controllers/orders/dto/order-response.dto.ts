@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from '../../../domain/orders/order';
-import { OrderSide } from '../../../domain/orders/order-side';
-import { OrderStatus } from '../../../domain/orders/order-status';
+import { OrderSide } from '../../../domain/orders/enums/order-side';
+import { OrderStatus } from '../../../domain/orders/enums/order-status';
 
 export class OrderFillDto {
   @ApiProperty({ example: 'b3f1c2a4-1234-4a4a-8a8a-abcdef123456' })

@@ -28,7 +28,7 @@ describe('Notification (dominio, sin Nest ni DB)', () => {
       const read = Notification.create(baseProps()).markAsRead();
       const readAgain = read.markAsRead();
       expect(readAgain.read).toBe(true);
-      expect(readAgain).not.toBe(undefined);
+      expect(readAgain).toBeDefined();
     });
   });
 

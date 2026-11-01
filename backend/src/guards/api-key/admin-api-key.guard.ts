@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 
-import { API_KEY_REPOSITORY, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
+import { TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
 import { UserRole } from '../../domain/auth/user-role';
 import { ApiKeyRepository } from '../../repositories/api-key/api-key.repository';
@@ -27,7 +27,7 @@ import { ApiKeyGuard } from './api-key.guard';
 export class AdminApiKeyGuard extends ApiKeyGuard {
   constructor(
     @Inject(TOKEN_HASHER) hasher: TokenHasher,
-    @Inject(API_KEY_REPOSITORY) apiKeys: ApiKeyRepository,
+    apiKeys: ApiKeyRepository,
   ) {
     super(hasher, apiKeys);
   }

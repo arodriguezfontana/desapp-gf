@@ -30,7 +30,7 @@ describe('PlayerService', () => {
       findActiveExternalIdsByTeam: jest.fn(),
       applyTeamRosterSync: jest.fn(),
       findAllActive: jest.fn(),
-    };
+    } as unknown as typeof players;
     service = new PlayerService(players);
   });
 

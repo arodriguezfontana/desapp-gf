@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { PRICE_ALERT_REPOSITORY } from '../../modules/alerts/alerts.constants';
 import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../domain/alerts/events/alert-triggered.event';
 import { QUOTE_RECALCULATED_EVENT, QuoteRecalculatedEvent } from '../../domain/alerts/events/quote-recalculated.event';
@@ -14,7 +13,7 @@ import { QUOTE_RECALCULATED_EVENT, QuoteRecalculatedEvent } from '../../domain/a
 @Injectable()
 export class QuoteRecalculatedListener {
   constructor(
-    @Inject(PRICE_ALERT_REPOSITORY) private readonly alerts: PriceAlertRepository,
+    private readonly alerts: PriceAlertRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -22,13 +21,14 @@ export class QuoteRecalculatedListener {
   async handle(event: QuoteRecalculatedEvent): Promise<void> {
     const activeAlerts = await this.alerts.findActiveByUserIdAndPlayerId(event.userId, event.playerId);
 
-    for (const alert of activeAlerts) {
-      if (alert.matches(event.value)) {
-        // emitAsync (no emit): espera a que los listeners de alert.triggered
-        // (persistencia de Notification + envío de mail) terminen antes de
-        // resolver, para que quote.recalculated solo se considere procesado
-        // cuando la notificación ya quedó visible (spec SC-003).
-        await this.eventEmitter.emitAsync(
+    const triggered = activeAlerts.filter((alert) => alert.matches(event.value));
+    // emitAsync (no emit): espera a que los listeners de alert.triggered
+    // (persistencia de Notification) terminen antes de resolver, para que
+    // quote.recalculated solo se considere procesado cuando la notificación
+    // ya quedó visible (spec SC-003).
+    await Promise.all(
+      triggered.map((alert) =>
+        this.eventEmitter.emitAsync(
           ALERT_TRIGGERED_EVENT,
           new AlertTriggeredEvent(
             alert.id,
@@ -38,8 +38,8 @@ export class QuoteRecalculatedListener {
             event.value,
             event.occurredAt,
           ),
-        );
-      }
-    }
+        ),
+      ),
+    );
   }
 }

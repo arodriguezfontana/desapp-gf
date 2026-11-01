@@ -2,20 +2,20 @@ import { OrdersService } from './orders.service';
 import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { Order } from '../../domain/orders/order';
 import { OrderBook } from '../../domain/orders/order-book';
-import { OrderSide } from '../../domain/orders/order-side';
-import { OrderStatus } from '../../domain/orders/order-status';
+import { OrderSide } from '../../domain/orders/enums/order-side';
+import { OrderStatus } from '../../domain/orders/enums/order-status';
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
-import { TokenTransactionType } from '../../domain/orders/token-transaction-type';
+import { TokenTransactionType } from '../../domain/orders/enums/token-transaction-type';
 import { InsufficientHoldingError } from '../../domain/portfolio/errors/insufficient-holding.error';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import type { Player } from '../../domain/player/player';
-import type { OrderRepository } from '../../repositories/orders/order.repository';
-import type { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
-import type { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
-import type { PlayerRepository } from '../../repositories/player/player.repository';
+import { OrderRepository } from '../../repositories/orders/order.repository';
+import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
+import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 import type { TransactionManager } from '../../repositories/shared/transaction-manager';
 import type { QuotationService } from '../quotation/quotation.service';
 import type { Transaction } from '../../repositories/shared/transaction';
@@ -64,7 +64,6 @@ describe('OrdersService', () => {
       findById: jest.fn(),
       findByIdWithLock: jest.fn(),
       findByUserId: jest.fn(),
-      findCompatibleCandidates: jest.fn(),
       sumPendingSellQuantity: jest.fn(),
       save: jest.fn(),
       saveInTransaction: jest.fn().mockImplementation((_tx, order) => Promise.resolve(order)),

@@ -4,23 +4,23 @@ import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WHOSCORED_ADAPTER } from '../../modules/player-sync/player-sync.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import {
   WhoScoredAdapter,
   WhoScoredRawPlayer,
   WhoScoredTeamRef,
 } from '../../adapters/player-sync/whoscored-adapter';
 import { League } from '../../domain/player/enums/league';
-import { computePlayersToRemove } from '../../domain/player/team-roster-sync';
-import { mapWhoScoredPosition } from '../../domain/player/whoscored-position-mapping';
-import { PlayerSyncInput } from '../../domain/player/player-sync-input';
+import { computePlayersToRemove } from '../../domain/sync/team-roster-sync';
+import { mapWhoScoredPosition } from '../../domain/sync/whoscored-position-mapping';
+import { PlayerSyncInput } from '../../domain/sync/player-sync-input';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import {
   SyncFailedUnit,
   SyncRunState,
   WhoScoredSyncSummary,
-} from '../../domain/player/sync-run';
+} from '../../domain/sync/sync-run';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
+import { RunLock } from '../../shared/run-lock';
 
 const MAX_RETAINED_RUNS = 20;
 const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error inesperado.';
@@ -28,7 +28,7 @@ const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error ine
 /**
  * Sincroniza el catálogo con datos reales de WhoScored (006-whoscored-catalog-sync).
  * Spec 009 agrega el disparo manual: `startManualRun()` / `getRun()`, lock en memoria
- * (`activeRunId`) y registro de corridas (`runs`). El método `sync()` del `@Cron` conserva
+ * (`runLock`) y registro de corridas (`runs`). El método `sync()` del `@Cron` conserva
  * su firma `Promise<void>` para no romper los tests existentes.
  */
 @Injectable()
@@ -36,27 +36,27 @@ export class PlayerSyncService {
   private readonly logger = new Logger(PlayerSyncService.name);
   private readonly manualReviewLogger = new Logger('PlayerSyncManualReview');
 
-  private activeRunId: string | null = null;
+  private readonly runLock = new RunLock();
   private readonly runs = new Map<string, SyncRunState>();
 
   constructor(
     @Inject(WHOSCORED_ADAPTER) private readonly whoScored: WhoScoredAdapter,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
+    private readonly players: PlayerRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}
 
   /**
    * Comprueba el lock y, si está libre, genera un runId, registra la corrida
-   * y la arranca en background. Lanza `SyncInProgressError(activeRunId)` si el lock
+   * y la arranca en background. Lanza `SyncInProgressError(runId)` si el lock
    * ya está tomado.
    */
   startManualRun(): string {
-    if (this.activeRunId !== null) {
-      throw new SyncInProgressError(this.activeRunId);
+    if (this.runLock.isLocked) {
+      throw new SyncInProgressError(this.runLock.currentRunId ?? undefined);
     }
     const runId = this.ids.generate();
-    this.activeRunId = runId;
+    this.runLock.tryAcquire(runId);
     this.runs.set(runId, {
       runId,
       status: 'running',
@@ -80,14 +80,14 @@ export class PlayerSyncService {
    */
   @Cron(CronExpression.EVERY_WEEK, { waitForCompletion: true })
   async sync(): Promise<void> {
-    if (this.activeRunId !== null) {
+    if (this.runLock.isLocked) {
       this.logger.warn(
         'El @Cron de WhoScored se salta porque ya hay una corrida en curso (spec 009, FR-015).',
       );
       return;
     }
     const runId = this.ids.generate();
-    this.activeRunId = runId;
+    this.runLock.tryAcquire(runId);
     this.runs.set(runId, {
       runId,
       status: 'running',
@@ -134,7 +134,7 @@ export class PlayerSyncService {
         errorMessage: FATAL_ERROR_MESSAGE,
       });
     } finally {
-      this.activeRunId = null;
+      this.runLock.release();
     }
   }
 

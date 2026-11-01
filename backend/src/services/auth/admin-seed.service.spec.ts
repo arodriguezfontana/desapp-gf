@@ -8,13 +8,13 @@ import { User } from '../../domain/auth/user';
 import { UserRole } from '../../domain/auth/user-role';
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { AdminSeedService } from './admin-seed.service';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
 describe('AdminSeedService', () => {
   const PASSWORD = 'Admin1234!';
   let users: jest.Mocked<UserRepository>;
   let hasher: jest.Mocked<PasswordHasher>;
-  let strategyProvisioning: jest.Mocked<UserStrategyProvisioningService>;
+  let strategyProvisioning: jest.Mocked<StrategyProvisioningService>;
   let env: Record<string, string | undefined>;
   let config: ConfigService;
   let service: AdminSeedService;
@@ -32,7 +32,7 @@ describe('AdminSeedService', () => {
       save: jest.fn().mockResolvedValue(undefined),
       findById: jest.fn(),
       existsByUsername: jest.fn().mockResolvedValue(false),
-    };
+    } as unknown as typeof users;
     hasher = {
       hash: jest.fn().mockResolvedValue('hash-admin'),
       compare: jest.fn(),
@@ -42,7 +42,7 @@ describe('AdminSeedService', () => {
     config = { get: (key: string) => env[key] } as unknown as ConfigService;
     strategyProvisioning = {
       provisionDefaultStrategiesFor: jest.fn().mockResolvedValue([]),
-    } as unknown as jest.Mocked<UserStrategyProvisioningService>;
+    } as unknown as jest.Mocked<StrategyProvisioningService>;
     service = new AdminSeedService(
       users,
       hasher,

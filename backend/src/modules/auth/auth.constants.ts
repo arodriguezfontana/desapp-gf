@@ -8,6 +8,5 @@ export const JWT_EXPIRES_IN = '24h';
 export const JWT_EXPIRES_IN_SECONDS = 24 * 60 * 60;
 
 /** Tokens de inyeccion de los puertos de dominio. */
-export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 export const PASSWORD_HASHER = Symbol('PASSWORD_HASHER');
 export const TOKEN_ISSUER = Symbol('TOKEN_ISSUER');

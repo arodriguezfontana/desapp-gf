@@ -3,7 +3,7 @@ import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 
-import { API_KEY_REPOSITORY, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
+import { TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
 import { TokenHasher } from '../../adapters/api-key/token-hasher';
 import { ApiKey } from '../../domain/api-key/api-key';
 import { generateRawApiKey } from '../../domain/api-key/raw-api-key';
@@ -18,7 +18,7 @@ export interface IssuedApiKey {
 @Injectable()
 export class ApiKeyService {
   constructor(
-    @Inject(API_KEY_REPOSITORY) private readonly apiKeys: ApiKeyRepository,
+    private readonly apiKeys: ApiKeyRepository,
     @Inject(TOKEN_HASHER) private readonly hasher: TokenHasher,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,

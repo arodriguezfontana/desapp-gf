@@ -8,16 +8,14 @@ import * as path from 'path';
 import { DatabaseModule } from '../../database/database.module';
 import { MatchEntity } from '../../repositories/competition/entities/match.entity';
 import { StandingEntity } from '../../repositories/competition/entities/standing.entity';
-import { TypeOrmMatchRepository } from '../../repositories/competition/typeorm-match.repository';
+import { MatchRepository } from '../../repositories/competition/match.repository';
 import { MatchMapper } from '../../repositories/competition/mappers/match.mapper';
-import { TypeOrmStandingRepository } from '../../repositories/competition/typeorm-standing.repository';
+import { StandingRepository } from '../../repositories/competition/standing.repository';
 import { StandingMapper } from '../../repositories/competition/mappers/standing.mapper';
 import { FootballDataSyncService } from './football-data-sync.service';
 import { FootballDataAdapter } from '../../adapters/competition/football-data-adapter';
 import {
   FOOTBALL_DATA_ADAPTER,
-  MATCH_REPOSITORY,
-  STANDING_REPOSITORY,
 } from '../../modules/competition/football-data-sync.constants';
 
 interface StandingsFixtureRow {
@@ -82,8 +80,8 @@ describe('FootballDataSyncService (Integration against Postgres with Mocked Adap
         MatchMapper,
         StandingMapper,
         { provide: FOOTBALL_DATA_ADAPTER, useValue: mockAdapter },
-        { provide: MATCH_REPOSITORY, useClass: TypeOrmMatchRepository },
-        { provide: STANDING_REPOSITORY, useClass: TypeOrmStandingRepository },
+        MatchRepository,
+        StandingRepository,
       ],
     }).compile();
 

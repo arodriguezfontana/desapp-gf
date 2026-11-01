@@ -12,13 +12,4 @@ export class TeamNameExceptionMapper {
       leagueCode: entity.leagueCode,
     });
   }
-
-  toEntity(domain: TeamNameException): Partial<TeamNameExceptionEntity> {
-    return {
-      whoScoredRawName: domain.whoScoredRawName,
-      footballDataTeamId: domain.footballDataTeamId,
-      footballDataTeamName: domain.footballDataTeamName,
-      leagueCode: domain.leagueCode,
-    };
-  }
 }

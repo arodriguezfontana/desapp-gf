@@ -1,8 +1,8 @@
 import { OrdersController } from './orders.controller';
 import { OrdersService } from '../../services/orders/orders.service';
 import { Order } from '../../domain/orders/order';
-import { OrderSide } from '../../domain/orders/order-side';
-import { OrderStatus } from '../../domain/orders/order-status';
+import { OrderSide } from '../../domain/orders/enums/order-side';
+import { OrderStatus } from '../../domain/orders/enums/order-status';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';

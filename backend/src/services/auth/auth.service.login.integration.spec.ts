@@ -10,19 +10,17 @@ import {
   JWT_EXPIRES_IN_SECONDS,
   PASSWORD_HASHER,
   TOKEN_ISSUER,
-  USER_REPOSITORY,
 } from '../../modules/auth/auth.constants';
-import { VALUATION_STRATEGY_REPOSITORY } from '../../modules/quotation/quotation.constants';
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
 import { JwtTokenIssuer } from '../../adapters/auth/jwt-token-issuer';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
-import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
+import { UserRepository } from '../../repositories/auth/user.repository';
 import { ValuationStrategyEntity } from '../../repositories/quotation/entities/valuation-strategy.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
-import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService.login (integración contra Postgres real)', () => {
@@ -44,11 +42,11 @@ describe('AuthService.login (integración contra Postgres real)', () => {
         AuthService,
         UserMapper,
         ValuationStrategyMapper,
-        UserStrategyProvisioningService,
-        { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
+        StrategyProvisioningService,
+        UserRepository,
         { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
         { provide: TOKEN_ISSUER, useClass: JwtTokenIssuer },
-        { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
+        ValuationStrategyRepository,
       ],
     }).compile();
 

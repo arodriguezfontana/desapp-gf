@@ -21,7 +21,7 @@ describe('ApiKeyService', () => {
       findByHash: jest.fn(),
       save: jest.fn(),
       saveWithRevocation: jest.fn(),
-    };
+    } as unknown as typeof repo;
     hasher = { hash: jest.fn(), compare: jest.fn() };
     service = new ApiKeyService(repo, hasher, new FixedClock(), new SequentialIdGenerator('key'));
   });

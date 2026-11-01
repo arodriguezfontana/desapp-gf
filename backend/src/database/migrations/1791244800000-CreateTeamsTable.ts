@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Crea la tabla `teams` para la feature 010-team-name-crosswalk (US3).
  * Resultado materializado del crosswalk WhoScored ↔ Football-Data.
- * Poblada por `seed:crosswalk`, consumida por PlayerEnrichmentService.
+ * Poblada por `TeamCrosswalkSyncService`, consumida por PlayerEnrichmentService.
  */
 export class CreateTeamsTable1791244800000 implements MigrationInterface {
   name = 'CreateTeamsTable1791244800000';

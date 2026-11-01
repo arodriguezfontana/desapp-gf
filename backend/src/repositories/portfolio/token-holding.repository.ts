@@ -1,28 +1,65 @@
+import { randomUUID } from 'node:crypto';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { Transaction } from '../shared/transaction';
+import { TokenHoldingEntity } from './entities/token-holding.entity';
+import { TokenHoldingMapper } from './mappers/token-holding.mapper';
 
-/**
- * Puerto de dominio para la persistencia de TokenHolding
- * (020-order-matching-engine). Token: TOKEN_HOLDING_REPOSITORY.
- */
-export interface TokenHoldingRepository {
-  findByUserId(userId: string): Promise<TokenHolding[]>;
-  findByUserAndPlayer(userId: string, playerId: string): Promise<TokenHolding | null>;
+@Injectable()
+export class TokenHoldingRepository {
+  constructor(
+    @InjectRepository(TokenHoldingEntity)
+    private readonly repo: Repository<TokenHoldingEntity>,
+    private readonly mapper: TokenHoldingMapper,
+  ) {}
 
-  /** Insert o update simple, sin transaccion (p. ej. el seed del superusuario). */
-  save(holding: TokenHolding): Promise<TokenHolding>;
+  async findByUserId(userId: string): Promise<TokenHolding[]> {
+    const entities = await this.repo.find({ where: { userId } });
+    return entities.map((e) => this.mapper.toDomain(e));
+  }
 
-  /**
-   * Dentro de una `Transaction` ya abierta: lockea (`pessimistic_write`) el
-   * holding de (userId, playerId), creandolo en 0 primero si todavia no
-   * existia (bootstrap resuelto con `ON CONFLICT DO NOTHING` + re-select con
-   * lock, para que una carrera entre dos transacciones concurrentes creando
-   * el mismo holding por primera vez no falle). research.md D4: SIEMPRE
-   * invocar en orden de `userId` ascendente cuando se lockean 2+ holdings en
-   * la misma transaccion, para evitar deadlocks.
-   */
-  lockForUpdate(tx: Transaction, userId: string, playerId: string): Promise<TokenHolding>;
+  async findByUserAndPlayer(userId: string, playerId: string): Promise<TokenHolding | null> {
+    const entity = await this.repo.findOne({ where: { userId, playerId } });
+    return entity ? this.mapper.toDomain(entity) : null;
+  }
 
-  /** Persiste (insert o update) dentro de una `Transaction` ya abierta. */
-  saveInTransaction(tx: Transaction, holding: TokenHolding): Promise<TokenHolding>;
+  async save(holding: TokenHolding): Promise<TokenHolding> {
+    await this.repo.save(this.mapper.toEntity(holding));
+    return holding;
+  }
+
+  async lockForUpdate(tx: Transaction, userId: string, playerId: string): Promise<TokenHolding> {
+    const repo = tx.manager.getRepository(TokenHoldingEntity);
+    const lock = () =>
+      repo
+        .createQueryBuilder('h')
+        .setLock('pessimistic_write')
+        .where('h.user_id = :userId', { userId })
+        .andWhere('h.player_id = :playerId', { playerId })
+        .getOne();
+
+    let entity = await lock();
+    if (!entity) {
+      // Bootstrap: puede competir con otra transaccion concurrente creando el
+      // mismo holding por primera vez. ON CONFLICT DO NOTHING absorbe esa
+      // carrera; el re-select posterior, ya con lock, trae la fila
+      // (propia o de quien ganó) de forma segura.
+      await tx.manager.query(
+        `INSERT INTO "token_holdings" ("id", "user_id", "player_id", "quantity", "updated_at")
+         VALUES ($1, $2, $3, 0, now())
+         ON CONFLICT ("user_id", "player_id") DO NOTHING`,
+        [randomUUID(), userId, playerId],
+      );
+      entity = await lock();
+    }
+
+    return this.mapper.toDomain(entity!);
+  }
+
+  async saveInTransaction(tx: Transaction, holding: TokenHolding): Promise<TokenHolding> {
+    await tx.manager.getRepository(TokenHoldingEntity).save(this.mapper.toEntity(holding));
+    return holding;
+  }
 }

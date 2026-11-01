@@ -6,7 +6,7 @@ export class FixedClock implements Clock {
   constructor(private readonly instant: Date = new Date('2026-10-26T12:00:00.000Z')) {}
 
   now(): Date {
-    return new Date(this.instant.getTime());
+    return new Date(this.instant);
   }
 }
 

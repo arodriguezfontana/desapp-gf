@@ -1,12 +1,10 @@
 import { Order } from './order';
-import { OrderSide } from './order-side';
+import { OrderSide } from './enums/order-side';
 
 /**
- * Una porcion ejecutada entre la orden nueva y una candidata (020-order-matching-engine,
- * spec FR-016/FR-017). `buyOrderId`/`sellOrderId` identifican siempre la
+ * Una porcion ejecutada entre la orden nueva y una candidata. `buyOrderId`/`sellOrderId` identifican siempre la
  * orden BUY y la orden SELL de este fill puntual, sin importar cual de las
- * dos es "la nueva" — asi el Service puede escribir CREDIT/DEBIT sin volver
- * a inferir quien es quien.
+ * dos es "la nueva" — asi el Service puede escribir CREDIT/DEBIT sin volver a inferir quien es quien.
  */
 export interface Fill {
   buyOrderId: string;
@@ -24,19 +22,6 @@ export interface MatchPlan {
   fills: Fill[];
 }
 
-/**
- * Funcion pura de dominio (020-order-matching-engine, spec DD-001, FR-011 a
- * FR-015): dada una orden nueva y sus candidatas YA filtradas (mismo
- * jugador, lado opuesto, precio exacto, con cantidad pendiente) y YA
- * ordenadas FIFO por `(createdAt, id)` ascendente, consume candidatas en ese
- * orden hasta cubrir toda la cantidad pedida o agotarlas. Sin NestJS, sin
- * TypeORM, sin efectos de lado — enteramente testeable en aislamiento
- * (constitucion, Principio II/IX).
- *
- * `candidates` se asume ya validada por el caller (el llamador es quien
- * lockea y filtra); `isCompatibleWith` se usa aca solo como red de
- * seguridad defensiva, no como el filtro primario.
- */
 function buildFill(newOrder: Order, filledNew: Order, candidate: Order, fillQuantity: number): Fill {
   const isNewOrderBuy = newOrder.side === OrderSide.BUY;
   const buyOrder = isNewOrderBuy ? filledNew : candidate;
@@ -51,6 +36,18 @@ function buildFill(newOrder: Order, filledNew: Order, candidate: Order, fillQuan
   };
 }
 
+/**
+ * Funcion pura de dominio: dada una orden nueva y sus candidatas YA filtradas (mismo
+ * jugador, lado opuesto, precio cruzado —BUY >= SELL—, con cantidad
+ * pendiente) y YA ordenadas por mejor precio y luego FIFO por
+ * `(createdAt, id)` ascendente, consume candidatas en ese orden hasta cubrir
+ * toda la cantidad pedida o agotarlas. El precio de cada fill es el de la
+ * orden SELL. 
+ *
+ * `candidates` se asume ya validada por el caller (el llamador es quien
+ * lockea y filtra); `isCompatibleWith` se usa aca solo como red de
+ * seguridad defensiva, no como el filtro primario.
+ */
 export function matchOrder(newOrder: Order, candidates: Order[]): MatchPlan {
   const updatedCandidates: Order[] = [];
   const fills: Fill[] = [];

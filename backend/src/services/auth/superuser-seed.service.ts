@@ -4,10 +4,7 @@ import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import { ConfigService } from '@nestjs/config';
 
-import { PASSWORD_HASHER, USER_REPOSITORY } from '../../modules/auth/auth.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
-import { ORDER_REPOSITORY } from '../../modules/orders/orders.constants';
-import { TOKEN_HOLDING_REPOSITORY } from '../../modules/portfolio/portfolio.constants';
+import { PASSWORD_HASHER } from '../../modules/auth/auth.constants';
 
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
@@ -16,7 +13,7 @@ import { User } from '../../domain/auth/user';
 import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';
 import { Order } from '../../domain/orders/order';
-import { OrderSide } from '../../domain/orders/order-side';
+import { OrderSide } from '../../domain/orders/enums/order-side';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 
 import { UserRepository } from '../../repositories/auth/user.repository';
@@ -26,7 +23,7 @@ import { TokenHoldingRepository } from '../../repositories/portfolio/token-holdi
 
 import { QuotationService } from '../quotation/quotation.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
 const SUPERUSER_USERNAME = 'superuser';
 const INITIAL_HOLDING_QUANTITY = 100;
@@ -52,13 +49,13 @@ export class SuperuserSeedService {
   private readonly logger = new Logger(SuperuserSeedService.name);
 
   constructor(
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
-    @Inject(PLAYER_REPOSITORY) private readonly players: PlayerRepository,
-    @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
-    @Inject(TOKEN_HOLDING_REPOSITORY) private readonly holdings: TokenHoldingRepository,
+    private readonly players: PlayerRepository,
+    private readonly orders: OrderRepository,
+    private readonly holdings: TokenHoldingRepository,
     private readonly config: ConfigService,
-    private readonly strategyProvisioning: UserStrategyProvisioningService,
+    private readonly strategyProvisioning: StrategyProvisioningService,
     private readonly quotation: QuotationService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
@@ -163,15 +160,17 @@ export class SuperuserSeedService {
       return;
     }
 
-    let provisioned = 0;
-    for (const player of catalogPlayers) {
-      try {
-        const added = await this.provisionPlayer(userId, player.id);
-        if (added) provisioned++;
-      } catch (err) {
-        this.logger.warn(`Error provisionando liquidez para jugador ${player.id}: ${String(err)}`);
-      }
-    }
+    const results = await Promise.all(
+      catalogPlayers.map(async (player) => {
+        try {
+          return await this.provisionPlayer(userId, player.id);
+        } catch (err) {
+          this.logger.warn(`Error provisionando liquidez para jugador ${player.id}: ${String(err)}`);
+          return false;
+        }
+      }),
+    );
+    const provisioned = results.filter(Boolean).length;
 
     this.logger.log(`Liquidez inicial provisionada en ${provisioned} jugador(es).`);
   }

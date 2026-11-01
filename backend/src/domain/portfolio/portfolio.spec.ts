@@ -1,6 +1,4 @@
-import { Holding } from './holding';
-import { Portfolio } from './portfolio';
-import { PortfolioSummary } from './portfolio-summary';
+import { Holding, Portfolio, PortfolioSummary } from './portfolio';
 
 describe('Portfolio domain', () => {
   it('crea un portfolio vacío correctamente', () => {

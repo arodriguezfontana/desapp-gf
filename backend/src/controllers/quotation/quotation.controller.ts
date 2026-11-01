@@ -7,7 +7,6 @@ import { RecalculateResponseDto } from './dto/recalculate-response.dto';
 
 /**
  * Recálculo global de cotizaciones, disparado manualmente por el admin
- * (019-per-user-valuation-strategies, spec plan.md Backend ajustado).
  * Protegido por AdminApiKeyGuard; @Public() omite el JwtAuthGuard global.
  */
 @ApiTags('quotes')

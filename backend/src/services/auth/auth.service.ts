@@ -6,7 +6,6 @@ import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
 import {
   PASSWORD_HASHER,
   TOKEN_ISSUER,
-  USER_REPOSITORY,
 } from '../../modules/auth/auth.constants';
 import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { TokenIssuer } from '../../adapters/auth/token-issuer';
@@ -17,15 +16,15 @@ import { User } from '../../domain/auth/user';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { InvalidCredentialsError } from '../../domain/auth/errors/invalid-credentials.error';
 import { UserRepository } from '../../repositories/auth/user.repository';
-import { UserStrategyProvisioningService } from '../quotation/user-strategy-provisioning.service';
+import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
     @Inject(TOKEN_ISSUER) private readonly tokens: TokenIssuer,
-    private readonly strategyProvisioning: UserStrategyProvisioningService,
+    private readonly strategyProvisioning: StrategyProvisioningService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
   ) {}

@@ -1,25 +1,51 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Email } from '../../domain/auth/email';
+import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { User } from '../../domain/auth/user';
+import { isPostgresErrorCode } from '../../shared/errors/postgres-error';
+import { UserEntity } from './entities/user.entity';
+import { UserMapper } from './mappers/user.mapper';
 
-/**
- * Puerto de dominio para la persistencia de usuarios. Recibe y devuelve objetos
- * de dominio; el Service nunca ve la entidad de TypeORM. Token: USER_REPOSITORY.
- */
-export interface UserRepository {
-  findByEmail(email: Email): Promise<User | null>;
-  existsByEmail(email: Email): Promise<boolean>;
-  /**
-   * Persiste un usuario nuevo. Si el email ya existe (incluso por una carrera
-   * concurrente que evadio existsByEmail), lanza EmailAlreadyInUseError.
-   */
-  save(user: User): Promise<void>;
-  findById(id: string): Promise<User | null>;
+const PG_UNIQUE_VIOLATION = '23505';
 
-  /**
-   * Usado por `SuperuserSeedService` para su chequeo de idempotencia
-   * (020-order-matching-engine, research.md D3): como `username` no es
-   * unico, la idempotencia del seed se verifica por este campo, no por
-   * email.
-   */
-  existsByUsername(username: string): Promise<boolean>;
+@Injectable()
+export class UserRepository {
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly repo: Repository<UserEntity>,
+    private readonly mapper: UserMapper,
+  ) {}
+
+  async findByEmail(email: Email): Promise<User | null> {
+    const entity = await this.repo.findOne({
+      where: { email: email.toString() },
+    });
+    return entity ? this.mapper.toDomain(entity) : null;
+  }
+
+  async existsByEmail(email: Email): Promise<boolean> {
+    return this.repo.existsBy({ email: email.toString() });
+  }
+
+  async save(user: User): Promise<void> {
+    try {
+      await this.repo.insert(this.mapper.toEntity(user));
+    } catch (error) {
+      if (isPostgresErrorCode(error, PG_UNIQUE_VIOLATION)) {
+        throw new EmailAlreadyInUseError();
+      }
+      throw error;
+    }
+  }
+
+  async findById(id: string): Promise<User | null> {
+    const entity = await this.repo.findOne({ where: { id } });
+    return entity ? this.mapper.toDomain(entity) : null;
+  }
+
+  async existsByUsername(username: string): Promise<boolean> {
+    return this.repo.existsBy({ username });
+  }
 }

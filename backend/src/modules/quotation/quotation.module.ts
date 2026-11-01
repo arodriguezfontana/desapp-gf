@@ -10,14 +10,11 @@ import { ValuationStrategyEntity } from '../../repositories/quotation/entities/v
 import { PlayerQuoteEntity } from '../../repositories/quotation/entities/player-quote.entity';
 import { ValuationStrategyMapper } from '../../repositories/quotation/valuation-strategy.mapper';
 import { PlayerQuoteMapper } from '../../repositories/quotation/player-quote.mapper';
-import { TypeOrmValuationStrategyRepository } from '../../repositories/quotation/typeorm-valuation-strategy.repository';
-import { TypeOrmPlayerQuoteRepository } from '../../repositories/quotation/typeorm-player-quote.repository';
+import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
 import { QuotationService } from '../../services/quotation/quotation.service';
-import { UserStrategyProvisioningService } from '../../services/quotation/user-strategy-provisioning.service';
-import {
-  VALUATION_STRATEGY_REPOSITORY,
-  PLAYER_QUOTE_REPOSITORY,
-} from './quotation.constants';
+import { StrategyService } from '../../services/quotation/strategy.service';
+import { StrategyProvisioningService } from '../../services/quotation/strategy-provisioning.service';
 
 /**
  * Estrategias de valuación propias por usuario y recálculo de cotizaciones
@@ -37,17 +34,18 @@ import {
   controllers: [QuotationController, UserStrategyController],
   providers: [
     QuotationService,
-    UserStrategyProvisioningService,
+    StrategyService,
+    StrategyProvisioningService,
     ValuationStrategyMapper,
     PlayerQuoteMapper,
-    { provide: VALUATION_STRATEGY_REPOSITORY, useClass: TypeOrmValuationStrategyRepository },
-    { provide: PLAYER_QUOTE_REPOSITORY, useClass: TypeOrmPlayerQuoteRepository },
+    ValuationStrategyRepository,
+    PlayerQuoteRepository,
   ],
   exports: [
     QuotationService,
-    UserStrategyProvisioningService,
-    PLAYER_QUOTE_REPOSITORY,
-    VALUATION_STRATEGY_REPOSITORY,
+    StrategyProvisioningService,
+    PlayerQuoteRepository,
+    ValuationStrategyRepository,
   ],
 })
 export class QuotationModule {}

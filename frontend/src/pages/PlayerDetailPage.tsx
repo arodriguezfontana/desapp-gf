@@ -6,6 +6,14 @@ import { useCreateOrder } from '../hooks/useCreateOrder';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { useOrderBook } from '../hooks/useOrderBook';
 import { getPositionLabel, type Player, type PlayerQuote } from '../types/catalog.types';
+import {
+  formatStat,
+  getPositionStats,
+  getSecondaryStats,
+  getStatValue,
+  STAT_LABELS,
+  type StatKey,
+} from '../utils/positionStats';
 import type { PlayerValuationResponseDto } from '../types/userStrategy.types';
 import type { OrderSide } from '../types/orders.types';
 import { QuoteHistoryChart } from '../components/QuoteHistoryChart';
@@ -34,6 +42,24 @@ const POSITION_SILHOUETTE: Record<string, string> = {
 const getSilhouette = (pos: string) =>
   POSITION_SILHOUETTE[pos] ?? '/assets/player_silhouette_mf.svg';
 
+// ── Colores de las estadísticas en la ficha ─────────────────────────────────
+// Los 3 bloques destacados llevan siempre verde, amarillo y violeta, en ese orden,
+// sea cual sea la posición (el color lo da el lugar del bloque, no la estadística).
+const MAIN_STAT_COLORS = ['#2dd4bf', '#b79753', '#c084fc'];
+
+// Bloques secundarios: color propio de cada estadística; las que no figuran usan el acento de la posición.
+const SECONDARY_STAT_COLORS: Partial<Record<StatKey, string>> = {
+  goals: '#2dd4bf',
+  assists: '#b79753',
+  dribbles: '#c084fc',
+  totalTackles: '#a78bfa',
+  shots: '#2dd4bf',
+  passesCompleted: '#a78bfa',
+  interceptions: '#a855f7',
+  yellowCards: '#facc15',
+  redCards: '#f87171',
+};
+
 // ── Componente de métrica individual ────────────────────────────────────────
 const StatBlock: React.FC<{
   label: string;
@@ -55,7 +81,7 @@ const StatBlock: React.FC<{
       className={`font-black tabular-nums leading-none ${size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'}`}
       style={{ color: highlight ? color : '#e2e8f0' }}
     >
-      {value ?? <span className="text-white/20 text-sm">—</span>}
+      {value == null ? <span className="text-white/20 text-sm">—</span> : formatStat(value)}
     </span>
     <span
       className={`font-black uppercase tracking-widest mt-1.5 line-clamp-1 ${
@@ -66,29 +92,6 @@ const StatBlock: React.FC<{
     </span>
   </div>
 );
-
-// ── Card de métrica de rendimiento ──────────────────────────────────────────
-const RatingCard: React.FC<{ label: string; value: number | null; max?: number; color: string }> = ({
-  label, value, max = 10, color,
-}) => {
-  const pct = value != null ? Math.min(100, (value / max) * 100) : 0;
-  return (
-    <div className="rounded-xl p-3 sm:p-3.5 border border-white/8 bg-black/30 flex flex-col justify-between transition-all hover:border-white/15">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-[10px] font-black uppercase tracking-wider text-white/70">{label}</span>
-        <span className="text-base sm:text-lg font-black tabular-nums" style={{ color }}>
-          {value != null ? value.toFixed(1) : '—'}
-        </span>
-      </div>
-      <div className="h-2 bg-white/8 rounded-full overflow-hidden w-full">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}aa)` }}
-        />
-      </div>
-    </div>
-  );
-};
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export const PlayerDetailPage: React.FC = () => {
@@ -361,42 +364,38 @@ export const PlayerDetailPage: React.FC = () => {
           {/* ════════ COLUMNA DERECHA: DASHBOARD DE ESTADÍSTICAS & EVOLUCIÓN ════════ */}
           <div className="lg:col-span-7 flex flex-col justify-between p-6 sm:p-8 space-y-6 sm:space-y-8" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
 
-            {/* 1. Métricas de Rendimiento */}
-            <div>
-              <h2 className="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: `${accent.text}90` }}>
-                <span className="w-4 h-px" style={{ backgroundColor: `${accent.from}60` }} />{' '}
-                Métricas de rendimiento{' '}
-                <span className="flex-1 h-px bg-white/10" />
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <RatingCard label="Rating" value={player.rating} max={10} color={accent.text} />
-                <RatingCard label="Pases compl." value={player.passesCompleted} max={100} color="#a78bfa" />
-                <RatingCard label="Remates" value={player.shots} max={6} color="#2dd4bf" />
-                <RatingCard label="Intercepciones" value={player.interceptions} max={4} color="#a855f7" />
-              </div>
-            </div>
-
-            {/* 2. Estadísticas de Temporada */}
+            {/* Estadísticas del jugador */}
             <div className="space-y-3">
               <h2 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white/40">
                 <span className="w-4 h-px bg-white/20" />{' '}
-                Estadísticas de temporada{' '}
+                Estadísticas del jugador{' '}
                 <span className="flex-1 h-px bg-white/10" />
               </h2>
 
-              {/* Tridente Ofensivo: Goles (#2dd4bf), Asistencias (#b79753), Pases Clave (accent.text) */}
+              {/* Las 3 estadísticas más significativas de la posición: las mismas que la card del catálogo */}
               <div className="grid grid-cols-3 gap-3">
-                <StatBlock label="Goles" value={player.goals} color="#2dd4bf" highlight size="lg" />
-                <StatBlock label="Asistencias" value={player.assists} color="#b79753" highlight size="lg" />
-                <StatBlock label="Pases clave" value={player.keyPasses} color={accent.text} highlight size="lg" />
+                {getPositionStats(player.position).map((key, index) => (
+                  <StatBlock
+                    key={key}
+                    label={STAT_LABELS[key].full}
+                    value={getStatValue(player, key)}
+                    color={MAIN_STAT_COLORS[index]}
+                    highlight
+                    size="lg"
+                  />
+                ))}
               </div>
 
-              {/* Métricas complementarias: Regates, Entradas, Amarillas, Rojas */}
-              <div className="grid grid-cols-4 gap-2.5 sm:gap-3">
-                <StatBlock label="Regates" value={player.dribbles} color="#c084fc" />
-                <StatBlock label="Entradas" value={player.totalTackles} color="#a78bfa" />
-                <StatBlock label="Amarillas" value={player.yellowCards} color="#facc15" />
-                <StatBlock label="Rojas" value={player.redCards} color="#f87171" />
+              {/* Resto de las estadísticas de temporada */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                {getSecondaryStats(player.position).map((key) => (
+                  <StatBlock
+                    key={key}
+                    label={STAT_LABELS[key].full}
+                    value={getStatValue(player, key)}
+                    color={SECONDARY_STAT_COLORS[key] ?? accent.text}
+                  />
+                ))}
               </div>
             </div>
 

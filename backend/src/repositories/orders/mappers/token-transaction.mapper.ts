@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TokenTransaction } from '../../../domain/orders/token-transaction';
-import { TokenTransactionType } from '../../../domain/orders/token-transaction-type';
+import { TokenTransactionType } from '../../../domain/orders/enums/token-transaction-type';
 import { TokenTransactionEntity } from '../entities/token-transaction.entity';
 
 /** Conversion dominio <-> persistencia. Sin logica de negocio. */

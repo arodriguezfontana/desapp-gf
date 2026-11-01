@@ -1,1 +1,0 @@
-export const PLAYER_REPOSITORY = Symbol('PLAYER_REPOSITORY');

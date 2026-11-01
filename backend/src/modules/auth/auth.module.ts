@@ -9,7 +9,6 @@ import {
   JWT_EXPIRES_IN,
   PASSWORD_HASHER,
   TOKEN_ISSUER,
-  USER_REPOSITORY,
 } from './auth.constants';
 import { AuthController } from '../../controllers/auth/auth.controller';
 import { AuthService } from '../../services/auth/auth.service';
@@ -17,7 +16,7 @@ import { AdminSeedService } from '../../services/auth/admin-seed.service';
 import { SuperuserSeedService } from '../../services/auth/superuser-seed.service';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
-import { TypeOrmUserRepository } from '../../repositories/auth/typeorm-user.repository';
+import { UserRepository } from '../../repositories/auth/user.repository';
 import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher';
 import { JwtTokenIssuer } from '../../adapters/auth/jwt-token-issuer';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
@@ -42,7 +41,7 @@ import { PortfolioModule } from '../portfolio/portfolio.module';
     // (019-per-user-valuation-strategies, research.md D3).
     forwardRef(() => QuotationModule),
     // SuperuserSeedService (020-order-matching-engine, research.md D3) necesita
-    // PLAYER_REPOSITORY, ORDER_REPOSITORY y TOKEN_HOLDING_REPOSITORY.
+    // PlayerRepository, OrderRepository y TokenHoldingRepository.
     forwardRef(() => PlayerModule),
     forwardRef(() => OrdersModule),
     forwardRef(() => PortfolioModule),
@@ -53,12 +52,12 @@ import { PortfolioModule } from '../portfolio/portfolio.module';
     AdminSeedService,
     SuperuserSeedService,
     UserMapper,
-    { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
+    UserRepository,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: TOKEN_ISSUER, useClass: JwtTokenIssuer },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   // AuthService se exporta para que ApiKeyModule resuelva el User emisor (spec 008, R2).
-  exports: [AuthService, USER_REPOSITORY, PASSWORD_HASHER, TOKEN_ISSUER],
+  exports: [AuthService, UserRepository, PASSWORD_HASHER, TOKEN_ISSUER],
 })
 export class AuthModule {}

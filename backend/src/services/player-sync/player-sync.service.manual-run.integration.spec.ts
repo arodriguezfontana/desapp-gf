@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
 import { WHOSCORED_ADAPTER } from '../../modules/player-sync/player-sync.constants';
-import { PLAYER_REPOSITORY } from '../../modules/player/player.constants';
 import {
   WhoScoredAdapter,
   WhoScoredLeagueTeams,
@@ -15,7 +14,7 @@ import {
 import { League } from '../../domain/player/enums/league';
 import { PlayerEntity } from '../../repositories/player/entities/player.entity';
 import { PlayerMapper } from '../../repositories/player/mappers/player.mapper';
-import { TypeOrmPlayerRepository } from '../../repositories/player/typeorm-player.repository';
+import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerSyncService } from './player-sync.service';
 
 class FakeWhoScoredAdapter implements WhoScoredAdapter {
@@ -53,7 +52,7 @@ describe('PlayerSyncService — startManualRun (integración, spec 009)', () => 
       ],
       providers: [
         PlayerMapper,
-        { provide: PLAYER_REPOSITORY, useClass: TypeOrmPlayerRepository },
+        PlayerRepository,
         { provide: WHOSCORED_ADAPTER, useValue: fakeAdapter },
         PlayerSyncService,
       ],

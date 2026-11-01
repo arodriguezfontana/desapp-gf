@@ -7,11 +7,11 @@ import { DataSource, IsNull } from 'typeorm';
 
 import { DatabaseModule } from '../../database/database.module';
 import { Sha256TokenHasher } from '../../adapters/api-key/sha256-token-hasher';
-import { API_KEY_REPOSITORY, TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
+import { TOKEN_HASHER } from '../../modules/api-key/api-key.constants';
 import { ApiKeyEntity } from '../../repositories/api-key/entities/api-key.entity';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { ApiKeyMapper } from '../../repositories/api-key/mappers/api-key.mapper';
-import { TypeOrmApiKeyRepository } from '../../repositories/api-key/typeorm-api-key.repository';
+import { ApiKeyRepository } from '../../repositories/api-key/api-key.repository';
 import { Email } from '../../domain/auth/email';
 import { User } from '../../domain/auth/user';
 import { UserRole } from '../../domain/auth/user-role';
@@ -36,7 +36,7 @@ describe('ApiKeyService.issueApiKey (integración contra Postgres real)', () => 
       providers: [
         ApiKeyService,
         ApiKeyMapper,
-        { provide: API_KEY_REPOSITORY, useClass: TypeOrmApiKeyRepository },
+        ApiKeyRepository,
         { provide: TOKEN_HASHER, useClass: Sha256TokenHasher },
       ],
     }).compile();

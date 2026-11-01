@@ -17,12 +17,12 @@ describe('FootballDataSyncService — manejo de errores del @Cron', () => {
       upsertMatches: jest.fn().mockResolvedValue(undefined),
       findByLeagueCode: jest.fn(),
       findByExternalId: jest.fn(),
-    };
+    } as unknown as typeof matchRepo;
     const standingRepo: jest.Mocked<StandingRepository> = {
       upsertStandings: jest.fn().mockResolvedValue(undefined),
       findByLeagueCode: jest.fn(),
       findByTeamAndLeague: jest.fn(),
-    };
+    } as unknown as typeof standingRepo;
     service = new FootballDataSyncService(adapter, matchRepo, standingRepo);
     service.setRequestDelay(0);
     jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
