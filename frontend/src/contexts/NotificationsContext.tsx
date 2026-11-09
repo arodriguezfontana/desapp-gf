@@ -9,9 +9,26 @@ interface NotificationsProviderProps {
 }
 
 /**
+ * Combina el listado del servidor con lo que ya está en pantalla sin repetir
+ * ids: el listado manda (incluye el estado de lectura) y se conservan, al
+ * principio, las que llegaron por push y todavía no figuran en él.
+ */
+function mergeById(
+  fromServer: NotificationResponseDto[],
+  current: NotificationResponseDto[],
+): NotificationResponseDto[] {
+  const knownIds = new Set(fromServer.map((n) => n.id));
+  return [...current.filter((n) => !knownIds.has(n.id)), ...fromServer];
+}
+
+/**
  * Carga el listado inicial de notificaciones y se suscribe al stream SSE
  * mientras el usuario está autenticado (025-player-price-alerts, spec
  * FR-017, FR-018). Se desmonta la conexión SSE al cerrar sesión.
+ *
+ * Las notificaciones llegan por push, sin polling ni recarga. Como el stream
+ * no reenvía lo que pasó mientras estuvo desconectado, cada vez que se
+ * (re)establece la conexión se vuelve a pedir el listado y se fusiona.
  */
 export function NotificationsProvider({ children }: NotificationsProviderProps) {
   const { isAuthenticated } = useAuth();
@@ -28,15 +45,20 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
     }
 
     let isMounted = true;
-    const load = async () => {
-      setIsLoading(true);
+    const sync = async () => {
       try {
         const result = await notificationsService.listOwn();
         if (isMounted) {
-          setNotifications(result);
+          setNotifications((prev) => mergeById(result, prev));
         }
       } catch {
-        /* la bandeja queda vacía; el usuario puede reintentar recargando */
+        /* se conserva lo que ya hay en pantalla; el próximo (re)connect del stream reintenta */
+      }
+    };
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        await sync();
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -48,9 +70,12 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
     const stream = notificationsService.openStream();
     streamRef.current = stream;
     if (stream) {
+      stream.onopen = () => {
+        void sync();
+      };
       stream.onmessage = (event: MessageEvent) => {
         const notification = JSON.parse(event.data) as NotificationResponseDto;
-        setNotifications((prev) => [notification, ...prev]);
+        setNotifications((prev) => (prev.some((n) => n.id === notification.id) ? prev : [notification, ...prev]));
       };
     }
 

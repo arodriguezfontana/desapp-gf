@@ -107,4 +107,69 @@ describe('useNotifications', () => {
 
     expect(result.current.notifications[0]).toEqual(pushed);
   });
+
+  it('no repite una notificación que llega por push y también figura en el listado', async () => {
+    vi.spyOn(notificationsService, 'listOwn').mockResolvedValueOnce([mockNotification]);
+    const fakeStream = { onopen: null, onmessage: null as ((e: MessageEvent) => void) | null, close: vi.fn() };
+    vi.spyOn(notificationsService, 'openStream').mockReturnValueOnce(
+      fakeStream as unknown as EventSource,
+    );
+
+    const { result } = renderHook(() => useNotifications(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      fakeStream.onmessage?.({ data: JSON.stringify(mockNotification) } as MessageEvent);
+    });
+
+    expect(result.current.notifications).toEqual([mockNotification]);
+  });
+
+  it('no pierde una notificación pusheada si el listado inicial llega después y no la incluye', async () => {
+    let resolveList: (list: NotificationResponseDto[]) => void = () => undefined;
+    vi.spyOn(notificationsService, 'listOwn').mockReturnValueOnce(
+      new Promise<NotificationResponseDto[]>((resolve) => {
+        resolveList = resolve;
+      }),
+    );
+    const fakeStream = { onopen: null, onmessage: null as ((e: MessageEvent) => void) | null, close: vi.fn() };
+    vi.spyOn(notificationsService, 'openStream').mockReturnValueOnce(
+      fakeStream as unknown as EventSource,
+    );
+
+    const { result } = renderHook(() => useNotifications(), { wrapper });
+
+    const pushed: NotificationResponseDto = { ...mockNotification, id: 'notif-push' };
+    act(() => {
+      fakeStream.onmessage?.({ data: JSON.stringify(pushed) } as MessageEvent);
+    });
+    await act(async () => {
+      resolveList([mockNotification]);
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.notifications.map((n) => n.id)).toEqual(['notif-push', 'notif-1']);
+  });
+
+  it('al reconectarse el stream vuelve a pedir el listado y muestra lo que llegó mientras estuvo caído', async () => {
+    const missed: NotificationResponseDto = { ...mockNotification, id: 'notif-missed' };
+    const listSpy = vi
+      .spyOn(notificationsService, 'listOwn')
+      .mockResolvedValueOnce([mockNotification])
+      .mockResolvedValueOnce([missed, mockNotification]);
+    const fakeStream = { onopen: null as (() => void) | null, onmessage: null, close: vi.fn() };
+    vi.spyOn(notificationsService, 'openStream').mockReturnValueOnce(
+      fakeStream as unknown as EventSource,
+    );
+
+    const { result } = renderHook(() => useNotifications(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      fakeStream.onopen?.();
+    });
+
+    expect(listSpy).toHaveBeenCalledTimes(2);
+    expect(result.current.notifications.map((n) => n.id)).toEqual(['notif-missed', 'notif-1']);
+  });
 });
