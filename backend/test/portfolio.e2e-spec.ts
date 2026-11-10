@@ -73,6 +73,8 @@ describe('GET /users/:id/portfolio (e2e)', () => {
       orderId,
       counterpartOrderId,
       createdAt: new Date(),
+      balanceBefore: 0,
+      balanceAfter: quantity,
     });
   };
 

@@ -49,6 +49,7 @@ import {
   MIN_REFERENCE_PRICE,
   QUOTE_HISTORY_STEPS,
 } from './simulation-plans';
+import { buildSimulationSnapshots, SimulatedMovement } from './simulation-balances';
 
 @Injectable()
 export class MarketSimulationService {
@@ -171,6 +172,11 @@ export class MarketSimulationService {
     const adminHoldingsQty = new Map<string, number>();
     const ordersToSave: Order[] = [];
     const transactionsToSave: TokenTransaction[] = [];
+    // Movimientos sembrados (admin y bots) para calcular su saldo antes/despues (spec 030): el admin
+    // parte de 0 y cada bot de su tenencia inicial. La tenencia final del bot se fija abajo con
+    // `withQuantity` y no se reconcilia con estos asientos: son datos de prueba.
+    const movements: SimulatedMovement[] = [];
+    const draftTransactions: Array<Omit<Parameters<typeof TokenTransaction.create>[0], 'balanceBefore' | 'balanceAfter'>> = [];
     let transactionsCount = 0;
 
     for (const plan of txPlans) {
@@ -185,14 +191,24 @@ export class MarketSimulationService {
       ordersToSave.push(Order.seed({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
       ordersToSave.push(Order.seed({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
 
-      transactionsToSave.push(TokenTransaction.create({ id: this.ids.generate(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt }));
+      draftTransactions.push({ id: this.ids.generate(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt });
       transactionsCount++;
 
       const botTxType = plan.type === TokenTransactionType.CREDIT ? TokenTransactionType.DEBIT : TokenTransactionType.CREDIT;
-      transactionsToSave.push(TokenTransaction.create({ id: this.ids.generate(), userId: bot.id, type: botTxType, playerId: player.id, quantity: plan.quantity, price, orderId: counterpartOrderId, counterpartOrderId: orderId, createdAt }));
+      draftTransactions.push({ id: this.ids.generate(), userId: bot.id, type: botTxType, playerId: player.id, quantity: plan.quantity, price, orderId: counterpartOrderId, counterpartOrderId: orderId, createdAt });
 
       const current = adminHoldingsQty.get(player.id) ?? 0;
       adminHoldingsQty.set(player.id, Math.max(0, plan.type === TokenTransactionType.CREDIT ? current + plan.quantity : current - plan.quantity));
+    }
+
+    for (const draft of draftTransactions) {
+      movements.push({ id: draft.id, userId: draft.userId, playerId: draft.playerId, type: draft.type, quantity: draft.quantity, createdAt: draft.createdAt });
+    }
+    const botIds = new Set(bots.map((bot) => bot.id));
+    const snapshots = buildSimulationSnapshots(movements, (userId) => (botIds.has(userId) ? BOT_INITIAL_HOLDING : 0));
+    for (const draft of draftTransactions) {
+      const snapshot = snapshots.get(draft.id)!;
+      transactionsToSave.push(TokenTransaction.create({ ...draft, balanceBefore: snapshot.before, balanceAfter: snapshot.after }));
     }
 
     // Las transacciones referencian a las órdenes (FK): primero las órdenes.

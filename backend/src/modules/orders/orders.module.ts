@@ -42,6 +42,6 @@ import { OrdersService } from '../../services/orders/orders.service';
     TokenTransactionRepository,
     TransactionManager,
   ],
-  exports: [OrdersService, OrderRepository, TokenTransactionRepository],
+  exports: [OrdersService, OrderRepository, TokenTransactionRepository, TransactionManager],
 })
 export class OrdersModule {}

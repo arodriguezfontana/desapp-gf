@@ -21,7 +21,8 @@
     "test:e2e:cov": "jest --runInBand --coverage --config ./test/jest-e2e.json",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/player-catalog-data-source.ts",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/player-catalog-data-source.ts",
-    "seed:simulation": "ts-node scripts/simulate-market.ts"
+    "seed:simulation": "ts-node scripts/simulate-market.ts",
+    "db:backfill-token-balances": "ts-node scripts/backfill-token-balances.ts"
   },
   "jest": {
     "coverageDirectory": "coverage",

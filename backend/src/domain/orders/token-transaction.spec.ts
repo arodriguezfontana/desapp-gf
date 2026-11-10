@@ -12,6 +12,8 @@ describe('TokenTransaction.pairFromFill', () => {
     price: 12.5,
   };
   const createdAt = new Date('2026-10-26T10:00:00Z');
+  // Saldo antes/después de cada parte (obligatorio desde 030-token-balance-snapshot, paso 2).
+  const snapshot = { buyer: { before: 0, after: 3 }, seller: { before: 3, after: 0 } };
 
   const sequentialIds = () => {
     let n = 0;
@@ -19,7 +21,7 @@ describe('TokenTransaction.pairFromFill', () => {
   };
 
   it('genera un CREDIT para el comprador y un DEBIT para el vendedor', () => {
-    const [credit, debit] = TokenTransaction.pairFromFill(fill, 'player-1', createdAt, sequentialIds());
+    const [credit, debit] = TokenTransaction.pairFromFill(fill, 'player-1', createdAt, sequentialIds(), snapshot);
 
     expect(credit.type).toBe(TokenTransactionType.CREDIT);
     expect(credit.userId).toBe('buyer');
@@ -33,7 +35,7 @@ describe('TokenTransaction.pairFromFill', () => {
   });
 
   it('ambos asientos comparten jugador, cantidad, precio y timestamp', () => {
-    const entries = TokenTransaction.pairFromFill(fill, 'player-1', createdAt, sequentialIds());
+    const entries = TokenTransaction.pairFromFill(fill, 'player-1', createdAt, sequentialIds(), snapshot);
 
     for (const entry of entries) {
       expect(entry.playerId).toBe('player-1');
@@ -44,7 +46,7 @@ describe('TokenTransaction.pairFromFill', () => {
   });
 
   it('usa un id distinto para cada asiento', () => {
-    const [credit, debit] = TokenTransaction.pairFromFill(fill, 'player-1', createdAt, sequentialIds());
+    const [credit, debit] = TokenTransaction.pairFromFill(fill, 'player-1', createdAt, sequentialIds(), snapshot);
     expect(credit.id).toBe('id-1');
     expect(debit.id).toBe('id-2');
   });

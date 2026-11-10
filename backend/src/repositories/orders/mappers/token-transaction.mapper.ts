@@ -17,6 +17,8 @@ export class TokenTransactionMapper {
       orderId: entity.orderId,
       counterpartOrderId: entity.counterpartOrderId,
       createdAt: entity.createdAt,
+      balanceBefore: entity.balanceBefore,
+      balanceAfter: entity.balanceAfter,
     });
   }
 
@@ -31,6 +33,8 @@ export class TokenTransactionMapper {
     entity.orderId = transaction.orderId;
     entity.counterpartOrderId = transaction.counterpartOrderId;
     entity.createdAt = transaction.createdAt;
+    entity.balanceBefore = transaction.balanceBefore;
+    entity.balanceAfter = transaction.balanceAfter;
     return entity;
   }
 }

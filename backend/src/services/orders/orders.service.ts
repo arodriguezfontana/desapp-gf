@@ -9,7 +9,7 @@ import { OrderBook } from '../../domain/orders/order-book';
 import { oppositeSide, OrderSide } from '../../domain/orders/enums/order-side';
 import { TokenTransaction } from '../../domain/orders/token-transaction';
 import { matchOrder } from '../../domain/orders/match-order';
-import { involvedUserIdsInLockOrder, settleFills } from '../../domain/orders/settle-fills';
+import { involvedUserIdsInLockOrder, settleFillsAudited } from '../../domain/orders/settle-fills';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
@@ -114,7 +114,9 @@ export class OrdersService {
           async (uid) => [uid, await this.holdings.lockForUpdate(tx, uid, playerId)] as const,
         ),
       );
-      const settledHoldings = settleFills(matchPlan.fills, new Map(lockedEntries));
+      // Los saldos antes/despues de cada movimiento salen de las mismas operaciones que cambian
+      // la tenencia y se escriben en esta misma transaccion (spec 030, FR-002).
+      const { holdings: settledHoldings, snapshots } = settleFillsAudited(matchPlan.fills, new Map(lockedEntries));
 
       await Promise.all(
         Array.from(settledHoldings.values()).map((h) => this.holdings.saveInTransaction(tx, h)),
@@ -127,12 +129,12 @@ export class OrdersService {
 
       const executedAt = this.clock.now();
       await Promise.all(
-        matchPlan.fills.flatMap((fill) => {
+        matchPlan.fills.flatMap((fill, index) => {
           this.logger.log(
             `Fill ejecutado: BUY ${fill.buyOrderId} x SELL ${fill.sellOrderId}, cantidad ${fill.quantity}, precio ${fill.price}`,
           );
-          return TokenTransaction.pairFromFill(fill, playerId, executedAt, () => this.ids.generate()).map((entry) =>
-            this.tokenTransactions.saveInTransaction(tx, entry),
+          return TokenTransaction.pairFromFill(fill, playerId, executedAt, () => this.ids.generate(), snapshots[index]).map(
+            (entry) => this.tokenTransactions.saveInTransaction(tx, entry),
           );
         }),
       );

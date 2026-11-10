@@ -39,8 +39,11 @@ export class TokenTransactionResponseDto {
     this.playerName = tx.playerName;
     this.quantity = tx.quantity;
     this.price = tx.price.toFixed(2);
-    this.orderId = tx.orderId;
-    this.counterpartOrderId = tx.counterpartOrderId;
+    // El historial sólo lee asientos de compraventa (con orden y contraparte): el asiento de
+    // emisión inicial (ids nulos) se excluye en TokenTransactionRepository.findByUserId, de modo
+    // que el contrato de la respuesta (030-token-balance-snapshot, FR-017) no cambia.
+    this.orderId = tx.orderId as string;
+    this.counterpartOrderId = tx.counterpartOrderId as string;
     this.createdAt = tx.createdAt.toISOString();
   }
 

@@ -10,23 +10,24 @@ import { PasswordHasher } from '../../adapters/auth/password-hasher';
 import { Email } from '../../domain/auth/email';
 import { EmailAlreadyInUseError } from '../../domain/auth/errors/email-already-in-use.error';
 import { User } from '../../domain/auth/user';
+import { SUPERUSER_USERNAME } from '../../domain/auth/superuser';
 import { parseSeedEmail, parseSeedPassword } from './seed-credentials.helper';
 import { UserRole } from '../../domain/auth/user-role';
 import { Order } from '../../domain/orders/order';
 import { OrderSide } from '../../domain/orders/enums/order-side';
-import { TokenHolding } from '../../domain/portfolio/token-holding';
+import { issueInitialEmission, INITIAL_EMISSION_QUANTITY } from '../../domain/orders/token-emission';
 
 import { UserRepository } from '../../repositories/auth/user.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { OrderRepository } from '../../repositories/orders/order.repository';
 import { TokenHoldingRepository } from '../../repositories/portfolio/token-holding.repository';
+import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
+import { TransactionManager } from '../../repositories/shared/transaction-manager';
 
 import { QuotationService } from '../quotation/quotation.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 
-const SUPERUSER_USERNAME = 'superuser';
-const INITIAL_HOLDING_QUANTITY = 100;
 
 /**
  * Crea al superusuario al arrancar, a partir de `SUPERUSER_EMAIL` y
@@ -54,6 +55,8 @@ export class SuperuserSeedService {
     private readonly players: PlayerRepository,
     private readonly orders: OrderRepository,
     private readonly holdings: TokenHoldingRepository,
+    private readonly tokenTransactions: TokenTransactionRepository,
+    private readonly transactionManager: TransactionManager,
     private readonly config: ConfigService,
     private readonly strategyProvisioning: StrategyProvisioningService,
     private readonly quotation: QuotationService,
@@ -132,20 +135,33 @@ export class SuperuserSeedService {
     const existing = await this.holdings.findByUserAndPlayer(userId, playerId);
     if (existing && existing.quantity > 0) return false;
 
-    const holding = TokenHolding.createEmpty(userId, playerId).credit(INITIAL_HOLDING_QUANTITY);
-    await this.holdings.save(holding);
-
+    // El precio se resuelve ANTES de abrir la transaccion: valuar no escribe y no debe retenerla.
     const price = await this.resolvePrice(userId, playerId);
+    const createdAt = this.clock.now();
+    const { holding, entry } = issueInitialEmission({
+      userId,
+      playerId,
+      price,
+      createdAt,
+      newId: () => this.ids.generate(),
+    });
     const order = Order.create({
       id: this.ids.generate(),
       userId,
       playerId,
       side: OrderSide.SELL,
-      quantity: INITIAL_HOLDING_QUANTITY,
+      quantity: INITIAL_EMISSION_QUANTITY,
       price,
-      createdAt: this.clock.now(),
+      createdAt,
     });
-    await this.orders.save(order);
+
+    // La tenencia, su asiento de auditoria y la orden de venta inicial son una unidad atomica
+    // (Principio VI, spec 030 FR-006): o quedan los tres o no queda ninguno.
+    await this.transactionManager.run(async (tx) => {
+      await this.holdings.saveInTransaction(tx, holding);
+      await this.orders.saveInTransaction(tx, order);
+      await this.tokenTransactions.saveInTransaction(tx, entry);
+    });
     return true;
   }
 
