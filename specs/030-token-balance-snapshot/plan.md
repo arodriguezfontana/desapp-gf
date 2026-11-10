@@ -121,7 +121,7 @@ backend/
 backend/src/domain/portfolio/token-holding-snapshot.spec.ts
 backend/src/domain/orders/{balance-chain,settle-fills-audited,token-emission,token-transaction-snapshot}.spec.ts
 backend/src/database/backfill/backfill-token-balances.integration.spec.ts
-backend/src/database/token-balance-snapshot-migration.integration.spec.ts
+backend/src/database/migration-specs/token-balance-snapshot-migration.integration.spec.ts
 
 # PASO 2 (gateado, se entrega aparte cuando el informe del backfill esté limpio en cada entorno)
 backend/src/database/migrations/1793100000001-EnforceTokenTransactionBalances.ts      # precondición + SET NOT NULL

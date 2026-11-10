@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TokenTransaction } from '../../../domain/orders/token-transaction';
 import { TokenTransactionType } from '../../../domain/orders/enums/token-transaction-type';
-import { WithPlayerName } from '../../../shared/with-player-name';
+import { WithPlayerName } from '../../../shared/presentation/with-player-name';
 
 /** Respuesta de GET /orders/history (historial de operaciones del usuario autenticado). */
 export class TokenTransactionResponseDto {

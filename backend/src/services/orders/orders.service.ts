@@ -24,7 +24,7 @@ import { TransactionManager } from '../../repositories/shared/transaction-manage
 
 import { QuotationService } from '../quotation/quotation.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
-import { WithPlayerName, withPlayerName } from '../../shared/with-player-name';
+import { WithPlayerName, withPlayerName } from '../../shared/presentation/with-player-name';
 
 export interface OrderCreationResult {
   order: Order;

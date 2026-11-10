@@ -140,7 +140,7 @@ Monorepo existente. Backend NestJS: `backend/src/shared/observability/logging/` 
 
 **Purpose**: CORS, documentación (Principios VIII y X) y validación final
 
-- [X] T029 [P] Crear `createCorsOptions(rawOrigins: string | undefined)` en `backend/src/shared/cors-origins.ts` (devuelve `{ origin: parseCorsOrigins(rawOrigins), credentials: true, exposedHeaders: ['X-Correlation-Id'] }`) y su test en un archivo **nuevo** `backend/src/shared/cors-options.spec.ts` (no tocar `cors-origins.spec.ts` si existe): verifica `exposedHeaders`, `credentials` y que `origin` respeta `CORS_ORIGIN` y el default `http://localhost:5173`
+- [X] T029 [P] Crear `createCorsOptions(rawOrigins: string | undefined)` en `backend/src/shared/cors/cors-origins.ts` (devuelve `{ origin: parseCorsOrigins(rawOrigins), credentials: true, exposedHeaders: ['X-Correlation-Id'] }`) y su test en un archivo **nuevo** `backend/src/shared/cors/cors-options.spec.ts` (no tocar `cors-origins.spec.ts` si existe): verifica `exposedHeaders`, `credentials` y que `origin` respeta `CORS_ORIGIN` y el default `http://localhost:5173`
 - [X] T030 En `backend/src/main.ts`: usar `app.enableCors(createCorsOptions(process.env.CORS_ORIGIN))` en lugar del objeto inline, y agregar a la `setDescription` del `DocumentBuilder` una frase en español: toda respuesta incluye el header `X-Correlation-Id` (el cliente puede enviarlo para reutilizarlo en reintentos; valor de 1–64 caracteres alfanuméricos y `._:-`). Sin tocar el resto del arranque
 - [X] T031 [P] Actualizar `docs/postman/desapp.postman_collection.json`: ampliar la `description` de la colección con una nota sobre `X-Correlation-Id` (se devuelve siempre; se puede enviar) y agregar un evento `test` a nivel colección con `pm.test('Responde X-Correlation-Id', function () { pm.expect(pm.response.headers.has('X-Correlation-Id')).to.be.true; });`. Mantener JSON válido y la indentación del archivo; verificarlo con `node -e "JSON.parse(require('fs').readFileSync('docs/postman/desapp.postman_collection.json','utf8'))"`
 - [X] T032 [P] Ejecutar `pnpm lint` en `backend/` y corregir lo que falle en los archivos nuevos o editados
@@ -210,7 +210,7 @@ T008  backend/test/observability/observability/helpers/log-capture.ts
 - `AllExceptionsFilter` **no se modifica**; sus logs ganan el `correlationId` por el contexto de la request.
 - **No desplegar US2 sin US3**: con los campos de query/cuerpo activos y sin la verificación de secretos, el log podría exponer datos.
 - No hacer `git commit`: los cambios quedan sin commitear para que los revise el usuario.
-- Los únicos archivos existentes que se editan son `package.json`, `.env.example`, `app.module.ts`, `main.ts`, `test/test-app.ts`, `shared/cors-origins.ts` y la colección Postman; ningún test existente se modifica.
+- Los únicos archivos existentes que se editan son `package.json`, `.env.example`, `app.module.ts`, `main.ts`, `test/test-app.ts`, `shared/cors/cors-origins.ts` y la colección Postman; ningún test existente se modifica.
 
 ## Ajustes posteriores a la implementación
 

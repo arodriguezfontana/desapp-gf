@@ -130,7 +130,7 @@ Backend-only: `backend/src/` y `backend/test/`. Los tests de integración viven 
 
 ### Tests for User Story 4
 
-- [X] T035 [P] [US4] Crear `backend/src/database/add-role-migration.integration.spec.ts` (fuera de `migrations/`: el runner cargaría el spec como migration) contra Postgres efímero: crear tablas sin `role` con SQL crudo, insertar un usuario y una clave, correr `up()` de la migration, verificar que ambas filas tienen `role = 'user'`; correr `down()` y `up()` de nuevo (idempotencia por `IF NOT EXISTS`).
+- [X] T035 [P] [US4] Crear `backend/src/database/migration-specs/add-role-migration.integration.spec.ts` (fuera de `migrations/`: el runner cargaría el spec como migration) contra Postgres efímero: crear tablas sin `role` con SQL crudo, insertar un usuario y una clave, correr `up()` de la migration, verificar que ambas filas tienen `role = 'user'`; correr `down()` y `up()` de nuevo (idempotencia por `IF NOT EXISTS`).
 - [X] T036 [P] [US4] Crear `backend/src/repositories/api-key/typeorm-api-key.repository.integration.spec.ts` contra Postgres efímero: insertar una fila legacy (sin `role` explícito, con la columna en default `'user'`), y verificar que `findByHash` devuelve una `ApiKey` activa con `role === UserRole.USER`.
 
 **Checkpoint**: US4 verificada: las claves previas siguen válidas y con rol `user`.

@@ -6,7 +6,7 @@ import { PlayerRepository } from '../../repositories/player/player.repository';
 import { StandingRepository } from '../../repositories/competition/standing.repository';
 import { TeamNameExceptionRepository } from '../../repositories/competition/team-name-exception.repository';
 import { TeamRepository } from '../../repositories/competition/team.repository';
-import { RunLock } from '../../shared/run-lock';
+import { RunLock } from '../../shared/concurrency/run-lock';
 
 /** Domingos a las 06:00: despues de los crons semanales de WhoScored y Football-Data (domingos a las 00:00). */
 export const TEAM_CROSSWALK_CRON = '0 6 * * 0';

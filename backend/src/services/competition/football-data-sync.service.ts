@@ -14,7 +14,7 @@ import {
   LeagueSyncResult,
 } from '../../domain/competition/sync-summary';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
-import { RunLock } from '../../shared/run-lock';
+import { RunLock } from '../../shared/concurrency/run-lock';
 
 export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
 

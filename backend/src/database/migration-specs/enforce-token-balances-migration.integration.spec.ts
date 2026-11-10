@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { QueryRunner } from 'typeorm';
-import { EnforceTokenTransactionBalances1793100000001 } from './migrations/1793100000001-EnforceTokenTransactionBalances';
+import { EnforceTokenTransactionBalances1793100000001 } from '../migrations/1793100000001-EnforceTokenTransactionBalances';
 
 /**
  * 030-token-balance-snapshot, paso 2: la migración sólo endurece a NOT NULL si el backfill cubrió

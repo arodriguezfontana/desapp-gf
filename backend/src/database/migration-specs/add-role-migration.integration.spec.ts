@@ -4,10 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 
-import { ApiKeyEntity } from '../repositories/api-key/entities/api-key.entity';
-import { UserEntity } from '../repositories/auth/entities/user.entity';
-import { DatabaseModule } from './database.module';
-import { AddRoleToUsersAndApiKeys1790985600000 } from './migrations/1790985600000-AddRoleToUsersAndApiKeys';
+import { ApiKeyEntity } from '../../repositories/api-key/entities/api-key.entity';
+import { UserEntity } from '../../repositories/auth/entities/user.entity';
+import { DatabaseModule } from '../database.module';
+import { AddRoleToUsersAndApiKeys1790985600000 } from '../migrations/1790985600000-AddRoleToUsersAndApiKeys';
 
 /**
  * Este spec vive FUERA de `database/migrations/` a propósito: el runner de

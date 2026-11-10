@@ -5,7 +5,7 @@ import { AppModule } from './app.module';
 import { runPlayerCatalogMigrations } from './database/run-player-catalog-migrations';
 import { AdminSeedService } from './services/auth/admin-seed.service';
 import { SuperuserSeedService } from './services/auth/superuser-seed.service';
-import { createCorsOptions } from './shared/cors-origins';
+import { createCorsOptions } from './shared/cors/cors-origins';
 import { configureRequestLogging } from './shared/observability/logging/configure-request-logging';
 import { createGlobalValidationPipe } from './shared/validation/global-validation-pipe';
 

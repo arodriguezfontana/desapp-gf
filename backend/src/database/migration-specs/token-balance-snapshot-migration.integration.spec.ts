@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { QueryRunner } from 'typeorm';
-import { AddBalanceSnapshotToTokenTransactions1793100000000 } from './migrations/1793100000000-AddBalanceSnapshotToTokenTransactions';
+import { AddBalanceSnapshotToTokenTransactions1793100000000 } from '../migrations/1793100000000-AddBalanceSnapshotToTokenTransactions';
 
 /**
  * 030-token-balance-snapshot: migración de esquema de producción (sin `synchronize`).
