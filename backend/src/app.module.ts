@@ -19,6 +19,8 @@ import { SimulationModule } from './modules/simulation/simulation.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ObservabilityModule } from './modules/observability/observability.module';
+import { PersistenceModule } from './modules/persistence/persistence.module';
+import { SeedModule } from './modules/seed/seed.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -40,6 +42,8 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     AlertsModule,
     NotificationsModule,
     ObservabilityModule,
+    PersistenceModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],
