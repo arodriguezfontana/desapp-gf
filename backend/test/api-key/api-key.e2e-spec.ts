@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import * as request from 'supertest';
-import { ApiKeyEntity } from '../src/repositories/api-key/entities/api-key.entity';
-import { createTestApp, TestContext } from './test-app';
+import { ApiKeyEntity } from '../../src/repositories/api-key/entities/api-key.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 describe('POST /auth/api-key (e2e)', () => {
   let ctx: TestContext;

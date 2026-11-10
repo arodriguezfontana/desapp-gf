@@ -1,9 +1,9 @@
 import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { UserEntity } from '../src/repositories/auth/entities/user.entity';
-import { ValuationStrategyEntity } from '../src/repositories/quotation/entities/valuation-strategy.entity';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
+import { ValuationStrategyEntity } from '../../src/repositories/quotation/entities/valuation-strategy.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 /**
  * GET /notifications, PATCH /notifications/:id/read, PATCH /notifications/read-all

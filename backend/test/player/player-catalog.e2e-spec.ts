@@ -1,6 +1,6 @@
 import * as request from 'supertest';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 const LEAGUES = [
   'Premier League',

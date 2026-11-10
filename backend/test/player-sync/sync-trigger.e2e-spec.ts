@@ -1,17 +1,17 @@
 import * as request from 'supertest';
-import { UserEntity } from '../src/repositories/auth/entities/user.entity';
-import { createTestApp, TestContext } from './test-app';
-import { WHOSCORED_ADAPTER } from '../src/modules/player-sync/player-sync.constants';
-import { FOOTBALL_DATA_ADAPTER } from '../src/modules/competition/football-data-sync.constants';
+import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
+import { createTestApp, TestContext } from '../test-app';
+import { WHOSCORED_ADAPTER } from '../../src/modules/player-sync/player-sync.constants';
+import { FOOTBALL_DATA_ADAPTER } from '../../src/modules/competition/football-data-sync.constants';
 import {
   WhoScoredAdapter,
   WhoScoredLeagueTeams,
   WhoScoredTeamRef,
   WhoScoredRawPlayer,
-} from '../src/adapters/player-sync/whoscored-adapter';
-import { FootballDataAdapter } from '../src/adapters/competition/football-data-adapter';
-import { FootballDataSyncService } from '../src/services/competition/football-data-sync.service';
-import { League } from '../src/domain/player/enums/league';
+} from '../../src/adapters/player-sync/whoscored-adapter';
+import { FootballDataAdapter } from '../../src/adapters/competition/football-data-adapter';
+import { FootballDataSyncService } from '../../src/services/competition/football-data-sync.service';
+import { League } from '../../src/domain/player/enums/league';
 
 /** Adapter fake de WhoScored que devuelve 0 equipos sin HTTP. */
 class FakeWhoScoredAdapter implements WhoScoredAdapter {

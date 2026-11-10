@@ -1,5 +1,5 @@
 import * as request from 'supertest';
-import { createTestApp, TestContext } from './test-app';
+import { createTestApp, TestContext } from '../test-app';
 
 describe('POST /auth/login (e2e)', () => {
   let ctx: TestContext;

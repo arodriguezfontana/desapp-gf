@@ -1,12 +1,12 @@
 import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
 import { IsNull } from 'typeorm';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { TokenHoldingEntity } from '../src/repositories/portfolio/entities/token-holding.entity';
-import { TokenTransactionEntity } from '../src/repositories/orders/entities/token-transaction.entity';
-import { TokenTransactionRepository } from '../src/repositories/orders/token-transaction.repository';
-import { SuperuserSeedService } from '../src/services/auth/superuser-seed.service';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { TokenHoldingEntity } from '../../src/repositories/portfolio/entities/token-holding.entity';
+import { TokenTransactionEntity } from '../../src/repositories/orders/entities/token-transaction.entity';
+import { TokenTransactionRepository } from '../../src/repositories/orders/token-transaction.repository';
+import { SuperuserSeedService } from '../../src/services/auth/superuser-seed.service';
+import { createTestApp, TestContext } from '../test-app';
 
 /**
  * 030-token-balance-snapshot. Cada asiento de auditoría guarda el saldo de la tenencia antes y

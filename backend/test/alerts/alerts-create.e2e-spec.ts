@@ -1,7 +1,7 @@
 import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 /**
  * POST /alerts (025-player-price-alerts, contracts/alerts-api.md, spec FR-001..FR-004).

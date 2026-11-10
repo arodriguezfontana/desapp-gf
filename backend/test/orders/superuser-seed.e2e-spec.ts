@@ -1,10 +1,10 @@
 import * as request from 'supertest';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { UserEntity } from '../src/repositories/auth/entities/user.entity';
-import { OrderEntity } from '../src/repositories/orders/entities/order.entity';
-import { TokenHoldingEntity } from '../src/repositories/portfolio/entities/token-holding.entity';
-import { SuperuserSeedService } from '../src/services/auth/superuser-seed.service';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
+import { OrderEntity } from '../../src/repositories/orders/entities/order.entity';
+import { TokenHoldingEntity } from '../../src/repositories/portfolio/entities/token-holding.entity';
+import { SuperuserSeedService } from '../../src/services/auth/superuser-seed.service';
+import { createTestApp, TestContext } from '../test-app';
 
 const SUPERUSER_EMAIL = 'superuser-seed-test@mail.com';
 const SUPERUSER_PASSWORD = 'SuperPass1!';

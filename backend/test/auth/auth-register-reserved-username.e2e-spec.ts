@@ -1,5 +1,5 @@
 import * as request from 'supertest';
-import { createTestApp, TestContext } from './test-app';
+import { createTestApp, TestContext } from '../test-app';
 
 /**
  * 020-order-matching-engine, Historia 1 (spec FR-001 a FR-003, SC-001).

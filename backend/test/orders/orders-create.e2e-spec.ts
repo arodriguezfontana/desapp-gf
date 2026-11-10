@@ -1,8 +1,8 @@
 import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { TokenHoldingEntity } from '../src/repositories/portfolio/entities/token-holding.entity';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { TokenHoldingEntity } from '../../src/repositories/portfolio/entities/token-holding.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 /**
  * 020-order-matching-engine, Historia 3 (spec FR-008 a FR-010, SC-003).

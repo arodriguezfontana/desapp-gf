@@ -1,7 +1,7 @@
 import * as request from 'supertest';
-import { ApiKeyEntity } from '../src/repositories/api-key/entities/api-key.entity';
-import { UserEntity } from '../src/repositories/auth/entities/user.entity';
-import { createTestApp, TestContext } from './test-app';
+import { ApiKeyEntity } from '../../src/repositories/api-key/entities/api-key.entity';
+import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 describe('Rol de usuario (e2e, spec 008)', () => {
   let ctx: TestContext;

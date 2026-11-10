@@ -1,8 +1,8 @@
 import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { UserEntity } from '../src/repositories/auth/entities/user.entity';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { UserEntity } from '../../src/repositories/auth/entities/user.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 /**
  * E2E de POST /admin/simulate-market: cubre lo que antes solo tenía unit

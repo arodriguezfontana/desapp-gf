@@ -1,6 +1,6 @@
 import * as request from 'supertest';
 import { JwtService } from '@nestjs/jwt';
-import { createTestApp, TestContext } from './test-app';
+import { createTestApp, TestContext } from '../test-app';
 
 describe('Endpoints protegidos con JWT (e2e)', () => {
   let ctx: TestContext;

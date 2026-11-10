@@ -1,10 +1,10 @@
 import * as request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import { PlayerEntity } from '../src/repositories/player/entities/player.entity';
-import { TokenHoldingEntity } from '../src/repositories/portfolio/entities/token-holding.entity';
-import { OrderEntity } from '../src/repositories/orders/entities/order.entity';
-import { TokenTransactionEntity } from '../src/repositories/orders/entities/token-transaction.entity';
-import { createTestApp, TestContext } from './test-app';
+import { PlayerEntity } from '../../src/repositories/player/entities/player.entity';
+import { TokenHoldingEntity } from '../../src/repositories/portfolio/entities/token-holding.entity';
+import { OrderEntity } from '../../src/repositories/orders/entities/order.entity';
+import { TokenTransactionEntity } from '../../src/repositories/orders/entities/token-transaction.entity';
+import { createTestApp, TestContext } from '../test-app';
 
 /**
  * GET /users/:id/portfolio — portfolio de inversiones del usuario (spec).
