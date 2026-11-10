@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import type { Logger } from 'pino';
 import { pinoHttp } from 'pino-http';
-import { LOG_ROOT_LOGGER } from '../../modules/logging/logging.constants';
-import { REQUEST_METRICS_RECORDER } from '../../modules/metrics/metrics.constants';
+import { LOG_ROOT_LOGGER } from '../../../modules/observability/logging.constants';
+import { REQUEST_METRICS_RECORDER } from '../../../modules/observability/metrics.constants';
 import type { RequestMetricsRecorder } from '../metrics/request-metrics';
 import { buildRequestLogOptions } from './request-log-options';
 

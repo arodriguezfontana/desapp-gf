@@ -13,8 +13,8 @@ Guía de validación; el formato está en [contracts/metrics-api.md](contracts/m
 
 ```bash
 cd backend
-pnpm test:unit        # shared/metrics, metrics.service/controller, hook, tsarch
-pnpm test:e2e         # incluye test/metrics.e2e-spec.ts y test/sla-coverage.e2e-spec.ts
+pnpm test:unit        # shared/observability/metrics, metrics.service/controller, hook, tsarch
+pnpm test:e2e         # incluye test/observability/metrics.e2e-spec.ts y test/observability/sla-coverage.e2e-spec.ts
 pnpm build
 pnpm lint
 ```

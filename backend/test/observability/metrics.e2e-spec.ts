@@ -1,11 +1,11 @@
 import * as http from 'node:http';
 import * as request from 'supertest';
 import { JwtService } from '@nestjs/jwt';
-import { createTestApp, TestContext } from './test-app';
+import { createTestApp, TestContext } from '../test-app';
 import { createLogCapture } from './helpers/log-capture';
 import { familyNames, parsePrometheusText, PromSample, sampleValue } from './helpers/prom-text';
-import { LOG_CONFIG } from '../src/modules/logging/logging.constants';
-import { UserRepository } from '../src/repositories/auth/user.repository';
+import { LOG_CONFIG } from '../../src/modules/observability/logging.constants';
+import { UserRepository } from '../../src/repositories/auth/user.repository';
 
 /**
  * 029-http-metrics-sla. Se usa `createTestApp()` SIN sobrescribir `LOG_CONFIG`: el logger queda en

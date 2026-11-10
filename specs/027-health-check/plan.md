@@ -17,7 +17,7 @@ El plan del equipo se adopta con **cinco ajustes** que salieron de verificarlo c
 1. **Versión**: `@nestjs/terminus@^11.1.1`, no la última. La 12.x es ESM-only (`"type": "module"`) y el backend es CommonJS/ts-jest.
 2. **Instalador**: `pnpm add` (el repo usa `pnpm-lock.yaml`), no `npm install`.
 3. **503 con cuerpo**: el `AllExceptionsFilter` global reescribe cualquier `HttpException` a `{statusCode, error, message, ...}` y descartaría `status`/`details`. Terminus lanza `ServiceUnavailableException(result)`, así que "503 automático" **no preserva el cuerpo** en esta app. El service atrapa esa excepción y devuelve el resultado; el controller fija el status. El filtro no se toca.
-4. **Ubicación**: capas del repo (`controllers/health/`, `services/health/`, `modules/health/`) en vez de una carpeta `health/` suelta, que escaparía de las reglas de capas (Principio I) y del test tsarch.
+4. **Ubicación**: capas del repo (`controllers/observability/`, `services/observability/`, `modules/observability/`) en vez de una carpeta `health/` suelta, que escaparía de las reglas de capas (Principio I) y del test tsarch.
 5. **Tests**: se testea también el caso 503 (no sólo el 200). Lo exigen FR-003/FR-008/FR-009, SC-001 y el Principio IX (casos borde); además esa ruta atraviesa código propio (el manejo del filtro), no sólo Terminus.
 
 Además hay que **quitar** `getHealth` de `AppController`/`AppService` (dos handlers para `GET /health` chocan) y sus tests asociados — ver "Tests existentes afectados".
@@ -88,14 +88,14 @@ backend/
 │   ├── app.module.ts                             # + HealthModule en imports
 │   ├── app.controller.ts                         # - getHealth()
 │   ├── app.service.ts                            # - getHealth()
-│   ├── controllers/health/
+│   ├── controllers/observability/
 │   │   ├── health.controller.ts                  # GET /health, @Public(), Swagger, fija 200/503
 │   │   ├── health.controller.spec.ts
 │   │   └── dto/health-response.dto.ts            # forma documentada en Swagger
-│   ├── services/health/
+│   ├── services/observability/
 │   │   ├── health.service.ts                     # envuelve HealthCheckService + TypeOrmHealthIndicator
 │   │   └── health.service.spec.ts
-│   └── modules/health/health.module.ts           # TerminusModule + controller + service
+│   └── modules/observability/health.module.ts           # TerminusModule + controller + service
 └── test/
     └── health.e2e-spec.ts                        # 200, 503 (query rechazada y colgada), sin token, sin fuga
 docs/postman/desapp.postman_collection.json       # request /health: aserciones de cuerpo y descripción

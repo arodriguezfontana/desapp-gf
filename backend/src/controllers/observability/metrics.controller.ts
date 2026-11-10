@@ -2,8 +2,8 @@ import { Controller, Get, Res } from '@nestjs/common';
 import { ApiOperation, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { Public } from '../../guards/public.decorator';
-import { MetricsService } from '../../services/metrics/metrics.service';
-import { Sla } from '../../shared/metrics/sla';
+import { MetricsService } from '../../services/observability/metrics.service';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Métricas técnicas públicas (spec 029): sin JWT ni API key, porque un scraper de Prometheus

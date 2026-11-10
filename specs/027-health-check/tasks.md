@@ -41,7 +41,7 @@ Monorepo existente. Backend NestJS en capas: `backend/src/controllers/`, `backen
 
 **⚠️ CRITICAL**: Ningún test de las historias puede correr hasta retirar el handler viejo (dos `GET /health` simultáneos).
 
-- [X] T002 [P] Crear `backend/src/controllers/health/dto/health-response.dto.ts` con `HealthResponseDto` y `ComponentStatusDto` según `data-model.md` y `contracts/health-api.md`: `status` (`'ok' | 'error'`), `info`, `error`, `details` como mapas `componente → { status: 'up' | 'down', message?: string }`, con `@ApiProperty` de `@nestjs/swagger`. Identificadores en inglés (Principio XI)
+- [X] T002 [P] Crear `backend/src/controllers/observability/dto/health-response.dto.ts` con `HealthResponseDto` y `ComponentStatusDto` según `data-model.md` y `contracts/health-api.md`: `status` (`'ok' | 'error'`), `info`, `error`, `details` como mapas `componente → { status: 'up' | 'down', message?: string }`, con `@ApiProperty` de `@nestjs/swagger`. Identificadores en inglés (Principio XI)
 - [X] T003 **PUERTA — requiere un "sí" explícito del usuario antes de ejecutarse (Principio IX: no se modifican ni borran tests existentes sin permiso).** Pedir el permiso y reportar cada borrado. Con el "sí": en `backend/src/app.controller.ts` eliminar el método `getHealth` (y los imports que queden sin uso: `Public` sigue usándose en `getRoot`); en `backend/src/app.service.ts` eliminar `getHealth`; en `backend/src/app.controller.spec.ts` y `backend/src/app.service.spec.ts` eliminar únicamente el bloque `describe('getHealth')` de cada uno (los tests de `getRoot` no se tocan). `backend/test/protected.e2e-spec.ts` NO se modifica: su test "GET / y GET /health siguen respondiendo sin token" sigue siendo válido
 
 **Checkpoint**: Hay un único lugar donde registrar `GET /health`.
@@ -56,15 +56,15 @@ Monorepo existente. Backend NestJS en capas: `backend/src/controllers/`, `backen
 
 ### Tests for User Story 1 ⚠️ (escribirlos primero y verificar que fallan)
 
-- [X] T004 [P] [US1] Crear `backend/src/services/health/health.service.spec.ts` (unit, `HealthCheckService` y `TypeOrmHealthIndicator` simulados): (a) ping up → devuelve el resultado con `status: 'ok'`; (b) `check()` lanza `ServiceUnavailableException` con resultado `error` → el service **devuelve** ese resultado y no relanza; (c) un error inesperado que no sea `ServiceUnavailableException` se propaga; (d) se invoca `pingCheck('database', { timeout: 3000 })`
-- [X] T005 [P] [US1] Crear `backend/src/controllers/health/health.controller.spec.ts` (unit, `HealthService` simulado): resultado `status: 'ok'` → no fija 503 (queda 200) y devuelve el informe tal cual; resultado `status: 'error'` → `res.status(503)` y devuelve el informe
-- [X] T006 [US1] Crear `backend/test/health.e2e-spec.ts` (usa `createTestApp()` de `backend/test/test-app.ts`, patrón de `backend/test/protected.e2e-spec.ts`) con los casos de US1: (a) `GET /health` → 200, `body.status === 'ok'`; (b) tras `jest.spyOn(ctx.dataSource, 'query').mockRejectedValue(new Error('boom'))` → 503 y `body.status === 'error'`; (c) tras `mockRestore()` → 200 otra vez, sin reiniciar la app (FR-010 / SC-003); (d) `query` que nunca resuelve (`new Promise(() => {})`) → 503 en menos de 5 s (FR-009 / SC-004, subir el timeout de Jest a 15 s en ese test). Restaurar siempre el spy en `afterEach`
+- [X] T004 [P] [US1] Crear `backend/src/services/observability/health.service.spec.ts` (unit, `HealthCheckService` y `TypeOrmHealthIndicator` simulados): (a) ping up → devuelve el resultado con `status: 'ok'`; (b) `check()` lanza `ServiceUnavailableException` con resultado `error` → el service **devuelve** ese resultado y no relanza; (c) un error inesperado que no sea `ServiceUnavailableException` se propaga; (d) se invoca `pingCheck('database', { timeout: 3000 })`
+- [X] T005 [P] [US1] Crear `backend/src/controllers/observability/health.controller.spec.ts` (unit, `HealthService` simulado): resultado `status: 'ok'` → no fija 503 (queda 200) y devuelve el informe tal cual; resultado `status: 'error'` → `res.status(503)` y devuelve el informe
+- [X] T006 [US1] Crear `backend/test/observability/health.e2e-spec.ts` (usa `createTestApp()` de `backend/test/test-app.ts`, patrón de `backend/test/protected.e2e-spec.ts`) con los casos de US1: (a) `GET /health` → 200, `body.status === 'ok'`; (b) tras `jest.spyOn(ctx.dataSource, 'query').mockRejectedValue(new Error('boom'))` → 503 y `body.status === 'error'`; (c) tras `mockRestore()` → 200 otra vez, sin reiniciar la app (FR-010 / SC-003); (d) `query` que nunca resuelve (`new Promise(() => {})`) → 503 en menos de 5 s (FR-009 / SC-004, subir el timeout de Jest a 15 s en ese test). Restaurar siempre el spy en `afterEach`
 
 ### Implementation for User Story 1
 
-- [X] T007 [US1] Crear `backend/src/services/health/health.service.ts`: `HealthService` con `HealthCheckService` y `TypeOrmHealthIndicator` inyectados; método `check()` que llama `health.check([() => typeOrm.pingCheck('database', { timeout: 3000 })])`, atrapa `ServiceUnavailableException` y devuelve `exception.getResponse()` como `HealthResponseDto`; cualquier otra excepción se relanza (`research.md` §2). Sin caché (FR-010)
-- [X] T008 [US1] Crear `backend/src/controllers/health/health.controller.ts`: `@Controller('health')`, `@Public()` de `backend/src/guards/public.decorator.ts`, `@Get()` que llama a `HealthService.check()`, usa `@Res({ passthrough: true })` y fija `res.status(503)` si `status !== 'ok'`. El controller solo habla con el Service (Principio I)
-- [X] T009 [US1] Crear `backend/src/modules/health/health.module.ts` (importa `TerminusModule`, declara `HealthController` y `HealthService`) y registrar `HealthModule` en el array `imports` de `backend/src/app.module.ts`
+- [X] T007 [US1] Crear `backend/src/services/observability/health.service.ts`: `HealthService` con `HealthCheckService` y `TypeOrmHealthIndicator` inyectados; método `check()` que llama `health.check([() => typeOrm.pingCheck('database', { timeout: 3000 })])`, atrapa `ServiceUnavailableException` y devuelve `exception.getResponse()` como `HealthResponseDto`; cualquier otra excepción se relanza (`research.md` §2). Sin caché (FR-010)
+- [X] T008 [US1] Crear `backend/src/controllers/observability/health.controller.ts`: `@Controller('health')`, `@Public()` de `backend/src/guards/public.decorator.ts`, `@Get()` que llama a `HealthService.check()`, usa `@Res({ passthrough: true })` y fija `res.status(503)` si `status !== 'ok'`. El controller solo habla con el Service (Principio I)
+- [X] T009 [US1] Crear `backend/src/modules/observability/health.module.ts` (importa `TerminusModule`, declara `HealthController` y `HealthService`) y registrar `HealthModule` en el array `imports` de `backend/src/app.module.ts`
 - [X] T010 [US1] Correr `pnpm test:unit` y `pnpm test:e2e -- health.e2e-spec` desde `backend/`: T004–T006 pasan, `backend/test/architecture.spec.ts` sigue en verde y `backend/test/protected.e2e-spec.ts` también
 
 **Checkpoint**: US1 funcional: el health check ya sirve para decidir si el sistema está sano (MVP).
@@ -79,11 +79,11 @@ Monorepo existente. Backend NestJS en capas: `backend/src/controllers/`, `backen
 
 ### Tests for User Story 2 ⚠️
 
-- [X] T011 [US2] Agregar a `backend/test/health.e2e-spec.ts` los casos de US2: (a) 200 → `details.database.status === 'up'` e `info.database.status === 'up'`; (b) 503 con `query` rechazada → `error.database.status === 'down'` y `details.database.status === 'down'`; (c) FR-008: rechazar con `new Error('postgres://user:secret@db:5432/app')` y verificar que el body serializado (`JSON.stringify(res.body)`) no contiene `secret`, `postgres://` ni `boom`, ni `stack`; (d) en el caso de timeout, `message` es exactamente `timeout of 3000ms exceeded`; (e) `Object.keys(res.body.details)` es exactamente `['database']`
+- [X] T011 [US2] Agregar a `backend/test/observability/health.e2e-spec.ts` los casos de US2: (a) 200 → `details.database.status === 'up'` e `info.database.status === 'up'`; (b) 503 con `query` rechazada → `error.database.status === 'down'` y `details.database.status === 'down'`; (c) FR-008: rechazar con `new Error('postgres://user:secret@db:5432/app')` y verificar que el body serializado (`JSON.stringify(res.body)`) no contiene `secret`, `postgres://` ni `boom`, ni `stack`; (d) en el caso de timeout, `message` es exactamente `timeout of 3000ms exceeded`; (e) `Object.keys(res.body.details)` es exactamente `['database']`
 
 ### Implementation for User Story 2
 
-- [X] T012 [US2] En `backend/src/controllers/health/health.controller.ts` agregar la documentación Swagger (Principio VIII): `@ApiTags('health')`, `@ApiOperation` (resumen en español), `@ApiResponse({ status: 200, type: HealthResponseDto })` y `@ApiResponse({ status: 503, type: HealthResponseDto })`. No usar `@HealthCheck()` de Terminus (`research.md` §7)
+- [X] T012 [US2] En `backend/src/controllers/observability/health.controller.ts` agregar la documentación Swagger (Principio VIII): `@ApiTags('health')`, `@ApiOperation` (resumen en español), `@ApiResponse({ status: 200, type: HealthResponseDto })` y `@ApiResponse({ status: 503, type: HealthResponseDto })`. No usar `@HealthCheck()` de Terminus (`research.md` §7)
 
 **Checkpoint**: US1 + US2: el detalle por componente está probado y documentado.
 
@@ -97,11 +97,11 @@ Monorepo existente. Backend NestJS en capas: `backend/src/controllers/`, `backen
 
 ### Tests for User Story 3 ⚠️
 
-- [X] T013 [US3] Agregar a `backend/test/health.e2e-spec.ts` los casos de US3 (sin ningún header `Authorization`): (a) base sana → 200, no 401; (b) base caída (`query` rechazada) → 503, no 401; (c) en la misma app, `GET /auth/me` sin token → 401, probando que la exención se limita al health check (FR-007)
+- [X] T013 [US3] Agregar a `backend/test/observability/health.e2e-spec.ts` los casos de US3 (sin ningún header `Authorization`): (a) base sana → 200, no 401; (b) base caída (`query` rechazada) → 503, no 401; (c) en la misma app, `GET /auth/me` sin token → 401, probando que la exención se limita al health check (FR-007)
 
 ### Implementation for User Story 3
 
-- [X] T014 [US3] Verificar que `@Public()` quedó aplicado en `backend/src/controllers/health/health.controller.ts` (ya incluido en T008; no hay código nuevo) y que T013 pasa. Si T013 falla con 401, corregir el decorator en el controller
+- [X] T014 [US3] Verificar que `@Public()` quedó aplicado en `backend/src/controllers/observability/health.controller.ts` (ya incluido en T008; no hay código nuevo) y que T013 pasa. Si T013 falla con 401, corregir el decorator en el controller
 
 **Checkpoint**: US1–US3: acceso público probado.
 
@@ -115,7 +115,7 @@ Monorepo existente. Backend NestJS en capas: `backend/src/controllers/`, `backen
 
 ### Tests for User Story 4 ⚠️
 
-- [X] T015 [US4] Agregar a `backend/test/health.e2e-spec.ts` un `describe` separado de US4 que levanta la app con `createTestApp([...])` sobreescribiendo `WHOSCORED_ADAPTER` (de `backend/src/modules/player-sync/player-sync.constants.ts`) y `FOOTBALL_DATA_ADAPTER` (de `backend/src/modules/competition/football-data-sync.constants.ts`) con objetos cuyos métodos son `jest.fn().mockRejectedValue(new Error('proveedor caído'))` (mismo patrón que `backend/test/sync-trigger.e2e-spec.ts`). Verificar: (a) `GET /health` → 200 y `status: 'ok'`; (b) ningún `jest.fn` del adaptador fue invocado; (c) `details` no incluye `footballData` ni `whoscored`
+- [X] T015 [US4] Agregar a `backend/test/observability/health.e2e-spec.ts` un `describe` separado de US4 que levanta la app con `createTestApp([...])` sobreescribiendo `WHOSCORED_ADAPTER` (de `backend/src/modules/player-sync/player-sync.constants.ts`) y `FOOTBALL_DATA_ADAPTER` (de `backend/src/modules/competition/football-data-sync.constants.ts`) con objetos cuyos métodos son `jest.fn().mockRejectedValue(new Error('proveedor caído'))` (mismo patrón que `backend/test/sync-trigger.e2e-spec.ts`). Verificar: (a) `GET /health` → 200 y `status: 'ok'`; (b) ningún `jest.fn` del adaptador fue invocado; (c) `details` no incluye `footballData` ni `whoscored`
 
 ### Implementation for User Story 4
 
@@ -145,7 +145,7 @@ Monorepo existente. Backend NestJS en capas: `backend/src/controllers/`, `backen
 - **Setup (Phase 1)**: sin dependencias.
 - **Foundational (Phase 2)**: depende de T001 solo para T002 (usa `@nestjs/swagger`, ya presente: en la práctica es paralelo). **T003 (retiro del handler viejo) bloquea todos los e2e** y exige el "sí" del usuario.
 - **US1 (Phase 3)**: depende de Phase 2. Es el MVP.
-- **US2 (Phase 4), US3 (Phase 5), US4 (Phase 6)**: dependen de US1 (reutilizan el endpoint y el archivo `health.e2e-spec.ts`). Entre sí son independientes en lógica, pero comparten el archivo `backend/test/health.e2e-spec.ts` y `health.controller.ts` (T012), así que sus ediciones se hacen en secuencia, no en paralelo.
+- **US2 (Phase 4), US3 (Phase 5), US4 (Phase 6)**: dependen de US1 (reutilizan el endpoint y el archivo `health.e2e-spec.ts`). Entre sí son independientes en lógica, pero comparten el archivo `backend/test/observability/health.e2e-spec.ts` y `health.controller.ts` (T012), así que sus ediciones se hacen en secuencia, no en paralelo.
 - **Polish (Phase 7)**: depende de todas las historias que se incluyan.
 
 ### Within Each User Story
@@ -165,9 +165,9 @@ Monorepo existente. Backend NestJS en capas: `backend/src/controllers/`, `backen
 
 ```text
 # Tests de US1 a la vez (archivos distintos):
-T004  backend/src/services/health/health.service.spec.ts
-T005  backend/src/controllers/health/health.controller.spec.ts
-T006  backend/test/health.e2e-spec.ts   (otro archivo, sin dependencia de T004/T005)
+T004  backend/src/services/observability/health.service.spec.ts
+T005  backend/src/controllers/observability/health.controller.spec.ts
+T006  backend/test/observability/health.e2e-spec.ts   (otro archivo, sin dependencia de T004/T005)
 ```
 
 ---

@@ -1,4 +1,4 @@
-import { LogConfig } from '../../src/modules/logging/logging.constants';
+import { LogConfig } from '../../../src/modules/observability/logging.constants';
 
 export type LogLine = Record<string, unknown>;
 

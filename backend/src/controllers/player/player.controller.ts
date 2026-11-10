@@ -18,7 +18,7 @@ import { PlayerValuationQueryDto } from './dto/player-valuation-query.dto';
 import { PlayerValuationResponseDto } from './dto/player-valuation-response.dto';
 import { PlayerQuoteResponseDto } from '../quotation/dto/player-quote-response.dto';
 import { OrderBookResponseDto } from './dto/order-book-response.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Catálogo de jugadores (datos de prueba). El listado, el ranking y el

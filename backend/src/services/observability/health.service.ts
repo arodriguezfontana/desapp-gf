@@ -1,6 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
-import { HealthResponseDto } from '../../controllers/health/dto/health-response.dto';
+import { HealthResponseDto } from '../../controllers/observability/dto/health-response.dto';
 
 /** Tiempo máximo que se espera a que la base responda al ping (spec 027, FR-009). */
 export const DATABASE_PING_TIMEOUT_MS = 3000;

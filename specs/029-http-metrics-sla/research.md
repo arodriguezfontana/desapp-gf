@@ -7,7 +7,7 @@ descartable sobre la app real que enumera el router de Express (ya borrado). No 
 ## 1. Dónde se engancha la captura (corrige la precondición)
 
 - **Hallazgo**: la 028 no tiene un `res.on('finish')` propio. `configureRequestLogging` registra `pinoHttp(buildRequestLogOptions(logger))` con `app.use`, antes del body parser. `pino-http` escucha `finish` y `close` (la primera que ocurra, una sola vez) y entonces llama a `customSuccessObject(req, res, val)` (o `customErrorObject(req, res, err, val)` para 5xx), con `val = { res, responseTime }`. La ruta sólo se agrega al log si `req.route?.path` existe; **no hay fallback `unmatched`** todavía.
-- **Decision**: extender esos dos callbacks con una llamada a un `RequestMetricsRecorder` (interfaz en `shared/metrics`) y calcular ahí la etiqueta de ruta con fallback. Valores: `method = req.method` normalizado, `route = req.route?.path` o `unmatched`, `status_code = res.statusCode`, duración = `val.responseTime / 1000` (el mismo valor que sale en el log).
+- **Decision**: extender esos dos callbacks con una llamada a un `RequestMetricsRecorder` (interfaz en `shared/observability/metrics`) y calcular ahí la etiqueta de ruta con fallback. Valores: `method = req.method` normalizado, `route = req.route?.path` o `unmatched`, `status_code = res.statusCode`, duración = `val.responseTime / 1000` (el mismo valor que sale en el log).
 - **Rationale**: cumple "no crear middleware ni hook nuevo" y "no se recalculan por separado": mismo disparo, mismos valores, y cada request cuenta exactamente una vez en métricas y en log (FR-005) por construcción. `pino-http` evalúa los argumentos de `customSuccessObject` aunque el nivel del logger sea `silent`, así que la medición no depende del nivel de log (se prueba en e2e).
 - **Alternatives considered**: un `res.on('finish')` propio con `process.hrtime` (más preciso, pero duplica la medición y la duración deja de coincidir con la del log; además agrega un segundo punto de captura); un Interceptor (descartado por la spec: no ve 401/404/400).
 - **Riesgo conocido**: si `customLogLevel` devolviera `silent` para una ruta, `pino-http` retorna antes de evaluar los callbacks y esa ruta dejaría de medirse. Hoy nunca lo hace; un test lo fija.
@@ -46,7 +46,7 @@ descartable sobre la app real que enumera el router de Express (ya borrado). No 
 ## 7. SLA: decorator y tabla de clases (corrige "comentario o decorator, a definir")
 
 - **Hallazgo** (spike del router): se puede enumerar el router real (`app.getHttpAdapter().getInstance().router.stack`, capas con `route`) y las rutas por controller (`ModulesContainer` + metadatos `path`/`method` de `@nestjs/common`). Con eso se compara "rutas publicadas" contra "rutas con SLA".
-- **Decision**: `@Sla('<clase>')` en cada handler; las clases (`auth`, `read`, `read-computed`, `write`, `market`, `system-trigger`, `system-status`, `system-long`, `stream`, `ping`, `technical`) viven en un único archivo (`shared/metrics/sla.ts`) con `{ p95Ms: number | null, maxErrorRate }`. `resolveSla(method, route)` se arma a partir de los metadatos. El test `sla-coverage` verifica: (a) cada ruta del router (sin comodines) tiene SLA y cada SLA corresponde a una ruta (FR-017); (b) el identificador `METODO /patrón` coincide con la etiqueta que producen las métricas (FR-015); (c) todo umbral ⊂ buckets (FR-016); (d) `GET /metrics` tiene SLA.
+- **Decision**: `@Sla('<clase>')` en cada handler; las clases (`auth`, `read`, `read-computed`, `write`, `market`, `system-trigger`, `system-status`, `system-long`, `stream`, `ping`, `technical`) viven en un único archivo (`shared/observability/metrics/sla.ts`) con `{ p95Ms: number | null, maxErrorRate }`. `resolveSla(method, route)` se arma a partir de los metadatos. El test `sla-coverage` verifica: (a) cada ruta del router (sin comodines) tiene SLA y cada SLA corresponde a una ruta (FR-017); (b) el identificador `METODO /patrón` coincide con la etiqueta que producen las métricas (FR-015); (c) todo umbral ⊂ buckets (FR-016); (d) `GET /metrics` tiene SLA.
 - **Rationale**: un comentario no puede fallar un test (FR-017). Las clases evitan repetir 35 pares de números; los valores coinciden con la tabla de la spec, y cambiar un objetivo es editar un lugar. Queda junto al código y se verifica contra lo que realmente se expone.
 - **Alternatives considered**: comentario junto al controller (no verificable); archivo JSON/YAML aparte (se desincroniza de las rutas, que es justo lo que la spec quiere evitar); un decorator con los números en cada handler (35 duplicados).
 
@@ -67,7 +67,7 @@ descartable sobre la app real que enumera el router de Express (ya borrado). No 
 ## 10. Documentación
 
 - **Swagger**: `GET /metrics` (punto 8). **Postman**: request «Métricas — públicas, sin token (200)» con aserciones del `Content-Type` y de que aparecen las dos familias.
-- **SLA**: la tabla de la spec es la referencia humana; la fuente verificable es `shared/metrics/sla.ts` + los decorators.
+- **SLA**: la tabla de la spec es la referencia humana; la fuente verificable es `shared/observability/metrics/sla.ts` + los decorators.
 - **Documento de visión**: no está versionado (la constitución v1.12.0, Principio XIII, lo referencia por nombre y lo declara explícitamente). La tabla de endpoints sale de las rutas reales, como ya se decidió en la spec.
 
 ## 11. Fuera de alcance / riesgos

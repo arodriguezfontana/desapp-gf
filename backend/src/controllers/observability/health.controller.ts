@@ -2,9 +2,9 @@ import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { Public } from '../../guards/public.decorator';
-import { HealthService } from '../../services/health/health.service';
+import { HealthService } from '../../services/observability/health.service';
 import { HealthResponseDto } from './dto/health-response.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Health check público (spec 027): sin JWT ni API key, para monitoreo y orquestador.

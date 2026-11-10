@@ -58,7 +58,7 @@ sum by (status_code) (rate(http_requests_total{status_code=~"4.."}[5m]))
 
 ## Declaración de SLA (junto al código)
 
-Cada handler lleva `@Sla('<clase>')`; las clases y sus umbrales están en `backend/src/shared/metrics/sla.ts`
+Cada handler lleva `@Sla('<clase>')`; las clases y sus umbrales están en `backend/src/shared/observability/metrics/sla.ts`
 (ver [data-model.md](../data-model.md)). Un test e2e falla si un endpoint publicado no tiene SLA o un SLA no
 corresponde a un endpoint, y comprueba que los umbrales de latencia están entre los límites del histograma.
 

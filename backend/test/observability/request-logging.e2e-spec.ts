@@ -1,10 +1,10 @@
 import * as http from 'node:http';
 import * as request from 'supertest';
 import { JwtService } from '@nestjs/jwt';
-import { createTestApp, TestContext } from './test-app';
+import { createTestApp, TestContext } from '../test-app';
 import { createLogCapture, LogLine } from './helpers/log-capture';
-import { LOG_CONFIG } from '../src/modules/logging/logging.constants';
-import { UserRepository } from '../src/repositories/auth/user.repository';
+import { LOG_CONFIG } from '../../src/modules/observability/logging.constants';
+import { UserRepository } from '../../src/repositories/auth/user.repository';
 
 /**
  * 028-structured-request-logging. Los logs se capturan en memoria sobrescribiendo

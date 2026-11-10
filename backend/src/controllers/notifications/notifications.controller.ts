@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags }
 import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { NotificationsService } from '../../services/notifications/notifications.service';
 import { NotificationResponseDto } from './dto/notification-response.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Controller de notificaciones (025-player-price-alerts, contracts/notifications-api.md).

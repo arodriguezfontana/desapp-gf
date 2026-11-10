@@ -1,7 +1,7 @@
 import { INestApplication, RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { ModulesContainer } from '@nestjs/core';
-import { getSlaClass, SlaClassName } from '../../src/shared/metrics/sla';
+import { getSlaClass, SlaClassName } from '../../../src/shared/observability/metrics/sla';
 
 /** Identificador de un endpoint: `"MÉTODO /patrón"` (el mismo texto que forman las etiquetas `method` y `route`). */
 export type EndpointId = string;

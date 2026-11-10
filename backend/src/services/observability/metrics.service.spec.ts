@@ -1,4 +1,4 @@
-import { DURATION_BUCKETS_SECONDS } from '../../shared/metrics/request-metrics';
+import { DURATION_BUCKETS_SECONDS } from '../../shared/observability/metrics/request-metrics';
 import { MetricsService } from './metrics.service';
 
 const typeLines = (text: string): string[] => text.split('\n').filter((l) => l.startsWith('# TYPE '));

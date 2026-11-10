@@ -14,7 +14,7 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { MeResponseDto } from './dto/me-response.dto';
 import { RegisterRequestDto } from './dto/register-request.dto';
 import { RegisterResponseDto } from './dto/register-response.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 @ApiTags('auth')
 @Controller('auth')

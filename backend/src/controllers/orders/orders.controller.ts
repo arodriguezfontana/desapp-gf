@@ -6,7 +6,7 @@ import { OrdersService } from '../../services/orders/orders.service';
 import { CreateOrderRequestDto } from './dto/create-order-request.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { TokenTransactionResponseDto } from './dto/token-transaction-response.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Controller de Orders (020-order-matching-engine, 023-cancel-order, contracts/orders-api.md).

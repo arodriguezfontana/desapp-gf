@@ -1,7 +1,7 @@
 import * as request from 'supertest';
-import { createTestApp, TestContext } from './test-app';
-import { WHOSCORED_ADAPTER } from '../src/modules/player-sync/player-sync.constants';
-import { FOOTBALL_DATA_ADAPTER } from '../src/modules/competition/football-data-sync.constants';
+import { createTestApp, TestContext } from '../test-app';
+import { WHOSCORED_ADAPTER } from '../../src/modules/player-sync/player-sync.constants';
+import { FOOTBALL_DATA_ADAPTER } from '../../src/modules/competition/football-data-sync.constants';
 
 /**
  * 027-health-check. `GET /health` verifica solo la base de datos (ping con timeout

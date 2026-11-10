@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { HealthService } from '../../services/health/health.service';
+import { HealthService } from '../../services/observability/health.service';
 import { HealthController } from './health.controller';
 import { HealthResponseDto } from './dto/health-response.dto';
 

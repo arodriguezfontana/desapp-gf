@@ -4,7 +4,7 @@ import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { AlertsService } from '../../services/alerts/alerts.service';
 import { CreatePriceAlertRequestDto } from './dto/create-price-alert-request.dto';
 import { PriceAlertResponseDto } from './dto/price-alert-response.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Controller de alertas de precio (025-player-price-alerts, contracts/alerts-api.md).

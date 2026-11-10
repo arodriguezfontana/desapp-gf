@@ -6,7 +6,7 @@ import { StrategyService } from '../../services/quotation/strategy.service';
 import { UserStrategyListResponseDto, UserStrategyResponseDto } from './dto/user-strategy-response.dto';
 import { EditWeightsRequestDto } from './dto/edit-weights-request.dto';
 import { EditPositionWeightsRequestDto } from './dto/edit-position-weights-request.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Las dos estrategias de valuación propias del usuario autenticado

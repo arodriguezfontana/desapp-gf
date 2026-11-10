@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import type { Logger } from 'pino';
 import { LoggerModule } from 'nestjs-pino';
-import { buildRequestLogOptions } from '../../shared/logging/request-log-options';
+import { buildRequestLogOptions } from '../../shared/observability/logging/request-log-options';
 import { LoggingConfigModule } from './logging-config.module';
 import { LOG_ROOT_LOGGER } from './logging.constants';
 

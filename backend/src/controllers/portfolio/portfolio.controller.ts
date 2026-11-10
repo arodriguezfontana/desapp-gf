@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { PortfolioService } from '../../services/portfolio/portfolio.service';
 import { PortfolioResponseDto } from './dto/portfolio-response.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 @ApiTags('portfolio')
 @ApiBearerAuth()

@@ -9,7 +9,7 @@ import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
 import { Public } from '../../guards/public.decorator';
 import { FootballDataSyncService } from '../../services/competition/football-data-sync.service';
 import { SyncSummaryDto } from './dto/sync-summary.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 @ApiTags('sync')
 @ApiSecurity('ApiKeyAuth')

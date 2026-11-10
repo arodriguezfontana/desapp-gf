@@ -6,7 +6,7 @@ import { runPlayerCatalogMigrations } from './database/run-player-catalog-migrat
 import { AdminSeedService } from './services/auth/admin-seed.service';
 import { SuperuserSeedService } from './services/auth/superuser-seed.service';
 import { createCorsOptions } from './shared/cors-origins';
-import { configureRequestLogging } from './shared/logging/configure-request-logging';
+import { configureRequestLogging } from './shared/observability/logging/configure-request-logging';
 import { createGlobalValidationPipe } from './shared/validation/global-validation-pipe';
 
 async function bootstrap() {

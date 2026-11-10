@@ -48,7 +48,7 @@ Verificación del plan técnico del equipo contra el código del repo y contra e
 
 - **Hallazgo**: `backend/src` está organizado por capa (`controllers/<feature>/`, `services/<feature>/`, `modules/<feature>/`, …) y el test tsarch
   (`test/architecture.spec.ts`) aplica sus reglas por carpeta de capa (`controllers`, `services`, `domain`, …). Una carpeta `src/health/` quedaría fuera de ese esquema.
-- **Decision**: `controllers/health/`, `services/health/`, `modules/health/` (sin `domain/` ni `repositories/`).
+- **Decision**: `controllers/observability/`, `services/observability/`, `modules/observability/` (sin `domain/` ni `repositories/`).
 - **Rationale**: consistencia con el resto del repo y con la constitución (Principio I y sección Estructura); el controller sólo habla con el service.
 - **Alternatives considered**: `src/health/` con controller y módulo juntos (plan original): rompe la convención y deja la feature sin cobertura de las reglas de capas.
 
@@ -73,7 +73,7 @@ Verificación del plan técnico del equipo contra el código del repo y contra e
 
 - **Unit (`HealthService`)**: con `HealthCheckService` y `TypeOrmHealthIndicator` simulados: base up → devuelve `ok`; `check` lanza `ServiceUnavailableException` → devuelve el resultado `error` sin relanzar; error inesperado distinto de `ServiceUnavailableException` → se propaga (lo resolverá el filtro como 500, sin fuga). Se verifica `pingCheck('database', { timeout: 3000 })`.
 - **Unit (`HealthController`)**: resultado `ok` → no cambia el status (200); resultado `error` → `res.status(503)`.
-- **E2E (`test/health.e2e-spec.ts`)**, sobre `createTestApp()` (Postgres Testcontainers, nunca la base de desarrollo):
+- **E2E (`test/observability/health.e2e-spec.ts`)**, sobre `createTestApp()` (Postgres Testcontainers, nunca la base de desarrollo):
   - 200 sin token, `status: "ok"`, `details.database.status: "up"`.
   - 503 con `jest.spyOn(dataSource, 'query').mockRejectedValue(new Error(<texto con cadena de conexión>))`: `status: "error"`, `error.database.status: "down"` y el texto sensible **no** aparece en el body.
   - 503 con `query` que nunca resuelve: responde dentro de < 5 s con `database` `down` (timeout).

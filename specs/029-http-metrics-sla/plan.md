@@ -21,7 +21,7 @@ los spikes:
 3. **La etiqueta de ruta se endurece.** El router de Express tiene dos rutas comodín `{/*splat}` (las de los middleware de Nest): cualquier ruta con comodín se trata como `unmatched`, no como una ruta real.
 4. **Faltaban tres reglas de la spec en el plan**: método HTTP acotado a un conjunto estándar (FR-008), el stream en vivo se cuenta pero no entra al histograma (FR-011) y los límites de los intervalos incluyen cada umbral de latencia declarado (FR-016).
 5. **El SLA va en un decorator, no en un comentario.** La spec exige una verificación automática que falle si un endpoint no tiene SLA (FR-017); un comentario no se puede verificar. `@Sla('<clase>')` en cada handler + una tabla de clases en un solo archivo + un test que compara contra las rutas reales del router (33 rutas de controller, más las dos capas comodín que se excluyen; enumeradas en el spike).
-6. **Rutas por capa** (`controllers/metrics/`, `services/metrics/`, `modules/metrics/`), igual que 027, y **`pnpm add`**, no `npm install`.
+6. **Rutas por capa** (`controllers/observability/`, `services/observability/`, `modules/observability/`), igual que 027, y **`pnpm add`**, no `npm install`.
 7. **La 028 está en el historial** (`95c384f`, rama `feat/core-3`); no pude verificar su estado en `main`.
 
 Sobre el punto del plan "`unmatched` mezcla 404 y 400 del parser": estoy de acuerdo con no separarlos por etiqueta, y además **sí son distinguibles por `status_code`** (`unmatched/404` vs `unmatched/400`), así que no hace falta nada más.
@@ -52,7 +52,7 @@ Sobre el punto del plan "`unmatched` mezcla 404 y 400 del parser": estoy de acue
 
 | Principio | Estado | Nota |
 |-----------|--------|------|
-| I. Capas | ✅ | Controller → Service: `MetricsController` sólo habla con `MetricsService` (que usa `prom-client`, una librería sin regla de aislamiento en el principio ni en tsarch). El hook de la 028 (`shared/logging`) depende de una interfaz `RequestMetricsRecorder` en `shared/metrics`, no de `services/`, para no invertir capas |
+| I. Capas | ✅ | Controller → Service: `MetricsController` sólo habla con `MetricsService` (que usa `prom-client`, una librería sin regla de aislamiento en el principio ni en tsarch). El hook de la 028 (`shared/observability/logging`) depende de una interfaz `RequestMetricsRecorder` en `shared/observability/metrics`, no de `services/`, para no invertir capas |
 | II. Dominio rico | ✅ N/A | Sin lógica de negocio |
 | III. Validación / exception filter | ✅ | Sin cambios; el filtro no participa |
 | IV. Autenticación / secretos | ✅ | `/metrics` es `@Public()` como `/health` (decisión explícita de la spec); las etiquetas no llevan ids ni datos de requests |
@@ -91,17 +91,17 @@ backend/
 ├── package.json                                      # + prom-client
 ├── src/
 │   ├── app.module.ts                                 # + MetricsModule
-│   ├── modules/metrics/
+│   ├── modules/observability/
 │   │   ├── metrics.constants.ts                      # REQUEST_METRICS_RECORDER (token)
 │   │   └── metrics.module.ts                         # MetricsService + controller + token useExisting
-│   ├── services/metrics/
+│   ├── services/observability/
 │   │   ├── metrics.service.ts / .spec.ts             # Registry propio, Histogram + Counter, record(), render()
-│   ├── controllers/metrics/
+│   ├── controllers/observability/
 │   │   └── metrics.controller.ts / .spec.ts          # GET /metrics, @Public(), Swagger, @Sla('technical')
-│   ├── shared/metrics/
+│   ├── shared/observability/metrics/
 │   │   ├── request-metrics.ts / .spec.ts             # UNMATCHED_ROUTE, normalizeMethod, resolveRouteLabel, isStreamResponse, DURATION_BUCKETS_SECONDS, RequestMetricsRecorder
 │   │   └── sla.ts / .spec.ts                         # SLA_CLASSES, @Sla(), resolveSla(), umbrales
-│   ├── shared/logging/
+│   ├── shared/observability/logging/
 │   │   ├── request-log-options.ts                    # + parámetro recorder; llama al recorder en customSuccess/ErrorObject
 │   │   └── configure-request-logging.ts              # inyecta el recorder (app.get con el token)
 │   └── controllers/**/*.controller.ts                # + @Sla('<clase>') en cada handler (14 controllers + app.controller.ts)
@@ -111,7 +111,7 @@ backend/
 docs/postman/desapp.postman_collection.json           # request GET /metrics
 ```
 
-**Structure Decision**: capas del backend como en 027/028. La lógica pura (etiquetas, buckets, SLA) va en `shared/metrics/` para testearla sin Nest; el `Registry` y las métricas viven en un service; el hook de la 028 sólo conoce una interfaz.
+**Structure Decision**: capas del backend como en 027/028. La lógica pura (etiquetas, buckets, SLA) va en `shared/observability/metrics/` para testearla sin Nest; el `Registry` y las métricas viven en un service; el hook de la 028 sólo conoce una interfaz.
 
 ## Riesgos conocidos y mitigaciones
 

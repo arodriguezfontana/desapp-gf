@@ -14,7 +14,7 @@ Guía de validación; los detalles de forma están en [contracts/health-api.md](
 ```bash
 cd backend
 pnpm test:unit        # health.service.spec / health.controller.spec / architecture.spec (tsarch)
-pnpm test:e2e         # incluye test/health.e2e-spec.ts y protected.e2e-spec.ts
+pnpm test:e2e         # incluye test/observability/health.e2e-spec.ts y protected.e2e-spec.ts
 pnpm build            # nest build sin errores
 pnpm lint
 ```

@@ -1,9 +1,9 @@
 import * as request from 'supertest';
-import { createTestApp, TestContext } from './test-app';
+import { createTestApp, TestContext } from '../test-app';
 import { parsePrometheusText } from './helpers/prom-text';
 import { compareRouteSets, listDeclaredSla, listRouterRoutes } from './helpers/route-inventory';
-import { DURATION_BUCKETS_SECONDS } from '../src/shared/metrics/request-metrics';
-import { SLA_CLASSES, slaLatencyThresholdsSeconds } from '../src/shared/metrics/sla';
+import { DURATION_BUCKETS_SECONDS } from '../../src/shared/observability/metrics/request-metrics';
+import { SLA_CLASSES, slaLatencyThresholdsSeconds } from '../../src/shared/observability/metrics/sla';
 
 /**
  * 029-http-metrics-sla: el SLA declarado con `@Sla` se verifica contra lo que el backend publica

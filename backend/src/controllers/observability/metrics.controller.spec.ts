@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { MetricsService } from '../../services/metrics/metrics.service';
+import { MetricsService } from '../../services/observability/metrics.service';
 import { MetricsController } from './metrics.controller';
 
 describe('MetricsController', () => {

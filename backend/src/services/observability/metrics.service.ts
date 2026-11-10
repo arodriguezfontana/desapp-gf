@@ -4,7 +4,7 @@ import {
   DURATION_BUCKETS_SECONDS,
   RequestMetricSample,
   RequestMetricsRecorder,
-} from '../../shared/metrics/request-metrics';
+} from '../../shared/observability/metrics/request-metrics';
 
 /**
  * Métricas técnicas de requests (spec 029): histograma de duración y contador de requests,

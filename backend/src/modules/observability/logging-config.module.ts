@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import pino from 'pino';
-import { resolveLogLevel } from '../../shared/logging/log-level';
+import { resolveLogLevel } from '../../shared/observability/logging/log-level';
 import { LOG_CONFIG, LOG_ROOT_LOGGER, LogConfig } from './logging.constants';
 
 /**

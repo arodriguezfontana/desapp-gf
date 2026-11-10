@@ -53,7 +53,7 @@ Además: `LOG_LEVEL` opcional con default por entorno (`debug` si `NODE_ENV=deve
 
 | Principio | Estado | Nota |
 |-----------|--------|------|
-| I. Capas | ✅ | Sin controller/service nuevos: la infraestructura de logging vive en `shared/logging/` y `modules/logging/`, como el filtro global en `shared/filters/`. El test tsarch no se ve afectado (no hay imports entre capas nuevos) |
+| I. Capas | ✅ | Sin controller/service nuevos: la infraestructura de logging vive en `shared/observability/logging/` y `modules/observability/`, como el filtro global en `shared/filters/`. El test tsarch no se ve afectado (no hay imports entre capas nuevos) |
 | II. Dominio rico | ✅ N/A | Sin lógica de negocio |
 | III. Validación / exception filter | ✅ | El formato de error del filtro no cambia; sus logs pasan a ser JSON con el Correlation ID, y deja de loguear los 4xx (ya los registra el log de requests): sólo loguea los 5xx, con el stack real |
 | IV. Autenticación / secretos | ✅ **refuerza** | Ningún JWT, contraseña, API key, email ni nombre de usuario en logs, en ninguna capa: redacción recursiva + headers fuera + URL saneada |
@@ -93,10 +93,10 @@ backend/
 ├── src/
 │   ├── main.ts                                    # bufferLogs, useLogger, configureRequestLogging, exposedHeaders, nota Swagger
 │   ├── app.module.ts                              # + LoggingModule
-│   ├── modules/logging/
+│   ├── modules/observability/
 │   │   ├── logging.constants.ts                   # LOG_CONFIG (token overridable en tests)
 │   │   └── logging.module.ts                      # LoggerModule.forRootAsync(autoLogging:false) + provider LOG_CONFIG
-│   └── shared/logging/
+│   └── shared/observability/logging/
 │       ├── correlation-id.ts / .spec.ts           # resolveCorrelationId()
 │       ├── redaction.ts / .spec.ts                # redactBody(), redactQuery(), redactUrl()
 │       ├── request-log-options.ts / .spec.ts      # buildRequestLogOptions(): pino-http (genReqId, serializers, custom*Object, customLogLevel)
@@ -108,7 +108,7 @@ backend/
 docs/postman/desapp.postman_collection.json        # descripción + test a nivel colección del header
 ```
 
-**Structure Decision**: la lógica pura (id, redacción, opciones de `pino-http`) va en `shared/logging/` para testearla sin Nest ni red; el cableado de DI va en `modules/logging/`; el cableado Express previo al body parser va en `configureRequestLogging`. No hay carpetas de `controllers/services/domain/repositories`: no hay lógica de negocio ni acceso a datos.
+**Structure Decision**: la lógica pura (id, redacción, opciones de `pino-http`) va en `shared/observability/logging/` para testearla sin Nest ni red; el cableado de DI va en `modules/observability/`; el cableado Express previo al body parser va en `configureRequestLogging`. No hay carpetas de `controllers/services/domain/repositories`: no hay lógica de negocio ni acceso a datos.
 
 ## Complexity Tracking
 

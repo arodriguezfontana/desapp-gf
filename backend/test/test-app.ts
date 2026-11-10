@@ -4,7 +4,7 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { runPlayerCatalogMigrations } from '../src/database/run-player-catalog-migrations';
-import { configureRequestLogging } from '../src/shared/logging/configure-request-logging';
+import { configureRequestLogging } from '../src/shared/observability/logging/configure-request-logging';
 import { createGlobalValidationPipe } from '../src/shared/validation/global-validation-pipe';
 
 export interface ProviderOverride {

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { MetricsController } from '../../controllers/metrics/metrics.controller';
-import { MetricsService } from '../../services/metrics/metrics.service';
+import { MetricsController } from '../../controllers/observability/metrics.controller';
+import { MetricsService } from '../../services/observability/metrics.service';
 import { REQUEST_METRICS_RECORDER } from './metrics.constants';
 
 /**

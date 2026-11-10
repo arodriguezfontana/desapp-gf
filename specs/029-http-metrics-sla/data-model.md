@@ -38,7 +38,7 @@ Reglas de `route`:
 
 ## Objetivo de SLA (`SlaClass`)
 
-Declarado en `shared/metrics/sla.ts` y aplicado con `@Sla('<clase>')` en cada handler.
+Declarado en `shared/observability/metrics/sla.ts` y aplicado con `@Sla('<clase>')` en cada handler.
 
 | Clase | p95 (ms) | Tasa 5xx máx. | Endpoints (de la spec) |
 |-------|---------:|--------------:|------------------------|

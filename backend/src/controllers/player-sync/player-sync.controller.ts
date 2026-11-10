@@ -11,7 +11,7 @@ import { PlayerSyncService } from '../../services/player-sync/player-sync.servic
 import { SyncAcceptedDto } from './dto/sync-accepted.dto';
 import { SyncRunStatusDto } from './dto/sync-run-status.dto';
 import { SYNC_RUN_NOT_FOUND_MESSAGE } from '../../shared/errors/messages';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 @ApiTags('sync')
 @ApiSecurity('ApiKeyAuth')

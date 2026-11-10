@@ -78,8 +78,8 @@ SSE con token en la URL) que se corrió en un directorio temporal, fuera del rep
 
 ## 12. Estrategia de pruebas
 
-- **Unit** (`shared/logging/*.spec.ts`): `resolveCorrelationId` (válido, vacío, largo, caracteres inválidos, array de headers), `redactBody` (anidado, mayúsculas, arreglos, no muta, tope de profundidad), `redactUrl` (token en query), `buildRequestLogOptions` (serializers, niveles, `customSuccessObject` con `"anónimo"`/`userId`, truncado), `createCorsOptions` (`exposedHeaders`).
-- **E2E** (`test/request-logging.e2e-spec.ts`, sobre `createTestApp()`; el sumidero de logs se inyecta sobrescribiendo el provider `LOG_CONFIG`, igual que `sync-trigger` sobrescribe adaptadores):
+- **Unit** (`shared/observability/logging/*.spec.ts`): `resolveCorrelationId` (válido, vacío, largo, caracteres inválidos, array de headers), `redactBody` (anidado, mayúsculas, arreglos, no muta, tope de profundidad), `redactUrl` (token en query), `buildRequestLogOptions` (serializers, niveles, `customSuccessObject` con `"anónimo"`/`userId`, truncado), `createCorsOptions` (`exposedHeaders`).
+- **E2E** (`test/observability/request-logging.e2e-spec.ts`, sobre `createTestApp()`; el sumidero de logs se inyecta sobrescribiendo el provider `LOG_CONFIG`, igual que `sync-trigger` sobrescribe adaptadores):
   - header `X-Correlation-Id` presente en 200, 401 (login fallido), 404 y 400 por JSON mal formado;
   - id entrante válido: misma salida; inválido: reemplazado por UUID;
   - cada una de esas requests deja una entrada con los campos de FR-003;

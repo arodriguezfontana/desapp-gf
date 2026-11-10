@@ -11,7 +11,7 @@ import { Public } from '../../guards/public.decorator';
 import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
 import { MarketSimulationService } from '../../services/simulation/market-simulation.service';
 import { SimulationResultDto } from './dto/simulation-result.dto';
-import { Sla } from '../../shared/metrics/sla';
+import { Sla } from '../../shared/observability/metrics/sla';
 
 /**
  * Controller de administración para disparar la simulación interactiva del mercado.

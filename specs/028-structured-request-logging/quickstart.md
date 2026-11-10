@@ -13,8 +13,8 @@ Guía de validación; el formato de las líneas está en [contracts/request-logg
 
 ```bash
 cd backend
-pnpm test:unit        # shared/logging/*.spec, cors, tsarch
-pnpm test:e2e         # incluye test/request-logging.e2e-spec.ts
+pnpm test:unit        # shared/observability/logging/*.spec, cors, tsarch
+pnpm test:e2e         # incluye test/observability/request-logging.e2e-spec.ts
 pnpm build
 pnpm lint
 ```

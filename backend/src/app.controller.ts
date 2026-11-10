@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Public } from './guards/public.decorator';
-import { Sla } from './shared/metrics/sla';
+import { Sla } from './shared/observability/metrics/sla';
 
 @Controller()
 export class AppController {
