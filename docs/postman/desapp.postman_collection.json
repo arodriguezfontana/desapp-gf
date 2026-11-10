@@ -1068,7 +1068,9 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });"
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('status general \"ok\"', function () { pm.expect(pm.response.json().status).to.eql('ok'); });",
+                  "pm.test('database \"up\"', function () { pm.expect(pm.response.json().details.database.status).to.eql('up'); });"
                 ]
               }
             }
@@ -1085,7 +1087,7 @@
                 "health"
               ]
             },
-            "description": "GET / y GET /health son @Public(): responden 200 sin ningún token. Esta request cubre /health; probar /{{baseUrl}} manualmente cubre la raíz."
+            "description": "GET / y GET /health son @Public(): responden sin ningún token. /health verifica la conexión a la base de datos: con la base sana responde 200 con status \"ok\" y details.database.status \"up\"; si la base no responde (o supera los 3 s de timeout) responde 503 con status \"error\" y details.database.status \"down\" (no reproducible desde esta colección). No verifica Football-Data ni WhoScored. Esta request cubre /health; probar /{{baseUrl}} manualmente cubre la raíz."
           }
         }
       ]

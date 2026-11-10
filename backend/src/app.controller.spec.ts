@@ -24,17 +24,4 @@ describe('AppController', () => {
       expect(appController.getRoot()).toEqual(result);
     });
   });
-
-  describe('getHealth', () => {
-    it('should return a health status object', () => {
-      const result = {
-        status: 'ok',
-        service: 'desapp-api',
-        timestamp: new Date().toISOString(),
-      };
-      jest.spyOn(appService, 'getHealth').mockReturnValue(result);
-
-      expect(appController.getHealth()).toEqual(result);
-    });
-  });
 });

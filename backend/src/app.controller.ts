@@ -11,10 +11,4 @@ export class AppController {
   getRoot(): { message: string } {
     return this.appService.getRoot();
   }
-
-  @Get('health')
-  @Public()
-  getHealth(): { status: string; service: string; timestamp: string } {
-    return this.appService.getHealth();
-  }
 }
