@@ -1,9 +1,20 @@
 {
   "info": {
     "name": "DesApp — API completa",
-    "description": "Casos positivos y negativos de toda la API del backend (auth, ApiKey, catálogo, sincronizaciones, estrategias de valuación, cotizaciones, mercado de tokens, portfolio, alertas y simulación) para testear a mano o con el Collection Runner / newman. Correr en orden (folder por folder, request por request): varias requests dependen de variables que setean las anteriores (userEmail, accessToken, apiKey, playerId, accessTokenB, adminApiKey, etc.). Antes de correr, completar las variables de colección adminEmail y adminPassword con ADMIN_EMAIL y ADMIN_PASSWORD del .env del backend. El matching de órdenes (Feature 20) requiere además SUPERUSER_EMAIL y SUPERUSER_PASSWORD configurados y el catálogo de jugadores ya sincronizado antes de arrancar el backend: el superusuario publica una venta de 100 tokens por jugador que sirve de contraparte. Autenticación por endpoint: JWT (Authorization: Bearer) para todo lo ligado a un usuario; ApiKey (x-api-key) para el catálogo público; ApiKey de ADMIN para las sincronizaciones manuales y el recálculo global de cotizaciones; ApiKey o JWT de ADMIN para la simulación de mercado. Ver specs/001-user-auth/ a specs/025-player-price-alerts/. Los mantenimientos del crosswalk de equipos (specs/010-team-name-crosswalk/) y los crons semanales no tienen endpoint HTTP.",
+    "description": "Casos positivos y negativos de toda la API del backend (auth, ApiKey, catálogo, sincronizaciones, estrategias de valuación, cotizaciones, mercado de tokens, portfolio, alertas y simulación) para testear a mano o con el Collection Runner / newman. Correr en orden (folder por folder, request por request): varias requests dependen de variables que setean las anteriores (userEmail, accessToken, apiKey, playerId, accessTokenB, adminApiKey, etc.). Antes de correr, completar las variables de colección adminEmail y adminPassword con ADMIN_EMAIL y ADMIN_PASSWORD del .env del backend. El matching de órdenes (Feature 20) requiere además SUPERUSER_EMAIL y SUPERUSER_PASSWORD configurados y el catálogo de jugadores ya sincronizado antes de arrancar el backend: el superusuario publica una venta de 100 tokens por jugador que sirve de contraparte. Autenticación por endpoint: JWT (Authorization: Bearer) para todo lo ligado a un usuario; ApiKey (x-api-key) para el catálogo público; ApiKey de ADMIN para las sincronizaciones manuales y el recálculo global de cotizaciones; ApiKey o JWT de ADMIN para la simulación de mercado. Ver specs/001-user-auth/ a specs/025-player-price-alerts/. Los mantenimientos del crosswalk de equipos (specs/010-team-name-crosswalk/) y los crons semanales no tienen endpoint HTTP. Toda respuesta incluye el header X-Correlation-Id (identifica la request en los logs del backend); se puede enviar en la request para reutilizarlo en reintentos (1 a 64 caracteres: letras, números y . _ : -).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Responde X-Correlation-Id', function () { pm.expect(pm.response.headers.has('X-Correlation-Id')).to.be.true; });"
+        ]
+      }
+    }
+  ],
   "variable": [
     {
       "key": "baseUrl",

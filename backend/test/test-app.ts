@@ -1,8 +1,10 @@
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { runPlayerCatalogMigrations } from '../src/database/run-player-catalog-migrations';
+import { configureRequestLogging } from '../src/shared/logging/configure-request-logging';
 import { createGlobalValidationPipe } from '../src/shared/validation/global-validation-pipe';
 
 export interface ProviderOverride {
@@ -30,6 +32,9 @@ export async function createTestApp(overrides?: ProviderOverride[]): Promise<Tes
   const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication();
+  // Mismo logging que main.ts: logs JSON, Correlation ID y middleware previo al body parser.
+  app.useLogger(app.get(PinoLogger));
+  configureRequestLogging(app);
   app.useGlobalPipes(createGlobalValidationPipe());
   // listen(0) en lugar de init(): el SO asigna un puerto libre y el servidor
   // queda realmente escuchando antes de que supertest haga requests concurrentes.

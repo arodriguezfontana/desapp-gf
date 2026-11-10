@@ -13,3 +13,16 @@ export function parseCorsOrigins(value: string | undefined): string[] {
     .filter((origin) => origin.length > 0);
   return origins.length > 0 ? origins : [DEFAULT_CORS_ORIGIN];
 }
+
+/**
+ * Opciones de CORS del backend. Expone `X-Correlation-Id` para que el frontend pueda
+ * leerlo con `response.headers.get(...)`: sin esto el navegador oculta el header a los
+ * scripts de otro origen (spec 028).
+ */
+export function createCorsOptions(rawOrigins: string | undefined) {
+  return {
+    origin: parseCorsOrigins(rawOrigins),
+    credentials: true,
+    exposedHeaders: ['X-Correlation-Id'],
+  };
+}

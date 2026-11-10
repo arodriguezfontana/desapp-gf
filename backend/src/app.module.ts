@@ -19,6 +19,7 @@ import { SimulationModule } from './modules/simulation/simulation.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './modules/health/health.module';
+import { LoggingModule } from './modules/logging/logging.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
@@ -40,6 +41,7 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
     AlertsModule,
     NotificationsModule,
     HealthModule,
+    LoggingModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_FILTER, useClass: AllExceptionsFilter }],
