@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { runPlayerCatalogMigrations } from './database/run-player-catalog-migrations';
 import { AdminSeedService } from './services/auth/admin-seed.service';
 import { SuperuserSeedService } from './services/auth/superuser-seed.service';
+import { parseCorsOrigins } from './shared/cors-origins';
 import { createGlobalValidationPipe } from './shared/validation/global-validation-pipe';
 
 async function bootstrap() {
@@ -24,7 +25,7 @@ async function bootstrap() {
   await app.get(SuperuserSeedService, { strict: false }).run();
 
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: parseCorsOrigins(process.env.CORS_ORIGIN),
     credentials: true,
   });
 

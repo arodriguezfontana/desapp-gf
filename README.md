@@ -19,7 +19,8 @@ pnpm install --dir frontend
 
 Variables de entorno (copiar los `.env.example`):
 
-- `backend/.env` → `PORT`, `DATABASE_URL`, `JWT_SECRET` (secreto real de firma del JWT,
+- `backend/.env` → `PORT`, `CORS_ORIGIN` (orígenes del frontend permitidos, separados por coma; por defecto
+  `http://localhost:5173`), `DATABASE_URL`, `JWT_SECRET` (secreto real de firma del JWT,
   generar uno propio: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
   `QUOTES_API_KEY` (clave para que el frontend consulte el catálogo y dispare recálculos),
   `ADMIN_API_KEY` (clave exclusiva del administrador para operaciones privilegiadas, como activar estrategias de cotización),
