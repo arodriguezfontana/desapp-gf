@@ -21,35 +21,20 @@ import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repo
 import { Email } from '../../domain/auth/email';
 import { User } from '../../domain/auth/user';
 import { UserRole } from '../../domain/auth/user-role';
-import { Order } from '../../domain/orders/order';
-import { OrderSide } from '../../domain/orders/enums/order-side';
-import { OrderStatus } from '../../domain/orders/enums/order-status';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
-import { TokenTransaction } from '../../domain/orders/token-transaction';
-import { TokenTransactionType } from '../../domain/orders/enums/token-transaction-type';
-import { PlayerQuote } from '../../domain/quotation/player-quote';
 import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
-import { PriceAlert } from '../../domain/alerts/price-alert';
-import { AlertCondition } from '../../domain/alerts/alert-condition';
 import { QuotationService } from '../quotation/quotation.service';
 import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/simulation/dto/simulation-result.dto';
 import {
-  ADMIN_ORDER_PLANS,
-  BOT_INITIAL_HOLDING,
   buildDateHelper,
-  buildTradePlans,
   DEFAULT_BOTS,
-  DEMO_ALERT_ABOVE_FACTOR,
-  DEMO_ALERT_BELOW_FACTOR,
   FALLBACK_REFERENCE_PRICE,
-  MARKET_BOOK_LEVELS,
   MAX_SIMULATED_PLAYERS,
   MIN_REFERENCE_PRICE,
-  QUOTE_HISTORY_STEPS,
 } from './simulation-plans';
-import { buildSimulationSnapshots, SimulatedMovement } from './simulation-balances';
+import { buildAdminOrders, buildDemoAlerts, buildMarketBook, buildQuoteHistory, buildTradeSeed } from './simulation-seeds';
 
 @Injectable()
 export class MarketSimulationService {
@@ -167,60 +152,22 @@ export class MarketSimulationService {
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
   ): Promise<{ transactionsCount: number; holdingsCount: number }> {
-    const txPlans = buildTradePlans(simPlayers.length);
-
-    const adminHoldingsQty = new Map<string, number>();
-    const ordersToSave: Order[] = [];
-    const transactionsToSave: TokenTransaction[] = [];
-    // Movimientos sembrados (admin y bots) para calcular su saldo antes/despues (spec 030): el admin
-    // parte de 0 y cada bot de su tenencia inicial. La tenencia final del bot se fija abajo con
-    // `withQuantity` y no se reconcilia con estos asientos: son datos de prueba.
-    const movements: SimulatedMovement[] = [];
-    const draftTransactions: Array<Omit<Parameters<typeof TokenTransaction.create>[0], 'balanceBefore' | 'balanceAfter'>> = [];
-    let transactionsCount = 0;
-
-    for (const plan of txPlans) {
-      const player = simPlayers[plan.playerIdx];
-      const bot = bots[plan.botIdx % bots.length];
-      const price = roundToTwoDecimals((refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE) * plan.priceFactor);
-      const createdAt = tDate(plan.daysAgo);
-      const orderId = this.ids.generate();
-      const counterpartOrderId = this.ids.generate();
-      const adminSide = plan.type === TokenTransactionType.CREDIT ? OrderSide.BUY : OrderSide.SELL;
-
-      ordersToSave.push(Order.seed({ id: orderId, userId: admin.id, playerId: player.id, side: adminSide, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
-      ordersToSave.push(Order.seed({ id: counterpartOrderId, userId: bot.id, playerId: player.id, side: adminSide === OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY, quantity: plan.quantity, remainingQuantity: 0, price, createdAt, status: OrderStatus.COMPLETED }));
-
-      draftTransactions.push({ id: this.ids.generate(), userId: admin.id, type: plan.type, playerId: player.id, quantity: plan.quantity, price, orderId, counterpartOrderId, createdAt });
-      transactionsCount++;
-
-      const botTxType = plan.type === TokenTransactionType.CREDIT ? TokenTransactionType.DEBIT : TokenTransactionType.CREDIT;
-      draftTransactions.push({ id: this.ids.generate(), userId: bot.id, type: botTxType, playerId: player.id, quantity: plan.quantity, price, orderId: counterpartOrderId, counterpartOrderId: orderId, createdAt });
-
-      const current = adminHoldingsQty.get(player.id) ?? 0;
-      adminHoldingsQty.set(player.id, Math.max(0, plan.type === TokenTransactionType.CREDIT ? current + plan.quantity : current - plan.quantity));
-    }
-
-    for (const draft of draftTransactions) {
-      movements.push({ id: draft.id, userId: draft.userId, playerId: draft.playerId, type: draft.type, quantity: draft.quantity, createdAt: draft.createdAt });
-    }
-    const botIds = new Set(bots.map((bot) => bot.id));
-    const snapshots = buildSimulationSnapshots(movements, (userId) => (botIds.has(userId) ? BOT_INITIAL_HOLDING : 0));
-    for (const draft of draftTransactions) {
-      const snapshot = snapshots.get(draft.id)!;
-      transactionsToSave.push(TokenTransaction.create({ ...draft, balanceBefore: snapshot.before, balanceAfter: snapshot.after }));
-    }
+    const { orders, transactions, adminHoldings } = buildTradeSeed({
+      adminId: admin.id,
+      bots,
+      simPlayers,
+      refPrices,
+      dateAgo: tDate,
+      newId: () => this.ids.generate(),
+    });
 
     // Las transacciones referencian a las órdenes (FK): primero las órdenes.
-    await Promise.all(ordersToSave.map((order) => this.orders.save(order)));
-    await Promise.all(transactionsToSave.map((tx) => this.tokenTransactions.save(tx)));
+    await Promise.all(orders.map((order) => this.orders.save(order)));
+    await Promise.all(transactions.map((tx) => this.tokenTransactions.save(tx)));
+    await Promise.all(adminHoldings.map((h) => this.saveHoldingQuantity(h.userId, h.playerId, h.quantity)));
 
-    const holdingsToSave = [...adminHoldingsQty.entries()].filter(([, quantity]) => quantity > 0);
-    await Promise.all(
-      holdingsToSave.map(([playerId, quantity]) => this.saveHoldingQuantity(admin.id, playerId, quantity)),
-    );
-
-    return { transactionsCount, holdingsCount: holdingsToSave.length };
+    // Cada operación del admin deja dos asientos (el suyo y el de su bot); se cuenta una por plan.
+    return { transactionsCount: transactions.length / 2, holdingsCount: adminHoldings.length };
   }
 
   private async seedAdminOrders(
@@ -229,21 +176,7 @@ export class MarketSimulationService {
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
   ): Promise<number> {
-    const orders = ADMIN_ORDER_PLANS.map((plan) => {
-      const player = plan.playerIdx < 0 ? simPlayers.at(plan.playerIdx)! : simPlayers[plan.playerIdx];
-      const referencePrice = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
-      return Order.seed({
-        id: this.ids.generate(),
-        userId: adminId,
-        playerId: player.id,
-        side: plan.side,
-        quantity: plan.quantity,
-        remainingQuantity: plan.remainingQuantity,
-        price: roundToTwoDecimals(referencePrice * plan.priceFactor),
-        createdAt: tDate(plan.daysAgo),
-        status: plan.status,
-      });
-    });
+    const orders = buildAdminOrders({ adminId, simPlayers, refPrices, dateAgo: tDate, newId: () => this.ids.generate() });
     await Promise.all(orders.map((order) => this.orders.save(order)));
     return orders.length;
   }
@@ -254,27 +187,15 @@ export class MarketSimulationService {
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
   ): Promise<number> {
-    const holdings = simPlayers.flatMap((player) => bots.map((bot) => ({ botId: bot.id, playerId: player.id })));
-    const orders = simPlayers.flatMap((player) => {
-      const base = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
-      return MARKET_BOOK_LEVELS.map((level) =>
-        Order.seed({
-          id: this.ids.generate(),
-          userId: bots[level.botIdx].id,
-          playerId: player.id,
-          side: level.side,
-          quantity: level.quantity,
-          remainingQuantity: level.quantity,
-          price: roundToTwoDecimals(base * level.priceFactor),
-          createdAt: tDate(level.daysAgo),
-          status: OrderStatus.PENDING,
-        }),
-      );
+    const { orders, botHoldings } = buildMarketBook({
+      bots,
+      simPlayers,
+      refPrices,
+      dateAgo: tDate,
+      newId: () => this.ids.generate(),
     });
 
-    await Promise.all(
-      holdings.map(({ botId, playerId }) => this.saveHoldingQuantity(botId, playerId, BOT_INITIAL_HOLDING)),
-    );
+    await Promise.all(botHoldings.map((h) => this.saveHoldingQuantity(h.userId, h.playerId, h.quantity)));
     await Promise.all(orders.map((order) => this.orders.save(order)));
     return orders.length;
   }
@@ -291,26 +212,18 @@ export class MarketSimulationService {
     const selectedStrategy = adminStrategies.find((s) => s.isSelected) ?? adminStrategies[0];
     const strategyId = selectedStrategy ? selectedStrategy.id : this.ids.generate();
 
-    const quotesToSave: PlayerQuote[] = [];
-    const quotesSummary: SimulatedQuoteDto[] = [];
-    const latestQuoteByPlayer: PlayerQuote[] = [];
-
-    for (const player of activePlayers) {
-      const currentPrice = refPrices.get(player.id) ?? FALLBACK_REFERENCE_PRICE;
-      let latestQuote: PlayerQuote | null = null;
-      for (const step of QUOTE_HISTORY_STEPS) {
-        const quoteValue = roundToTwoDecimals(currentPrice * step.factor);
-        const quote = PlayerQuote.create({ id: this.ids.generate(), userId: adminId, playerId: player.id, strategyId, weightSnapshot: { rating: 1.0, goals: 1.0 }, factorEscalaSnapshot: 1.0, score: roundToTwoDecimals(quoteValue / 10), value: quoteValue, calculatedAt: tDate(step.daysAgo), appliedPosition: player.position });
-        quotesToSave.push(quote);
-        latestQuote = quote;
-      }
-      quotesSummary.push({ playerId: player.id, playerName: player.name, value: latestQuote!.value });
-      latestQuoteByPlayer.push(latestQuote!);
-    }
-    await this.playerQuotes.saveMany(quotesToSave);
+    const { quotes, latest } = buildQuoteHistory({
+      adminId,
+      activePlayers,
+      refPrices,
+      strategyId,
+      dateAgo: tDate,
+      newId: () => this.ids.generate(),
+    });
+    await this.playerQuotes.saveMany(quotes);
 
     await Promise.all(
-      latestQuoteByPlayer.map((quote) =>
+      latest.map((quote) =>
         this.eventEmitter.emitAsync(
           QUOTE_RECALCULATED_EVENT,
           new QuoteRecalculatedEvent(quote.userId, quote.playerId, quote.value, quote.calculatedAt),
@@ -318,16 +231,18 @@ export class MarketSimulationService {
       ),
     );
 
-    return { quotesCount: quotesToSave.length, quotesSummary };
+    const quotesSummary = latest.map((quote, index) => ({
+      playerId: quote.playerId,
+      playerName: activePlayers[index].name,
+      value: quote.value,
+    }));
+    return { quotesCount: quotes.length, quotesSummary };
   }
 
   /**
-   * Siembra, solo la primera vez, dos `PriceAlert` de demo del admin: una
-   * `PRICE_BELOW` y una `PRICE_ABOVE`, sobre dos jugadores distintos de los
-   * que tienen actividad de mercado simulada. Los umbrales se calculan a
-   * partir de `refPrices` con margen suficiente para que la cotización que
-   * genera el paso 9 (≈0.99 × precio de referencia) las cumpla, de forma
-   * que el recálculo simulado dispare el flujo real de alertas.
+   * Siembra, solo la primera vez, dos `PriceAlert` de demo del admin (ver `buildDemoAlerts`): una
+   * `PRICE_BELOW` y una `PRICE_ABOVE` sobre dos jugadores distintos de los que tienen actividad de
+   * mercado simulada, para que el recálculo simulado dispare el flujo real de alertas.
    */
   private async ensureDemoAlerts(
     adminId: string,
@@ -339,37 +254,15 @@ export class MarketSimulationService {
       return 0;
     }
 
-    const now = this.clock.now();
-    const belowPlayer = simPlayers[0];
-    const belowPrice = refPrices.get(belowPlayer.id) ?? FALLBACK_REFERENCE_PRICE;
-    const alertsToCreate: PriceAlert[] = [
-      PriceAlert.create({
-        id: this.ids.generate(),
-        userId: adminId,
-        playerId: belowPlayer.id,
-        condition: AlertCondition.PRICE_BELOW,
-        targetValue: roundToTwoDecimals(belowPrice * DEMO_ALERT_BELOW_FACTOR),
-        createdAt: now,
-      }),
-    ];
-
-    if (simPlayers.length > 1) {
-      const abovePlayer = simPlayers[1];
-      const abovePrice = refPrices.get(abovePlayer.id) ?? FALLBACK_REFERENCE_PRICE;
-      alertsToCreate.push(
-        PriceAlert.create({
-          id: this.ids.generate(),
-          userId: adminId,
-          playerId: abovePlayer.id,
-          condition: AlertCondition.PRICE_ABOVE,
-          targetValue: roundToTwoDecimals(abovePrice * DEMO_ALERT_ABOVE_FACTOR),
-          createdAt: now,
-        }),
-      );
-    }
-
-    await Promise.all(alertsToCreate.map((alert) => this.priceAlerts.save(alert)));
-    return alertsToCreate.length;
+    const alerts = buildDemoAlerts({
+      adminId,
+      simPlayers,
+      refPrices,
+      now: this.clock.now(),
+      newId: () => this.ids.generate(),
+    });
+    await Promise.all(alerts.map((alert) => this.priceAlerts.save(alert)));
+    return alerts.length;
   }
 
   /** Fija la cantidad de un holding (idempotente): reutiliza el existente o abre uno nuevo. */
