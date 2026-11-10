@@ -10,6 +10,7 @@ import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { AuthService } from '../../services/auth/auth.service';
 import { ApiKeyService } from '../../services/api-key/api-key.service';
 import { IssueApiKeyResponseDto } from './dto/issue-api-key-response.dto';
+import { Sla } from '../../shared/metrics/sla';
 
 @ApiTags('auth')
 @Controller('auth/api-key')
@@ -20,6 +21,7 @@ export class ApiKeyController {
   ) {}
 
   @Post()
+  @Sla('auth')
   @HttpCode(201)
   @ApiBearerAuth()
   @ApiOperation({

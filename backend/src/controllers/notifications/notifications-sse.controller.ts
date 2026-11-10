@@ -6,6 +6,7 @@ import { SseJwtAuthGuard } from '../../guards/auth/sse-jwt-auth.guard';
 import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { NotificationsService } from '../../services/notifications/notifications.service';
 import { NotificationResponseDto } from './dto/notification-response.dto';
+import { Sla } from '../../shared/metrics/sla';
 
 /**
  * Push en vivo de notificaciones vía Server-Sent Events
@@ -20,6 +21,7 @@ export class NotificationsSseController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Sse('stream')
+  @Sla('stream')
   @ApiExcludeEndpoint()
   stream(@CurrentUser() userId: string): Observable<MessageEvent> {
     return this.notificationsService.subscribe(userId).pipe(

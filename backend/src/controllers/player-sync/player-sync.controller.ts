@@ -11,6 +11,7 @@ import { PlayerSyncService } from '../../services/player-sync/player-sync.servic
 import { SyncAcceptedDto } from './dto/sync-accepted.dto';
 import { SyncRunStatusDto } from './dto/sync-run-status.dto';
 import { SYNC_RUN_NOT_FOUND_MESSAGE } from '../../shared/errors/messages';
+import { Sla } from '../../shared/metrics/sla';
 
 @ApiTags('sync')
 @ApiSecurity('ApiKeyAuth')
@@ -21,6 +22,7 @@ export class PlayerSyncController {
   constructor(private readonly playerSyncService: PlayerSyncService) {}
 
   @Post('whoscored')
+  @Sla('system-trigger')
   @HttpCode(202)
   @ApiOperation({ summary: 'Dispara la sincronización de WhoScored en background' })
   @ApiResponse({ status: 202, description: 'Corrida iniciada. Usar el runId para consultar el estado.', type: SyncAcceptedDto })
@@ -32,6 +34,7 @@ export class PlayerSyncController {
   }
 
   @Get('whoscored/:runId')
+  @Sla('system-status')
   @ApiOperation({ summary: 'Estado y resumen de una corrida de WhoScored' })
   @ApiResponse({ status: 200, description: 'Estado de la corrida.', type: SyncRunStatusDto })
   @ApiResponse({ status: 401, description: 'Sin ApiKey válida.' })

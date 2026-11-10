@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'node:http';
 import type { Logger } from 'pino';
 import type { Options } from 'pino-http';
 import { CORRELATION_ID_HEADER, resolveCorrelationId } from './correlation-id';
+import { RequestMetricsRecorder, toMetricSample } from '../metrics/request-metrics';
 import { redactBody, redactQuery, redactUrl } from './redaction';
 
 /** Máximo de caracteres del cuerpo de request que se registra; más allá se trunca (FR-014). */
@@ -59,6 +60,25 @@ function buildRequestLogFields(req: LoggableRequest): Record<string, unknown> {
 }
 
 /**
+ * Registra la request terminada en las métricas (spec 029) con los mismos valores que el log:
+ * `res.statusCode`, `req.route` y `responseTime`. Un fallo de las métricas nunca debe afectar la
+ * respuesta ni el log (FR-013).
+ */
+function recordMetrics(
+  recorder: RequestMetricsRecorder | undefined,
+  req: IncomingMessage,
+  res: ServerResponse,
+  responseTimeMs: number,
+): void {
+  if (!recorder) return;
+  try {
+    recorder.record(toMetricSample(req, res, responseTimeMs));
+  } catch {
+    // Se ignora a propósito: la medición es secundaria respecto de la respuesta.
+  }
+}
+
+/**
  * Opciones de `pino-http` para el log de cada request (spec 028). Se usan en dos
  * lugares: el middleware temprano que registra `configureRequestLogging` (el que
  * loguea) y `LoggerModule` (que sólo aporta el contexto por request, con
@@ -67,8 +87,12 @@ function buildRequestLogFields(req: LoggableRequest): Record<string, unknown> {
  * El serializador de `req` emite únicamente método y URL redactada: el estándar
  * volcaría todos los headers (`authorization`, `x-api-key`) y la URL con el token
  * del stream de notificaciones (constitución, Principio IV).
+ *
+ * Con `recorder` (spec 029), cada request terminada se cuenta y se mide en el mismo disparo que
+ * emite su línea de cierre: así el total de las métricas coincide con el del log. Es opcional para
+ * que el log siga funcionando sin métricas (tests unitarios).
  */
-export function buildRequestLogOptions(logger: Logger): Options {
+export function buildRequestLogOptions(logger: Logger, recorder?: RequestMetricsRecorder): Options {
   return {
     logger,
     // El child por request lleva sólo el id; si no, cada log del handler repetiría el objeto `req`.
@@ -88,19 +112,23 @@ export function buildRequestLogOptions(logger: Logger): Options {
       }),
       res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
     },
+    // IMPORTANTE (spec 029): las métricas se registran dentro de `customSuccessObject` y
+    // `customErrorObject`. Si esta función devolviera `silent` para alguna request, `pino-http`
+    // no evaluaría esos callbacks y esa ruta dejaría de medirse. Nunca devolver `silent` acá.
     customLogLevel: (_req, res, err) => {
       if (err || res.statusCode >= 500) return 'error';
       if (res.statusCode >= 400) return 'warn';
       return 'info';
     },
-    customSuccessObject: (req, _res, val) => ({
-      ...val,
-      ...buildRequestLogFields(req as unknown as LoggableRequest),
-    }),
+    customSuccessObject: (req, res, val) => {
+      recordMetrics(recorder, req, res, val.responseTime);
+      return { ...val, ...buildRequestLogFields(req as unknown as LoggableRequest) };
+    },
     // Para los 5xx `pino-http` agrega un Error fabricado ("failed with status code 500") cuyo
     // stack no es el del fallo real: se descarta. El stack real lo loguea AllExceptionsFilter.
-    customErrorObject: (req, _res, _error, val) => {
+    customErrorObject: (req, res, _error, val) => {
       const { err: _fabricated, ...rest } = val as Record<string, unknown>;
+      recordMetrics(recorder, req, res, (val as { responseTime: number }).responseTime);
       return { ...rest, ...buildRequestLogFields(req as unknown as LoggableRequest) };
     },
   };

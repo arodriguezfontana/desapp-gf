@@ -4,6 +4,7 @@ import { Response } from 'express';
 import { Public } from '../../guards/public.decorator';
 import { HealthService } from '../../services/health/health.service';
 import { HealthResponseDto } from './dto/health-response.dto';
+import { Sla } from '../../shared/metrics/sla';
 
 /**
  * Health check público (spec 027): sin JWT ni API key, para monitoreo y orquestador.
@@ -15,6 +16,7 @@ export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
   @Get()
+  @Sla('technical')
   @Public()
   @ApiOperation({
     summary:

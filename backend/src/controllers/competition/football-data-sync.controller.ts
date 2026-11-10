@@ -9,6 +9,7 @@ import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
 import { Public } from '../../guards/public.decorator';
 import { FootballDataSyncService } from '../../services/competition/football-data-sync.service';
 import { SyncSummaryDto } from './dto/sync-summary.dto';
+import { Sla } from '../../shared/metrics/sla';
 
 @ApiTags('sync')
 @ApiSecurity('ApiKeyAuth')
@@ -19,6 +20,7 @@ export class FootballDataSyncController {
   constructor(private readonly footballDataSyncService: FootballDataSyncService) {}
 
   @Post('football-data')
+  @Sla('system-trigger')
   @HttpCode(200)
   @ApiOperation({ summary: 'Dispara la sincronización de Football-Data (sincrónico, ~70 s)' })
   @ApiResponse({ status: 200, description: 'Resumen de la corrida por liga.', type: SyncSummaryDto })

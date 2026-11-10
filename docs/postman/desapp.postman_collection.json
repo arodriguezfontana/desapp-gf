@@ -1100,6 +1100,37 @@
             },
             "description": "GET / y GET /health son @Public(): responden sin ningún token. /health verifica la conexión a la base de datos: con la base sana responde 200 con status \"ok\" y details.database.status \"up\"; si la base no responde (o supera los 3 s de timeout) responde 503 con status \"error\" y details.database.status \"down\" (no reproducible desde esta colección). No verifica Football-Data ni WhoScored. Esta request cubre /health; probar /{{baseUrl}} manualmente cubre la raíz."
           }
+        },
+        {
+          "name": "Métricas — públicas, sin token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Content-Type es text/plain (formato de Prometheus)', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('text/plain'); });",
+                  "pm.test('expone el histograma de duración', function () { pm.expect(pm.response.text()).to.include('http_request_duration_seconds'); });",
+                  "pm.test('expone el contador de requests', function () { pm.expect(pm.response.text()).to.include('http_requests_total'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "GET /metrics es @Public(): responde sin ningún token (lo consulta un scraper de Prometheus). Devuelve en formato de texto de Prometheus las dos métricas de requests: http_request_duration_seconds (histograma de duración) y http_requests_total (contador), ambas por method, route y status_code. route es el patrón de la ruta (por ejemplo /players/:id), nunca el path pedido; las rutas inexistentes (404) o rechazadas antes de resolverse (400 por JSON ilegible) se agrupan bajo route=\"unmatched\". La tasa de error del SLA se calcula sólo sobre status_code 5xx. Las series aparecen a medida que el backend atiende tráfico."
+          }
         }
       ]
     },

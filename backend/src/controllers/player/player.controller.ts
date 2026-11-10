@@ -18,6 +18,7 @@ import { PlayerValuationQueryDto } from './dto/player-valuation-query.dto';
 import { PlayerValuationResponseDto } from './dto/player-valuation-response.dto';
 import { PlayerQuoteResponseDto } from '../quotation/dto/player-quote-response.dto';
 import { OrderBookResponseDto } from './dto/order-book-response.dto';
+import { Sla } from '../../shared/metrics/sla';
 
 /**
  * Catálogo de jugadores (datos de prueba). El listado, el ranking y el
@@ -40,6 +41,7 @@ export class PlayerController {
   ) {}
 
   @Get()
+  @Sla('read')
   @Public()
   @UseGuards(ApiKeyGuard)
   @ApiSecurity('ApiKeyAuth')
@@ -75,6 +77,7 @@ export class PlayerController {
   }
 
   @Get('ranking')
+  @Sla('read-computed')
   @ApiBearerAuth()
   @ApiOperation({
     summary:
@@ -137,6 +140,7 @@ export class PlayerController {
   }
 
   @Get(':id')
+  @Sla('read')
   @Public()
   @UseGuards(ApiKeyGuard)
   @ApiSecurity('ApiKeyAuth')
@@ -150,6 +154,7 @@ export class PlayerController {
   }
 
   @Get(':id/valuation')
+  @Sla('read-computed')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Cuánto valdría este jugador según mi estrategia',
@@ -176,6 +181,7 @@ export class PlayerController {
   }
 
   @Get(':id/quotes')
+  @Sla('read')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Mi historial de cotizaciones de un jugador',
@@ -194,6 +200,7 @@ export class PlayerController {
   }
 
   @Get(':id/order-book')
+  @Sla('read')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Libro de órdenes y profundidad de mercado de un jugador',

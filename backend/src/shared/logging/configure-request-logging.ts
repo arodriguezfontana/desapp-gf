@@ -2,6 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import type { Logger } from 'pino';
 import { pinoHttp } from 'pino-http';
 import { LOG_ROOT_LOGGER } from '../../modules/logging/logging.constants';
+import { REQUEST_METRICS_RECORDER } from '../../modules/metrics/metrics.constants';
+import type { RequestMetricsRecorder } from '../metrics/request-metrics';
 import { buildRequestLogOptions } from './request-log-options';
 
 /**
@@ -14,5 +16,15 @@ import { buildRequestLogOptions } from './request-log-options';
  */
 export function configureRequestLogging(app: INestApplication): void {
   const logger = app.get<Logger>(LOG_ROOT_LOGGER);
-  app.use(pinoHttp(buildRequestLogOptions(logger)));
+  // Las métricas (spec 029) se registran en este mismo hook de cierre; si la app no tiene
+  // `MetricsModule` (apps de prueba mínimas) el log funciona igual, sin métricas.
+  app.use(pinoHttp(buildRequestLogOptions(logger, resolveRecorder(app))));
+}
+
+function resolveRecorder(app: INestApplication): RequestMetricsRecorder | undefined {
+  try {
+    return app.get<RequestMetricsRecorder>(REQUEST_METRICS_RECORDER, { strict: false });
+  } catch {
+    return undefined;
+  }
 }

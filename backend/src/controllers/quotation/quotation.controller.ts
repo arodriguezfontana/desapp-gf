@@ -4,6 +4,7 @@ import { AdminApiKeyGuard } from '../../guards/api-key/admin-api-key.guard';
 import { Public } from '../../guards/public.decorator';
 import { QuotationService } from '../../services/quotation/quotation.service';
 import { RecalculateResponseDto } from './dto/recalculate-response.dto';
+import { Sla } from '../../shared/metrics/sla';
 
 /**
  * Recálculo global de cotizaciones, disparado manualmente por el admin
@@ -18,6 +19,7 @@ export class QuotationController {
   constructor(private readonly quotationService: QuotationService) {}
 
   @Post('recalculate')
+  @Sla('system-long')
   @HttpCode(200)
   @ApiOperation({
     summary: 'Recálculo global de cotizaciones (admin)',
