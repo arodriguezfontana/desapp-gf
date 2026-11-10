@@ -20,6 +20,14 @@ export default tseslint.config(
     },
   },
   {
+    // Scripts de mantenimiento en ESM puro (p. ej. scripts/seed-users.mjs): corren con Node, sin TypeScript.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
+  {
     files: ['src/services/**/*.ts'],
     rules: {
       'no-restricted-imports': [

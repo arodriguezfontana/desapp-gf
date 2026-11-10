@@ -176,20 +176,20 @@ describe('backfillTokenBalances (integration, spec 030)', () => {
   });
 
   it('una tenencia inconsistente queda sin tocar y reportada; las sanas sí se completan en la misma corrida', async () => {
-    const sana = await insertUser('sana');
-    const rota = await insertUser('rota');
-    await insertHolding(sana, P1, 5);
-    await insertHolding(rota, P1, 99); // el historial sólo explica 5: apertura 94
-    const sanaIds = await insertEntries(sana, P1, [{ type: 'CREDIT', quantity: 5, at: day(1) }]);
-    const rotaIds = await insertEntries(rota, P1, [{ type: 'CREDIT', quantity: 5, at: day(1) }]);
+    const healthy = await insertUser('healthy');
+    const broken = await insertUser('broken');
+    await insertHolding(healthy, P1, 5);
+    await insertHolding(broken, P1, 99); // el historial sólo explica 5: apertura 94
+    const healthyIds = await insertEntries(healthy, P1, [{ type: 'CREDIT', quantity: 5, at: day(1) }]);
+    const brokenIds = await insertEntries(broken, P1, [{ type: 'CREDIT', quantity: 5, at: day(1) }]);
 
     const report = await backfillTokenBalances(dataSource);
 
-    expect(await balancesOf(sanaIds)).toEqual([{ before: 0, after: 5 }]);
-    expect(await balancesOf(rotaIds)).toEqual([{ before: null, after: null }]);
+    expect(await balancesOf(healthyIds)).toEqual([{ before: 0, after: 5 }]);
+    expect(await balancesOf(brokenIds)).toEqual([{ before: null, after: null }]);
     expect(report.applied).toBe(1);
     expect(report.inconsistent).toEqual([
-      { userId: rota, playerId: P1, reason: 'opening-mismatch', opening: 94, net: 5, closingBalance: 99 },
+      { userId: broken, playerId: P1, reason: 'opening-mismatch', opening: 94, net: 5, closingBalance: 99 },
     ]);
   });
 
