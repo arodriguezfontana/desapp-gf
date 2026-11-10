@@ -1,6 +1,38 @@
 <!--
 Sync Impact Report
 ==================
+Version change: 1.11.1 → 1.12.0
+Rationale: MINOR. Se agrega el Principio XIII "Performance y degradación controlada", un
+principio nuevo, sin redefinir ni eliminar ninguna regla existente. Exige tres cosas:
+  1. SLA objetivo documentado (latencia p95 y tasa de error sobre 5xx) para todo endpoint de
+     la tabla de la Sección 4 del documento de visión, verificable contra las métricas que
+     ya exige el Principio VII.
+  2. Capa de caché para las consultas de alta frecuencia (ranking, catálogo), que MUST seguir
+     sirviendo datos ya guardados si el proveedor externo falla. Complementa al Principio I
+     (que garantiza que el sistema no se caiga), no lo reemplaza: este principio apunta a
+     que además ande rápido.
+  3. Índices de base de datos agregados según patrones de acceso reales medidos, no
+     especulativamente.
+
+Modified principles: ninguno (el Principio I y el VII sólo se referencian, sin cambios).
+Added sections:
+  - XIII. Performance y degradación controlada
+Removed sections: none
+Renumbered principles: none
+
+Follow-up TODOs:
+  - Esta enmienda debe ser aprobada por el resto del grupo antes de integrarse (Governance →
+    Enmiendas).
+  - El documento de visión (y su Sección 4) no está versionado en este repositorio: la
+    constitución lo referencia por nombre, tal como se pidió. Si se versiona, enlazarlo acá.
+  - La plantilla `.specify/scripts/powershell/resolve-template.ps1` no existe en este
+    proyecto; se aplicó la enmienda sobre el constitution.md vigente, que conserva la
+    estructura de `.specify/templates/constitution-template.md`.
+-->
+
+<!--
+Sync Impact Report (enmienda anterior)
+==================
 Version change: 1.11.0 → 1.11.1
 Rationale: PATCH. Corrección de redacción en el Principio VI: el ejemplo de operación
 atómica mencionaba un "saldo" (y un "saldo cobrado" en el Rationale), pero el sistema no
@@ -451,6 +483,27 @@ enunciado MUST resolverse como una decisión explícita en la spec, con su justi
 **Rationale**: Escribir la spec primero fuerza a acordar el alcance y a dejar registro
 de por qué se decidió cada cosa.
 
+### XIII. Performance y degradación controlada
+
+- **SLA por endpoint**: todo endpoint de la tabla de la Sección 4 del documento de visión
+  MUST tener un SLA objetivo documentado, con latencia p95 y tasa de error sobre 5xx. Ese
+  SLA MUST poder verificarse contra las métricas de latencia y de tasa de error que exige
+  el Principio VII.
+- **Caché en consultas de alta frecuencia**: las consultas de alta frecuencia (ranking,
+  catálogo) MUST pasar por una capa de caché antes de llegar a la base de datos o a un
+  proveedor externo. Esa capa MUST seguir sirviendo los datos ya guardados si el proveedor
+  externo falla. Esta regla complementa al Principio I, no lo reemplaza: el Principio I
+  garantiza que el sistema no se caiga; este garantiza que además ande rápido.
+- **Índices medidos**: los índices de base de datos MUST agregarse a partir de patrones de
+  acceso reales medidos, nunca especulativamente.
+
+**Rationale**: Un SLA sin métrica que lo verifique no sirve, porque no hay forma de saber
+si se cumple. La caché resuelve latencia, no disponibilidad: por eso complementa la
+degradación ante fallos del Principio I en lugar de sustituirla. Indexar sin medir es tan
+riesgoso como no indexar: un índice innecesario encarece las escrituras y ocupa espacio sin
+mejorar ninguna consulta real, y la ausencia de un índice necesario degrada justo las
+consultas que más se usan.
+
 ## Technology Stack & Constraints
 
 El proyecto MUST mantenerse dentro del siguiente stack salvo enmienda de esta
@@ -512,4 +565,4 @@ constitución:
   constitución. Cualquier desviación deliberada MUST justificarse por escrito en la spec
   o en la descripción del cambio, o si no debe corregirse antes de integrar.
 
-**Version**: 1.11.1 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-10-30
+**Version**: 1.12.0 | **Ratified**: 2026-09-02 | **Last Amended**: 2026-11-10
