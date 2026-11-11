@@ -36,16 +36,37 @@ describe('MetricsService', () => {
     expect(text).not.toContain('http_request_duration_seconds_count{method="GET",route="/notifications/stream"');
   });
 
-  it('expone exactamente las dos familias, sin métricas del proceso', async () => {
+  it('expone las dos familias de requests', async () => {
     const service = new MetricsService();
     service.record({ method: 'GET', route: 'unmatched', statusCode: 404, durationSeconds: 0.001 });
 
     const types = typeLines(await service.render());
 
-    expect(types).toEqual([
-      '# TYPE http_request_duration_seconds histogram',
-      '# TYPE http_requests_total counter',
-    ]);
+    expect(types).toContain('# TYPE http_request_duration_seconds histogram');
+    expect(types).toContain('# TYPE http_requests_total counter');
+  });
+
+  it('expone también las métricas por defecto del proceso Node (CPU, memoria, heap, event loop)', async () => {
+    const text = await new MetricsService().render();
+
+    expect(text).toContain('# TYPE process_cpu_seconds_total counter');
+    expect(text).toContain('# TYPE process_resident_memory_bytes gauge');
+    expect(text).toContain('# TYPE nodejs_heap_size_used_bytes gauge');
+    expect(text).toContain('# TYPE nodejs_eventloop_lag_seconds gauge');
+  });
+
+  it('las métricas del proceso no llevan las etiquetas de requests', async () => {
+    const service = new MetricsService();
+    service.record({ method: 'GET', route: '/health', statusCode: 200, durationSeconds: 0.01 });
+
+    const processLines = (await service.render())
+      .split('\n')
+      .filter((l) => /^(process|nodejs)_/.test(l));
+
+    expect(processLines.length).toBeGreaterThan(0);
+    for (const line of processLines) {
+      expect(line).not.toMatch(/route=|status_code=/);
+    }
   });
 
   it('el histograma tiene un límite por cada intervalo definido', async () => {

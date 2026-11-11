@@ -60,6 +60,19 @@ Con el backend corriendo:
 - Swagger UI → http://localhost:3000/docs
 - Spec OpenAPI v3 (JSON) → http://localhost:3000/docs-json
 
+## Observabilidad (equivalente a Spring Boot Actuator)
+
+El backend es NestJS, así que no usa Actuator. Estos endpoints públicos cubren lo mismo, sin token:
+
+| Actuator | Acá | Qué devuelve |
+|---|---|---|
+| `/actuator/health` | `GET /health` | Estado de la base de datos (`@nestjs/terminus`): 200 si responde, 503 si no. |
+| `/actuator/prometheus` | `GET /metrics` | Formato Prometheus (`prom-client`): duración y conteo de requests por método, ruta y código, más las métricas del proceso Node (`process_*`, `nodejs_*`: CPU, memoria, heap, event loop, GC). |
+| `/actuator/info` | `GET /info` | Nombre, versión, commit, entorno, versión de Node, arranque y uptime. |
+
+`GET /info` toma el commit de la variable `GIT_COMMIT`, que tiene que definir el despliegue (por ejemplo
+`GIT_COMMIT=$(git rev-parse --short HEAD)`); si no está definida, el commit sale como `null`.
+
 ## Métricas: Prometheus y Grafana (opcional)
 
 > **Es una mejora de visualización opcional.** No es un requisito del enunciado ni del checklist de la

@@ -23,7 +23,7 @@ Una herramienta de monitoreo (un scraper de Prometheus) consulta periódicamente
 1. **Given** el backend en ejecución, **When** se consulta `GET /metrics` sin credenciales, **Then** responde 200 (nunca 401) con las métricas en formato de texto de Prometheus.
 2. **Given** requests ya atendidas a distintos endpoints, **When** se consulta `/metrics`, **Then** existe una medida de duración (con intervalos acumulativos) y un contador de requests, ambos etiquetados con método, ruta y código de estado.
 3. **Given** el resto de los endpoints protegidos del sistema, **When** se consulta cualquiera de ellos sin credenciales, **Then** siguen rechazando la consulta: la exención aplica únicamente a `/metrics` (y a los endpoints ya públicos).
-4. **Given** una consulta a `/metrics`, **When** se leen las métricas, **Then** sólo figuran las dos métricas de requests definidas y sus etiquetas, sin datos de usuarios, identificadores, credenciales ni contenido de las requests.
+4. **Given** una consulta a `/metrics`, **When** se leen las métricas, **Then** figuran las dos métricas de requests definidas con sus etiquetas y, aparte, las métricas por defecto del proceso Node (FR-020), sin datos de usuarios, identificadores, credenciales ni contenido de las requests.
 
 ---
 
@@ -129,6 +129,8 @@ El equipo necesita un objetivo explícito de latencia (p95) y de tasa de error 5
 - **FR-017**: Las verificaciones automáticas del proyecto MUST fallar si existe un endpoint publicado sin entrada de SLA o una entrada de SLA sin endpoint publicado.
 - **FR-018**: La decisión de capturar las métricas a nivel de middleware sobre el evento de finalización de la respuesta, en lugar de un Interceptor, MUST quedar documentada con su justificación (ver "Decisión de diseño").
 - **FR-019**: La documentación de la API (Swagger) y la colección de Postman del proyecto MUST reflejar el nuevo endpoint `GET /metrics` y su formato de respuesta.
+- **FR-020** *(agregado, equivalente a Actuator)*: Además de las dos métricas de requests de FR-003, `GET /metrics` MUST exponer las métricas por defecto del proceso Node.js (`process_*` y `nodejs_*` de `prom-client`: CPU, memoria residente, heap, event loop lag, GC y handles activos). Estas métricas MUST NOT llevar las etiquetas de requests (método, ruta, código de estado) y MUST cumplir FR-012.
+- **FR-021** *(agregado, equivalente a `/actuator/info`)*: El sistema MUST exponer `GET /info`, público como `/health` y `/metrics`, con el nombre y la versión del servicio (de `package.json`), el commit desplegado (variable `GIT_COMMIT`, `null` si no se informa), el entorno (`NODE_ENV`, `development` por defecto), la versión de Node, el instante de arranque y el uptime en segundos. MUST NOT exponer ninguna otra variable de entorno ni configuración.
 
 ### Key Entities
 
@@ -177,6 +179,7 @@ Objetivos **declarados** para este trabajo (no derivados de tráfico real). Cada
 | Técnico | `GET /` | ≤ 100 ms | ≤ 0,5 % |
 | Técnico | `GET /health` | ≤ 250 ms | ≤ 0,5 % |
 | Técnico | `GET /metrics` | ≤ 250 ms | ≤ 0,5 % |
+| Técnico | `GET /info` | ≤ 250 ms | ≤ 0,5 % |
 
 ## Decisión de diseño
 
