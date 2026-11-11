@@ -81,6 +81,32 @@ Cuando una request llega con un Correlation ID (porque es un reintento del propi
 
 ---
 
+### User Story 5 - Auditoría de negocio transversal: qué operación se ejecutó, quién y con qué resultado (Priority: P2)
+
+El log técnico de cada request (historias 1 a 4) dice **qué se pidió** en términos de HTTP: método, ruta, código y duración. No sabe qué significa eso para el negocio. Quien audita o investiga necesita además una **segunda capa, de auditoría de negocio**, que registre qué operación de negocio se ejecutó (por ejemplo "compra de tokens", "venta de tokens", "creación de una alerta de precio", "recálculo de cotizaciones") en términos semánticos y no solo como `POST /orders` o `POST /quotes/recalculate`, quién la ejecutó y con qué resultado.
+
+Esta capa se implementa con **Programación Orientada a Aspectos (AOP)**: un Interceptor de NestJS —la forma nativa en que el framework implementa AOP— que envuelve la ejecución de los métodos de controller que representan una operación de negocio y la registra de forma transversal, **sin que cada método (ni cada service) tenga que invocar el registro a mano**.
+
+**Es adicional al logging técnico, no lo reemplaza ni lo duplica.** El log técnico sigue registrando, para toda request, su método, ruta, parámetros, código y duración; la auditoría de negocio no repite nada de eso. Agrega únicamente lo que el logging técnico no conoce: el significado de negocio de la operación, su actor y su resultado. Ambos registros comparten el Correlation ID, de modo que filtrando por un solo valor se ve la request técnica y, si la hubo, la operación de negocio que ejecutó. Tampoco reemplaza el log de auditoría append-only de compra y venta de tokens que exige el Principio V: aquel es un registro persistente e inmutable de los movimientos; este es un registro estructurado de las operaciones de negocio que se ejecutaron.
+
+**Why this priority**: Aporta el significado de negocio que hace útil un log para auditar ("el usuario X vendió tokens y falló por tenencia insuficiente"), pero la trazabilidad base (historias 1 a 4) funciona sin él. Por eso es P2.
+
+**Independent Test**: Ejecutar una compra de tokens exitosa, una venta que falla por tenencia insuficiente, la creación de una alerta y un recálculo de cotizaciones; verificar que cada ejecución deja un registro de auditoría de negocio con su operación semántica, su actor y su resultado, que ninguno de esos servicios invoca el registro por su cuenta, y que el log técnico de cada request sigue siendo el mismo de siempre.
+
+**Acceptance Scenarios**:
+
+1. **Given** un método de controller que representa una operación de negocio, **When** se ejecuta, **Then** queda un registro de auditoría de negocio con el nombre semántico de la operación (por ejemplo "compra de tokens", no `POST /orders`), el actor y el resultado.
+2. **Given** la creación de una orden, **When** es de compra y cuando es de venta, **Then** los registros distinguen "compra de tokens" de "venta de tokens", aunque ambas lleguen por el mismo método HTTP y la misma ruta.
+3. **Given** una operación que termina bien, **When** se registra, **Then** el resultado es "éxito".
+4. **Given** una operación que se ejecuta pero falla (por ejemplo, vender más tokens de los que se poseen, o un error inesperado), **When** se registra, **Then** el resultado es "fallo" con su categoría (rechazo por regla de negocio o error inesperado), sin stack trace, sin mensajes internos y sin cuerpo de respuesta.
+5. **Given** una operación ejecutada por un usuario autenticado, **When** se registra, **Then** el actor es su identificador interno; **Given** una operación de sistema protegida por API key (como el recálculo de cotizaciones), **Then** el actor se registra como operación de sistema, nunca con el valor de la API key.
+6. **Given** un endpoint nuevo que se declara como operación de negocio, **When** se ejecuta, **Then** queda auditado sin que su código ni el de su service invoquen el registro.
+7. **Given** una request rechazada antes de llegar a un controller (sin autenticación, ruta inexistente, cuerpo inválido), **When** el backend responde, **Then** queda en el log técnico pero **no** genera registro de auditoría de negocio, porque ninguna operación de negocio llegó a ejecutarse.
+8. **Given** una consulta de lectura (por ejemplo, listar jugadores), **When** se ejecuta, **Then** no genera registro de auditoría de negocio: solo se auditan las operaciones que cambian estado o disparan un proceso de negocio.
+9. **Given** un fallo del sistema de logs al registrar la auditoría, **When** se ejecuta la operación, **Then** su resultado y la respuesta no cambian.
+
+---
+
 ### Edge Cases
 
 - ¿Qué pasa con requests de larga duración, como el stream de notificaciones en vivo? El tiempo de ejecución registrado refleja la duración total de la conexión; el log de la request se emite cuando la conexión termina, y la URL registrada nunca incluye el token que viaja en ella.
@@ -113,12 +139,21 @@ Cuando una request llega con un Correlation ID (porque es un reintento del propi
 - **FR-015**: Un fallo del logging (salida bloqueada, valor no serializable) MUST NOT alterar el código ni el cuerpo de la respuesta ni hacer fallar la request.
 - **FR-016**: El Correlation ID MUST NOT propagarse a las llamadas salientes a APIs externas ni a los listeners asíncronos de eventos internos: queda fuera de alcance y no se intenta.
 - **FR-017**: La decisión de reutilizar el Correlation ID entrante cuando existe, en lugar de generar siempre uno nuevo, MUST quedar documentada con su justificación (ver "Decisión de diseño").
+- **FR-018**: El sistema MUST ofrecer una segunda capa de auditoría de negocio, adicional al logging técnico de requests, que registre cada ejecución de una operación de negocio con: su nombre semántico, el actor y el resultado. MUST NOT repetir los datos que el log técnico ya registra (método, ruta, parámetros, cuerpo, código de respuesta, duración).
+- **FR-019**: La auditoría de negocio MUST implementarse con Programación Orientada a Aspectos mediante un Interceptor de NestJS que envuelve la ejecución de los métodos de controller declarados como operación de negocio, de forma transversal: ni el método de controller ni su service MUST invocar el registro a mano.
+- **FR-020**: Las operaciones de negocio auditables MUST declararse de forma explícita y con un nombre semántico (compra de tokens, venta de tokens, creación de alerta, recálculo de cotizaciones, entre otras que cambien estado o disparen un proceso de negocio). Un mismo método HTTP y ruta MUST poder dar lugar a operaciones distintas según el contenido de la request (compra y venta de tokens). Las consultas de lectura MUST NOT auditarse. La lista exacta de operaciones declaradas se fija en la planificación.
+- **FR-021**: El resultado registrado MUST ser "éxito" o "fallo"; en caso de fallo MUST incluir su categoría (rechazo por regla de negocio o error inesperado) y MUST NOT incluir stack traces, mensajes internos ni cuerpos de respuesta.
+- **FR-022**: El actor MUST ser el identificador interno del usuario autenticado, o la indicación de operación de sistema cuando la operación está protegida por API key; MUST NOT registrarse el valor de una API key, un token ni datos personales (rige la redacción de FR-011 y FR-012).
+- **FR-023**: Cada registro de auditoría de negocio MUST llevar el Correlation ID de la request, de modo que se vincule con las entradas del log técnico (FR-008).
+- **FR-024**: Una request que no llega a ejecutar un método de controller (rechazada por autenticación, ruta inexistente, cuerpo inválido) MUST NOT generar registro de auditoría de negocio; su cobertura sigue a cargo del logging técnico (FR-001).
+- **FR-025**: Un fallo de la auditoría de negocio MUST NOT alterar la respuesta, el código de estado ni el resultado de la operación (FR-015 aplica también a esta capa).
 
 ### Key Entities
 
 - **Entrada de log de request**: registro estructurado de una request HTTP finalizada. Atributos: marca de tiempo, Correlation ID, usuario (identificador o "anónimo"), método, endpoint, query, parámetros de ruta, cuerpo del request redactado (opcional, posiblemente truncado), código de respuesta, duración en milisegundos.
 - **Correlation ID**: identificador de una request (o de una operación lógica repetida) que vincula todas las entradas de log producidas durante su procesamiento y que viaja de vuelta al cliente en la respuesta.
 - **Campo sensible**: dato que nunca se registra en claro (contraseña, token, API key, credencial, dato personal del usuario), reemplazado por un marcador de redacción.
+- **Registro de auditoría de negocio**: registro estructurado de la ejecución de una operación de negocio, distinto de la entrada de log de request. Atributos: marca de tiempo, Correlation ID, operación (nombre semántico), actor (identificador del usuario u operación de sistema) y resultado (éxito, o fallo con su categoría).
 
 ## Decisión de diseño
 
@@ -129,12 +164,20 @@ Cuando una request llega con un Correlation ID (porque es un reintento del propi
 - **Costo y mitigación**: el identificador entrante lo controla quien llama, así que podría usarse para falsear o ensuciar los logs (valores larguísimos, saltos de línea, texto que simule otras entradas) o para que dos operaciones distintas compartan identificador. Por eso se valida longitud y caracteres (FR-007) y se genera uno propio ante cualquier valor dudoso. Que dos clientes reutilicen un mismo valor no afecta la seguridad (el Correlation ID es solo informativo y no concede acceso a nada), a lo sumo mezcla trazas que ese cliente decidió unir.
 - **Alternativa descartada**: generar siempre un identificador propio y guardar el entrante como campo aparte. Se descarta porque obliga a filtrar por dos valores para seguir una operación con reintentos, justo lo que la feature busca evitar.
 
+**Por qué dos mecanismos distintos: middleware para la cobertura universal, AOP para la auditoría de negocio.**
+
+- **La restricción de fondo**: un Interceptor de NestJS solo puede envolver un método que efectivamente se ejecuta. Una request rechazada antes de llegar a un controller (sin autenticación, ruta inexistente, cuerpo ilegible) nunca lo atraviesa, así que un Interceptor jamás la vería.
+- **Cobertura universal → middleware**: registrar toda request, incluidas las rechazadas, y asignarle su Correlation ID exige actuar antes de que exista un controller. Por eso el log técnico y el Correlation ID se resuelven con middleware: es el único mecanismo que ve el 100% de las requests.
+- **Auditoría de negocio → AOP**: registrar qué operación de negocio se ejecutó es, por definición, algo que solo ocurre cuando un controller efectivamente la ejecuta, y es un concern transversal que se repetiría en cada operación. El Interceptor es la herramienta correcta para eso: declara la operación una vez y la envuelve desde afuera, sin ensuciar cada service con logging de auditoría repetido y sin que una operación nueva pueda olvidarse de auditarse por no haber copiado el código.
+- **Consecuencia**: las dos capas se complementan y no se solapan. El middleware garantiza que ninguna request quede sin registrar; el Interceptor agrega el significado de negocio solo donde hay una operación de negocio que significar.
+
 ## Fuera de alcance, aceptado como riesgo
 
 - El Correlation ID **no** se propaga a las llamadas salientes del sistema a Football-Data y WhoScored, que además no están bajo nuestro control.
 - El Correlation ID **no** se propaga a los listeners asíncronos disparados por eventos internos (por ejemplo, la cadena `quote.recalculated` → alertas → notificaciones). Los logs de esos listeners son estructurados pero no llevan el identificador de la request que originó el evento.
 - **Consecuencia aceptada**: se puede correlacionar todo lo que ocurre dentro del ciclo de vida de una request HTTP, pero no un flujo que continúa después de que la request ya respondió.
 - También quedan fuera: métricas de latencia y tasa de error (otra exigencia del Principio VII, otra feature), almacenamiento y consulta centralizada de logs, rotación/retención de logs, muestreo o filtrado de ruido, y propagar el identificador a un frontend o a herramientas de monitoreo externas.
+- **La auditoría de negocio por AOP no cubre las operaciones disparadas sin pasar por un endpoint.** El Interceptor está atado al contexto de ejecución HTTP de NestJS, así que solo audita lo que se ejecuta a través de un método de controller. Una operación de negocio que se dispara internamente —por ejemplo, el recálculo semanal de cotizaciones programado con `@Cron`— no pasa por ningún controller y no queda auditada por este mecanismo. Cubrirla con el mismo criterio de AOP requeriría un decorator de método aplicado directamente sobre el service, que es un mecanismo distinto; queda fuera de esta entrega salvo que se pida explícitamente.
 
 ## Success Criteria *(mandatory)*
 
@@ -148,6 +191,8 @@ Cuando una request llega con un Correlation ID (porque es un reintento del propi
 - **SC-006**: Ninguna entrada de log contiene el cuerpo de una respuesta.
 - **SC-007**: El registro de requests no agrega más de 5 ms a la respuesta de un usuario en condiciones normales, y un fallo del sistema de logs no cambia el resultado de ninguna request.
 - **SC-008**: Ante un reporte de error con su Correlation ID, quien investiga identifica la secuencia completa de la operación sin consultar más de un filtro y sin adivinar a qué request corresponde cada línea.
+- **SC-009**: El 100% de las ejecuciones de operaciones de negocio declaradas dejan un registro de auditoría de negocio con su nombre semántico, su actor y su resultado; 0 requests rechazadas antes de un controller y 0 consultas de lectura generan uno.
+- **SC-010**: Ninguna operación de negocio ni ninguno de sus services contiene código de registro de auditoría propio, y ningún registro de auditoría de negocio repite campos del log técnico de la request (método, ruta, cuerpo, código, duración) ni contiene datos sensibles.
 
 ## Assumptions
 

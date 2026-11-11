@@ -7,6 +7,7 @@ import { UserStrategyListResponseDto, UserStrategyResponseDto } from './dto/user
 import { EditWeightsRequestDto } from './dto/edit-weights-request.dto';
 import { EditPositionWeightsRequestDto } from './dto/edit-position-weights-request.dto';
 import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 /**
  * Las dos estrategias de valuación propias del usuario autenticado
@@ -33,6 +34,7 @@ export class UserStrategyController {
 
   @Patch(':id/select')
   @Sla('write')
+  @AuditedOperation('STRATEGY_SELECTED')
   @HttpCode(200)
   @ApiOperation({ summary: 'Marcar una de mis estrategias como seleccionada' })
   @ApiResponse({ status: 200, type: UserStrategyResponseDto })
@@ -49,6 +51,7 @@ export class UserStrategyController {
 
   @Patch(':id/weights')
   @Sla('write')
+  @AuditedOperation('STRATEGY_WEIGHTS_UPDATED')
   @HttpCode(200)
   @ApiOperation({ summary: 'Editar los pesos generales de una de mis estrategias' })
   @ApiResponse({ status: 200, type: UserStrategyResponseDto })
@@ -67,6 +70,7 @@ export class UserStrategyController {
 
   @Patch(':id/position-weights/:position')
   @Sla('write')
+  @AuditedOperation('STRATEGY_POSITION_WEIGHTS_UPDATED')
   @HttpCode(200)
   @ApiOperation({ summary: 'Editar el perfil de pesos de una posición de una de mis estrategias' })
   @ApiResponse({ status: 200, type: UserStrategyResponseDto })

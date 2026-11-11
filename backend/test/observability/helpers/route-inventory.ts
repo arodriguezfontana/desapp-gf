@@ -1,6 +1,7 @@
 import { INestApplication, RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { ModulesContainer } from '@nestjs/core';
+import { getAuditedOperation } from '../../../src/shared/observability/business-audit/audited-operation.decorator';
 import { getSlaClass, SlaClassName } from '../../../src/shared/observability/metrics/sla';
 
 /** Identificador de un endpoint: `"MÉTODO /patrón"` (el mismo texto que forman las etiquetas `method` y `route`). */
@@ -59,6 +60,49 @@ export function listDeclaredSla(app: INestApplication): { id: EndpointId; sla: S
     }
   }
   return declared.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Un handler de controller con su método HTTP y si declara `@AuditedOperation` (auditoría de negocio, spec 028 US5). */
+export interface HandlerAudit {
+  id: EndpointId;
+  method: string;
+  audited: boolean;
+}
+
+/** Todos los handlers de controller publicados, con su método y si están declarados como operación auditable. */
+export function listHandlerAudits(app: INestApplication): HandlerAudit[] {
+  const container = app.get(ModulesContainer, { strict: false });
+  const handlers: HandlerAudit[] = [];
+  for (const module of container.values()) {
+    for (const wrapper of module.controllers.values()) {
+      const controllerClass = wrapper.metatype as (new (...args: never[]) => object) | null;
+      if (!controllerClass) continue;
+      const controllerPath = asPath(Reflect.getMetadata(PATH_METADATA, controllerClass));
+      for (const name of Object.getOwnPropertyNames(controllerClass.prototype)) {
+        const handler = (controllerClass.prototype as Record<string, unknown>)[name];
+        if (typeof handler !== 'function') continue;
+        const method = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
+        if (method === undefined) continue;
+        const methodPath = asPath(Reflect.getMetadata(PATH_METADATA, handler));
+        handlers.push({
+          id: `${RequestMethod[method]} ${joinPaths(controllerPath, methodPath)}`,
+          method: RequestMethod[method],
+          audited: getAuditedOperation(handler) !== undefined,
+        });
+      }
+    }
+  }
+  return handlers.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+const WRITE_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
+
+/** Handlers de escritura sin auditoría, y handlers de lectura que la declaran (no corresponde). */
+export function compareAuditCoverage(handlers: HandlerAudit[]): { writesWithoutAudit: EndpointId[]; readsAudited: EndpointId[] } {
+  return {
+    writesWithoutAudit: handlers.filter((h) => WRITE_METHODS.has(h.method) && !h.audited).map((h) => h.id),
+    readsAudited: handlers.filter((h) => !WRITE_METHODS.has(h.method) && h.audited).map((h) => h.id),
+  };
 }
 
 export interface CoverageDiff {

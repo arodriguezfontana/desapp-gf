@@ -11,6 +11,7 @@ import { AuthService } from '../../services/auth/auth.service';
 import { ApiKeyService } from '../../services/api-key/api-key.service';
 import { IssueApiKeyResponseDto } from './dto/issue-api-key-response.dto';
 import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 @ApiTags('auth')
 @Controller('auth/api-key')
@@ -22,6 +23,7 @@ export class ApiKeyController {
 
   @Post()
   @Sla('auth')
+  @AuditedOperation('API_KEY_ISSUED')
   @HttpCode(201)
   @ApiBearerAuth()
   @ApiOperation({

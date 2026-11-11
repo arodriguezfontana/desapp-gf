@@ -61,3 +61,26 @@ Otras entradas del backend (arranque, servicios, filtro de excepciones, cron) us
 - `userId` es siempre un string (UUID o `"anónimo"`), nunca `null`.
 - El JSON de una entrada no tiene claves duplicadas.
 - El logging no muta la request ni la respuesta, y un fallo al armar o escribir el log no cambia la respuesta.
+
+## Registro de auditoría de negocio (`BusinessAuditEntry`) — User Story 5
+
+Línea de log estructurada, **distinta** de la entrada de log de request y adicional a ella. No se persiste en base: sale por el mismo logger JSON.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `time` | epoch ms | Marca de tiempo (la agrega el logger) |
+| `correlationId` | string | El de la request (lo agrega el contexto del logger; vincula con la línea técnica) |
+| `event` | `"business_audit"` | Marca fija para filtrar esta capa |
+| `operation` | string | Código semántico de la operación (`TOKENS_BOUGHT`, `ALERT_CREATED`, `QUOTES_RECALCULATED`, …) |
+| `actor` | string | UUID del usuario, `"sistema"` (operación de sistema por API key) o `"anónimo"` (alta y login) |
+| `outcome` | `"success"` \| `"failure"` | Resultado |
+| `failureCategory` | `"rejected"` \| `"unexpected"` | Sólo si `outcome = failure`: rechazo por regla de negocio o error inesperado |
+
+No contiene: método, ruta, parámetros, cuerpo, código de respuesta, duración, stack ni mensajes internos (todo eso está o no debe estar en el log técnico), ni credenciales, tokens, API keys ni datos personales.
+
+### Invariantes de la auditoría de negocio
+
+- A lo sumo un registro por ejecución de un handler declarado; ninguno por una request que no llegó a ejecutar un handler (401/403, 404, JSON ilegible, validación de DTO) ni por una lectura.
+- `failureCategory` está presente si y sólo si `outcome = failure`.
+- `actor` nunca es una API key, un token ni un dato personal.
+- El Interceptor no muta la request ni la respuesta, relanza siempre el error original, y un fallo al registrar no cambia el resultado de la operación.

@@ -76,3 +76,17 @@ Filtrar por un solo valor: `jq 'select(.correlationId == "retry-7f3a-001")'` (o 
 
 - **Swagger**: sin endpoints nuevos. La descripción global del documento OpenAPI agrega que toda respuesta incluye `X-Correlation-Id` y que el cliente puede enviarlo.
 - **Postman**: nota en la descripción de la colección y un test a nivel colección: `pm.response.headers.has('X-Correlation-Id')`.
+
+## 7. Registro de auditoría de negocio (User Story 5)
+
+Segunda capa, adicional al log de request de las secciones anteriores. Un Interceptor de NestJS la emite cuando un handler declarado como operación de negocio termina; comparte el `correlationId` con la línea técnica de la misma request.
+
+```json
+{"level":30,"time":1783700000100,"context":"BusinessAudit","correlationId":"3f6e9c1a-0b52-4c7e-9a3a-6d1a0e2b7f10","event":"business_audit","operation":"TOKENS_SOLD","actor":"b3f1c2a4-1234-4a4a-8a8a-abcdef123456","outcome":"failure","failureCategory":"rejected","msg":"operación de negocio"}
+```
+
+- Éxito: `outcome: "success"`, nivel `info`. Rechazo por regla de negocio (p. ej. tenencia insuficiente): `outcome: "failure"`, `failureCategory: "rejected"`, nivel `warn`. Error inesperado: `failureCategory: "unexpected"`, nivel `error`.
+- `actor`: UUID del usuario; `"sistema"` en operaciones de sistema por API key; `"anónimo"` en alta y login.
+- No aparecen: método, ruta, parámetros, cuerpo, status, duración, stack, mensajes internos ni secretos. Para eso está la línea técnica con el mismo `correlationId`.
+- No se genera registro para requests rechazadas antes de ejecutar un handler (401/403, 404, JSON ilegible, validación de DTO) ni para lecturas.
+- Filtro: `jq 'select(.event == "business_audit")'`; y con el id, `jq 'select(.correlationId == "<id>")'` muestra juntas la línea técnica y la de negocio.

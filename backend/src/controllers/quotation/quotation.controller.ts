@@ -5,6 +5,7 @@ import { Public } from '../../guards/public.decorator';
 import { QuotationService } from '../../services/quotation/quotation.service';
 import { RecalculateResponseDto } from './dto/recalculate-response.dto';
 import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 /**
  * Recálculo global de cotizaciones, disparado manualmente por el admin
@@ -20,6 +21,7 @@ export class QuotationController {
 
   @Post('recalculate')
   @Sla('system-long')
+  @AuditedOperation('QUOTES_RECALCULATED', { actor: 'system' })
   @HttpCode(200)
   @ApiOperation({
     summary: 'Recálculo global de cotizaciones (admin)',

@@ -9,7 +9,7 @@ SSE con token en la URL) que se corrió en un directorio temporal, fuera del rep
 - **Decision**: no construir interceptor. El logging de requests lo hace `pino-http`.
 - **Evidencia**: en el spike, con `pino-http` como middleware, una request sin token (401, rechazada por guard) y una ruta inexistente (404) quedaron logueadas, con `userId: "anónimo"` y con el header `X-Correlation-Id` en la respuesta. Un interceptor no habría corrido en ninguno de los dos casos.
 - **Rationale**: `FR-001`/`FR-002` piden cobertura total y automática; sólo el middleware la da.
-- **Alternatives considered**: interceptor global (huecos, descartado); interceptor + middleware (dos rutas de logging, duplicación).
+- **Alternatives considered**: interceptor global (huecos, descartado); interceptor + middleware **para el logging técnico** (dos rutas de logging, duplicación). Esto no excluye un Interceptor para un fin distinto: la auditoría de negocio de la User Story 5 (ver §15).
 - **Nota**: la spec describe el comportamiento, no la técnica; el "interceptor global" del pedido original queda reemplazado y justificado en `plan.md` → Complexity Tracking.
 
 ## 2. Hueco: el 400 por JSON mal formado (nuevo hallazgo)
@@ -103,3 +103,17 @@ SSE con token en la URL) que se corrió en un directorio temporal, fuera del rep
 - **Líneas duplicadas (resuelto)**: `AllExceptionsFilter` ya no loguea los 4xx —los registra el log de requests con status, usuario y Correlation ID—; sólo loguea los 5xx, porque trae el stack real del error. Además la línea de cierre de un 5xx descarta el `Error` fabricado por `pino-http` ("failed with status code 500", con un stack que no es el del fallo). Un 4xx deja una línea; un 5xx deja dos, con información distinta.
 - Las conexiones de larga duración (SSE) registran al cerrarse; si el cliente corta, `pino-http` emite "request aborted".
 - Las métricas (ítem #3) reutilizarán `responseTime`; no se implementan acá.
+- La auditoría de negocio por AOP (§15) no cubre las operaciones disparadas sin endpoint (el recálculo semanal con `@Cron`): quedan fuera de esta entrega, como dice la spec.
+
+## 15. Auditoría de negocio con AOP (User Story 5)
+
+- **Decision**: un Interceptor global (`BusinessAuditInterceptor`, `APP_INTERCEPTOR`) que lee metadatos `@AuditedOperation` del handler y registra operación, actor y resultado con el `Logger` de Nest. El middleware de §1 se mantiene sin cambios para el logging técnico.
+- **Por qué los dos conviven**: un Interceptor sólo envuelve un método que se ejecuta; el middleware es el único que ve el 100% del tráfico (§1). Son capas distintas: el middleware registra *que llegó una request*; el Interceptor registra *qué operación de negocio ejecutó*. No hay duplicación porque la auditoría no repite ningún campo técnico (FR-018).
+- **Orden de ejecución de Nest (hallazgo)**: middleware → guards → interceptores → pipes → handler → interceptores. Consecuencias: (a) 401/403, 404 y el JSON ilegible del body-parser nunca llegan al Interceptor (FR-024 se cumple por construcción); (b) la validación de DTO (`ValidationPipe`) falla *dentro* de `next.handle()`, así que el Interceptor sí la vería como un error del handler.
+- **Cómo se excluye la validación de DTO**: `createGlobalValidationPipe` hoy lanza un `BadRequestException` común, indistinguible de uno lanzado por un service. Se cambia el `exceptionFactory` para que lance `RequestValidationException extends BadRequestException` (mismo status, mismo mensaje traducido, mismo formato de error: el `AllExceptionsFilter` y el spec de la pipe no notan la diferencia) y el Interceptor la ignora.
+- **Actor**: los guards de API key (`ApiKeyGuard`, `AdminApiKeyGuard`) sólo validan y **no** adjuntan usuario ni la key a la request (verificado); el JWT adjunta `{ userId }`. Por eso el actor sale de `req.user` y, si no hay, de la declaración (`'system'` o `'anonymous'`). Nunca se toca el valor de la API key.
+- **Resultado**: `DomainError` o `HttpException` < 500 → `rejected`; el resto → `unexpected`. El Interceptor relanza siempre; el `AllExceptionsFilter` sigue produciendo la respuesta.
+- **Correlation ID**: el `Logger` de Nest ya lo recibe por el contexto de la request (§6); no se pasa a mano (FR-023).
+- **Verificación de cobertura**: e2e `business-audit-coverage` con el inventario de rutas reales (`route-inventory`): todo `POST`/`PATCH`/`DELETE` debe declarar `@AuditedOperation`; las lecturas no (FR-020).
+- **Alternatives considered**: ampliar `pino-http` (no conoce la operación ni el resultado de negocio); `customProps` con un mapa ruta→nombre (duplica rutas y se desincroniza); logging manual en cada service (repetido, olvidable, ensucia los services); un decorator sobre el service (otro mecanismo, cubriría el `@Cron`, pero queda fuera de esta entrega).
+- **Fuera de alcance**: las operaciones disparadas sin endpoint (el recálculo semanal con `@Cron`) no pasan por un controller y el Interceptor no las ve; ver spec.

@@ -12,6 +12,7 @@ import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
 import { MarketSimulationService } from '../../services/simulation/market-simulation.service';
 import { SimulationResultDto } from './dto/simulation-result.dto';
 import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 /**
  * Controller de administración para disparar la simulación interactiva del mercado.
@@ -28,6 +29,7 @@ export class SimulationController {
 
   @Post('simulate-market')
   @Sla('system-long')
+  @AuditedOperation('MARKET_SIMULATED')
   @HttpCode(200)
   @ApiOperation({
     summary:

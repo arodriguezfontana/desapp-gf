@@ -47,3 +47,19 @@ cd backend && pnpm dev          # o: pnpm dev:pretty para leer la salida más c�
 - Con el frontend en `http://localhost:5173`: `fetch(...).then(r => r.headers.get('X-Correlation-Id'))` devuelve el valor (no `null`).
 - Swagger (`/docs`): la descripción global menciona `X-Correlation-Id`.
 - Postman: la colección tiene la nota y el test a nivel colección; correrla con la base sana deja las aserciones en verde.
+
+## 4. Auditoría de negocio (User Story 5)
+
+Con el backend en marcha y la consola en JSON (`LOG_LEVEL=info`):
+
+| Paso | Acción | Esperado |
+|------|--------|----------|
+| Compra | `POST /orders` con `side: "BUY"` y JWT | Una línea técnica y una línea `event: "business_audit"` con `operation: "TOKENS_BOUGHT"`, `outcome: "success"` y el mismo `correlationId` |
+| Venta | `POST /orders` con `side: "SELL"` | `operation: "TOKENS_SOLD"` (mismo método y ruta que la compra) |
+| Rechazo de negocio | vender más tokens de los que se tienen | `outcome: "failure"`, `failureCategory: "rejected"`, sin stack ni mensaje interno |
+| Sistema | `POST /quotes/recalculate` con la API key | `actor: "sistema"`; la API key no aparece |
+| Sin registro | `GET /auth/me` sin token (401), `GET /ruta-que-no-existe` (404), `POST /auth/login` con `{"a":` (JSON ilegible), `POST /orders` con un cuerpo que no pasa el DTO | Sólo la línea técnica; **ninguna** línea `business_audit` |
+| Lectura | `GET /players` | Sólo la línea técnica |
+| Sin duplicados | filtrar una compra por su `correlationId` | La línea de negocio no repite método, ruta, cuerpo, status ni duración |
+
+Automático: `pnpm test:unit` (interceptor, clasificador, actor) y `pnpm test:e2e` (incluye `business-audit-coverage`: todo `POST`/`PATCH`/`DELETE` declara `@AuditedOperation`).

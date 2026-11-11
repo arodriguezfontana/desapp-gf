@@ -12,6 +12,7 @@ import { SyncAcceptedDto } from './dto/sync-accepted.dto';
 import { SyncRunStatusDto } from './dto/sync-run-status.dto';
 import { SYNC_RUN_NOT_FOUND_MESSAGE } from '../../shared/errors/messages';
 import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 @ApiTags('sync')
 @ApiSecurity('ApiKeyAuth')
@@ -23,6 +24,7 @@ export class PlayerSyncController {
 
   @Post('whoscored')
   @Sla('system-trigger')
+  @AuditedOperation('PLAYER_SYNC_TRIGGERED', { actor: 'system' })
   @HttpCode(202)
   @ApiOperation({ summary: 'Dispara la sincronización de WhoScored en background' })
   @ApiResponse({ status: 202, description: 'Corrida iniciada. Usar el runId para consultar el estado.', type: SyncAcceptedDto })

@@ -12,14 +12,14 @@ description: "Task list for Logging estructurado y trazabilidad de requests"
 
 **Tests**: Incluidos y obligatorios — el Principio IX de la constitución exige casos felices y borde, unit tests y e2e con supertest sobre PostgreSQL efímero de Testcontainers. El test de arquitectura tsarch existente (`backend/test/architecture.spec.ts`) cubre las capas sin cambios. **Ningún test existente se modifica ni se borra**: las ampliaciones van en archivos nuevos.
 
-**Organization**: Tareas agrupadas por user story de `spec.md` (US1–US3 son P1; US4 es P2). El código de producción es una sola tubería de logging: nace en US1 (Correlation ID + wiring), US2 le suma los campos de cada entrada, US3 prueba y cierra la redacción de secretos y US4 agrega la reutilización validada del id entrante. Los helpers puros que bloquean a todas las historias (nivel de log y redacción) están en Foundational.
+**Organization**: Tareas agrupadas por user story de `spec.md` (US1–US3 son P1; US4 y US5 son P2). El código de producción es una sola tubería de logging: nace en US1 (Correlation ID + wiring), US2 le suma los campos de cada entrada, US3 prueba y cierra la redacción de secretos y US4 agrega la reutilización validada del id entrante. Los helpers puros que bloquean a todas las historias (nivel de log y redacción) están en Foundational.
 
-**⚠️ Antes de cualquier tarea que corra e2e o integración** (T018, T034, T036): ejecutar `docker info`. Si Docker está apagado, el setup de tests cae en silencio a la base de desarrollo y los e2e **borran datos** (ya pasó). Si está apagado, levantar Docker Desktop y esperar a que `docker info` responda.
+**⚠️ Antes de cualquier tarea que corra e2e o integración** (T018, T034, T036, T041, T042, T058, T060, T061): ejecutar `docker info`. Si Docker está apagado, el setup de tests cae en silencio a la base de desarrollo y los e2e **borran datos** (ya pasó). Si está apagado, levantar Docker Desktop y esperar a que `docker info` responda.
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Puede ejecutarse en paralelo (archivos distintos, sin dependencias)
-- **[Story]**: US1 (Correlation ID y traza completa), US2 (registro automático con campos), US3 (sin secretos en logs), US4 (reutilizar el id entrante)
+- **[Story]**: US1 (Correlation ID y traza completa), US2 (registro automático con campos), US3 (sin secretos en logs), US4 (reutilizar el id entrante), US5 (auditoría de negocio con AOP)
 - Rutas exactas en cada descripción, siguiendo la estructura de `plan.md`
 - Todo el trabajo es en `backend/` (más `docs/postman/`); los comandos `pnpm` se corren desde `backend/`
 
@@ -151,6 +151,53 @@ Monorepo existente. Backend NestJS: `backend/src/shared/observability/logging/` 
 
 ---
 
+## Phase 8: User Story 5 - Auditoría de negocio transversal con AOP (Priority: P2)
+
+**Goal**: Una segunda capa, adicional al log técnico, que registra con un Interceptor de NestJS qué operación de negocio se ejecutó, quién y con qué resultado, sin que los controllers ni los services invoquen el registro (spec FR-018 a FR-025; diseño en [plan.md](./plan.md) "Segunda capa" y [research.md](./research.md) §15).
+
+**Independent Test**: Ejecutar una compra, una venta que falla por tenencia insuficiente, una alerta y un recálculo de cotizaciones: cada ejecución deja una línea `event: "business_audit"` con su operación semántica, actor y resultado y el mismo `correlationId` que su línea técnica; una request 401/404/JSON ilegible/validación de DTO y una lectura no dejan ninguna; el e2e de cobertura falla si un `POST`/`PATCH`/`DELETE` no declara `@AuditedOperation`.
+
+> **Estas tareas son el delta de la actualización de la spec** (T001–T036 ya estaban hechas y no se tocan). **Ningún test existente se modifica ni se borra**: todo test nuevo va en archivos nuevos. **Antes de las tareas que corren e2e** (T041, T042, T058, T060): `docker info`.
+
+### Tests for User Story 5 ⚠️
+
+> Escribirlos primero y verificar que fallan antes de implementar
+
+- [X] T037 [P] [US5] Crear `backend/src/shared/observability/business-audit/audit-outcome.spec.ts` (unit, sin Nest; falla hasta T044): `classifyFailure` devuelve `rejected` para un `DomainError` y para un `HttpException` con status < 500 (400, 403, 404, 409) y `unexpected` para un `Error` común, un `HttpException` 500 y cualquier valor no-`Error`; `resolveActor(req, declared)` devuelve `req.user.userId` si existe, `"sistema"` si no hay usuario y se declaró `'system'`, `"anónimo"` si no hay usuario y se declaró `'anonymous'` o nada, y **nunca** lee el header `x-api-key`
+- [X] T038 [P] [US5] Crear `backend/src/shared/observability/business-audit/audited-operation.decorator.spec.ts` (falla hasta T043): `@AuditedOperation('ALERT_CREATED')` guarda la operación y el actor por defecto (`'user'`) en los metadatos del handler y `getAuditedOperation(handler)` los devuelve; con `{ actor: 'system' }` guarda `'system'`; acepta una función `(req) => código` y `resolveOperation(metadata, req)` la evalúa; un handler sin decorator devuelve `undefined`
+- [X] T039 [P] [US5] Crear `backend/src/shared/validation/request-validation-exception.spec.ts` (nuevo; **no** se toca `global-validation-pipe.spec.ts`; falla hasta T045): el `ValidationPipe` de `createGlobalValidationPipe()` ante un cuerpo inválido lanza una `RequestValidationException`, que además es `instanceof BadRequestException`, con el mismo status 400 y el mismo mensaje traducido a español de siempre
+- [X] T040 [US5] Crear `backend/src/shared/observability/business-audit/business-audit.interceptor.spec.ts` (unit con un `ExecutionContext`/`CallHandler` de prueba y un `Logger` espiado; falla hasta T046; depende de T037 y T038): handler sin metadatos pasa de largo sin registrar; éxito → una línea `info` con `event: "business_audit"`, `operation`, `actor` y `outcome: "success"`; `DomainError` → `warn` con `outcome: "failure"` y `failureCategory: "rejected"`; error inesperado → `error` con `failureCategory: "unexpected"`; **relanza siempre** el error original sin cambiarlo; una `RequestValidationException` **no** registra nada y también se relanza; el registro no incluye método, ruta, parámetros, cuerpo, status, duración ni stack; un `Logger` que lanza no altera el valor devuelto ni el error relanzado (FR-025); una operación declarada como función `(req) => código` se resuelve contra la request (el caso concreto de las órdenes se prueba en T048)
+- [X] T041 [US5] Crear `backend/test/observability/business-audit.e2e-spec.ts` (sobre `createTestApp()` con `LOG_CONFIG` capturado vía `backend/test/observability/helpers/log-capture.ts`; falla hasta T043–T057): compra y venta por `POST /orders` dejan `TOKENS_BOUGHT` y `TOKENS_SOLD`; una venta con tenencia insuficiente deja `failure`/`rejected`; crear una alerta deja `ALERT_CREATED` con el actor igual al UUID del usuario; `POST /quotes/recalculate` con la API key deja `QUOTES_RECALCULATED` con actor `"sistema"` y la API key no aparece en ninguna línea; **sin registro de negocio** para: `GET /auth/me` sin token (401), una ruta inexistente (404), un `POST /auth/login` con JSON ilegible, un `POST /orders` con un cuerpo que no pasa el DTO y cualquier `GET`; cada línea de negocio comparte el `correlationId` con la línea técnica de su request y **no** repite método, ruta, cuerpo, status ni duración; ningún secreto ni dato personal en la línea; un `jest.spyOn(Logger.prototype, 'log')` que lanza no cambia el status ni el cuerpo de la respuesta
+- [X] T042 [P] [US5] Crear `backend/test/observability/business-audit-coverage.e2e-spec.ts` (usa `createTestApp()` y `listRouterRoutes`/`listDeclaredSla` de `backend/test/observability/helpers/route-inventory.ts`; falla hasta T048–T057): todo handler publicado con método `POST`, `PATCH` o `DELETE` tiene un `@AuditedOperation` (se leen los metadatos con `getAuditedOperation`), ninguna lectura (`GET`) lo tiene, y un meta-test con un conjunto sintético sin la declaración comprueba que la verificación detecta la falta (mismo patrón que `sla-coverage`). Si hace falta, ampliar `route-inventory.ts` con una función que devuelva el método de cada handler; **no** cambiar las existentes
+
+### Implementation for User Story 5
+
+- [X] T043 [US5] Crear `backend/src/shared/observability/business-audit/audited-operation.decorator.ts` (depende de T038): `AuditedOperation(operation: string | ((req: Request) => string), options?: { actor?: 'user' | 'system' | 'anonymous' })` con `SetMetadata` (clave propia), más `getAuditedOperation(handler)` y `resolveOperation(metadata, req)`. Mismo estilo que `backend/src/shared/observability/metrics/sla.ts`
+- [X] T044 [US5] Crear `backend/src/shared/observability/business-audit/audit-outcome.ts` (depende de T037): `classifyFailure(error)` y `resolveActor(req, declared)` como en T037; funciones puras, sin Nest salvo los tipos de excepción
+- [X] T045 [US5] Crear `backend/src/shared/observability/business-audit/request-validation.exception.ts` (`export class RequestValidationException extends BadRequestException`) y, en `backend/src/shared/validation/global-validation-pipe.ts`, hacer que el `exceptionFactory` devuelva `new RequestValidationException(translateValidationErrors(errors))` en lugar de `BadRequestException`. Status, mensaje y formato de error **no** cambian; no modificar `global-validation-pipe.spec.ts` (depende de T039)
+- [X] T046 [US5] Crear `backend/src/shared/observability/business-audit/business-audit.interceptor.ts` (depende de T040, T043, T044, T045): `BusinessAuditInterceptor implements NestInterceptor`, con `Reflector`/`getAuditedOperation`; sin metadatos devuelve `next.handle()`; con metadatos `next.handle().pipe(tap({ next, error }))`, registra con `new Logger('BusinessAudit')` (el Correlation ID entra solo por el contexto de la request) los campos `event`, `operation`, `actor`, `outcome` y `failureCategory`, con nivel `info`/`warn`/`error`, **sin** método, ruta, parámetros, cuerpo, status, duración ni stack; ignora `RequestValidationException`; envuelve el registro en `try/catch`; no traga ni cambia el error
+- [X] T047 [US5] Crear `backend/src/modules/observability/business-audit.module.ts` con `providers: [{ provide: APP_INTERCEPTOR, useClass: BusinessAuditInterceptor }]` e importarlo en `ObservabilityModule` (`backend/src/modules/observability/observability.module.ts`); no se toca `app.module.ts` (depende de T046)
+- [X] T048 [P] [US5] `backend/src/controllers/orders/orders.controller.ts`: primero crear `backend/src/controllers/orders/order-operation.spec.ts` (nuevo, sin Nest; falla hasta que exista la función): `resolveOrderOperation(req)` devuelve `TOKENS_BOUGHT` si `req.body.side` es `OrderSide.BUY`, `TOKENS_SOLD` si es `OrderSide.SELL` y `ORDER_PLACED` si falta o no es ninguno de los dos (el interceptor corre antes del `ValidationPipe`, así que lee el cuerpo crudo; una orden con `side` inválido nunca se audita porque la validación del DTO la rechaza antes), sin tocar la request. Luego crear `backend/src/controllers/orders/order-operation.ts` con esa función, usando el enum `OrderSide` (no strings sueltos). Por último, en el controller: `POST /orders` → `@AuditedOperation(resolveOrderOperation)` y `DELETE /orders/:id` → `@AuditedOperation('ORDER_CANCELLED')`
+- [X] T049 [P] [US5] `backend/src/controllers/alerts/alerts.controller.ts`: `POST /alerts` → `ALERT_CREATED`; `DELETE /alerts/:id` → `ALERT_DELETED`
+- [X] T050 [P] [US5] `backend/src/controllers/notifications/notifications.controller.ts`: `PATCH /notifications/:id/read` → `NOTIFICATION_READ`; `PATCH /notifications/read-all` → `NOTIFICATIONS_ALL_READ`
+- [X] T051 [P] [US5] `backend/src/controllers/user-strategy/user-strategy.controller.ts`: `PATCH …/:id/select` → `STRATEGY_SELECTED`; `PATCH …/:id/weights` → `STRATEGY_WEIGHTS_UPDATED`; `PATCH …/:id/position-weights/:position` → `STRATEGY_POSITION_WEIGHTS_UPDATED`
+- [X] T052 [P] [US5] `backend/src/controllers/auth/auth.controller.ts`: `POST /auth/register` → `USER_REGISTERED` y `POST /auth/login` → `USER_LOGGED_IN`, ambos con `{ actor: 'anonymous' }` (un fallo de credenciales queda como `rejected`; el email y la contraseña no se registran)
+- [X] T053 [P] [US5] `backend/src/controllers/api-key/api-key.controller.ts`: `POST /auth/api-key` → `API_KEY_ISSUED` (el valor emitido nunca se registra)
+- [X] T054 [P] [US5] `backend/src/controllers/quotation/quotation.controller.ts`: `POST /quotes/recalculate` → `QUOTES_RECALCULATED` con `{ actor: 'system' }`
+- [X] T055 [P] [US5] `backend/src/controllers/player-sync/player-sync.controller.ts`: `POST /sync/whoscored` → `PLAYER_SYNC_TRIGGERED` con `{ actor: 'system' }` (la consulta `GET /sync/whoscored/:runId` es una lectura: no se audita)
+- [X] T056 [P] [US5] `backend/src/controllers/competition/football-data-sync.controller.ts`: `POST /sync/football-data` → `FOOTBALL_DATA_SYNC_TRIGGERED` con `{ actor: 'system' }`
+- [X] T057 [P] [US5] `backend/src/controllers/simulation/simulation.controller.ts`: `POST /admin/simulate-market` → `MARKET_SIMULATED` (el actor sale de `req.user`, que adjunta `AdminAccessGuard`)
+- [X] T058 [US5] **Verificar `docker info` primero.** Correr desde `backend/` (con `pnpm exec jest … --testPathPatterns`, no `pnpm test:unit -- …`): los unit de `business-audit`, `request-validation-exception` y los specs existentes de `validation`; luego `business-audit.e2e-spec` y `business-audit-coverage.e2e-spec`. Confirmar que el e2e `request-logging` y el resto de los e2e existentes siguen en verde sin tocarlos
+
+### Polish de User Story 5
+
+- [X] T059 Ejecutar `pnpm lint` y `pnpm build` en `backend/` sin errores; revisar que `backend/src/shared/observability/business-audit/` no importe nada de `repositories/` ni `services/` (el test de arquitectura tsarch lo verifica)
+- [X] T060 **Verificar `docker info` primero.** Ejecutar la suite completa desde `backend/`: `pnpm test:unit`, `pnpm test:integration` y `pnpm test:e2e`, todo en verde, y confirmar con `git diff --stat -- "backend/**/*.spec.ts" "backend/test/**"` que ningún test existente fue modificado (sólo archivos nuevos)
+- [X] T061 **Verificar `docker info` primero.** Recorrer el quickstart §4 ([quickstart.md](./quickstart.md)) contra una base desechable, no la de desarrollo (`docker run -d --name t028_pg -e POSTGRES_PASSWORD=t028 -e POSTGRES_DB=t028 -p 5544:5432 postgres:16-alpine`, backend con `PORT=3101`, `NODE_ENV=test`, `LOG_LEVEL=info`): compra, venta, rechazo de negocio, operación de sistema, requests sin registro y lectura; al final detener el backend y `docker rm -f t028_pg`
+- [X] T062 Verificar la documentación (Principios VIII y X): no cambia ningún endpoint ni su contrato, así que Swagger y Postman no se tocan; dejar constancia en el reporte. Dejar los cambios **sin commitear** y proponer el nombre del commit en español (`feat: …`)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -162,6 +209,7 @@ Monorepo existente. Backend NestJS: `backend/src/shared/observability/logging/` 
 - **US3 (Phase 5)**: depende de US2 (la redacción actúa sobre los campos que US2 agrega).
 - **US4 (Phase 6)**: depende de US1; es independiente de US2/US3 en lógica, pero comparte `request-log-options.ts` y `request-logging.e2e-spec.ts`, así que se hace después de ellas, no en paralelo.
 - **Polish (Phase 7)**: depende de las historias incluidas. T030 después de T016 y T029 (mismo `main.ts`).
+- **US5 (Phase 8)**: depende de US1 (Correlation ID y `Logger` con contexto de request) y es independiente de US2–US4. T037 y T038 y T039 en paralelo; T040 después de T037 y T038; T043–T045 antes de T046; T047 después de T046; T048–T057 en paralelo entre sí (un controller cada una) y después de T043; T058 al final de la implementación; T059–T062 cierran la fase.
 
 ### Within Each User Story
 
