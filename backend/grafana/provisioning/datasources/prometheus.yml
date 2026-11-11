@@ -1,0 +1,12 @@
+# Datasource de Prometheus cargado automáticamente al arrancar Grafana (OPCIONAL: ver el README).
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    # El nombre del service de docker-compose, no `localhost`: Grafana corre en su propio contenedor.
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

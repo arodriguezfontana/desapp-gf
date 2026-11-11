@@ -84,13 +84,20 @@ sería el propio Prometheus. Comprobación: http://localhost:9090/targets debe m
 **Entrar a Grafana**: http://localhost:3001 — usuario `admin`, contraseña `admin` (credenciales de desarrollo
 local; Grafana te pide cambiarla, podés omitirlo).
 
-**Agregar Prometheus como datasource**: *Connections → Data sources → Add data source → Prometheus*, y en
-**URL** poner `http://prometheus:9090` (el nombre del service de Docker; **no** `localhost`, porque Grafana
-corre en su propio contenedor). *Save & test* debe responder "Successfully queried the Prometheus API".
+**Ya viene cargado (provisioning).** Al arrancar, Grafana carga solo, desde `backend/grafana/`, el datasource
+**Prometheus** (apuntando a `http://prometheus:9090`, el nombre del service de Docker, no `localhost`) y el
+dashboard **FútVal — métricas HTTP del backend** (*Dashboards*), con dos paneles: latencia p95 por ruta y
+tasa de error 5xx. No hay pasos manuales y funciona igual en cualquier máquina. Como el dashboard está
+versionado en el repo (`backend/grafana/dashboards/futval-http-metrics.json`), los cambios se hacen en ese
+archivo, no desde la interfaz (que no los guarda).
 
-**Armar el dashboard**: *Dashboards → New → Import → Upload JSON file* y elegir `backend/grafana-dashboard.json`,
-seleccionando el datasource Prometheus recién creado. Trae dos paneles; si preferís armarlos a mano
-(*New dashboard → Add visualization*), estas son las consultas:
+**Hacerlo a mano** (si preferís armarlo vos, o usar otra instancia de Grafana):
+- *Datasource*: *Connections → Data sources → Add data source → Prometheus*, con **URL**
+  `http://prometheus:9090` (nombre del service, **no** `localhost`, porque Grafana corre en su propio
+  contenedor). *Save & test* debe responder "Successfully queried the Prometheus API".
+- *Dashboard*: *Dashboards → New → Import → Upload JSON file* y elegir
+  `backend/grafana/dashboards/futval-http-metrics.json` (elige el datasource en la variable **Datasource**
+  de arriba), o crear los paneles con *Add visualization* y estas consultas:
 
 | Panel | Consulta PromQL |
 |-------|-----------------|

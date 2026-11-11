@@ -1,0 +1,9 @@
+# Carga automática de los dashboards de backend/grafana/dashboards (montada en /var/lib/grafana/dashboards).
+apiVersion: 1
+
+providers:
+  - name: futval
+    type: file
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

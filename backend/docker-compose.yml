@@ -56,6 +56,10 @@ services:
     environment:
       # Credenciales de DESARROLLO LOCAL (admin/admin). No usar fuera de la máquina local.
       GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      # Provisioning: el datasource de Prometheus y el dashboard quedan cargados al arrancar, sin pasos manuales.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
 
