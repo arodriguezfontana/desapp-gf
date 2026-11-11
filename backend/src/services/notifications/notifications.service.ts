@@ -4,7 +4,7 @@ import { Notification } from '../../domain/notifications/notification';
 import { NotificationNotFoundError } from '../../domain/notifications/errors/notification-not-found.error';
 import { NotificationRepository } from '../../repositories/notifications/notification.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
-import { WithPlayerName, withPlayerName } from '../../shared/with-player-name';
+import { WithPlayerName, withPlayerName } from '../../shared/presentation/with-player-name';
 
 /** Notificación enriquecida con el nombre del jugador, resuelto al vuelo (no se denormaliza en la tabla). */
 export type NotificationWithPlayerName = WithPlayerName<Notification>;

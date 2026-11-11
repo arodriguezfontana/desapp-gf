@@ -1,4 +1,4 @@
-import { TokenHolding } from '../portfolio/token-holding';
+import { MovementSnapshot, TokenHolding } from '../portfolio/token-holding';
 import { Fill } from './match-order';
 
 /**
@@ -16,10 +16,20 @@ export function involvedUserIdsInLockOrder(fills: Fill[]): string[] {
   return Array.from(userIds).sort((a, b) => a.localeCompare(b));
 }
 
+/** Saldo de cada parte de un fill justo antes y despues de aplicarlo (030-token-balance-snapshot). */
+export interface FillSnapshot {
+  buyer: MovementSnapshot;
+  seller: MovementSnapshot;
+}
+
 /**
  * Funcion pura de dominio (constitucion, Principio II y VI): aplica cada fill al
  * holding del comprador (credito) y al del vendedor (debito) y devuelve los
- * holdings resultantes por `userId`, sin tocar los recibidos.
+ * holdings resultantes por `userId`, sin tocar los recibidos, junto con el saldo
+ * antes/despues de cada movimiento (un snapshot por fill, en el orden de `fills`).
+ *
+ * Los snapshots salen de las mismas operaciones `applyCredit`/`applyDebit` que cambian el
+ * saldo: no se recalculan despues (spec 030, FR-002).
  *
  * Si `buyerUserId === sellerUserId` (auto-match) el credito y el debito caen
  * sobre EL MISMO holding: por eso cada operacion lee el holding recien antes de
@@ -28,11 +38,28 @@ export function involvedUserIdsInLockOrder(fills: Fill[]): string[] {
  *
  * @throws InsufficientHoldingError si algun debito dejaria un holding negativo.
  */
-export function settleFills(fills: Fill[], holdings: ReadonlyMap<string, TokenHolding>): Map<string, TokenHolding> {
+export function settleFillsAudited(
+  fills: Fill[],
+  holdings: ReadonlyMap<string, TokenHolding>,
+): { holdings: Map<string, TokenHolding>; snapshots: FillSnapshot[] } {
   const settled = new Map(holdings);
+  const snapshots: FillSnapshot[] = [];
   for (const fill of fills) {
-    settled.set(fill.buyerUserId, settled.get(fill.buyerUserId)!.credit(fill.quantity));
-    settled.set(fill.sellerUserId, settled.get(fill.sellerUserId)!.debit(fill.quantity));
+    const credited = settled.get(fill.buyerUserId)!.applyCredit(fill.quantity);
+    settled.set(fill.buyerUserId, credited.holding);
+    const debited = settled.get(fill.sellerUserId)!.applyDebit(fill.quantity);
+    settled.set(fill.sellerUserId, debited.holding);
+    snapshots.push({ buyer: credited.snapshot, seller: debited.snapshot });
   }
-  return settled;
+  return { holdings: settled, snapshots };
+}
+
+/**
+ * Igual que `settleFillsAudited` pero devuelve solo los holdings resultantes. Es el calculo
+ * original (constitucion, Principio II y VI): los dos comparten una unica implementacion.
+ *
+ * @throws InsufficientHoldingError si algun debito dejaria un holding negativo.
+ */
+export function settleFills(fills: Fill[], holdings: ReadonlyMap<string, TokenHolding>): Map<string, TokenHolding> {
+  return settleFillsAudited(fills, holdings).holdings;
 }

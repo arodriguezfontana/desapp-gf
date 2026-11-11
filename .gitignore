@@ -33,3 +33,6 @@ feature.json
 
 # Per-machine extension config overrides.
 extensions/*/local-config.yml
+
+# Artefactos incrementales de TypeScript
+*.tsbuildinfo

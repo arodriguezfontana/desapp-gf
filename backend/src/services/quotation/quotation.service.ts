@@ -15,7 +15,7 @@ import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { StrategyService } from './strategy.service';
-import { RunLock } from '../../shared/run-lock';
+import { RunLock } from '../../shared/concurrency/run-lock';
 
 export interface RecalculateResult {
   recalculated: Array<{ userId: string; playerId: string; value: number; score: number }>;

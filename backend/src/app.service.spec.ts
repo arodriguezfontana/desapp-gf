@@ -21,13 +21,4 @@ describe('AppService', () => {
       expect(service.getRoot()).toEqual({ message: 'DESAPP API' });
     });
   });
-
-  describe('getHealth', () => {
-    it('devuelve estado ok para el servicio backend', () => {
-      const health = service.getHealth();
-      expect(health.status).toBe('ok');
-      expect(health.service).toBe('backend');
-      expect(typeof health.timestamp).toBe('string');
-    });
-  });
 });

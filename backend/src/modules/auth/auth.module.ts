@@ -13,7 +13,6 @@ import {
 import { AuthController } from '../../controllers/auth/auth.controller';
 import { AuthService } from '../../services/auth/auth.service';
 import { AdminSeedService } from '../../services/auth/admin-seed.service';
-import { SuperuserSeedService } from '../../services/auth/superuser-seed.service';
 import { UserEntity } from '../../repositories/auth/entities/user.entity';
 import { UserMapper } from '../../repositories/auth/mappers/user.mapper';
 import { UserRepository } from '../../repositories/auth/user.repository';
@@ -21,9 +20,6 @@ import { BcryptPasswordHasher } from '../../adapters/auth/bcrypt-password-hasher
 import { JwtTokenIssuer } from '../../adapters/auth/jwt-token-issuer';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { QuotationModule } from '../quotation/quotation.module';
-import { PlayerModule } from '../player/player.module';
-import { OrdersModule } from '../orders/orders.module';
-import { PortfolioModule } from '../portfolio/portfolio.module';
 
 @Module({
   imports: [
@@ -40,17 +36,11 @@ import { PortfolioModule } from '../portfolio/portfolio.module';
     // Provisioning de las dos estrategias por defecto al alta/seed
     // (019-per-user-valuation-strategies, research.md D3).
     forwardRef(() => QuotationModule),
-    // SuperuserSeedService (020-order-matching-engine, research.md D3) necesita
-    // PlayerRepository, OrderRepository y TokenHoldingRepository.
-    forwardRef(() => PlayerModule),
-    forwardRef(() => OrdersModule),
-    forwardRef(() => PortfolioModule),
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
     AdminSeedService,
-    SuperuserSeedService,
     UserMapper,
     UserRepository,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },

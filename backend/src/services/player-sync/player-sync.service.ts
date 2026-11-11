@@ -20,7 +20,7 @@ import {
   WhoScoredSyncSummary,
 } from '../../domain/sync/sync-run';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
-import { RunLock } from '../../shared/run-lock';
+import { RunLock } from '../../shared/concurrency/run-lock';
 
 const MAX_RETAINED_RUNS = 20;
 const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error inesperado.';

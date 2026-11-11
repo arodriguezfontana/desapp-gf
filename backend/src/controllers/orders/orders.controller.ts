@@ -6,6 +6,9 @@ import { OrdersService } from '../../services/orders/orders.service';
 import { CreateOrderRequestDto } from './dto/create-order-request.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { TokenTransactionResponseDto } from './dto/token-transaction-response.dto';
+import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
+import { resolveOrderOperation } from './order-operation';
 
 /**
  * Controller de Orders (020-order-matching-engine, 023-cancel-order, contracts/orders-api.md).
@@ -20,6 +23,8 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
+  @Sla('market')
+  @AuditedOperation(resolveOrderOperation)
   @ApiOperation({
     summary:
       'Publica una orden de compra o venta. El precio se calcula automáticamente con la estrategia seleccionada del usuario; nunca se recibe desde el cliente.',
@@ -37,6 +42,8 @@ export class OrdersController {
   }
 
   @Delete(':id')
+  @Sla('market')
+  @AuditedOperation('ORDER_CANCELLED')
   @ApiOperation({
     summary:
       'Cancela una orden propia en estado PENDING o PARTIALLY_FILLED. Retira el remanente del mercado y libera los tokens retenidos si era una venta.',
@@ -57,6 +64,7 @@ export class OrdersController {
   }
 
   @Get()
+  @Sla('read')
   @ApiOperation({
     summary: 'Devuelve todas las órdenes emitidas por el usuario autenticado ordenadas por fecha descendente.',
   })
@@ -68,6 +76,7 @@ export class OrdersController {
   }
 
   @Get('history')
+  @Sla('read')
   @ApiOperation({ summary: 'Devuelve el historial de transacciones de tokens del usuario autenticado, ordenado por fecha descendente.' })
   @ApiResponse({ status: 200, type: [TokenTransactionResponseDto] })
   @ApiResponse({ status: 401, description: 'No autorizado' })

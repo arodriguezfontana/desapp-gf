@@ -66,18 +66,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ...(runId !== undefined && { runId }),
     };
 
+    // Solo los 5xx se loguean acá: traen el stack real del error, que la línea de
+    // cierre de la request no tiene. Los 4xx ya quedan registrados (con status, usuario
+    // y Correlation ID) por el log de requests (spec 028), así que repetirlos acá
+    // duplicaba la línea.
+    //
     // Loguea solo el path, sin query string: /notifications/stream lleva el
     // JWT como query param (único mecanismo soportado por EventSource,
     // research.md §2 de 025-player-price-alerts) y no debe quedar en logs
     // de la aplicación (constitución, Principio IV).
-    const loggedPath = request.url.split('?')[0];
     if (status >= 500) {
+      const loggedPath = request.url.split('?')[0];
       this.logger.error(
         `${request.method} ${loggedPath} -> ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
-    } else {
-      this.logger.warn(`${request.method} ${loggedPath} -> ${status}`);
     }
 
     response.status(status).json(body);

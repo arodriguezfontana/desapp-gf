@@ -4,6 +4,8 @@ import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { AlertsService } from '../../services/alerts/alerts.service';
 import { CreatePriceAlertRequestDto } from './dto/create-price-alert-request.dto';
 import { PriceAlertResponseDto } from './dto/price-alert-response.dto';
+import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 /**
  * Controller de alertas de precio (025-player-price-alerts, contracts/alerts-api.md).
@@ -16,6 +18,8 @@ export class AlertsController {
   constructor(private readonly alertsService: AlertsService) {}
 
   @Post()
+  @Sla('write')
+  @AuditedOperation('ALERT_CREATED')
   @ApiOperation({ summary: 'Crea una alerta de precio propia sobre un jugador existente.' })
   @ApiResponse({ status: 201, type: PriceAlertResponseDto })
   @ApiResponse({ status: 400, description: 'Umbral no positivo o condición inválida.' })
@@ -31,6 +35,7 @@ export class AlertsController {
   }
 
   @Get()
+  @Sla('read')
   @ApiOperation({ summary: 'Lista las alertas propias del usuario autenticado (activas y canceladas).' })
   @ApiResponse({ status: 200, type: [PriceAlertResponseDto] })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
@@ -40,6 +45,8 @@ export class AlertsController {
   }
 
   @Delete(':id')
+  @Sla('write')
+  @AuditedOperation('ALERT_DELETED')
   @HttpCode(204)
   @ApiOperation({ summary: 'Cancela una alerta propia; deja de evaluarse en recálculos futuros.' })
   @ApiParam({ name: 'id', description: 'ID de la alerta (UUID)', type: String })

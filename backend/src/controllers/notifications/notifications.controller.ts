@@ -3,6 +3,8 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags }
 import { CurrentUser } from '../../guards/auth/current-user.decorator';
 import { NotificationsService } from '../../services/notifications/notifications.service';
 import { NotificationResponseDto } from './dto/notification-response.dto';
+import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 /**
  * Controller de notificaciones (025-player-price-alerts, contracts/notifications-api.md).
@@ -15,6 +17,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
+  @Sla('read')
   @ApiOperation({ summary: 'Lista las notificaciones propias del usuario autenticado, más recientes primero.' })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
   @ApiResponse({ status: 200, type: [NotificationResponseDto] })
@@ -28,6 +31,8 @@ export class NotificationsController {
   }
 
   @Patch(':id/read')
+  @Sla('write')
+  @AuditedOperation('NOTIFICATION_READ')
   @HttpCode(204)
   @ApiOperation({ summary: 'Marca una notificación propia como leída.' })
   @ApiParam({ name: 'id', description: 'ID de la notificación (UUID)', type: String })
@@ -39,6 +44,8 @@ export class NotificationsController {
   }
 
   @Patch('read-all')
+  @Sla('write')
+  @AuditedOperation('NOTIFICATIONS_ALL_READ')
   @HttpCode(204)
   @ApiOperation({ summary: 'Marca todas las notificaciones propias no leídas como leídas.' })
   @ApiResponse({ status: 204, description: 'Notificaciones marcadas como leídas.' })

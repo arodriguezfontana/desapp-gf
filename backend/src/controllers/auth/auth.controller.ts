@@ -14,6 +14,8 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { MeResponseDto } from './dto/me-response.dto';
 import { RegisterRequestDto } from './dto/register-request.dto';
 import { RegisterResponseDto } from './dto/register-response.dto';
+import { Sla } from '../../shared/observability/metrics/sla';
+import { AuditedOperation } from '../../shared/observability/business-audit/audited-operation.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,6 +23,8 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post('register')
+  @Sla('auth')
+  @AuditedOperation('USER_REGISTERED', { actor: 'anonymous' })
   @Public()
   @ApiOperation({ summary: 'Alta de cuenta (no inicia sesión, no devuelve token)' })
   @ApiResponse({ status: 201, type: RegisterResponseDto })
@@ -36,6 +40,8 @@ export class AuthController {
   }
 
   @Post('login')
+  @Sla('auth')
+  @AuditedOperation('USER_LOGGED_IN', { actor: 'anonymous' })
   @Public()
   @HttpCode(200)
   @ApiOperation({ summary: 'Inicio de sesión — devuelve un JWT válido por 24 h' })
@@ -52,6 +58,7 @@ export class AuthController {
   }
 
   @Get('me')
+  @Sla('read')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Datos del usuario autenticado (endpoint protegido de referencia)' })
   @ApiResponse({ status: 200, type: MeResponseDto })

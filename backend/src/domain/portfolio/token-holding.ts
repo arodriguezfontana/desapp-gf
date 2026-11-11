@@ -2,6 +2,16 @@ import { randomUUID } from 'node:crypto';
 import { InsufficientHoldingError } from './errors/insufficient-holding.error';
 
 /**
+ * Saldo de una tenencia justo antes y justo después de aplicar un movimiento
+ * (030-token-balance-snapshot). Se captura en la misma operación que cambia el saldo; no se
+ * recalcula después a partir del historial.
+ */
+export interface MovementSnapshot {
+  before: number;
+  after: number;
+}
+
+/**
  * Entidad de dominio TokenHolding (020-order-matching-engine, data-model.md —
  * construye desde cero la infraestructura de 017-buy-tokens, ver research.md D7).
  * Cantidad de tokens que un usuario posee de un jugador determinado. Existe
@@ -64,10 +74,19 @@ export class TokenHolding {
 
   /** Devuelve una nueva instancia con `quantity` incrementada. */
   credit(quantity: number): TokenHolding {
+    return this.applyCredit(quantity).holding;
+  }
+
+  /**
+   * Igual que `credit`, pero devuelve además el saldo antes y después del movimiento
+   * (030-token-balance-snapshot): ambos valores salen de la misma operación que cambia el saldo.
+   */
+  applyCredit(quantity: number): { holding: TokenHolding; snapshot: MovementSnapshot } {
     if (!Number.isInteger(quantity) || quantity <= 0) {
       throw new InsufficientHoldingError();
     }
-    return new TokenHolding(this._id, this._userId, this._playerId, this._quantity + quantity, new Date());
+    const holding = new TokenHolding(this._id, this._userId, this._playerId, this._quantity + quantity, new Date());
+    return { holding, snapshot: { before: this._quantity, after: holding.quantity } };
   }
 
   /**
@@ -77,6 +96,15 @@ export class TokenHolding {
    * normal esto ya se validó antes de llegar acá (spec FR-010).
    */
   debit(quantity: number): TokenHolding {
+    return this.applyDebit(quantity).holding;
+  }
+
+  /**
+   * Igual que `debit`, pero devuelve además el saldo antes y después del movimiento
+   * (030-token-balance-snapshot).
+   * @throws InsufficientHoldingError si el resultado quedaría negativo.
+   */
+  applyDebit(quantity: number): { holding: TokenHolding; snapshot: MovementSnapshot } {
     if (!Number.isInteger(quantity) || quantity <= 0) {
       throw new InsufficientHoldingError();
     }
@@ -84,7 +112,8 @@ export class TokenHolding {
     if (next < 0) {
       throw new InsufficientHoldingError();
     }
-    return new TokenHolding(this._id, this._userId, this._playerId, next, new Date());
+    const holding = new TokenHolding(this._id, this._userId, this._playerId, next, new Date());
+    return { holding, snapshot: { before: this._quantity, after: next } };
   }
 
   get id(): string {

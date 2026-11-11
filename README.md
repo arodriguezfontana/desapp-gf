@@ -19,7 +19,8 @@ pnpm install --dir frontend
 
 Variables de entorno (copiar los `.env.example`):
 
-- `backend/.env` → `PORT`, `DATABASE_URL`, `JWT_SECRET` (secreto real de firma del JWT,
+- `backend/.env` → `PORT`, `CORS_ORIGIN` (orígenes del frontend permitidos, separados por coma; por defecto
+  `http://localhost:5173`), `DATABASE_URL`, `JWT_SECRET` (secreto real de firma del JWT,
   generar uno propio: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
   `QUOTES_API_KEY` (clave para que el frontend consulte el catálogo y dispare recálculos),
   `ADMIN_API_KEY` (clave exclusiva del administrador para operaciones privilegiadas, como activar estrategias de cotización),
@@ -58,6 +59,55 @@ Con el backend corriendo:
 
 - Swagger UI → http://localhost:3000/docs
 - Spec OpenAPI v3 (JSON) → http://localhost:3000/docs-json
+
+## Métricas: Prometheus y Grafana (opcional)
+
+> **Es una mejora de visualización opcional.** No es un requisito del enunciado ni del checklist de la
+> entrega, y no cambia nada de `GET /metrics`: ese endpoint (público, formato Prometheus) sigue funcionando
+> y se puede consultar directamente con `curl http://localhost:3000/metrics`, sin Prometheus ni Grafana. Si
+> estos dos servicios no están o fallan en una demo, la feature de métricas no se ve afectada.
+
+El backend expone dos métricas, con las etiquetas `method`, `route` y `status_code`:
+`http_request_duration_seconds` (histograma de duración) y `http_requests_total` (contador de requests).
+
+**Levantar todo** (desde `backend/`, con el backend corriendo en el puerto 3000):
+
+```bash
+cd backend && docker compose up -d      # Postgres + Prometheus (:9090) + Grafana (:3001)
+# Sólo Postgres: docker compose up -d postgres
+```
+
+Prometheus lee el backend como `host.docker.internal:3000` (ver `backend/prometheus.yml`) porque el backend de
+desarrollo corre en tu máquina con `pnpm dev`, no como un service de Docker. `localhost` dentro del contenedor
+sería el propio Prometheus. Comprobación: http://localhost:9090/targets debe mostrar `futval-backend` en **UP**.
+
+**Entrar a Grafana**: http://localhost:3001 — usuario `admin`, contraseña `admin` (credenciales de desarrollo
+local; Grafana te pide cambiarla, podés omitirlo).
+
+**Ya viene cargado (provisioning).** Al arrancar, Grafana carga solo, desde `backend/grafana/`, el datasource
+**Prometheus** (apuntando a `http://prometheus:9090`, el nombre del service de Docker, no `localhost`) y el
+dashboard **FútVal — métricas HTTP del backend** (*Dashboards*), con dos paneles: latencia p95 por ruta y
+tasa de error 5xx. No hay pasos manuales y funciona igual en cualquier máquina. Como el dashboard está
+versionado en el repo (`backend/grafana/dashboards/futval-http-metrics.json`), los cambios se hacen en ese
+archivo, no desde la interfaz (que no los guarda).
+
+**Hacerlo a mano** (si preferís armarlo vos, o usar otra instancia de Grafana):
+- *Datasource*: *Connections → Data sources → Add data source → Prometheus*, con **URL**
+  `http://prometheus:9090` (nombre del service, **no** `localhost`, porque Grafana corre en su propio
+  contenedor). *Save & test* debe responder "Successfully queried the Prometheus API".
+- *Dashboard*: *Dashboards → New → Import → Upload JSON file* y elegir
+  `backend/grafana/dashboards/futval-http-metrics.json` (elige el datasource en la variable **Datasource**
+  de arriba), o crear los paneles con *Add visualization* y estas consultas:
+
+| Panel | Consulta PromQL |
+|-------|-----------------|
+| Latencia p95 por ruta (segundos) | `histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket[5m])))` |
+| Tasa de error 5xx | `(sum(rate(http_requests_total{status_code=~"5.."}[5m])) or vector(0)) / sum(rate(http_requests_total[5m]))` |
+
+La tasa de error cuenta sólo los 5xx (fallas del servicio); los 4xx son errores del cliente y no entran. El
+`or vector(0)` hace que el panel muestre 0 % cuando todavía no hubo ningún 5xx, en lugar de "No data". Para ver
+una sola ruta, agregar un filtro, por ejemplo `{route="/orders"}`, en ambas consultas. Los streams (SSE) se
+cuentan en `http_requests_total` pero no entran al histograma de duración.
 
 ## Scripts
 
