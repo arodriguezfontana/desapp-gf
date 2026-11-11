@@ -8,8 +8,8 @@ const HERO_SLIDES = [
     badge: 'MERCADO OFICIAL DE FICHAJES',
     badgeColor: 'bg-[#b79753] text-[#0b3332]',
     title: 'BIENVENIDO A FÚTVAL',
-    subtitle: 'Plataforma oficial de consulta de catálogo de jugadores y cotización en tiempo real para las 5 ligas europeas principales.',
-    ctaText: 'EXPLORAR CATÁLOGO DE JUGADORES',
+    subtitle: 'Comprá y vendé tokens de jugadores de las 5 ligas europeas principales, con cotizaciones calculadas según tu propia estrategia de valuación.',
+    ctaText: 'EXPLORAR EL MERCADO',
     ctaLink: '/catalog',
     position: 'object-cover object-center',
   },
@@ -19,7 +19,7 @@ const HERO_SLIDES = [
     badge: 'ACCESO PERSONAL & SEGURIDAD',
     badgeColor: 'bg-[#2dd4bf] text-[#0b3332]',
     title: 'GESTIÓN DE SEGURIDAD & APIKEY',
-    subtitle: 'Administrá tus claves de acceso personales para consultar el catálogo de futbolistas con total seguridad y privacidad.',
+    subtitle: 'Generá y renová tu clave de acceso personal para consultar el catálogo, y mantené tu cuenta protegida con total privacidad.',
     ctaText: 'IR A MI CUENTA & CLAVE',
     ctaLink: '/account',
     position: 'object-cover object-center',
@@ -27,13 +27,96 @@ const HERO_SLIDES = [
   {
     id: 3,
     image: '/assets/soccer_player.jpg',
-    badge: 'PASIÓN & COMPETICIÓN',
+    badge: 'PORTAFOLIO & OPERACIONES',
     badgeColor: 'bg-[#b79753] text-[#0b3332]',
-    title: 'EMOCIÓN DEL FÚTBOL DE ÉLITE',
-    subtitle: 'Seguí el rendimiento de las máximas figuras del fútbol europeo con estadísticas y valoraciones actualizadas.',
-    ctaText: 'VER FICHAJES',
-    ctaLink: '/catalog',
+    title: 'TU PORTAFOLIO EN UN SOLO LUGAR',
+    subtitle: 'Seguí el valor de tus tokens, tus órdenes abiertas y el historial de tus operaciones en un solo lugar.',
+    ctaText: 'VER MI PORTAFOLIO',
+    ctaLink: '/portfolio',
     position: 'object-cover object-center',
+  },
+];
+
+interface FeatureCard {
+  id: string;
+  image: string;
+  imageAlt: string;
+  imagePosition: string;
+  tag: string;
+  tagStyle: string;
+  title: string;
+  description: string;
+  bullets: string[];
+  bulletColor: string;
+  ctaText: string;
+  ctaLink: string;
+  ctaStyle: string;
+}
+
+const CTA_PRIMARY =
+  'w-full py-3 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center shadow-md hover:shadow-lg active:scale-95 mt-2';
+const CTA_SECONDARY =
+  'w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-white font-black uppercase tracking-widest text-xs transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2';
+const TAG_TEAL = 'text-[#2dd4bf] border-[#2dd4bf]/40';
+const TAG_GOLD = 'text-[#b79753] border-[#b79753]/40';
+
+const FEATURE_CARDS: FeatureCard[] = [
+  {
+    id: 'catalogo',
+    image: '/assets/home_catalog_players.jpg',
+    imageAlt: 'Duelo y acción de jugadores de fútbol',
+    imagePosition: 'object-[center_40%]',
+    tag: 'CATÁLOGO & RANKING',
+    tagStyle: TAG_TEAL,
+    title: 'Catálogo y Ranking',
+    description:
+      'Consultá futbolistas de Premier League, La Liga, Serie A, Bundesliga y Ligue 1, y mirá quiénes lideran el ranking de cotización.',
+    bullets: [
+      'Filtros combinados por liga, posición y club.',
+      'Ranking de jugadores según su valuación.',
+    ],
+    bulletColor: 'text-[#2dd4bf]',
+    ctaText: 'Ir al Catálogo',
+    ctaLink: '/catalog',
+    ctaStyle: CTA_PRIMARY,
+  },
+  {
+    id: 'mercado',
+    image: '/assets/tactics_board.jpg',
+    imageAlt: 'Pizarra táctica con jugadas de fútbol',
+    imagePosition: 'object-center',
+    tag: 'MERCADO DE ÓRDENES',
+    tagStyle: TAG_GOLD,
+    title: 'Comprá y Vendé Tokens',
+    description:
+      'Entrá al detalle de cualquier jugador para publicar órdenes de compra o venta y seguir su cotización en el tiempo.',
+    bullets: [
+      'Libro de órdenes con la profundidad del mercado.',
+      'Historial de cotizaciones del jugador.',
+    ],
+    bulletColor: 'text-[#b79753]',
+    ctaText: 'Operar en el Mercado',
+    ctaLink: '/catalog',
+    ctaStyle: CTA_PRIMARY,
+  },
+  {
+    id: 'portafolio',
+    image: '/assets/golden_trophy.jpg',
+    imageAlt: 'Trofeo dorado',
+    imagePosition: 'object-center',
+    tag: 'MI PORTAFOLIO',
+    tagStyle: TAG_GOLD,
+    title: 'Mi Portafolio',
+    description:
+      'Mirá cuánto valen tus tokens, cuánto ganaste o perdiste y cómo evolucionó tu cartera, con tus propias estrategias de valuación.',
+    bullets: [
+      'Tenencias, ganancia o pérdida y evolución del valor.',
+      'Mis órdenes abiertas e historial de operaciones.',
+    ],
+    bulletColor: 'text-[#b79753]',
+    ctaText: 'Ver mi Portafolio',
+    ctaLink: '/portfolio',
+    ctaStyle: CTA_SECONDARY,
   },
 ];
 
@@ -133,101 +216,56 @@ export function HomePage() {
             FUNCIONALIDADES PRINCIPALES
           </span>
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white">
-            Explorá el Mercado de Fútbol
+            Todo lo que podés hacer en FútVal
           </h2>
           <p className="text-xs sm:text-sm text-gray-300 mt-2 font-medium">
-            Accedé a información relevante, cotizaciones y datos de jugadores de las 5 grandes ligas de Europa.
+            Consultá el catálogo, operá en el mercado y seguí tu portafolio con los jugadores de las 5 grandes ligas de Europa.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-          {/* Module 1: Catálogo de Jugadores con Imagen Decorativa Dinámica */}
-          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
-            <div className="relative h-52 sm:h-56 overflow-hidden border-b border-[#1a6866]">
-              <img
-                src="/assets/home_catalog_players.jpg"
-                alt="Duelo y Acción de Jugadores de Fútbol"
-                className="w-full h-full object-cover object-[center_40%] filter brightness-90 group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/20 to-transparent" />
-              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#2dd4bf] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#2dd4bf]/40">
-                FUTBOLISTAS & CLUBES
-              </span>
-            </div>
-
-            <div className="p-6 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
-                  Catálogo de Jugadores
-                </h3>
-                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
-                  Consultá futbolistas de Premier League, La Liga, Serie A, Bundesliga y Ligue 1. Filtrá por posición, equipo o competencia con paginación integrada.
-                </p>
-
-                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#2dd4bf] font-black">✓</span>
-                    <span>Filtros combinados por liga y club.</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#2dd4bf] font-black">✓</span>
-                    <span>Búsqueda instantánea por nombre de equipo.</span>
-                  </li>
-                </ul>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+          {FEATURE_CARDS.map((card) => (
+            <div
+              key={card.id}
+              className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group"
+            >
+              <div className="relative h-52 sm:h-56 overflow-hidden border-b border-[#1a6866]">
+                <img
+                  src={card.image}
+                  alt={card.imageAlt}
+                  className={`w-full h-full object-cover ${card.imagePosition} filter brightness-90 group-hover:scale-105 transition-transform duration-500`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/20 to-transparent" />
+                <span
+                  className={`absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border ${card.tagStyle}`}
+                >
+                  {card.tag}
+                </span>
               </div>
 
-              <Link
-                to="/catalog"
-                className="w-full py-3 bg-[#b79753] hover:bg-[#9e8144] text-[#0b3332] font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center shadow-md hover:shadow-lg active:scale-95 mt-2"
-              >
-                Ir al Catálogo &rarr;
-              </Link>
-            </div>
-          </div>
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">{card.description}</p>
 
-          {/* Module 2: Claves de Acceso Personal con Imagen Decorativa Seguridad VIP */}
-          <div className="bg-[#104443] border border-[#1a6866] hover:border-[#b79753] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
-            <div className="relative h-52 sm:h-56 overflow-hidden border-b border-[#1a6866]">
-              <img
-                src="/assets/home_key_security.jpg"
-                alt="Credencial y Acceso Seguro"
-                className="w-full h-full object-cover object-top filter brightness-90 group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#104443] via-[#104443]/20 to-transparent" />
-              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-widest text-[#b79753] bg-[#0b3332]/90 backdrop-blur-md px-3 py-1 rounded-md border border-[#b79753]/40">
-                ACCESO SEGURO
-              </span>
-            </div>
+                  <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
+                    {card.bullets.map((bullet) => (
+                      <li key={bullet} className="flex items-center gap-2">
+                        <span className={`${card.bulletColor} font-black`}>✓</span>
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-            <div className="p-6 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3 group-hover:text-[#b79753] transition-colors">
-                  Gestión de Clave
-                </h3>
-                <p className="text-xs font-medium text-gray-300 leading-relaxed mb-6">
-                  Generá tu clave de acceso personal en tu panel de cuenta para ingresar de forma segura y consultar la información completa del catálogo.
-                </p>
-
-                <ul className="space-y-2.5 text-xs font-bold text-gray-300 mb-6">
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#b79753] font-black">✓</span>
-                    <span>Generación instantánea desde tu cuenta.</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#b79753] font-black">✓</span>
-                    <span>Renovación segura de claves en 1 clic.</span>
-                  </li>
-                </ul>
+                <Link to={card.ctaLink} className={card.ctaStyle}>
+                  {card.ctaText} &rarr;
+                </Link>
               </div>
-
-              <Link
-                to="/account"
-                className="w-full py-3 bg-[#0e3b3a] hover:bg-[#165756] text-white font-black uppercase text-xs tracking-widest transition-all rounded-xl text-center border border-[#b79753]/40 shadow-md active:scale-95 mt-2"
-              >
-                Mi Cuenta & Clave &rarr;
-              </Link>
             </div>
-          </div>
+          ))}
         </div>
       </section>
     </div>
