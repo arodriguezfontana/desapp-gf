@@ -73,62 +73,17 @@ El backend es NestJS, así que no usa Actuator. Estos endpoints públicos cubren
 `GET /info` toma el commit de la variable `GIT_COMMIT`, que tiene que definir el despliegue (por ejemplo
 `GIT_COMMIT=$(git rev-parse --short HEAD)`); si no está definida, el commit sale como `null`.
 
-## Métricas: Prometheus y Grafana (opcional)
+## Ver las métricas
 
-> **Es una mejora de visualización opcional.** No es un requisito del enunciado ni del checklist de la
-> entrega, y no cambia nada de `GET /metrics`: ese endpoint (público, formato Prometheus) sigue funcionando
-> y se puede consultar directamente con `curl http://localhost:3000/metrics`, sin Prometheus ni Grafana. Si
-> estos dos servicios no están o fallan en una demo, la feature de métricas no se ve afectada.
+1. Con el backend corriendo (`cd backend && pnpm dev`), las métricas están en http://localhost:3000/metrics.
+2. Para verlas en Prometheus y Grafana, levantar los servicios (desde `backend/`):
 
-El backend expone dos métricas de requests, con las etiquetas `method`, `route` y `status_code`:
-`http_request_duration_seconds` (histograma de duración) y `http_requests_total` (contador de requests).
-Además expone las métricas por defecto del proceso Node (`process_*` y `nodejs_*`), sin esas etiquetas.
+   ```bash
+   docker compose up -d      # Postgres + Prometheus (:9090) + Grafana (:3001)
+   ```
 
-**Levantar todo** (desde `backend/`, con el backend corriendo en el puerto 3000):
-
-```bash
-cd backend && docker compose up -d      # Postgres + Prometheus (:9090) + Grafana (:3001)
-# Sólo Postgres: docker compose up -d postgres
-```
-
-Prometheus lee el backend como `host.docker.internal:3000` (ver `backend/prometheus.yml`) porque el backend de
-desarrollo corre en tu máquina con `pnpm dev`, no como un service de Docker. `localhost` dentro del contenedor
-sería el propio Prometheus. Comprobación: http://localhost:9090/targets debe mostrar `futval-backend` en **UP**.
-
-**Entrar a Grafana**: http://localhost:3001 — usuario `admin`, contraseña `admin` (credenciales de desarrollo
-local; Grafana te pide cambiarla, podés omitirlo).
-
-**Ya viene cargado (provisioning).** Al arrancar, Grafana carga solo, desde `backend/grafana/`, el datasource
-**Prometheus** (apuntando a `http://prometheus:9090`, el nombre del service de Docker, no `localhost`) y el
-dashboard **FútVal — métricas del backend** (*Dashboards*), con dos filas: **Requests HTTP** (latencia p95
-por ruta y tasa de error 5xx) y **Proceso Node.js** (uptime, CPU, memoria, event loop lag, tiempo en GC y
-handles activos). No hay pasos manuales y funciona igual en cualquier máquina. Como el dashboard está
-versionado en el repo (`backend/grafana/dashboards/futval-http-metrics.json`), los cambios se hacen en ese
-archivo, no desde la interfaz (que no los guarda).
-
-**Hacerlo a mano** (si preferís armarlo vos, o usar otra instancia de Grafana):
-- *Datasource*: *Connections → Data sources → Add data source → Prometheus*, con **URL**
-  `http://prometheus:9090` (nombre del service, **no** `localhost`, porque Grafana corre en su propio
-  contenedor). *Save & test* debe responder "Successfully queried the Prometheus API".
-- *Dashboard*: *Dashboards → New → Import → Upload JSON file* y elegir
-  `backend/grafana/dashboards/futval-http-metrics.json` (elige el datasource en la variable **Datasource**
-  de arriba), o crear los paneles con *Add visualization* y estas consultas:
-
-| Panel | Consulta PromQL |
-|-------|-----------------|
-| Latencia p95 por ruta (segundos) | `histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket[5m])))` |
-| Tasa de error 5xx | `(sum(rate(http_requests_total{status_code=~"5.."}[5m])) or vector(0)) / sum(rate(http_requests_total[5m]))` |
-| Uptime (stat, segundos) | `time() - process_start_time_seconds` |
-| CPU del proceso (% de un núcleo) | `rate(process_cpu_user_seconds_total[1m])` y `rate(process_cpu_system_seconds_total[1m])` |
-| Memoria (bytes) | `process_resident_memory_bytes`, `nodejs_heap_size_total_bytes`, `nodejs_heap_size_used_bytes` |
-| Event loop lag (segundos) | `nodejs_eventloop_lag_p50_seconds` y `nodejs_eventloop_lag_p99_seconds` |
-| Tiempo en GC (%) | `sum by (kind) (rate(nodejs_gc_duration_seconds_sum[5m]))` |
-| Handles y requests activos | `nodejs_active_handles_total` y `nodejs_active_requests_total` |
-
-La tasa de error cuenta sólo los 5xx (fallas del servicio); los 4xx son errores del cliente y no entran. El
-`or vector(0)` hace que el panel muestre 0 % cuando todavía no hubo ningún 5xx, en lugar de "No data". Para ver
-una sola ruta, agregar un filtro, por ejemplo `{route="/orders"}`, en ambas consultas. Los streams (SSE) se
-cuentan en `http_requests_total` pero no entran al histograma de duración.
+3. Prometheus: http://localhost:9090 (en `/targets`, `futval-backend` debe estar en **UP**).
+4. Grafana: http://localhost:3001 (usuario `admin`, contraseña `admin`). El dashboard **FútVal — métricas del backend** ya viene cargado.
 
 ## Scripts
 
