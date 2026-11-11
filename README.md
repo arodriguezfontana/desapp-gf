@@ -60,6 +60,48 @@ Con el backend corriendo:
 - Swagger UI → http://localhost:3000/docs
 - Spec OpenAPI v3 (JSON) → http://localhost:3000/docs-json
 
+## Métricas: Prometheus y Grafana (opcional)
+
+> **Es una mejora de visualización opcional.** No es un requisito del enunciado ni del checklist de la
+> entrega, y no cambia nada de `GET /metrics`: ese endpoint (público, formato Prometheus) sigue funcionando
+> y se puede consultar directamente con `curl http://localhost:3000/metrics`, sin Prometheus ni Grafana. Si
+> estos dos servicios no están o fallan en una demo, la feature de métricas no se ve afectada.
+
+El backend expone dos métricas, con las etiquetas `method`, `route` y `status_code`:
+`http_request_duration_seconds` (histograma de duración) y `http_requests_total` (contador de requests).
+
+**Levantar todo** (desde `backend/`, con el backend corriendo en el puerto 3000):
+
+```bash
+cd backend && docker compose up -d      # Postgres + Prometheus (:9090) + Grafana (:3001)
+# Sólo Postgres: docker compose up -d postgres
+```
+
+Prometheus lee el backend como `host.docker.internal:3000` (ver `backend/prometheus.yml`) porque el backend de
+desarrollo corre en tu máquina con `pnpm dev`, no como un service de Docker. `localhost` dentro del contenedor
+sería el propio Prometheus. Comprobación: http://localhost:9090/targets debe mostrar `futval-backend` en **UP**.
+
+**Entrar a Grafana**: http://localhost:3001 — usuario `admin`, contraseña `admin` (credenciales de desarrollo
+local; Grafana te pide cambiarla, podés omitirlo).
+
+**Agregar Prometheus como datasource**: *Connections → Data sources → Add data source → Prometheus*, y en
+**URL** poner `http://prometheus:9090` (el nombre del service de Docker; **no** `localhost`, porque Grafana
+corre en su propio contenedor). *Save & test* debe responder "Successfully queried the Prometheus API".
+
+**Armar el dashboard**: *Dashboards → New → Import → Upload JSON file* y elegir `backend/grafana-dashboard.json`,
+seleccionando el datasource Prometheus recién creado. Trae dos paneles; si preferís armarlos a mano
+(*New dashboard → Add visualization*), estas son las consultas:
+
+| Panel | Consulta PromQL |
+|-------|-----------------|
+| Latencia p95 por ruta (segundos) | `histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket[5m])))` |
+| Tasa de error 5xx | `(sum(rate(http_requests_total{status_code=~"5.."}[5m])) or vector(0)) / sum(rate(http_requests_total[5m]))` |
+
+La tasa de error cuenta sólo los 5xx (fallas del servicio); los 4xx son errores del cliente y no entran. El
+`or vector(0)` hace que el panel muestre 0 % cuando todavía no hubo ningún 5xx, en lugar de "No data". Para ver
+una sola ruta, agregar un filtro, por ejemplo `{route="/orders"}`, en ambas consultas. Los streams (SSE) se
+cuentan en `http_requests_total` pero no entran al histograma de duración.
+
 ## Scripts
 
 **Backend**: `dev` · `build` · `start` · `start:prod` · `lint` · `test:unit` (sin Docker) · `test:integration` · `test:e2e` · `test` (unit + integración) · `test:watch` · `test:cov`

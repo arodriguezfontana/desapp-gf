@@ -1,0 +1,16 @@
+# Configuración de Prometheus para visualizar las métricas del backend (spec 029). OPCIONAL: ver el README.
+# Lo monta docker-compose.yml en /etc/prometheus/prometheus.yml.
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: futval-backend
+    metrics_path: /metrics
+    static_configs:
+      # No `localhost`: dentro del contenedor de Prometheus apuntaría a Prometheus mismo.
+      # El backend de desarrollo corre en el host (`pnpm dev`, puerto 3000), no como service de
+      # docker-compose, así que se lo alcanza como `host.docker.internal` (ver `extra_hosts` del service
+      # `prometheus`). Si el backend pasara a correr como un service de docker-compose, el target sería el
+      # nombre de ese service, p. ej. `backend:3000`.
+      - targets: ["host.docker.internal:3000"]

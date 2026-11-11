@@ -2,6 +2,8 @@
 # Las credenciales NO viven acá: se toman de backend/.env por interpolacion.
 # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB deben coincidir con lo que codifica DATABASE_URL.
 # Uso: `docker compose up -d` desde backend/ (requiere parar un Postgres nativo en el mismo puerto).
+# Además de Postgres, levanta Prometheus (:9090) y Grafana (:3001), opcionales, para ver las métricas.
+# Sólo Postgres: `docker compose up -d postgres`.
 
 services:
   postgres:
@@ -23,6 +25,39 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # ── Visualización de métricas (OPCIONAL) ────────────────────────────────────
+  # Prometheus + Grafana consumen GET /metrics del backend tal cual está (spec 029). No son parte del
+  # enunciado ni de la entrega: si no están, o fallan en una demo, el endpoint /metrics y el resto de la
+  # feature siguen funcionando igual. Guía en el README ("Métricas: Prometheus y Grafana (opcional)").
+  #
+  # El backend de desarrollo NO corre en Docker (`pnpm dev` en el host, puerto 3000), así que no hay un
+  # service del backend al que apuntar ni del que depender: Prometheus lo alcanza como
+  # `host.docker.internal:3000` (ver prometheus.yml). `localhost` dentro del contenedor sería el propio Prometheus.
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: desapp_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      # En Docker Desktop (Windows/Mac) `host.docker.internal` ya existe; en Linux hace falta esta línea.
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: desapp_grafana
+    restart: unless-stopped
+    ports:
+      # 3001 en el host para no chocar con el backend (3000); Grafana escucha en 3000 dentro del contenedor.
+      - "3001:3000"
+    environment:
+      # Credenciales de DESARROLLO LOCAL (admin/admin). No usar fuera de la máquina local.
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
 
 volumes:
   pgdata:
