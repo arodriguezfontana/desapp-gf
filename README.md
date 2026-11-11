@@ -80,8 +80,9 @@ El backend es NestJS, así que no usa Actuator. Estos endpoints públicos cubren
 > y se puede consultar directamente con `curl http://localhost:3000/metrics`, sin Prometheus ni Grafana. Si
 > estos dos servicios no están o fallan en una demo, la feature de métricas no se ve afectada.
 
-El backend expone dos métricas, con las etiquetas `method`, `route` y `status_code`:
+El backend expone dos métricas de requests, con las etiquetas `method`, `route` y `status_code`:
 `http_request_duration_seconds` (histograma de duración) y `http_requests_total` (contador de requests).
+Además expone las métricas por defecto del proceso Node (`process_*` y `nodejs_*`), sin esas etiquetas.
 
 **Levantar todo** (desde `backend/`, con el backend corriendo en el puerto 3000):
 
@@ -99,8 +100,9 @@ local; Grafana te pide cambiarla, podés omitirlo).
 
 **Ya viene cargado (provisioning).** Al arrancar, Grafana carga solo, desde `backend/grafana/`, el datasource
 **Prometheus** (apuntando a `http://prometheus:9090`, el nombre del service de Docker, no `localhost`) y el
-dashboard **FútVal — métricas HTTP del backend** (*Dashboards*), con dos paneles: latencia p95 por ruta y
-tasa de error 5xx. No hay pasos manuales y funciona igual en cualquier máquina. Como el dashboard está
+dashboard **FútVal — métricas del backend** (*Dashboards*), con dos filas: **Requests HTTP** (latencia p95
+por ruta y tasa de error 5xx) y **Proceso Node.js** (uptime, CPU, memoria, event loop lag, tiempo en GC y
+handles activos). No hay pasos manuales y funciona igual en cualquier máquina. Como el dashboard está
 versionado en el repo (`backend/grafana/dashboards/futval-http-metrics.json`), los cambios se hacen en ese
 archivo, no desde la interfaz (que no los guarda).
 
@@ -116,6 +118,12 @@ archivo, no desde la interfaz (que no los guarda).
 |-------|-----------------|
 | Latencia p95 por ruta (segundos) | `histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket[5m])))` |
 | Tasa de error 5xx | `(sum(rate(http_requests_total{status_code=~"5.."}[5m])) or vector(0)) / sum(rate(http_requests_total[5m]))` |
+| Uptime (stat, segundos) | `time() - process_start_time_seconds` |
+| CPU del proceso (% de un núcleo) | `rate(process_cpu_user_seconds_total[1m])` y `rate(process_cpu_system_seconds_total[1m])` |
+| Memoria (bytes) | `process_resident_memory_bytes`, `nodejs_heap_size_total_bytes`, `nodejs_heap_size_used_bytes` |
+| Event loop lag (segundos) | `nodejs_eventloop_lag_p50_seconds` y `nodejs_eventloop_lag_p99_seconds` |
+| Tiempo en GC (%) | `sum by (kind) (rate(nodejs_gc_duration_seconds_sum[5m]))` |
+| Handles y requests activos | `nodejs_active_handles_total` y `nodejs_active_requests_total` |
 
 La tasa de error cuenta sólo los 5xx (fallas del servicio); los 4xx son errores del cliente y no entran. El
 `or vector(0)` hace que el panel muestre 0 % cuando todavía no hubo ningún 5xx, en lugar de "No data". Para ver
