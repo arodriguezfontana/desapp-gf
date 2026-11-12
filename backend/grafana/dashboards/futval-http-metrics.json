@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 9,
   "refresh": "15s",
   "time": {
     "from": "now-30m",
@@ -50,7 +50,7 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 1
       },
@@ -76,17 +76,17 @@
     {
       "id": 2,
       "type": "timeseries",
-      "title": "Tasa de error 5xx",
-      "description": "Respuestas 5xx sobre el total de requests (http_requests_total). Los 4xx no cuentan: son errores del cliente.",
+      "title": "Tasa de error 5xx por endpoint",
+      "description": "Por cada endpoint, respuestas 5xx sobre sus requests totales (http_requests_total). Es la tasa de error del SLA. Solo aparecen los endpoints que devolvieron algún 5xx; si no hay ninguno el panel queda vacío, que es lo esperado. Los 4xx no cuentan: son errores del cliente.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 9,
+        "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 1
+        "x": 0,
+        "y": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -102,10 +102,70 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_requests_total[5m]))",
-          "legendFormat": "5xx / total"
+          "expr": "sum by (route) (rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum by (route) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{route}}"
         }
-      ]
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Tasa de 4xx por endpoint",
+      "description": "Por cada endpoint, respuestas 4xx sobre sus requests totales. Solo aparecen los endpoints que devolvieron algún 4xx; las rutas inexistentes salen como \"unmatched\". Es informativa: los 4xx son errores del cliente y no entran en la tasa de error del SLA (solo 5xx).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (route) (rate(http_requests_total{status_code=~\"4..\"}[5m])) / sum by (route) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{route}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
     },
     {
       "id": 11,
@@ -116,7 +176,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 18
       },
       "panels": []
     },
@@ -133,7 +193,7 @@
         "h": 8,
         "w": 4,
         "x": 0,
-        "y": 11
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -179,7 +239,7 @@
         "h": 8,
         "w": 10,
         "x": 4,
-        "y": 11
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -229,7 +289,7 @@
         "h": 8,
         "w": 10,
         "x": 14,
-        "y": 11
+        "y": 19
       },
       "fieldConfig": {
         "defaults": {
@@ -281,7 +341,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 19
+        "y": 27
       },
       "fieldConfig": {
         "defaults": {
@@ -324,7 +384,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 19
+        "y": 27
       },
       "fieldConfig": {
         "defaults": {
@@ -358,7 +418,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 19
+        "y": 27
       },
       "fieldConfig": {
         "defaults": {
