@@ -1,0 +1,367 @@
+{
+  "when": "2026-11-12T15:13:19.306Z",
+  "base": "http://localhost:3299",
+  "concurrency": 30,
+  "requests": 200,
+  "margin": 2,
+  "report": [
+    {
+      "cls": "auth",
+      "endpoint": "POST /auth/register",
+      "requests": 40,
+      "ok": 40,
+      "server5xx": 0,
+      "clientP50": 81.76280000000406,
+      "clientP95": 133.3269999999975,
+      "clientMax": 142.44640000000072,
+      "serverP95": 250
+    },
+    {
+      "cls": "auth",
+      "endpoint": "POST /auth/login",
+      "requests": 100,
+      "ok": 100,
+      "server5xx": 0,
+      "clientP50": 83.28100000000268,
+      "clientP95": 116.62930000000051,
+      "clientMax": 138.83299999999872,
+      "serverP95": 250
+    },
+    {
+      "cls": "auth",
+      "endpoint": "POST /auth/api-key",
+      "requests": 40,
+      "ok": 40,
+      "server5xx": 0,
+      "clientP50": 4.871500000001106,
+      "clientP95": 7.114399999998568,
+      "clientMax": 15.148300000000745,
+      "serverP95": 5
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /auth/me",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 49.455100000006496,
+      "clientP95": 68.4435999999987,
+      "clientMax": 76.75730000000476,
+      "serverP95": 50
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /players",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 60.43739999999525,
+      "clientP95": 79.3437999999951,
+      "clientMax": 88.25619999999617,
+      "serverP95": 100
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /players/:id",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 43.33289999999397,
+      "clientP95": 58.132900000004156,
+      "clientMax": 67.2161999999953,
+      "serverP95": 50
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /players/:id/quotes",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 62.70209999999497,
+      "clientP95": 78.31070000000182,
+      "clientMax": 90.18510000000242,
+      "serverP95": 100
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /players/:id/order-book",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 64.6356999999989,
+      "clientP95": 82.46730000000389,
+      "clientMax": 89.22460000000137,
+      "serverP95": 100
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /users/:id/portfolio",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 53.94670000000042,
+      "clientP95": 71.30599999999686,
+      "clientMax": 89.73250000000553,
+      "serverP95": 100
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /orders",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 48.60659999999916,
+      "clientP95": 58.1163000000015,
+      "clientMax": 62.37169999999605,
+      "serverP95": 50
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /orders/history",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 51.43920000000071,
+      "clientP95": 70.4239000000016,
+      "clientMax": 86.8998999999967,
+      "serverP95": 100
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /alerts",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 47.32480000000214,
+      "clientP95": 63.88930000000255,
+      "clientMax": 67.91419999999925,
+      "serverP95": 50
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /notifications",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 47.05569999999716,
+      "clientP95": 66.54780000000028,
+      "clientMax": 79.04709999999614,
+      "serverP95": 50
+    },
+    {
+      "cls": "read",
+      "endpoint": "GET /users/me/strategies",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 51.49579999999696,
+      "clientP95": 74.18970000000263,
+      "clientMax": 82.73630000000412,
+      "serverP95": 100
+    },
+    {
+      "cls": "read-computed",
+      "endpoint": "GET /players/ranking",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 81.88719999999739,
+      "clientP95": 94.20560000000114,
+      "clientMax": 99.99900000000343,
+      "serverP95": 100
+    },
+    {
+      "cls": "read-computed",
+      "endpoint": "GET /players/:id/valuation",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 66.1195000000007,
+      "clientP95": 86.16830000000482,
+      "clientMax": 100.59189999999944,
+      "serverP95": 100
+    },
+    {
+      "cls": "write",
+      "endpoint": "POST /alerts",
+      "requests": 100,
+      "ok": 98,
+      "server5xx": 0,
+      "clientP50": 84.0760999999984,
+      "clientP95": 120.07390000000305,
+      "clientMax": 132.28450000000157,
+      "serverP95": 100
+    },
+    {
+      "cls": "write",
+      "endpoint": "DELETE /alerts/:id",
+      "requests": 100,
+      "ok": 100,
+      "server5xx": 0,
+      "clientP50": 65.31760000000213,
+      "clientP95": 86.13090000000375,
+      "clientMax": 97.10749999999825,
+      "serverP95": 100
+    },
+    {
+      "cls": "write",
+      "endpoint": "PATCH /notifications/read-all",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 44.01570000000356,
+      "clientP95": 68.5376000000033,
+      "clientMax": 74.56500000000233,
+      "serverP95": 50
+    },
+    {
+      "cls": "write",
+      "endpoint": "PATCH /users/me/strategies/:id/select",
+      "requests": 200,
+      "ok": 188,
+      "server5xx": 12,
+      "clientP50": 986.1040999999968,
+      "clientP95": 3077.7195999999967,
+      "clientMax": 5125.176699999996,
+      "serverP95": 5000
+    },
+    {
+      "cls": "market",
+      "endpoint": "POST /orders",
+      "requests": 100,
+      "ok": 98,
+      "server5xx": 0,
+      "clientP50": 142.76900000000023,
+      "clientP95": 186.38230000000476,
+      "clientMax": 205.88419999999314,
+      "serverP95": 250
+    },
+    {
+      "cls": "market",
+      "endpoint": "DELETE /orders/:id",
+      "requests": 108,
+      "ok": 17,
+      "server5xx": 0,
+      "clientP50": 56.068200000001525,
+      "clientP95": 75.81049999999959,
+      "clientMax": 84.78699999999662,
+      "serverP95": 100
+    },
+    {
+      "cls": "ping",
+      "endpoint": "GET /",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 9.990100000002712,
+      "clientP95": 23.539899999996123,
+      "clientMax": 28.353100000000268,
+      "serverP95": 5
+    },
+    {
+      "cls": "technical",
+      "endpoint": "GET /health",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 33.07430000000022,
+      "clientP95": 46.79439999999886,
+      "clientMax": 53.351800000004005,
+      "serverP95": 50
+    },
+    {
+      "cls": "technical",
+      "endpoint": "GET /metrics",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 66.7471000000005,
+      "clientP95": 79.20040000000154,
+      "clientMax": 92.72239999999874,
+      "serverP95": 5
+    },
+    {
+      "cls": "technical",
+      "endpoint": "GET /info",
+      "requests": 200,
+      "ok": 200,
+      "server5xx": 0,
+      "clientP50": 19.684599999993225,
+      "clientP95": 28.36250000000291,
+      "clientMax": 33.13130000000092,
+      "serverP95": 5
+    }
+  ],
+  "summary": [
+    {
+      "cls": "auth",
+      "worstClient": 133.3269999999975,
+      "worstServer": 250,
+      "declared": 600,
+      "proposal": 300,
+      "worst": "POST /auth/register",
+      "errors5xx": 0,
+      "requests": 180
+    },
+    {
+      "cls": "read",
+      "worstClient": 82.46730000000389,
+      "worstServer": 100,
+      "declared": 300,
+      "proposal": 250,
+      "worst": "GET /players/:id/order-book",
+      "errors5xx": 0,
+      "requests": 2200
+    },
+    {
+      "cls": "read-computed",
+      "worstClient": 94.20560000000114,
+      "worstServer": 100,
+      "declared": 800,
+      "proposal": 250,
+      "worst": "GET /players/ranking",
+      "errors5xx": 0,
+      "requests": 400
+    },
+    {
+      "cls": "write",
+      "worstClient": 3077.7195999999967,
+      "worstServer": 5000,
+      "declared": 500,
+      "proposal": 10000,
+      "worst": "PATCH /users/me/strategies/:id/select",
+      "errors5xx": 12,
+      "requests": 600
+    },
+    {
+      "cls": "market",
+      "worstClient": 186.38230000000476,
+      "worstServer": 250,
+      "declared": 800,
+      "proposal": 500,
+      "worst": "POST /orders",
+      "errors5xx": 0,
+      "requests": 208
+    },
+    {
+      "cls": "ping",
+      "worstClient": 23.539899999996123,
+      "worstServer": 5,
+      "declared": 100,
+      "proposal": 50,
+      "worst": "GET /",
+      "errors5xx": 0,
+      "requests": 200
+    },
+    {
+      "cls": "technical",
+      "worstClient": 79.20040000000154,
+      "worstServer": 50,
+      "declared": 250,
+      "proposal": 250,
+      "worst": "GET /metrics",
+      "errors5xx": 0,
+      "requests": 600
+    }
+  ]
+}

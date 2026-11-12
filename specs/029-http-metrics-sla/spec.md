@@ -181,6 +181,66 @@ Objetivos **declarados** para este trabajo (no derivados de tráfico real). Cada
 | Técnico | `GET /metrics` | ≤ 250 ms | ≤ 0,5 % |
 | Técnico | `GET /info` | ≤ 250 ms | ≤ 0,5 % |
 
+## Fundamento de los objetivos (medición en entorno de prueba)
+
+Los objetivos de la tabla anterior se declararon antes de medir nada. Esta sección los contrasta con una **línea base medida** y fija el criterio con que se validan, para que no queden como números arbitrarios. Sigue siendo una medición de un entorno de desarrollo, no de producción.
+
+**Entorno medido** (2026-11-12): laptop de desarrollo con Windows; backend, PostgreSQL 14 local y cliente de carga en la misma máquina; base descartable copiada de la de desarrollo (946 jugadores, usuarios de prueba creados por el propio script, cotizaciones recalculadas); 200 requests por endpoint (40 a 100 en los de autenticación, escritura y mercado) tras un calentamiento de 10. Script: [`backend/scripts/slo-baseline.mjs`](../../backend/scripts/slo-baseline.mjs); resultados crudos en [`mediciones/`](./mediciones/). El p95 se calculó del lado del cliente (exacto) y del lado del servidor (cota superior desde los buckets de `http_request_duration_seconds`); ambos coinciden en orden de magnitud.
+
+**Criterio de validación**: un objetivo de latencia se considera respaldado si es **al menos 2 veces el peor p95 medido de su clase con la carga más alta probada (30 usuarios virtuales)**. El factor 2 absorbe la diferencia entre una laptop y un despliegue y la variación entre corridas (las corridas 1 y 2 difieren en menos de 30 % por clase).
+
+| Clase | Objetivo declarado | Peor p95 medido, 10 usuarios virtuales (corridas 1 / 2) | Peor p95 medido, 30 usuarios virtuales | ¿Objetivo ≥ 2× el peor medido a 30? | Endpoint más lento de la clase |
+|-------|--------------------|---------------------------------------------------------|----------------------------------------|---------------------------------------|--------------------------------|
+| Autenticación | 600 ms | 117,8 / 125,4 ms | 133,3 ms | Sí (4,5×) | `POST /auth/register` (hashing) |
+| Lectura | 300 ms | 30,5 / 31,7 ms | 82,5 ms | Sí (3,6×) | `GET /players/:id/order-book` (a 30) |
+| Lectura calculada | 800 ms | 33,6 / 42,6 ms | 94,2 ms | Sí (8,5×) | `GET /players/ranking` |
+| Escritura | 500 ms | 35,4 / 35,8 ms | 3077,7 ms | **No** (ver hallazgo 2) | `PATCH /users/me/strategies/:id/select` |
+| Mercado | 800 ms | 82,1 / 72,9 ms | 186,4 ms | Sí (4,3×) | `POST /orders` |
+| Técnico `GET /` | 100 ms | 7,1 / 9,4 ms | 23,5 ms | Sí (4,3×) | `GET /` |
+| Técnico | 250 ms | 27,0 / 26,5 ms | 79,2 ms | Sí (3,2×) | `GET /metrics` |
+
+**Resultado por endpoint** (p95 del lado del cliente; salen de los archivos de [`mediciones/`](./mediciones/); 26 de los 35 endpoints de la tabla):
+
+| Endpoint | Objetivo p95 | p95 medido, 10 usuarios (corr. 1 / 2) | p95 medido, 30 usuarios | Margen (objetivo ÷ p95 a 30) | Estado |
+|---|---|---|---|---|---|
+| `POST /auth/register` | ≤ 600 ms | 118 / 125 ms | 133 ms | 4,5× | Cumple |
+| `POST /auth/login` | ≤ 600 ms | 105 / 123 ms | 117 ms | 5,1× | Cumple |
+| `POST /auth/api-key` | ≤ 600 ms | 26 / 10 ms | 7 ms | n/a | Cumple en secuencia (la corrida de 30 fue secuencial a propósito); en paralelo sobre el mismo usuario responde 500 (hallazgo 1). |
+| `GET /auth/me` | ≤ 300 ms | 31 / 30 ms | 68 ms | 4,4× | Cumple |
+| `GET /players` | ≤ 300 ms | 26 / 32 ms | 79 ms | 3,8× | Cumple |
+| `GET /players/:id` | ≤ 300 ms | 20 / 22 ms | 58 ms | 5,2× | Cumple |
+| `GET /players/:id/quotes` | ≤ 300 ms | 30 / 28 ms | 78 ms | 3,8× | Cumple |
+| `GET /players/:id/order-book` | ≤ 300 ms | 23 / 30 ms | 82 ms | 3,6× | Cumple |
+| `GET /users/:id/portfolio` | ≤ 300 ms | 27 / 27 ms | 71 ms | 4,2× | Cumple |
+| `GET /orders` | ≤ 300 ms | 22 / 20 ms | 58 ms | 5,2× | Cumple |
+| `GET /orders/history` | ≤ 300 ms | 21 / 20 ms | 70 ms | 4,3× | Cumple |
+| `GET /alerts` | ≤ 300 ms | 19 / 21 ms | 64 ms | 4,7× | Cumple |
+| `GET /notifications` | ≤ 300 ms | 22 / 19 ms | 67 ms | 4,5× | Cumple |
+| `GET /users/me/strategies` | ≤ 300 ms | 20 / 22 ms | 74 ms | 4,0× | Cumple |
+| `GET /players/ranking` | ≤ 800 ms | 34 / 43 ms | 94 ms | 8,5× | Cumple |
+| `GET /players/:id/valuation` | ≤ 800 ms | 22 / 27 ms | 86 ms | 9,3× | Cumple |
+| `POST /alerts` | ≤ 500 ms | 35 / 33 ms | 120 ms | 4,2× | Cumple |
+| `DELETE /alerts/:id` | ≤ 500 ms | 30 / 30 ms | 86 ms | 5,8× | Cumple |
+| `PATCH /notifications/read-all` | ≤ 500 ms | 27 / 19 ms | 69 ms | 7,3× | Cumple |
+| `PATCH /users/me/strategies/:id/select` | ≤ 500 ms | 35 / 36 ms | 3078 ms | 0,2× | **No cumple**: 12 respuestas 500 por deadlock con 30 usuarios (hallazgo 2). |
+| `POST /orders` | ≤ 800 ms | 82 / 73 ms | 186 ms | 4,3× | Cumple |
+| `DELETE /orders/:id` | ≤ 800 ms | 29 / 35 ms | 76 ms | 10,6× | Cumple, pero sólo 17 de 108 cancelaciones tuvieron éxito (el resto 409): refleja sobre todo el rechazo. |
+| `GET /` | ≤ 100 ms | 7 / 9 ms | 24 ms | 4,2× | Cumple |
+| `GET /health` | ≤ 250 ms | 16 / 25 ms | 47 ms | 5,3× | Cumple |
+| `GET /metrics` | ≤ 250 ms | 27 / 26 ms | 79 ms | 3,2× | Cumple |
+| `GET /info` | ≤ 250 ms | 7 / 5 ms | 28 ms | 8,8× | Cumple |
+
+**No medidas** (9 endpoints): `PATCH /notifications/:id/read`, `PATCH /users/me/strategies/:id/weights` y `PATCH /users/me/strategies/:id/position-weights/:position` (no se incluyeron en el script; los dos últimos requieren pesos válidos), y los que dependen de servicios externos o no tienen objetivo de latencia: `POST /sync/whoscored`, `GET /sync/whoscored/:runId`, `POST /sync/football-data` (`Sistema`), `POST /admin/simulate-market` y el stream `GET /notifications/stream`. Sus objetivos siguen siendo los declarados, sin respaldo medido. `POST /quotes/recalculate` (sin objetivo de p95) tardó 2,2 s con ese volumen. En `DELETE /orders/:id` sólo 17 de 108 cancelaciones tuvieron éxito (las demás respondieron 409 porque la orden de compra ya se había cruzado): el p95 de esa fila refleja sobre todo el camino de rechazo.
+
+**Lectura de los resultados**: con las cargas probadas, los objetivos declarados son entre 3 y 9 veces mayores que lo medido a 30 usuarios (y más de 4 veces a 10), por lo que cumplen el criterio sin estar pegados al límite. Aplicar el factor 2 directamente sobre las mediciones a 10 usuarios habría dado objetivos de 25 a 300 ms; no se aplicó porque valores tan ajustados a una laptop se romperían al cambiar de entorno. Los valores declarados se conservan y la medición los respalda; cambiarlos es una decisión pendiente del equipo.
+
+**Hallazgos de la medición** (errores 5xx reales, no de la herramienta):
+
+1. **`POST /auth/api-key` devuelve 500 si se invoca en paralelo para el mismo usuario**: 27 de 40 respuestas en la corrida 1 fallaron por violar el índice único `idx_api_keys_active_user` (la rotación de la API key no es segura ante concurrencia). En secuencia, 40 de 40 respondieron bien con p95 de 10 ms.
+2. **`PATCH /users/me/strategies/:id/select` devuelve 500 por deadlock de PostgreSQL con carga concurrente sobre el mismo usuario**: 12 de 200 respuestas a 30 usuarios virtuales, con p95 de ≈ 3 s. Es la única clase que no cumple el criterio, y por una causa de implementación, no de capacidad.
+
+Ambos hallazgos están fuera del alcance de esta spec (no se corrigieron) y quedan abiertos; son exactamente el tipo de falla que la tasa de 5xx del SLA debe detectar. Hasta que se corrijan, la clase `Escritura` no cumple su objetivo bajo concurrencia sobre un mismo usuario.
+
 ## Decisión de diseño
 
 **La recolección de métricas se hace a nivel de middleware, sobre el evento de finalización de la respuesta, y no con un Interceptor.**
