@@ -11,9 +11,10 @@
  * Después agrupa por clase, toma el PEOR p95 entre sus endpoints y propone un objetivo con la regla
  * "peor p95 × MARGIN, redondeado al próximo límite de bucket".
  *
- * IMPORTANTE: escribe datos (usuarios, alertas, órdenes). Correrlo SOLO contra una instancia con una
- * base descartable, nunca contra la base de desarrollo. No toca los endpoints de sincronización con
- * terceros ni el recálculo/simulación (clases `system-*`), que dependen de servicios externos.
+ * IMPORTANTE: escribe datos (usuarios, alertas, órdenes, pesos de estrategias). Correrlo SOLO contra
+ * una instancia con una base descartable, nunca contra la base de desarrollo. No toca los endpoints
+ * de sincronización con terceros ni la simulación (clases `system-*`), que dependen de servicios
+ * externos; el recálculo se ejecuta una vez como preparación (genera las notificaciones a leer).
  *
  * Uso:
  *   BASE_URL=http://localhost:3299 ADMIN_EMAIL=... ADMIN_PASSWORD=... node scripts/slo-baseline.mjs
@@ -152,10 +153,22 @@ async function main() {
   const adminToken = (await must(await call('POST', '/auth/login', { body: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD } }), 'admin login')).accessToken;
   const adminKey = (await must(await call('POST', '/auth/api-key', { token: adminToken }), 'admin api-key')).apiKey;
 
+  // Usuario aparte, sólo para `PATCH /notifications/:id/read`: se le crean alertas que ya se cumplen
+  // (precio > 0,01 o precio < 100000, para cualquier cotización) ANTES del recálculo, así éste las dispara
+  // y deja una notificación por alerta. No se mezcla con `users` para no alterar las lecturas de arriba.
+  const notifEmail = `slo.${RUN}.notif@slo.test`;
+  await must(await call('POST', '/auth/register', { body: { email: notifEmail, password: PASSWORD, username: `slo_${RUN}_notif` } }), 'register notif');
+  const notifToken = (await must(await call('POST', '/auth/login', { body: { email: notifEmail, password: PASSWORD } }), 'login notif')).accessToken;
+
   const list = await must(await call('GET', '/players?pageSize=50', { apiKey: users[0].apiKey }), 'players');
   const players = (list.items ?? list.data ?? list.players ?? list).map((p) => p.id);
   if (players.length === 0) throw new Error('El catálogo está vacío');
   console.log(`Catálogo: ${players.length} jugadores en la muestra. Recalculando cotizaciones (necesario para el ranking)...`);
+  for (const playerId of players) {
+    for (const [condition, targetValue] of [['PRICE_ABOVE', 0.01], ['PRICE_BELOW', 100000]]) {
+      await must(await call('POST', '/alerts', { token: notifToken, body: { playerId, condition, targetValue } }), 'alerta para notificar');
+    }
+  }
   const recalc = await call('POST', '/quotes/recalculate', { apiKey: adminKey });
   console.log(`Recálculo: ${recalc.status} en ${(recalc.ms / 1000).toFixed(1)} s (clase system-long: sin objetivo de p95)\n`);
 
@@ -207,9 +220,26 @@ async function main() {
   await measure({ cls: 'write', method: 'DELETE', route: '/alerts/:id', total: Math.min(alertIds.length, 100), warmup: 0,
     build: (i) => { const a = alertIds[i]; return call('DELETE', `/alerts/${a.id}`, { token: a.token }); } });
   await measure({ cls: 'write', method: 'PATCH', route: '/notifications/read-all', build: (i) => call('PATCH', '/notifications/read-all', { token: user(i).token }) });
+  // Las notificaciones las generó el recálculo de la preparación; se leen una vez y cada request toma una distinta.
+  const notifications = await must(await call('GET', '/notifications', { token: notifToken }), 'notificaciones');
+  const notificationIds = (Array.isArray(notifications) ? notifications : notifications.items ?? []).map((n) => n.id);
+  console.log(`Notificaciones disponibles para marcar como leídas: ${notificationIds.length}`);
+  if (notificationIds.length > 0) {
+    await measure({ cls: 'write', method: 'PATCH', route: '/notifications/:id/read', total: notificationIds.length, warmup: 0,
+      build: (i) => call('PATCH', `/notifications/${notificationIds[i]}/read`, { token: notifToken }) });
+  }
   const strategyIds = [];
   for (const u of users) strategyIds.push((await must(await call('GET', '/users/me/strategies', { token: u.token }), 'strategies')).strategies.map((s) => s.id));
   await measure({ cls: 'write', method: 'PATCH', route: '/users/me/strategies/:id/select', build: (i) => { const ids = strategyIds[Math.abs(i) % users.length]; return call('PATCH', `/users/me/strategies/${ids[Math.abs(i) % ids.length]}/select`, { token: user(i).token }); } });
+
+  // Se reenvían los pesos que la estrategia ya tiene (válidos por construcción: suman 1 y usan métricas
+  // reconocidas); el costo medido es el de la validación + el UPDATE. El perfil de posición reemplaza el
+  // de FW por los pesos generales, que también son válidos como perfil.
+  const strategies = [];
+  for (const u of users) strategies.push((await must(await call('GET', '/users/me/strategies', { token: u.token }), 'strategies')).strategies);
+  const ownStrategy = (i) => { const list = strategies[Math.abs(i) % users.length]; return list[Math.abs(i) % list.length]; };
+  await measure({ cls: 'write', method: 'PATCH', route: '/users/me/strategies/:id/weights', build: (i) => { const st = ownStrategy(i); return call('PATCH', `/users/me/strategies/${st.id}/weights`, { token: user(i).token, body: { weights: st.weights } }); } });
+  await measure({ cls: 'write', method: 'PATCH', route: '/users/me/strategies/:id/position-weights/:position', build: (i) => { const st = ownStrategy(i); return call('PATCH', `/users/me/strategies/${st.id}/position-weights/FW`, { token: user(i).token, body: { weights: st.weights } }); } });
 
   // ── Mercado: orden de compra seguida de su cancelación ──
   const orderIds = [];
