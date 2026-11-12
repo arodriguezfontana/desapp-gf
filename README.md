@@ -84,6 +84,8 @@ El backend es NestJS, así que no usa Actuator. Estos endpoints públicos cubren
 
 3. Prometheus: http://localhost:9090 (en `/targets`, `futval-backend` debe estar en **UP**).
 4. Grafana: http://localhost:3001 (usuario `admin`, contraseña `admin`). El dashboard **FútVal — métricas del backend** ya viene cargado.
+   Trae paneles de latencia p95, tasa de error 5xx (la del SLA) y tasa de 4xx, y una sección del proceso Node. La tasa de 4xx es informativa: los 4xx no entran en la tasa de error del SLA.
+   Hay un segundo dashboard, **FútVal — errores**, con el detalle de los errores: totales de 4xx y 5xx, desglose por código de estado, endpoints con más errores y una tabla por método, ruta y código.
 
 ## Scripts
 

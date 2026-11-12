@@ -199,7 +199,7 @@ Los objetivos de la tabla anterior se declararon antes de medir nada. Esta secci
 | Técnico `GET /` | 100 ms | 7,1 / 9,4 ms | 23,5 ms | Sí (4,3×) | `GET /` |
 | Técnico | 250 ms | 27,0 / 26,5 ms | 79,2 ms | Sí (3,2×) | `GET /metrics` |
 
-**Resultado por endpoint** (p95 del lado del cliente; salen de los archivos de [`mediciones/`](./mediciones/); 26 de los 35 endpoints de la tabla):
+**Resultado por endpoint** (p95 del lado del cliente; salen de los archivos de [`mediciones/`](./mediciones/); 29 de los 35 endpoints de la tabla; las filas de `PATCH /notifications/:id/read`, `.../weights` y `.../position-weights/:position` salen de las corridas 4 y 5 (10 usuarios) y 6 (30 usuarios), hechas después sobre una base con más datos, así que no son comparables 1 a 1 con el resto):
 
 | Endpoint | Objetivo p95 | p95 medido, 10 usuarios (corr. 1 / 2) | p95 medido, 30 usuarios | Margen (objetivo ÷ p95 a 30) | Estado |
 |---|---|---|---|---|---|
@@ -222,7 +222,10 @@ Los objetivos de la tabla anterior se declararon antes de medir nada. Esta secci
 | `POST /alerts` | ≤ 500 ms | 35 / 33 ms | 120 ms | 4,2× | Cumple |
 | `DELETE /alerts/:id` | ≤ 500 ms | 30 / 30 ms | 86 ms | 5,8× | Cumple |
 | `PATCH /notifications/read-all` | ≤ 500 ms | 27 / 19 ms | 69 ms | 7,3× | Cumple |
-| `PATCH /users/me/strategies/:id/select` | ≤ 500 ms | 35 / 36 ms | 3078 ms | 0,2× | **No cumple**: 12 respuestas 500 por deadlock con 30 usuarios (hallazgo 2). |
+| `PATCH /notifications/:id/read` | ≤ 500 ms | 57 / 77 ms (corr. 4 / 5) | 90 ms (corr. 6) | 5,5× | Cumple |
+| `PATCH /users/me/strategies/:id/select` | ≤ 500 ms | 35 / 36 ms | 3078 ms (corr. 3); 2035 ms con 10 respuestas 500 (corr. 6) | 0,2× | **No cumple**: respuestas 500 por deadlock con 30 usuarios en las dos corridas que lo probaron (hallazgo 2). |
+| `PATCH /users/me/strategies/:id/weights` | ≤ 500 ms | 118 / 85 ms (corr. 4 / 5) | 113 ms (corr. 6) | 4,4× | Cumple |
+| `PATCH /users/me/strategies/:id/position-weights/:position` | ≤ 500 ms | 113 / 65 ms (corr. 4 / 5) | 113 ms (corr. 6) | 4,4× | Cumple |
 | `POST /orders` | ≤ 800 ms | 82 / 73 ms | 186 ms | 4,3× | Cumple |
 | `DELETE /orders/:id` | ≤ 800 ms | 29 / 35 ms | 76 ms | 10,6× | Cumple, pero sólo 17 de 108 cancelaciones tuvieron éxito (el resto 409): refleja sobre todo el rechazo. |
 | `GET /` | ≤ 100 ms | 7 / 9 ms | 24 ms | 4,2× | Cumple |
@@ -230,16 +233,18 @@ Los objetivos de la tabla anterior se declararon antes de medir nada. Esta secci
 | `GET /metrics` | ≤ 250 ms | 27 / 26 ms | 79 ms | 3,2× | Cumple |
 | `GET /info` | ≤ 250 ms | 7 / 5 ms | 28 ms | 8,8× | Cumple |
 
-**No medidas** (9 endpoints): `PATCH /notifications/:id/read`, `PATCH /users/me/strategies/:id/weights` y `PATCH /users/me/strategies/:id/position-weights/:position` (no se incluyeron en el script; los dos últimos requieren pesos válidos), y los que dependen de servicios externos o no tienen objetivo de latencia: `POST /sync/whoscored`, `GET /sync/whoscored/:runId`, `POST /sync/football-data` (`Sistema`), `POST /admin/simulate-market` y el stream `GET /notifications/stream`. Sus objetivos siguen siendo los declarados, sin respaldo medido. `POST /quotes/recalculate` (sin objetivo de p95) tardó 2,2 s con ese volumen. En `DELETE /orders/:id` sólo 17 de 108 cancelaciones tuvieron éxito (las demás respondieron 409 porque la orden de compra ya se había cruzado): el p95 de esa fila refleja sobre todo el camino de rechazo.
+**No medidas** (6 endpoints), porque dependen de servicios externos o no tienen objetivo de latencia: `POST /sync/whoscored`, `GET /sync/whoscored/:runId` (necesita el `runId` de una corrida ya lanzada), `POST /sync/football-data`, `POST /admin/simulate-market` y el stream `GET /notifications/stream`, más `POST /quotes/recalculate`, que no tiene objetivo de p95 y se ejecuta una vez como preparación de cada corrida. Sus objetivos siguen siendo los declarados, sin respaldo medido. Ese recálculo tardó 2,2 s en las corridas 1 a 3 (base de desarrollo copiada, pocos usuarios); en las corridas 4 a 6 tardó 10,8 s, 36,9 s y 67,7 s: crece con la cantidad de usuarios acumulados en la base descartable (cada corrida crea usuarios con sus estrategias y cotizaciones) y con las alertas a evaluar, por lo que ese valor depende del volumen y no es una latencia de referencia. En `DELETE /orders/:id` sólo 17 de 108 cancelaciones tuvieron éxito en la corrida 3 (25 de 110 en las corridas 5 y 6): las demás respondieron 409 porque la orden de compra ya se había cruzado, así que el p95 de esa fila refleja sobre todo el camino de rechazo.
 
 **Lectura de los resultados**: con las cargas probadas, los objetivos declarados son entre 3 y 9 veces mayores que lo medido a 30 usuarios (y más de 4 veces a 10), por lo que cumplen el criterio sin estar pegados al límite. Aplicar el factor 2 directamente sobre las mediciones a 10 usuarios habría dado objetivos de 25 a 300 ms; no se aplicó porque valores tan ajustados a una laptop se romperían al cambiar de entorno. Los valores declarados se conservan y la medición los respalda; cambiarlos es una decisión pendiente del equipo.
 
 **Hallazgos de la medición** (errores 5xx reales, no de la herramienta):
 
 1. **`POST /auth/api-key` devuelve 500 si se invoca en paralelo para el mismo usuario**: 27 de 40 respuestas en la corrida 1 fallaron por violar el índice único `idx_api_keys_active_user` (la rotación de la API key no es segura ante concurrencia). En secuencia, 40 de 40 respondieron bien con p95 de 10 ms.
-2. **`PATCH /users/me/strategies/:id/select` devuelve 500 por deadlock de PostgreSQL con carga concurrente sobre el mismo usuario**: 12 de 200 respuestas a 30 usuarios virtuales, con p95 de ≈ 3 s. Es la única clase que no cumple el criterio, y por una causa de implementación, no de capacidad.
+2. **`PATCH /users/me/strategies/:id/select` devuelve 500 por deadlock de PostgreSQL con carga concurrente sobre el mismo usuario**: 12 de 200 respuestas a 30 usuarios virtuales en la corrida 3 y 10 de 200 en la corrida 6, con p95 de 2 a 3 s; con 10 usuarios no ocurrió en ninguna de las cuatro corridas. Es la única clase que no cumple el criterio, y por una causa de implementación, no de capacidad.
 
-Ambos hallazgos están fuera del alcance de esta spec (no se corrigieron) y quedan abiertos; son exactamente el tipo de falla que la tasa de 5xx del SLA debe detectar. Hasta que se corrijan, la clase `Escritura` no cumple su objetivo bajo concurrencia sobre un mismo usuario.
+3. **`POST /alerts` devuelve 500 si `targetValue` excede la precisión de la columna numérica**: con `targetValue = 1000000000` la base responde "desbordamiento de campo numeric" y el cliente recibe un 500 en lugar de un 400. Salió al armar las alertas de la corrida 4 (se redujo el valor a 100000); el DTO sólo valida que sea positivo.
+
+Los tres hallazgos están fuera del alcance de esta spec (no se corrigieron) y quedan abiertos; son exactamente el tipo de falla que la tasa de 5xx del SLA debe detectar. Hasta que se corrijan, la clase `Escritura` no cumple su objetivo bajo concurrencia sobre un mismo usuario.
 
 ## Decisión de diseño
 
