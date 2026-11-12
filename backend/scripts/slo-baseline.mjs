@@ -178,14 +178,14 @@ async function main() {
   // ── Autenticación ──
   let regSeq = 0;
   await measure({ cls: 'auth', method: 'POST', route: '/auth/register', total: 40, concurrency: 5, warmup: 2,
-    build: (i) => { const n = `${RUN}r${regSeq++}`; return call('POST', '/auth/register', { body: { email: `reg.${n}@slo.test`, password: PASSWORD, username: `reg_${n}` } }); } });
+    build: () => { const n = `${RUN}r${regSeq++}`; return call('POST', '/auth/register', { body: { email: `reg.${n}@slo.test`, password: PASSWORD, username: `reg_${n}` } }); } });
   await measure({ cls: 'auth', method: 'POST', route: '/auth/login', total: 100, concurrency: 5, warmup: 2,
     build: (i) => call('POST', '/auth/login', { body: { email: user(i).email, password: PASSWORD } }) });
   // Un usuario por request y sin concurrencia sobre el MISMO usuario: la rotación concurrente de la API
   // key de un mismo usuario viola `idx_api_keys_active_user` y responde 500 (hallazgo de la primera
   // corrida, ver specs/029-http-metrics-sla/spec.md → "Fundamento de los objetivos").
   await measure({ cls: 'auth', method: 'POST', route: '/auth/api-key', total: 40, concurrency: 1, warmup: 2,
-    build: (i) => call('POST', '/auth/api-key', { token: user(4).token }) });
+    build: () => call('POST', '/auth/api-key', { token: user(4).token }) });
   users[4].apiKey = (await must(await call('POST', '/auth/api-key', { token: users[4].token }), 'api-key')).apiKey;
 
   // ── Lecturas simples ──
