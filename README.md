@@ -66,26 +66,26 @@ El backend es NestJS, así que no usa Actuator. Estos endpoints públicos cubren
 
 | Actuator | Acá | Qué devuelve |
 |---|---|---|
-| `/actuator/health` | `GET /health` | Estado de la base de datos (`@nestjs/terminus`): 200 si responde, 503 si no. |
-| `/actuator/prometheus` | `GET /metrics` | Formato Prometheus (`prom-client`): duración y conteo de requests por método, ruta y código, más las métricas del proceso Node (`process_*`, `nodejs_*`: CPU, memoria, heap, event loop, GC). |
-| `/actuator/info` | `GET /info` | Nombre, versión, commit, entorno, versión de Node, arranque y uptime. |
+| `/actuator/health` | [`GET /health`](http://localhost:3000/health) | Estado de la base de datos (`@nestjs/terminus`): 200 si responde, 503 si no. |
+| `/actuator/prometheus` | [`GET /metrics`](http://localhost:3000/metrics) | Formato Prometheus (`prom-client`): duración y conteo de requests por método, ruta y código, más las métricas del proceso Node (`process_*`, `nodejs_*`: CPU, memoria, heap, event loop, GC). |
+| `/actuator/info` | [`GET /info`](http://localhost:3000/info) | Nombre, versión, commit, entorno, versión de Node, arranque y uptime. |
 
 `GET /info` toma el commit de la variable `GIT_COMMIT`, que tiene que definir el despliegue (por ejemplo
 `GIT_COMMIT=$(git rev-parse --short HEAD)`); si no está definida, el commit sale como `null`.
 
 ## Ver las métricas
 
-1. Con el backend corriendo (`cd backend && pnpm dev`), las métricas están en http://localhost:3000/metrics.
+1. Con el backend corriendo (`cd backend && pnpm dev`), las métricas están en [http://localhost:3000/metrics](http://localhost:3000/metrics).
 2. Para verlas en Prometheus y Grafana, levantar los servicios (desde `backend/`):
 
    ```bash
    docker compose up -d      # Postgres + Prometheus (:9090) + Grafana (:3001)
    ```
 
-3. Prometheus: http://localhost:9090 (en `/targets`, `futval-backend` debe estar en **UP**).
-4. Grafana: http://localhost:3001 (usuario `admin`, contraseña `admin`). El dashboard **FútVal — métricas del backend** ya viene cargado.
+3. Prometheus: http://localhost:9090 (en [`/targets`](http://localhost:9090/targets), `futval-backend` debe estar en **UP**).
+4. Grafana: http://localhost:3001 (usuario `admin`, contraseña `admin`). El dashboard [**FútVal — métricas del backend**](http://localhost:3001/d/futval-http-metrics) ya viene cargado.
    Trae paneles de latencia p95, tasa de error 5xx (la del SLA) y tasa de 4xx, y una sección del proceso Node. La tasa de 4xx es informativa: los 4xx no entran en la tasa de error del SLA.
-   Hay un segundo dashboard, **FútVal — errores**, con el detalle de los errores: totales de 4xx y 5xx, desglose por código de estado, endpoints con más errores y una tabla por método, ruta y código.
+   Hay un segundo dashboard, [**FútVal — errores**](http://localhost:3001/d/futval-errors), con el detalle de los errores: totales de 4xx y 5xx, desglose por código de estado, endpoints con más errores y una tabla por método, ruta y código.
 
 ## Scripts
 
