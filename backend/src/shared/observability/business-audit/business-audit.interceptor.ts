@@ -1,9 +1,8 @@
-import { CallHandler, ExecutionContext, Inject, Injectable, Logger, NestInterceptor, Optional } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { AuditRequest, getAuditedOperation, resolveOperation } from './audited-operation.decorator';
 import { classifyFailure, resolveActor } from './audit-outcome';
 import { RequestValidationException } from './request-validation.exception';
-import { BUSINESS_METRICS, BusinessMetrics } from '../metrics/business-metrics';
 
 /** Mensaje fijo de toda línea de auditoría de negocio. */
 export const BUSINESS_AUDIT_MESSAGE = 'operación de negocio';
@@ -20,17 +19,10 @@ export const BUSINESS_AUDIT_MESSAGE = 'operación de negocio';
  * inexistente, JSON ilegible) nunca llegan acá. Los pipes corren después de los interceptores, así que
  * la validación de DTO se ignora explícitamente (`RequestValidationException`). Siempre relanza el error
  * original, y un fallo al registrar no altera la respuesta (FR-025).
- *
- * Spec 031: en el mismo bloque protegido alimenta `business_operations_total` con la operación y el resultado
- * ya calculados. Corre cuando el handler terminó (el service ya confirmó la transacción), así que una
- * operación revertida no figura como exitosa. Para las operaciones que disparan un proceso largo en segundo
- * plano, `success` significa "aceptada", no "terminada".
  */
 @Injectable()
 export class BusinessAuditInterceptor implements NestInterceptor {
   private readonly logger = new Logger('BusinessAudit');
-
-  constructor(@Optional() @Inject(BUSINESS_METRICS) private readonly metrics?: BusinessMetrics) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') return next.handle();
@@ -61,12 +53,10 @@ export class BusinessAuditInterceptor implements NestInterceptor {
   ): void {
     try {
       const result = outcome();
-      const operation = resolveOperation(metadata, request);
-      this.metrics?.recordOperation(operation, result.outcome === 'success' ? 'success' : result.failureCategory);
       const entry = {
         msg: BUSINESS_AUDIT_MESSAGE,
         event: 'business_audit',
-        operation,
+        operation: resolveOperation(metadata, request),
         actor: resolveActor(request, metadata.actor),
         ...result,
       };

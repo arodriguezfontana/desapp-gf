@@ -11,9 +11,6 @@ import { HttpFootballDataAdapter } from '../../adapters/competition/http-footbal
 import { FootballDataSyncService } from '../../services/competition/football-data-sync.service';
 import { FootballDataSyncController } from '../../controllers/competition/football-data-sync.controller';
 import { ApiKeyModule } from '../api-key/api-key.module';
-import { RuntimeModule } from '../runtime/runtime.module';
-import { MetricsModule } from '../observability/metrics.module';
-import { SyncLastSuccessModule } from '../observability/sync-last-success.module';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
 import {
   FOOTBALL_DATA_ADAPTER,
@@ -29,9 +26,6 @@ import {
     TypeOrmModule.forFeature([MatchEntity, StandingEntity]),
     ScheduleModule.forRoot(),
     ApiKeyModule,
-    RuntimeModule,
-    MetricsModule,
-    SyncLastSuccessModule,
   ],
   controllers: [FootballDataSyncController],
   providers: [

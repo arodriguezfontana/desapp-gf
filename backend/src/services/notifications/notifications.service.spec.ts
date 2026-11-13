@@ -65,7 +65,7 @@ describe('NotificationsService — push en vivo (unit, con dobles, sin Nest ni D
   });
 
   it('si el usuario no tiene ninguna conexión abierta no hace nada (la bandeja ya la guardó)', async () => {
-    await expect(service.pushToStream(newNotification(randomUUID()))).resolves.toBe(false);
+    await expect(service.pushToStream(newNotification(randomUUID()))).resolves.toBeUndefined();
 
     expect(players.findById).not.toHaveBeenCalled();
   });

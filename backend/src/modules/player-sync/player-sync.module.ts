@@ -9,8 +9,6 @@ import { HttpWhoScoredAdapter } from '../../adapters/player-sync/http-whoscored-
 import { PlayerSyncService } from '../../services/player-sync/player-sync.service';
 import { PlayerSyncController } from '../../controllers/player-sync/player-sync.controller';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
-import { MetricsModule } from '../observability/metrics.module';
-import { SyncLastSuccessModule } from '../observability/sync-last-success.module';
 
 /**
  * Lado de escritura del catálogo (006-whoscored-catalog-sync): separado de
@@ -23,7 +21,7 @@ import { SyncLastSuccessModule } from '../observability/sync-last-success.module
  * protegido con `ApiKeyGuard`.
  */
 @Module({
-  imports: [RuntimeModule, PlayerModule, ApiKeyModule, ScheduleModule.forRoot(), MetricsModule, SyncLastSuccessModule],
+  imports: [RuntimeModule, PlayerModule, ApiKeyModule, ScheduleModule.forRoot()],
   controllers: [PlayerSyncController],
   providers: [
     PlayerSyncService,

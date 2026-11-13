@@ -33,7 +33,7 @@ export class QuotationController {
   @ApiResponse({ status: 403, description: 'La API key no es de admin' })
   @ApiResponse({ status: 409, description: 'Ya hay un recálculo global en curso' })
   async recalculate(): Promise<RecalculateResponseDto> {
-    const result = await this.quotationService.recalculateAll('manual');
+    const result = await this.quotationService.recalculateAll();
     return RecalculateResponseDto.fromDomain(result);
   }
 }

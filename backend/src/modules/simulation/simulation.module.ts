@@ -1,6 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { RuntimeModule } from '../runtime/runtime.module';
-import { MetricsModule } from '../observability/metrics.module';
 import { AuthModule } from '../auth/auth.module';
 import { ApiKeyModule } from '../api-key/api-key.module';
 import { PlayerModule } from '../player/player.module';
@@ -15,7 +14,6 @@ import { AdminAccessGuard } from '../../guards/auth/admin-access.guard';
 @Module({
   imports: [
     RuntimeModule,
-    MetricsModule,
     forwardRef(() => AuthModule),
     forwardRef(() => ApiKeyModule),
     forwardRef(() => PlayerModule),

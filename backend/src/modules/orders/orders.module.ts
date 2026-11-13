@@ -14,7 +14,6 @@ import { TokenTransactionMapper } from '../../repositories/orders/mappers/token-
 import { OrderRepository } from '../../repositories/orders/order.repository';
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
 import { PersistenceModule } from '../persistence/persistence.module';
-import { MetricsModule } from '../observability/metrics.module';
 import { OrdersService } from '../../services/orders/orders.service';
 
 
@@ -29,7 +28,6 @@ import { OrdersService } from '../../services/orders/orders.service';
   imports: [
     RuntimeModule,
     PersistenceModule,
-    MetricsModule,
     TypeOrmModule.forFeature([OrderEntity, TokenTransactionEntity]),
     forwardRef(() => PlayerModule),
     forwardRef(() => QuotationModule),

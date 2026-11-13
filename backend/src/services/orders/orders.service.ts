@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
@@ -15,9 +15,6 @@ import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found
 import { OrderNotFoundError } from '../../domain/orders/errors/order-not-found.error';
 import { OrderForbiddenError } from '../../domain/orders/errors/order-forbidden.error';
 import { OrderNotCancellableError } from '../../domain/orders/errors/order-not-cancellable.error';
-import { DomainError } from '../../shared/errors/domain-error';
-import { BUSINESS_METRICS, BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
-import { rejectionReasonOf } from './order-rejection-reason';
 
 import { OrderRepository } from '../../repositories/orders/order.repository';
 import { TokenTransactionRepository } from '../../repositories/orders/token-transaction.repository';
@@ -57,7 +54,6 @@ export class OrdersService {
     private readonly quotation: QuotationService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
-    @Optional() @Inject(BUSINESS_METRICS) private readonly metrics?: BusinessMetrics,
   ) {}
 
   /**
@@ -68,42 +64,6 @@ export class OrdersService {
    * usuario para ese jugador es menor a `quantity` (spec FR-010).
    */
   async createOrder(
-    userId: string,
-    playerId: string,
-    side: OrderSide,
-    quantity: number,
-  ): Promise<OrderCreationResult> {
-    try {
-      const result = await this.placeOrder(userId, playerId, side, quantity);
-      // Spec 031: tokens y volumen se cuentan DESPUÉS de que la transacción confirmó (una orden
-      // revertida nunca suma) y desde el lado de la orden que inicia; la contraparte no se mide.
-      this.measure(() =>
-        this.metrics?.recordTokensTraded(
-          side === OrderSide.BUY ? 'buy' : 'sell',
-          result.fills.reduce((total, fill) => total + fill.quantity, 0),
-          roundToTwoDecimals(result.fills.reduce((total, fill) => total + fill.quantity * fill.price, 0)),
-        ),
-      );
-      return result;
-    } catch (error) {
-      // Sólo un rechazo por regla de negocio cuenta como rechazo; un error inesperado no.
-      if (error instanceof DomainError) {
-        this.measure(() => this.metrics?.recordOrderRejection(rejectionReasonOf(error)));
-      }
-      throw error;
-    }
-  }
-
-  /** Medir nunca altera el resultado de la operación: cualquier fallo de la medición se ignora. */
-  private measure(work: () => void): void {
-    try {
-      work();
-    } catch {
-      // Ignorado a propósito (spec 031, FR-013).
-    }
-  }
-
-  private async placeOrder(
     userId: string,
     playerId: string,
     side: OrderSide,
