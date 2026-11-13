@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
@@ -21,6 +21,12 @@ import {
 } from '../../domain/sync/sync-run';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
 import { RunLock } from '../../shared/concurrency/run-lock';
+import {
+  BUSINESS_METRICS,
+  BusinessMetrics,
+  classifySyncRun,
+} from '../../shared/observability/metrics/business-metrics';
+import { SyncLastSuccessService } from '../observability/sync-last-success.service';
 
 const MAX_RETAINED_RUNS = 20;
 const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error inesperado.';
@@ -44,6 +50,8 @@ export class PlayerSyncService {
     private readonly players: PlayerRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Optional() @Inject(BUSINESS_METRICS) private readonly metrics?: BusinessMetrics,
+    @Optional() private readonly lastSuccess?: SyncLastSuccessService,
   ) {}
 
   /**
@@ -109,6 +117,8 @@ export class PlayerSyncService {
       playersSynced: 0,
       failedUnits: [],
     };
+    const startedAtMs = this.clock.now().getTime();
+    let aborted = false;
     try {
       await this.executeSync(summary);
       this.runs.set(runId, {
@@ -120,6 +130,7 @@ export class PlayerSyncService {
         summary,
       });
     } catch (error) {
+      aborted = true;
       this.logger.error(
         `Corrida ${runId} abortada por error inesperado.`,
         error instanceof Error ? error.stack : String(error),
@@ -135,6 +146,34 @@ export class PlayerSyncService {
       });
     } finally {
       this.runLock.release();
+      await this.recordRunMetrics(trigger, summary, aborted, startedAtMs);
+    }
+  }
+
+  /**
+   * Spec 031: cuenta la corrida (fuente, origen y resultado) y mide su duración; sólo una corrida `success`
+   * (todas las unidades bien) avanza la última sincronización exitosa. Nunca lanza: medir no altera la corrida.
+   */
+  private async recordRunMetrics(
+    trigger: 'manual' | 'cron',
+    summary: WhoScoredSyncSummary,
+    aborted: boolean,
+    startedAtMs: number,
+  ): Promise<void> {
+    try {
+      const finishedAt = this.clock.now();
+      const outcome = classifySyncRun({
+        aborted,
+        unitsSucceeded: summary.teamsSynced,
+        unitsFailed: summary.failedUnits.length,
+      });
+      const durationSeconds = Math.max(0, (finishedAt.getTime() - startedAtMs) / 1000);
+      this.metrics?.recordSyncRun('whoscored', trigger === 'cron' ? 'scheduled' : 'manual', outcome, durationSeconds);
+      if (outcome === 'success') {
+        await this.lastSuccess?.record('whoscored', finishedAt);
+      }
+    } catch {
+      // Ignorado a propósito (spec 031, FR-013).
     }
   }
 

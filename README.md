@@ -85,7 +85,31 @@ El backend es NestJS, así que no usa Actuator. Estos endpoints públicos cubren
 3. Prometheus: http://localhost:9090 (en [`/targets`](http://localhost:9090/targets), `futval-backend` debe estar en **UP**).
 4. Grafana: http://localhost:3001 (usuario `admin`, contraseña `admin`). El dashboard [**FútVal — métricas del backend**](http://localhost:3001/d/futval-http-metrics) ya viene cargado.
    Trae paneles de latencia p95, tasa de error 5xx (la del SLA) y tasa de 4xx, y una sección del proceso Node. La tasa de 4xx es informativa: los 4xx no entran en la tasa de error del SLA.
+   El mismo dashboard tiene una fila **Negocio** con las métricas de negocio (ver abajo): mercado, sincronización de datos, cotización, y alertas y notificaciones.
    Hay un segundo dashboard, [**FútVal — errores**](http://localhost:3001/d/futval-errors), con el detalle de los errores: totales de 4xx y 5xx, desglose por código de estado, endpoints con más errores y una tabla por método, ruta y código.
+
+### Métricas de negocio
+
+Además de cómo responde la API, `GET /metrics` expone cómo se usa y cómo funciona el producto (sin endpoints ni SLA nuevos). Las etiquetas toman valores de conjuntos cerrados y nunca identifican a un usuario, un jugador ni una corrida puntual.
+
+| Métrica | Tipo | Etiquetas | Qué mide |
+|---|---|---|---|
+| `business_operations_total` | counter | `operation`, `outcome` (`success`, `rejected`, `unexpected`) | Operaciones de escritura de la API por tipo y resultado. `success` es "operación aceptada": para `PLAYER_SYNC_TRIGGERED` es *corrida aceptada*, no *corrida terminada* (eso lo cuenta `sync_runs_total`). |
+| `market_tokens_traded_total` | counter | `side` (`buy`, `sell`) | Tokens operados, sólo de órdenes efectivamente registradas. |
+| `market_volume_credits_total` | counter | `side` | Volumen en créditos (cantidad × precio de cada fill). |
+| `market_order_rejections_total` | counter | `reason` (`insufficient_balance`, `insufficient_tokens`, `tokens_unavailable`, `other`) | Órdenes rechazadas al crearse. Mide sólo el alta de órdenes, no las cancelaciones. Hoy sólo `insufficient_tokens` y `other` tienen datos: no hay saldo monetario ni un error de "tokens no disponibles". |
+| `sync_runs_total` | counter | `source` (`whoscored`, `football_data`), `trigger` (`scheduled`, `manual`), `outcome` (`success`, `partial`, `failure`) | Corridas de sincronización. `success`: todas las unidades bien; `partial`: algunas fallaron y otras no; `failure`: se abortó o ninguna terminó bien. |
+| `sync_run_duration_seconds` | histogram | `source`, `trigger` | Duración de cada corrida. |
+| `sync_last_success_timestamp_seconds` | gauge | `source` | Momento de la última corrida **`success`** de cada fuente (una `partial` o `failure` no lo mueve). Se guarda en la base y sobrevive al reinicio; sin ninguna corrida exitosa, la serie no existe. |
+| `quote_recalculations_total` | counter | `trigger`, `outcome` (`success`, `failure`) | Recálculos de cotizaciones; la simulación de mercado cuenta como `manual`. |
+| `quote_recalculation_duration_seconds` | histogram | `trigger` | Duración de cada recálculo. |
+| `alerts_triggered_total` | counter | — | Alertas de precio disparadas. |
+| `notifications_created_total` | counter | `delivery` (`live`, `stored_only`) | Notificaciones creadas: `live` llegó al usuario conectado, `stored_only` quedó guardada porque no estaba conectado. |
+| `sse_connections_active` | gauge | — | Conexiones abiertas del stream de notificaciones en tiempo real. |
+
+**Decisión de diseño:** el negocio se mide por separado de la API (`BusinessMetricsService` junto a `MetricsService`, mismo `GET /metrics`) y sólo se cuenta lo que realmente ocurrió: el éxito de una orden se cuenta después de confirmar la transacción y desde la capa de servicios, así una operación revertida o que no se concretó nunca figura como exitosa. Medir nunca altera el resultado de la operación medida.
+
+**Riesgos aceptados (fuera de alcance):** las métricas viven en memoria y se reinician con el backend (salvo la última sincronización exitosa); con varias instancias cada una expone las suyas; no hay alertas sobre estos valores.
 
 ## Scripts
 

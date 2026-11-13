@@ -80,7 +80,7 @@ describe('QuotationService — @Cron semanal de recálculo (spec 019, FR-016)', 
         release = () => resolve([]);
       }),
     );
-    const manual = service.recalculateAll();
+    const manual = service.recalculateAll('manual');
 
     await expect(service.handleCron()).resolves.toBeUndefined();
 

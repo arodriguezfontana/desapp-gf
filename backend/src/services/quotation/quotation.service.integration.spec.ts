@@ -187,7 +187,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertPlayer({ goals: 20 });
       await insertPlayer({ goals: 40 });
 
-      const result = await service.recalculateAll();
+      const result = await service.recalculateAll('manual');
 
       expect(result.recalculated).toHaveLength(2);
       expect(result.skipped).toHaveLength(0);
@@ -201,7 +201,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertStrategy({ userId: userIdA, name: 'Test seleccionada', weights: WEIGHTS_GOALS_ONLY, factorEscala: 10, isSelected: true });
       await insertPlayer({ removedAt: new Date() });
 
-      const result = await service.recalculateAll();
+      const result = await service.recalculateAll('manual');
 
       expect(result.recalculated).toHaveLength(0);
       const quotes = await dataSource.getRepository(PlayerQuoteEntity).find();
@@ -220,7 +220,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       });
       await insertPlayer({ position: 'FW', goals: 20 });
 
-      await service.recalculateAll();
+      await service.recalculateAll('manual');
 
       const [quote] = await dataSource.getRepository(PlayerQuoteEntity).find();
       expect(quote.appliedPosition).toBe('FW');
@@ -232,7 +232,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertStrategy({ userId: userIdB, name: 'B', weights: WEIGHTS_GOALS_ONLY, factorEscala: 20, isSelected: true });
       await insertPlayer({ goals: 20 });
 
-      await service.recalculateAll();
+      await service.recalculateAll('manual');
 
       const quotesA = await dataSource.getRepository(PlayerQuoteEntity).find({ where: { userId: userIdA } });
       const quotesB = await dataSource.getRepository(PlayerQuoteEntity).find({ where: { userId: userIdB } });
@@ -249,7 +249,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       const listener = (payload: { userId: string; playerId: string; value: number }) => received.push(payload);
       eventEmitter.on('quote.recalculated', listener);
 
-      await service.recalculateAll();
+      await service.recalculateAll('manual');
 
       eventEmitter.off('quote.recalculated', listener);
       expect(received).toHaveLength(1);
@@ -275,7 +275,7 @@ describe('QuotationService (integración contra Postgres real)', () => {
       await insertStrategy({ userId: userIdB, name: 'B', weights: WEIGHTS_GOALS_ONLY, factorEscala: 20, isSelected: true });
       const playerId = await insertPlayer({ goals: 20 });
 
-      await service.recalculateAll();
+      await service.recalculateAll('manual');
 
       const historyA = await service.getQuoteHistory(userIdA, playerId);
       const historyB = await service.getQuoteHistory(userIdB, playerId);

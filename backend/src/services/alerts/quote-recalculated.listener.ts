@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { PriceAlertRepository } from '../../repositories/alerts/price-alert.repository';
 import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../domain/alerts/events/alert-triggered.event';
 import { QUOTE_RECALCULATED_EVENT, QuoteRecalculatedEvent } from '../../domain/alerts/events/quote-recalculated.event';
+import { BUSINESS_METRICS, BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
 
 /**
  * Escucha quote.recalculated, evalúa las alertas activas del usuario+jugador
@@ -15,6 +16,7 @@ export class QuoteRecalculatedListener {
   constructor(
     private readonly alerts: PriceAlertRepository,
     private readonly eventEmitter: EventEmitter2,
+    @Optional() @Inject(BUSINESS_METRICS) private readonly metrics?: BusinessMetrics,
   ) {}
 
   @OnEvent(QUOTE_RECALCULATED_EVENT)
@@ -22,6 +24,14 @@ export class QuoteRecalculatedListener {
     const activeAlerts = await this.alerts.findActiveByUserIdAndPlayerId(event.userId, event.playerId);
 
     const triggered = activeAlerts.filter((alert) => alert.matches(event.value));
+    // Spec 031: una por cada alerta que cumple su condición. Medir nunca altera la evaluación.
+    for (let i = 0; i < triggered.length; i++) {
+      try {
+        this.metrics?.recordAlertTriggered();
+      } catch {
+        // Ignorado a propósito (spec 031, FR-013).
+      }
+    }
     // emitAsync (no emit): espera a que los listeners de alert.triggered
     // (persistencia de Notification) terminen antes de resolver, para que
     // quote.recalculated solo se considere procesado cuando la notificación

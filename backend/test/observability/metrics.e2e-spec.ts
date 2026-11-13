@@ -6,6 +6,7 @@ import { createLogCapture } from './helpers/log-capture';
 import { familyNames, parsePrometheusText, PromSample, sampleValue } from './helpers/prom-text';
 import { LOG_CONFIG } from '../../src/modules/observability/logging.constants';
 import { UserRepository } from '../../src/repositories/auth/user.repository';
+import { BUSINESS_METRIC_NAMES } from '../../src/shared/observability/metrics/business-metrics';
 
 /**
  * 029-http-metrics-sla. Se usa `createTestApp()` SIN sobrescribir `LOG_CONFIG`: el logger queda en
@@ -87,8 +88,10 @@ describe('US1: consultar las métricas sin credenciales (e2e, spec 029)', () => 
 
     expect(families).toEqual(expect.arrayContaining(['http_request_duration_seconds', 'http_requests_total']));
     expect(families).toEqual(expect.arrayContaining(['process_cpu_seconds_total', 'nodejs_heap_size_used_bytes']));
-    // Fuera de las dos de requests, todo lo expuesto son las métricas por defecto de prom-client.
-    const others = families.filter((f) => !f.startsWith('http_'));
+    // Fuera de las dos de requests, todo lo expuesto son las métricas por defecto de prom-client y, desde la
+    // spec 031, las métricas de negocio (mismo Registry, mismo /metrics).
+    const business: string[] = Object.values(BUSINESS_METRIC_NAMES);
+    const others = families.filter((f) => !f.startsWith('http_') && !business.includes(f));
     for (const family of others) {
       expect(family).toMatch(/^(process|nodejs)_/);
     }

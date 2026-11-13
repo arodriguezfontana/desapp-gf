@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
@@ -24,6 +24,7 @@ import { UserRole } from '../../domain/auth/user-role';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 import { QuotationService } from '../quotation/quotation.service';
+import { BUSINESS_METRICS, BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
 import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/simulation/dto/simulation-result.dto';
@@ -56,6 +57,7 @@ export class MarketSimulationService {
     private readonly eventEmitter: EventEmitter2,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Optional() @Inject(BUSINESS_METRICS) private readonly metrics?: BusinessMetrics,
   ) {}
 
   async simulate(targetEmail?: string): Promise<SimulationResultDto> {
@@ -91,7 +93,7 @@ export class MarketSimulationService {
     const { transactionsCount, holdingsCount, adminOrdersCount, marketOrdersCount } =
       await this.seedMarketActivityIfNeeded(admin, bots, simPlayers, refPrices, tDate);
 
-    const { quotesCount, quotesSummary } = await this.seedQuotes(admin.id, activePlayers, refPrices, tDate);
+    const { quotesCount, quotesSummary } = await this.seedQuotesMeasured(admin.id, activePlayers, refPrices, tDate);
 
     this.logger.log(
       `Simulación completada con éxito: ${holdingsCount} holdings, ${transactionsCount} transacciones, ${adminOrdersCount} órdenes admin, ${marketOrdersCount} órdenes de mercado, ${quotesCount} cotizaciones.`,
@@ -198,6 +200,34 @@ export class MarketSimulationService {
     await Promise.all(botHoldings.map((h) => this.saveHoldingQuantity(h.userId, h.playerId, h.quantity)));
     await Promise.all(orders.map((order) => this.orders.save(order)));
     return orders.length;
+  }
+
+  /**
+   * Spec 031: la simulación de mercado cuenta como un recálculo `manual`. Esta función es el ÚNICO dueño de esa
+   * medición: la simulación siembra las cotizaciones y emite el evento por su cuenta y NO pasa por
+   * `QuotationService.recalculateAll` (que mide sus propias corridas). Si algún día pasara por ahí, tendría
+   * que dejar de medir acá para no contar dos veces (lo vigilan un unit y un e2e).
+   */
+  private async seedQuotesMeasured(
+    adminId: string,
+    activePlayers: Player[],
+    refPrices: Map<string, number>,
+    tDate: (daysAgo: number) => Date,
+  ): Promise<{ quotesCount: number; quotesSummary: SimulatedQuoteDto[] }> {
+    const startedAtMs = this.clock.now().getTime();
+    let outcome: 'success' | 'failure' = 'failure';
+    try {
+      const result = await this.seedQuotes(adminId, activePlayers, refPrices, tDate);
+      outcome = 'success';
+      return result;
+    } finally {
+      try {
+        const durationSeconds = Math.max(0, (this.clock.now().getTime() - startedAtMs) / 1000);
+        this.metrics?.recordQuoteRecalculation('manual', outcome, durationSeconds);
+      } catch {
+        // Ignorado a propósito: medir nunca altera la simulación (spec 031, FR-013).
+      }
+    }
   }
 
   private async seedQuotes(

@@ -136,8 +136,8 @@ describe('QuotationService', () => {
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([]);
 
-      const first = service.recalculateAll();
-      await expect(service.recalculateAll()).rejects.toBeInstanceOf(RecalculationInProgressError);
+      const first = service.recalculateAll('manual');
+      await expect(service.recalculateAll('manual')).rejects.toBeInstanceOf(RecalculationInProgressError);
       await first;
     });
 
@@ -147,7 +147,7 @@ describe('QuotationService', () => {
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([player]);
 
-      const result = await service.recalculateAll();
+      const result = await service.recalculateAll('manual');
 
       expect(result.recalculated).toHaveLength(1);
       expect(result.recalculated[0]).toMatchObject({ userId: USER_ID, playerId: 'p-1' });
@@ -163,7 +163,7 @@ describe('QuotationService', () => {
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([player]);
 
-      await service.recalculateAll();
+      await service.recalculateAll('manual');
 
       expect(eventEmitter.emitAsync).toHaveBeenCalledTimes(1);
       const [eventName, payload] = eventEmitter.emitAsync.mock.calls[0];
@@ -176,7 +176,7 @@ describe('QuotationService', () => {
       strategyRepo.findByUserId.mockResolvedValue([makeStrategy({ isSelected: false })]);
       playerRepo.findAllActive.mockResolvedValue([makePlayer()]);
 
-      await service.recalculateAll();
+      await service.recalculateAll('manual');
 
       expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
     });
@@ -189,7 +189,7 @@ describe('QuotationService', () => {
         .mockResolvedValueOnce([makeStrategy({ id: 's-2', userId: OTHER_USER_ID, isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([player]);
 
-      const result = await service.recalculateAll();
+      const result = await service.recalculateAll('manual');
 
       expect(result.recalculated).toHaveLength(2);
       expect(result.recalculated.map((r) => r.userId)).toEqual([USER_ID, OTHER_USER_ID]);
@@ -203,7 +203,7 @@ describe('QuotationService', () => {
         .mockResolvedValueOnce([makeStrategy({ id: 's-2', userId: OTHER_USER_ID, isSelected: true })]);
       playerRepo.findAllActive.mockResolvedValue([player]);
 
-      const result = await service.recalculateAll();
+      const result = await service.recalculateAll('manual');
 
       expect(result.recalculated).toHaveLength(1);
       expect(result.recalculated[0].userId).toBe(OTHER_USER_ID);
@@ -223,7 +223,7 @@ describe('QuotationService', () => {
         return { score: 0.5, value: 50.5, appliedPosition: null, weightsUsed: WEIGHTS };
       });
 
-      const result = await service.recalculateAll();
+      const result = await service.recalculateAll('manual');
 
       expect(result.recalculated).toEqual([{ userId: USER_ID, playerId: 'p-1', value: 50.5, score: 0.5 }]);
       expect(result.skipped).toEqual([{ userId: USER_ID, playerId: 'p-2', reason: 'fallo simulado de cálculo' }]);

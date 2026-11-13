@@ -3,6 +3,7 @@ import { RuntimeModule } from '../runtime/runtime.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiKeyModule } from '../api-key/api-key.module';
+import { MetricsModule } from '../observability/metrics.module';
 import { PlayerModule } from '../player/player.module';
 import { QuotationController } from '../../controllers/quotation/quotation.controller';
 import { UserStrategyController } from '../../controllers/user-strategy/user-strategy.controller';
@@ -26,6 +27,7 @@ import { StrategyProvisioningService } from '../../services/quotation/strategy-p
 @Module({
   imports: [
     RuntimeModule,
+    MetricsModule,
     forwardRef(() => PlayerModule),
     forwardRef(() => ApiKeyModule),
     ScheduleModule.forRoot(),

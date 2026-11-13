@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { RuntimeModule } from '../runtime/runtime.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlayerModule } from '../player/player.module';
+import { MetricsModule } from '../observability/metrics.module';
 import { AlertsController } from '../../controllers/alerts/alerts.controller';
 import { PriceAlertEntity } from '../../repositories/alerts/entities/price-alert.entity';
 import { PriceAlertMapper } from '../../repositories/alerts/price-alert.mapper';
@@ -15,7 +16,7 @@ import { QuoteRecalculatedListener } from '../../services/alerts/quote-recalcula
  * conocer el módulo de notificaciones (spec FR-021).
  */
 @Module({
-  imports: [RuntimeModule, forwardRef(() => PlayerModule), TypeOrmModule.forFeature([PriceAlertEntity])],
+  imports: [RuntimeModule, MetricsModule, forwardRef(() => PlayerModule), TypeOrmModule.forFeature([PriceAlertEntity])],
   controllers: [AlertsController],
   providers: [
     AlertsService,

@@ -19,25 +19,30 @@ import {
  */
 @Injectable()
 export class MetricsService implements RequestMetricsRecorder {
-  private readonly registry = new Registry();
+  private readonly registryInstance = new Registry();
 
   private readonly duration = new Histogram({
     name: 'http_request_duration_seconds',
     help: 'Duración de las requests HTTP, en segundos',
     labelNames: ['method', 'route', 'status_code'],
     buckets: [...DURATION_BUCKETS_SECONDS],
-    registers: [this.registry],
+    registers: [this.registryInstance],
   });
 
   private readonly requests = new Counter({
     name: 'http_requests_total',
     help: 'Requests HTTP atendidas',
     labelNames: ['method', 'route', 'status_code'],
-    registers: [this.registry],
+    registers: [this.registryInstance],
   });
 
   constructor() {
-    collectDefaultMetrics({ register: this.registry });
+    collectDefaultMetrics({ register: this.registryInstance });
+  }
+
+  /** `Registry` propio, compartido con las métricas de negocio (spec 031) para que salgan en el mismo `/metrics`. */
+  get registry(): Registry {
+    return this.registryInstance;
   }
 
   /** Cuenta la request y, salvo en los streams (`durationSeconds` null), observa su duración. */
@@ -55,11 +60,11 @@ export class MetricsService implements RequestMetricsRecorder {
 
   /** Texto en formato Prometheus: las dos familias de requests y las métricas del proceso. */
   render(): Promise<string> {
-    return this.registry.metrics();
+    return this.registryInstance.metrics();
   }
 
   /** `Content-Type` del texto de `render()`. */
   get contentType(): string {
-    return this.registry.contentType;
+    return this.registryInstance.contentType;
   }
 }
