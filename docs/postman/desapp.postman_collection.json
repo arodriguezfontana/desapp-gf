@@ -1129,7 +1129,41 @@
                 "metrics"
               ]
             },
-            "description": "GET /metrics es @Public(): responde sin ningún token (lo consulta un scraper de Prometheus). Devuelve en formato de texto de Prometheus las dos métricas de requests: http_request_duration_seconds (histograma de duración) y http_requests_total (contador), ambas por method, route y status_code. route es el patrón de la ruta (por ejemplo /players/:id), nunca el path pedido; las rutas inexistentes (404) o rechazadas antes de resolverse (400 por JSON ilegible) se agrupan bajo route=\"unmatched\". La tasa de error del SLA se calcula sólo sobre status_code 5xx. Las series aparecen a medida que el backend atiende tráfico."
+            "description": "GET /metrics es @Public(): responde sin ningún token (lo consulta un scraper de Prometheus). Devuelve en formato de texto de Prometheus las dos métricas de requests: http_request_duration_seconds (histograma de duración) y http_requests_total (contador), ambas por method, route y status_code. route es el patrón de la ruta (por ejemplo /players/:id), nunca el path pedido; las rutas inexistentes (404) o rechazadas antes de resolverse (400 por JSON ilegible) se agrupan bajo route=\"unmatched\". La tasa de error del SLA se calcula sólo sobre status_code 5xx. Las series aparecen a medida que el backend atiende tráfico. Además expone las métricas por defecto del proceso Node (process_* y nodejs_*: CPU, memoria, heap, event loop lag, GC), sin etiquetas de requests."
+          }
+        },
+        {
+          "name": "Info — pública, sin token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.test('nombre y versión son texto', function () { pm.expect(body.name).to.be.a('string'); pm.expect(body.version).to.be.a('string'); });",
+                  "pm.test('commit es texto o null', function () { pm.expect(body.commit === null || typeof body.commit === 'string').to.be.true; });",
+                  "pm.test('startedAt es una fecha ISO', function () { pm.expect(new Date(body.startedAt).toISOString()).to.eql(body.startedAt); });",
+                  "pm.test('uptimeSeconds es un entero >= 0', function () { pm.expect(Number.isInteger(body.uptimeSeconds) && body.uptimeSeconds >= 0).to.be.true; });",
+                  "pm.test('sólo los campos documentados', function () { pm.expect(Object.keys(body).sort()).to.eql(['commit', 'environment', 'name', 'node', 'startedAt', 'uptimeSeconds', 'version']); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "info"
+              ]
+            },
+            "description": "GET /info es @Public() (equivalente a /actuator/info). Devuelve name y version (del package.json), commit (variable GIT_COMMIT del despliegue; null si no se informó), environment (NODE_ENV; development por defecto), node (versión de Node), startedAt (arranque del proceso, ISO UTC) y uptimeSeconds. No expone ninguna otra variable de entorno ni configuración."
           }
         }
       ]
