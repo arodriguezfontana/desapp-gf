@@ -74,11 +74,12 @@ describe('SLA por endpoint: cobertura y consistencia (e2e, spec 029)', () => {
     }
   });
 
-  it('/metrics, /health y la raíz tienen SLA', () => {
+  it('/metrics, /health, /info y la raíz tienen SLA', () => {
     const byId = new Map(listDeclaredSla(ctx.app).map((entry) => [entry.id, entry.sla]));
 
     expect(byId.get('GET /metrics')).toBe('technical');
     expect(byId.get('GET /health')).toBe('technical');
+    expect(byId.get('GET /info')).toBe('technical');
     expect(byId.get('GET /')).toBe('ping');
   });
 

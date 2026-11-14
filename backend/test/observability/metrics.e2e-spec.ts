@@ -81,10 +81,17 @@ describe('US1: consultar las métricas sin credenciales (e2e, spec 029)', () => 
     expect(res.headers['content-type']).toContain('version=0.0.4');
   });
 
-  it('expone exactamente las dos familias definidas, sin métricas del proceso', async () => {
+  it('expone las dos familias de requests y, aparte, sólo métricas del proceso Node', async () => {
     const { text } = await scrape();
+    const families = familyNames(text);
 
-    expect(familyNames(text).sort()).toEqual(['http_request_duration_seconds', 'http_requests_total']);
+    expect(families).toEqual(expect.arrayContaining(['http_request_duration_seconds', 'http_requests_total']));
+    expect(families).toEqual(expect.arrayContaining(['process_cpu_seconds_total', 'nodejs_heap_size_used_bytes']));
+    // Fuera de las dos de requests, todo lo expuesto son las métricas por defecto de prom-client.
+    const others = families.filter((f) => !f.startsWith('http_'));
+    for (const family of others) {
+      expect(family).toMatch(/^(process|nodejs)_/);
+    }
   });
 
   it('los demás endpoints protegidos siguen exigiendo autenticación', async () => {

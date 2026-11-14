@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Counter, Histogram, Registry } from 'prom-client';
+import { collectDefaultMetrics, Counter, Histogram, Registry } from 'prom-client';
 import {
   DURATION_BUCKETS_SECONDS,
   RequestMetricSample,
@@ -11,8 +11,11 @@ import {
  * ambos por método, ruta y código de estado.
  *
  * Usa un `Registry` propio y no el global de `prom-client`: con el global, una segunda app Nest
- * en el mismo proceso (los tests crean varias) lanza "metric already registered". Tampoco se
- * activan las métricas por defecto: la spec define exactamente dos métricas.
+ * en el mismo proceso (los tests crean varias) lanza "metric already registered".
+ *
+ * Además de las dos métricas de requests expone las métricas por defecto de `prom-client` (CPU,
+ * memoria, heap, event loop lag, GC, handles), el equivalente a las métricas de JVM y de proceso de
+ * Actuator. Van al mismo `Registry` propio, así que también quedan aisladas por instancia.
  */
 @Injectable()
 export class MetricsService implements RequestMetricsRecorder {
@@ -33,6 +36,10 @@ export class MetricsService implements RequestMetricsRecorder {
     registers: [this.registry],
   });
 
+  constructor() {
+    collectDefaultMetrics({ register: this.registry });
+  }
+
   /** Cuenta la request y, salvo en los streams (`durationSeconds` null), observa su duración. */
   record(sample: RequestMetricSample): void {
     const labels = {
@@ -46,7 +53,7 @@ export class MetricsService implements RequestMetricsRecorder {
     }
   }
 
-  /** Texto en formato Prometheus con las dos familias. */
+  /** Texto en formato Prometheus: las dos familias de requests y las métricas del proceso. */
   render(): Promise<string> {
     return this.registry.metrics();
   }

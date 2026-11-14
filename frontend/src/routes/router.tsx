@@ -11,9 +11,11 @@ import { CatalogPage } from '../pages/CatalogPage';
 import { PlayerDetailPage } from '../pages/PlayerDetailPage';
 import { AdminPage } from '../pages/AdminPage';
 import { PortfolioPage } from '../pages/PortfolioPage';
+import { NotFoundPage, RouteErrorPage } from '../pages/ErrorPage';
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         path: '/',
@@ -30,6 +32,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: '/catalog', element: <CatalogPage /> },
+          { path: '*', element: <NotFoundPage /> },
         ],
       },
       {
