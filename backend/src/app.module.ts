@@ -21,12 +21,14 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ObservabilityModule } from './modules/observability/observability.module';
 import { PersistenceModule } from './modules/persistence/persistence.module';
 import { SeedModule } from './modules/seed/seed.module';
+import { RedisCacheModule } from './shared/cache/redis-cache.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
+    RedisCacheModule,
     DatabaseModule,
     AuthModule,
     ApiKeyModule,

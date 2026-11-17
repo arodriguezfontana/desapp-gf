@@ -26,6 +26,20 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: desapp_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # ── Visualización de métricas (OPCIONAL) ────────────────────────────────────
   # Prometheus + Grafana consumen GET /metrics del backend tal cual está (spec 029). No son parte del
   # enunciado ni de la entrega: si no están, o fallan en una demo, el endpoint /metrics y el resto de la
@@ -65,3 +79,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
