@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Player } from '../../domain/player/player';
 import { PlayerFilters } from '../../domain/player/player-filters';
 import { PlayerPagination } from '../../domain/player/player-page';
 import { TeamRepository } from '../../repositories/competition/team.repository';
+import { RedisCacheService } from '../../shared/cache/redis-cache.service';
+import { buildCacheKey, buildUserRankingCacheKey } from '../../domain/cache/build-cache-key';
 import { PlayerService } from './player.service';
 
 export interface PlayerWithCrest {
@@ -36,19 +39,35 @@ export class PlayerEnrichmentService {
   constructor(
     private readonly playerService: PlayerService,
     private readonly teams: TeamRepository,
+    @Optional() private readonly cache?: RedisCacheService,
+    @Optional() private readonly configService?: ConfigService,
   ) {}
 
   async listPlayersWithCrests(
     filters: PlayerFilters,
     pagination: PlayerPagination,
   ): Promise<PlayerPageWithCrests> {
+    const cacheKey = buildCacheKey('catalog', { ...filters, ...pagination });
+    if (this.cache) {
+      const cached = await this.cache.get<PlayerPageWithCrests>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const page = await this.playerService.listPlayers(filters, pagination);
     const crests = await this.loadCrests(page.items);
     const items = page.items.map((player) => ({
       player,
       crestUrl: crests.get(player.team) ?? null,
     }));
-    return { items, total: page.total };
+    const result: PlayerPageWithCrests = { items, total: page.total };
+
+    if (this.cache) {
+      const ttl = Number(this.configService?.get<number>('REDIS_TTL_CATALOG', 3600)) || 3600;
+      await this.cache.set(cacheKey, result, ttl);
+    }
+    return result;
   }
 
   async getRankingWithCrests(
@@ -56,6 +75,14 @@ export class PlayerEnrichmentService {
     filters: PlayerFilters,
     pagination: PlayerPagination,
   ): Promise<PlayerRankingPageWithCrests> {
+    const cacheKey = buildUserRankingCacheKey(userId, { ...filters, ...pagination });
+    if (this.cache) {
+      const cached = await this.cache.get<PlayerRankingPageWithCrests>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const page = await this.playerService.findRanking(userId, filters, pagination);
     const crests = await this.loadCrests(page.items.map((item) => item.player));
     const items = page.items.map((item, index) => ({
@@ -67,13 +94,33 @@ export class PlayerEnrichmentService {
       strategyName: item.strategyName,
       calculatedAt: item.calculatedAt,
     }));
-    return { items, total: page.total };
+    const result: PlayerRankingPageWithCrests = { items, total: page.total };
+
+    if (this.cache) {
+      const ttl = Number(this.configService?.get<number>('REDIS_TTL_RANKING', 86400)) || 86400;
+      await this.cache.set(cacheKey, result, ttl);
+    }
+    return result;
   }
 
   async getPlayerByIdWithCrest(id: string): Promise<PlayerWithCrest> {
+    const cacheKey = `futval:player:${id}`;
+    if (this.cache) {
+      const cached = await this.cache.get<PlayerWithCrest>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const player = await this.playerService.getPlayerById(id);
     const crests = await this.loadCrests([player]);
-    return { player, crestUrl: crests.get(player.team) ?? null };
+    const result: PlayerWithCrest = { player, crestUrl: crests.get(player.team) ?? null };
+
+    if (this.cache) {
+      const ttl = Number(this.configService?.get<number>('REDIS_TTL_CATALOG', 3600)) || 3600;
+      await this.cache.set(cacheKey, result, ttl);
+    }
+    return result;
   }
 
   /** Una sola consulta a `teams` por los equipos distintos de los jugadores: nombre WhoScored → escudo. */

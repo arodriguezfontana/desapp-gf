@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { resolveTeam } from '../../domain/competition/resolve-team';
 import { Team } from '../../domain/competition/team';
@@ -7,6 +7,7 @@ import { StandingRepository } from '../../repositories/competition/standing.repo
 import { TeamNameExceptionRepository } from '../../repositories/competition/team-name-exception.repository';
 import { TeamRepository } from '../../repositories/competition/team.repository';
 import { RunLock } from '../../shared/concurrency/run-lock';
+import { RedisCacheService } from '../../shared/cache/redis-cache.service';
 
 /** Domingos a las 06:00: despues de los crons semanales de WhoScored y Football-Data (domingos a las 00:00). */
 export const TEAM_CROSSWALK_CRON = '0 6 * * 0';
@@ -31,6 +32,7 @@ export class TeamCrosswalkSyncService {
     private readonly standings: StandingRepository,
     private readonly exceptions: TeamNameExceptionRepository,
     private readonly teams: TeamRepository,
+    @Optional() private readonly cache?: RedisCacheService,
   ) {}
 
   /**
@@ -82,6 +84,11 @@ export class TeamCrosswalkSyncService {
     }
 
     await this.teams.upsertTeams(resolvedTeams);
+
+    if (this.cache) {
+      await this.cache.delByPrefix('futval:catalog:');
+      await this.cache.delByPrefix('futval:player:');
+    }
 
     this.logger.log(`Crosswalk de equipos: ${resolvedTeams.length} resueltos, ${unresolved.length} sin resolver.`);
     if (unresolved.length > 0) {

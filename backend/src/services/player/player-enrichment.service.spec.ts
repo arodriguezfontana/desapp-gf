@@ -6,6 +6,7 @@ import { Team } from '../../domain/competition/team';
 import { League } from '../../domain/player/enums/league';
 import { Position } from '../../domain/player/enums/position';
 import { PlayerPage } from '../../domain/player/player-page';
+import { RedisCacheService } from '../../shared/cache/redis-cache.service';
 
 describe('PlayerEnrichmentService', () => {
   let playerService: jest.Mocked<PlayerService>;
@@ -231,6 +232,88 @@ describe('PlayerEnrichmentService', () => {
       expect(result.items).toEqual([]);
       expect(result.total).toBe(0);
       expect(teams.findByWhoScoredNames).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Caché Redis en PlayerEnrichmentService', () => {
+    let mockCache: {
+      get: jest.Mock;
+      set: jest.Mock;
+    };
+    let cachedService: PlayerEnrichmentService;
+
+    beforeEach(() => {
+      mockCache = {
+        get: jest.fn(),
+        set: jest.fn(),
+      };
+      cachedService = new PlayerEnrichmentService(
+        playerService,
+        teams,
+        mockCache as unknown as RedisCacheService,
+      );
+    });
+
+    it('listPlayersWithCrests devuelve respuesta de caché si existe (cache hit) sin llamar al repositorio', async () => {
+      const cachedPayload = {
+        items: [{ player: somePlayer, crestUrl: 'https://crest.png' }],
+        total: 1,
+      };
+      mockCache.get.mockResolvedValue(cachedPayload);
+
+      const result = await cachedService.listPlayersWithCrests({}, { page: 1, pageSize: 10 });
+
+      expect(result).toEqual(cachedPayload);
+      expect(playerService.listPlayers).not.toHaveBeenCalled();
+      expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('listPlayersWithCrests consulta repositorio y persiste en caché ante cache miss', async () => {
+      mockCache.get.mockResolvedValue(null);
+      playerService.listPlayers.mockResolvedValue({ items: [somePlayer], total: 1 });
+      teams.findByWhoScoredNames.mockResolvedValue([someTeam]);
+
+      const result = await cachedService.listPlayersWithCrests({ league: League.PREMIER_LEAGUE }, { page: 1, pageSize: 10 });
+
+      expect(result.total).toBe(1);
+      expect(playerService.listPlayers).toHaveBeenCalled();
+      expect(mockCache.set).toHaveBeenCalledWith(
+        expect.stringMatching(/^futval:catalog:[a-f0-9]{16}$/),
+        result,
+        3600,
+      );
+    });
+
+    it('getPlayerByIdWithCrest devuelve respuesta de caché si existe (cache hit)', async () => {
+      const cachedPlayer = { player: somePlayer, crestUrl: 'https://crest.png' };
+      mockCache.get.mockResolvedValue(cachedPlayer);
+
+      const result = await cachedService.getPlayerByIdWithCrest('id-1');
+
+      expect(result).toEqual(cachedPlayer);
+      expect(playerService.getPlayerById).not.toHaveBeenCalled();
+    });
+
+    it('getRankingWithCrests devuelve respuesta de caché aislada por userId', async () => {
+      const cachedRanking = {
+        items: [{
+          player: somePlayer,
+          crestUrl: 'https://crest.png',
+          rank: 1,
+          valor: 5000,
+          score: 8.0,
+          strategyName: 'Strategy A',
+          calculatedAt: new Date(),
+        }],
+        total: 1,
+      };
+      mockCache.get.mockResolvedValue(cachedRanking);
+
+      const result = await cachedService.getRankingWithCrests('user-1', {}, { page: 1, pageSize: 10 });
+
+      expect(result).toEqual(cachedRanking);
+      expect(playerService.findRanking).not.toHaveBeenCalled();
+      expect(mockCache.get).toHaveBeenCalledWith(expect.stringContaining('futval:ranking:user-1:'));
     });
   });
 });

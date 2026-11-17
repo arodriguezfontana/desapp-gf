@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
@@ -21,6 +21,7 @@ import {
 } from '../../domain/sync/sync-run';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
 import { RunLock } from '../../shared/concurrency/run-lock';
+import { RedisCacheService } from '../../shared/cache/redis-cache.service';
 
 const MAX_RETAINED_RUNS = 20;
 const FATAL_ERROR_MESSAGE = 'La sincronización se interrumpió por un error inesperado.';
@@ -44,6 +45,7 @@ export class PlayerSyncService {
     private readonly players: PlayerRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Optional() private readonly cache?: RedisCacheService,
   ) {}
 
   /**
@@ -111,6 +113,10 @@ export class PlayerSyncService {
     };
     try {
       await this.executeSync(summary);
+      if (this.cache) {
+        await this.cache.delByPrefix('futval:catalog:');
+        await this.cache.delByPrefix('futval:player:');
+      }
       this.runs.set(runId, {
         runId,
         status: 'completed',
