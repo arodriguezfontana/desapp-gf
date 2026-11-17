@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Clock } from '../../adapters/runtime/clock';
-import { InfoResponseDto } from '../../controllers/observability/dto/info-response.dto';
 import { BUILD_INFO } from '../../modules/observability/info.constants';
 import { CLOCK } from '../../modules/runtime/runtime.constants';
 import type { BuildInfo } from '../../shared/observability/info/build-info';
+import type { InfoReport } from './info-report';
 
 /**
  * Información del servicio (equivalente a `/actuator/info`): datos del build más el arranque y el
@@ -21,7 +21,7 @@ export class InfoService {
     this.startedAt = clock.now();
   }
 
-  getInfo(): InfoResponseDto {
+  getInfo(): InfoReport {
     const elapsedMs = this.clock.now().getTime() - this.startedAt.getTime();
     return {
       ...this.build,

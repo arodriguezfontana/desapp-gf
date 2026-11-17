@@ -92,6 +92,43 @@ describe('Arquitectura en capas (Principio I)', () => {
     await expect(rule).toPassAsync();
   });
 
+  /**
+   * Canario de las reglas de abajo: el Controller SÍ depende de Services, así que la regla inversa tiene que
+   * encontrar violaciones. Si `inFolder` dejara de resolver las carpetas del proyecto, las reglas
+   * "X no depende de Y" pasarían en falso.
+   */
+  it('precondición: tsarch resuelve las carpetas de capa (el Controller sí depende del Service)', async () => {
+    const violations = await project()
+      .inFolder('controllers')
+      .shouldNot()
+      .dependOnFiles()
+      .inFolder('services')
+      .check();
+    expect(violations.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * Sentido único de dependencias (Principio I): Controller → Service → {Dominio, Repository, Adapter}.
+   * Ninguna capa inferior conoce a una superior. En particular, los DTOs de Request/Response viven en el
+   * Controller y nunca cruzan hacia el Service, el Repository ni el dominio.
+   */
+  it.each([
+    { from: 'services', to: 'controllers', why: 'los DTOs viven en el Controller y no cruzan al Service' },
+    { from: 'repositories', to: 'controllers', why: 'el Repository no conoce a las capas superiores' },
+    { from: 'repositories', to: 'services', why: 'el Repository no conoce a las capas superiores' },
+    { from: 'adapters', to: 'controllers', why: 'el Adapter no conoce a las capas superiores' },
+    { from: 'adapters', to: 'services', why: 'el Adapter no conoce a las capas superiores' },
+    { from: 'domain', to: 'controllers', why: 'el dominio no depende de ninguna otra capa' },
+    { from: 'domain', to: 'services', why: 'el dominio no depende de ninguna otra capa' },
+    { from: 'domain', to: 'repositories', why: 'el dominio no depende de ninguna otra capa' },
+    { from: 'domain', to: 'adapters', why: 'el dominio no depende de ninguna otra capa' },
+    { from: 'domain', to: 'guards', why: 'el dominio no depende de ninguna otra capa' },
+    { from: 'domain', to: 'modules', why: 'el dominio no depende del cableado de NestJS' },
+  ])('$from/ no depende de $to/ ($why)', async ({ from, to }) => {
+    const rule = project().inFolder(from).shouldNot().dependOnFiles().inFolder(to);
+    await expect(rule).toPassAsync();
+  });
+
   it('el Service no depende de la entidad de persistencia', async () => {
     const rule = project()
       .inFolder('services')
@@ -128,6 +165,11 @@ describe('Arquitectura en capas (Principio I)', () => {
         'el Service no debe importar librerías de infraestructura directo (hasheo, etc.), eso vive detrás del Adapter correspondiente',
       folder: 'services',
       pattern: 'node_modules/(@types/)?bcrypt/',
+    },
+    {
+      title: 'el Service no debe importar TypeORM directo: el acceso a la base vive en el Repository',
+      folder: 'services',
+      pattern: 'node_modules/(@nestjs/)?typeorm/',
     },
     {
       title:

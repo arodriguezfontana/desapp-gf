@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { InfoReport } from '../../../services/observability/info-report';
 
 /** Información del servicio devuelta por `GET /info` (equivalente a `/actuator/info`). */
-export class InfoResponseDto {
+export class InfoResponseDto implements InfoReport {
   @ApiProperty({ example: 'backend', description: 'Nombre del servicio, tomado del package.json.' })
   name!: string;
 

@@ -1,9 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-export type ComponentState = 'up' | 'down';
+import type { ComponentState, ComponentStatus, HealthReport } from '../../../services/observability/health-report';
 
 /** Estado individual de una dependencia verificada por el health check. */
-export class ComponentStatusDto {
+export class ComponentStatusDto implements ComponentStatus {
   @ApiProperty({ enum: ['up', 'down'], example: 'up' })
   status!: ComponentState;
 
@@ -19,7 +18,7 @@ export class ComponentStatusDto {
 export type ComponentStatusMap = Record<string, ComponentStatusDto>;
 
 /** Informe de salud devuelto por `GET /health` (200 si `status` es `ok`, 503 en otro caso). */
-export class HealthResponseDto {
+export class HealthResponseDto implements HealthReport {
   @ApiProperty({ enum: ['ok', 'error', 'shutting_down'], example: 'ok' })
   status!: 'ok' | 'error' | 'shutting_down';
 

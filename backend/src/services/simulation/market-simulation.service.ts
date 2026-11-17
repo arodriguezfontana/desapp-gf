@@ -27,7 +27,7 @@ import { QuotationService } from '../quotation/quotation.service';
 import { BUSINESS_METRICS, BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
 import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
-import { SimulationResultDto, SimulatedQuoteDto } from '../../controllers/simulation/dto/simulation-result.dto';
+import { SimulatedQuote, SimulationResult } from './simulation-result';
 import {
   buildDateHelper,
   DEFAULT_BOTS,
@@ -60,7 +60,7 @@ export class MarketSimulationService {
     @Optional() @Inject(BUSINESS_METRICS) private readonly metrics?: BusinessMetrics,
   ) {}
 
-  async simulate(targetEmail?: string): Promise<SimulationResultDto> {
+  async simulate(targetEmail?: string): Promise<SimulationResult> {
     const adminEmailStr = targetEmail ?? this.config.get<string>('ADMIN_EMAIL') ?? 'admin@desapp.com';
     this.logger.log(`Iniciando simulación de mercado para ${adminEmailStr}...`);
 
@@ -213,7 +213,7 @@ export class MarketSimulationService {
     activePlayers: Player[],
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
-  ): Promise<{ quotesCount: number; quotesSummary: SimulatedQuoteDto[] }> {
+  ): Promise<{ quotesCount: number; quotesSummary: SimulatedQuote[] }> {
     const startedAtMs = this.clock.now().getTime();
     let outcome: 'success' | 'failure' = 'failure';
     try {
@@ -235,7 +235,7 @@ export class MarketSimulationService {
     activePlayers: Player[],
     refPrices: Map<string, number>,
     tDate: (daysAgo: number) => Date,
-  ): Promise<{ quotesCount: number; quotesSummary: SimulatedQuoteDto[] }> {
+  ): Promise<{ quotesCount: number; quotesSummary: SimulatedQuote[] }> {
     await this.playerQuotes.deleteAllByUserId(adminId);
 
     const adminStrategies = await this.strategies.findByUserId(adminId);

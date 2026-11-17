@@ -1,6 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
-import { HealthResponseDto } from '../../controllers/observability/dto/health-response.dto';
+import { HealthReport } from './health-report';
 
 /** Tiempo máximo que se espera a que la base responda al ping (spec 027, FR-009). */
 export const DATABASE_PING_TIMEOUT_MS = 3000;
@@ -22,14 +22,14 @@ export class HealthService {
     private readonly typeOrm: TypeOrmHealthIndicator,
   ) {}
 
-  async check(): Promise<HealthResponseDto> {
+  async check(): Promise<HealthReport> {
     try {
       return (await this.health.check([
         () => this.typeOrm.pingCheck('database', { timeout: DATABASE_PING_TIMEOUT_MS }),
-      ])) as HealthResponseDto;
+      ])) as HealthReport;
     } catch (error) {
       if (error instanceof ServiceUnavailableException) {
-        return error.getResponse() as HealthResponseDto;
+        return error.getResponse() as HealthReport;
       }
       throw error;
     }

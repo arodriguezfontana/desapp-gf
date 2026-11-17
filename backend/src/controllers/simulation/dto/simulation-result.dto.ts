@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { SimulatedQuote, SimulationResult } from '../../../services/simulation/simulation-result';
 
 /** Cotización vigente de un jugador cargada por la simulación, para mostrar valores sin pedir el detalle del jugador aparte. */
-export class SimulatedQuoteDto {
+export class SimulatedQuoteDto implements SimulatedQuote {
   @ApiProperty({ example: 'f3b1c2a0-...' })
   playerId!: string;
 
@@ -15,7 +16,7 @@ export class SimulatedQuoteDto {
 /**
  * Resumen devuelto tras ejecutar la simulación de mercado y actividad interactiva.
  */
-export class SimulationResultDto {
+export class SimulationResultDto implements SimulationResult {
   @ApiProperty({ example: true })
   success!: boolean;
 

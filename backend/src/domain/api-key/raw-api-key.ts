@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { API_KEY_PREFIX, API_KEY_RANDOM_BYTES } from '../../modules/api-key/api-key.constants';
+import { API_KEY_PREFIX, API_KEY_RANDOM_BYTES } from './api-key-format';
 
 /**
  * Genera el valor en texto plano de una ApiKey nueva. Existe solo de forma
