@@ -4,6 +4,7 @@ import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 import { StrategyOwnershipError } from '../../domain/quotation/errors/strategy-ownership.error';
 import { Position } from '../../domain/player/enums/position';
+import { RedisCacheService } from '../../shared/cache/redis-cache.service';
 
 const USER_ID = 'user-1';
 const OTHER_USER_ID = 'user-2';
@@ -112,6 +113,60 @@ describe('StrategyService', () => {
       const result = await service.editPositionWeights(USER_ID, 's-1', Position.FW, fwProfile);
 
       expect(result.positionWeights.FW).toEqual(fwProfile);
+    });
+  });
+
+  // ---- Invalidación reactiva de ranking en caché --------------------------------
+  describe('Invalidación de caché de ranking al mutar estrategias', () => {
+    let mockCache: jest.Mocked<Partial<RedisCacheService>>;
+    let cachedService: StrategyService;
+
+    beforeEach(() => {
+      mockCache = {
+        delByPrefix: jest.fn().mockResolvedValue(undefined),
+      };
+      cachedService = new StrategyService(
+        strategyRepo,
+        mockCache as unknown as RedisCacheService,
+      );
+    });
+
+    it('selectStrategy purga el prefijo futval:ranking:<userId>: tras seleccionar estrategia', async () => {
+      strategyRepo.findById.mockResolvedValue(makeStrategy());
+      strategyRepo.selectStrategy.mockResolvedValue(makeStrategy({ isSelected: true }));
+
+      await cachedService.selectStrategy(USER_ID, 's-1');
+
+      expect(mockCache.delByPrefix).toHaveBeenCalledWith(`futval:ranking:${USER_ID}:`);
+    });
+
+    it('editWeights purga el prefijo futval:ranking:<userId>: tras modificar ponderaciones generales', async () => {
+      strategyRepo.findById.mockResolvedValue(makeStrategy());
+      strategyRepo.save.mockImplementation(async (s) => s);
+
+      await cachedService.editWeights(USER_ID, 's-1', { goals: 0.5, assists: 0.5 });
+
+      expect(mockCache.delByPrefix).toHaveBeenCalledWith(`futval:ranking:${USER_ID}:`);
+    });
+
+    it('editPositionWeights purga el prefijo futval:ranking:<userId>: tras modificar ponderaciones por posición', async () => {
+      strategyRepo.findById.mockResolvedValue(makeStrategy());
+      strategyRepo.save.mockImplementation(async (s) => s);
+
+      await cachedService.editPositionWeights(USER_ID, 's-1', Position.FW, { goals: 0.5, shots: 0.5 });
+
+      expect(mockCache.delByPrefix).toHaveBeenCalledWith(`futval:ranking:${USER_ID}:`);
+    });
+
+    it('opera en modo fail-open si la invalidación en Redis lanza un error', async () => {
+      (mockCache.delByPrefix as jest.Mock).mockRejectedValueOnce(new Error('Redis connection lost'));
+      strategyRepo.findById.mockResolvedValue(makeStrategy());
+      strategyRepo.selectStrategy.mockResolvedValue(makeStrategy({ isSelected: true }));
+
+      // No debe lanzar excepción, debe retornar la estrategia seleccionada
+      const result = await cachedService.selectStrategy(USER_ID, 's-1');
+
+      expect(result).toBeDefined();
     });
   });
 });

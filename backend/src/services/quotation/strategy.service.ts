@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Position } from '../../domain/player/enums/position';
 import { StrategyNotFoundError } from '../../domain/quotation/errors/strategy-not-found.error';
 import { ValuationStrategy } from '../../domain/quotation/valuation-strategy';
 import { ValuationStrategyRepository } from '../../repositories/quotation/valuation-strategy.repository';
+import { RedisCacheService } from '../../shared/cache/redis-cache.service';
 
 /**
  * Operaciones sobre las dos estrategias de valuación propias de cada usuario
@@ -13,7 +14,10 @@ import { ValuationStrategyRepository } from '../../repositories/quotation/valuat
  */
 @Injectable()
 export class StrategyService {
-  constructor(private readonly strategyRepository: ValuationStrategyRepository) {}
+  constructor(
+    private readonly strategyRepository: ValuationStrategyRepository,
+    @Optional() private readonly cache?: RedisCacheService,
+  ) {}
 
   /** Las dos estrategias propias del usuario. */
   async listStrategies(userId: string): Promise<ValuationStrategy[]> {
@@ -43,7 +47,11 @@ export class StrategyService {
   /** Marca `strategyId` como seleccionada, desmarcando la otra del mismo usuario */
   async selectStrategy(userId: string, strategyId: string): Promise<ValuationStrategy> {
     await this.getOwnedStrategyOrThrow(strategyId, userId);
-    return this.strategyRepository.selectStrategy(userId, strategyId);
+    const result = await this.strategyRepository.selectStrategy(userId, strategyId);
+    if (this.cache) {
+      await this.cache.delByPrefix(`futval:ranking:${userId}:`);
+    }
+    return result;
   }
 
   /** Reemplazo completo de los pesos generales de una estrategia propia. */
@@ -54,7 +62,11 @@ export class StrategyService {
   ): Promise<ValuationStrategy> {
     const strategy = await this.getOwnedStrategyOrThrow(strategyId, userId);
     const updated = strategy.withWeights(weights);
-    return this.strategyRepository.save(updated);
+    const saved = await this.strategyRepository.save(updated);
+    if (this.cache) {
+      await this.cache.delByPrefix(`futval:ranking:${userId}:`);
+    }
+    return saved;
   }
 
   /** Reemplazo completo del perfil de una posición de una estrategia propia. */
@@ -66,6 +78,11 @@ export class StrategyService {
   ): Promise<ValuationStrategy> {
     const strategy = await this.getOwnedStrategyOrThrow(strategyId, userId);
     const updated = strategy.withPositionWeights(position, weights);
-    return this.strategyRepository.save(updated);
+    const saved = await this.strategyRepository.save(updated);
+    if (this.cache) {
+      await this.cache.delByPrefix(`futval:ranking:${userId}:`);
+    }
+    return saved;
   }
 }
+
