@@ -10,6 +10,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
  */
 @Entity('player_quotes')
 @Index(['userId', 'playerId', 'calculatedAt'])
+@Index('idx_player_quotes_user_player_calc_desc', ['userId', 'playerId', 'calculatedAt'])
 export class PlayerQuoteEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

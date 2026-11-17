@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Entidad de persistencia. Vive SOLO en la capa de repositorio; el Service nunca
@@ -22,6 +22,7 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
  * `004` que no tienen `externalId`), mismo criterio que `SeedPlayerCatalog`.
  */
 @Entity('players')
+@Index('idx_players_removed_league_position', ['removedAt', 'league', 'position'])
 export class PlayerEntity {
   @PrimaryColumn({ type: 'uuid' })
   id!: string;

@@ -437,5 +437,42 @@ describe('PlayerRepository — sincronización (integración contra Postgres rea
       );
       expect(result).toEqual({ items: [], total: 0 });
     });
+
+    it('maneja múltiples cotizaciones históricas acumuladas por jugador respetando el índice y ordenando por última cotización', async () => {
+      const p1 = await createPlayer({ name: 'Jugador Alfa', league: League.LA_LIGA, team: 'Sevilla', position: Position.FW });
+      const p2 = await createPlayer({ name: 'Jugador Beta', league: League.LA_LIGA, team: 'Betis', position: Position.MF });
+
+      // Generar 5 cotizaciones históricas para cada jugador en fechas sucesivas
+      for (let day = 1; day <= 5; day++) {
+        await createQuote({
+          playerId: p1.id,
+          strategyId,
+          value: 10000000 * day,
+          score: 6.0 + day * 0.5,
+          calculatedAt: new Date(`2026-03-0${day}T12:00:00Z`),
+        });
+        await createQuote({
+          playerId: p2.id,
+          strategyId,
+          value: 12000000 * day,
+          score: 6.5 + day * 0.4,
+          calculatedAt: new Date(`2026-03-0${day}T12:00:00Z`),
+        });
+      }
+
+      // La cotización más reciente de Beta es 60M (día 5), la de Alfa es 50M (día 5)
+      const ranking = await repository.findRanking(userId, {}, { page: 1, pageSize: 10 });
+
+      expect(ranking.total).toBe(2);
+      expect(ranking.items[0].player.name).toBe('Jugador Beta');
+      expect(ranking.items[0].valor).toBe(60000000);
+      expect(ranking.items[0].score).toBe(8.5);
+      expect(ranking.items[0].calculatedAt).toEqual(new Date('2026-03-05T12:00:00Z'));
+
+      expect(ranking.items[1].player.name).toBe('Jugador Alfa');
+      expect(ranking.items[1].valor).toBe(50000000);
+      expect(ranking.items[1].score).toBe(8.5);
+      expect(ranking.items[1].calculatedAt).toEqual(new Date('2026-03-05T12:00:00Z'));
+    });
   });
 });

@@ -165,26 +165,26 @@ export class PlayerRepository {
       WITH latest_quotes AS (
         SELECT
           pq.player_id,
+          pq.strategy_id,
           pq.score,
           pq.value,
           pq.calculated_at,
-          vs.name AS strategy_name,
           ROW_NUMBER() OVER (
             PARTITION BY pq.player_id
             ORDER BY pq.calculated_at DESC
           ) AS rn
         FROM player_quotes pq
-        INNER JOIN valuation_strategies vs ON vs.id = pq.strategy_id
         WHERE pq.user_id = $1
       )
       SELECT
         p.*,
         lq.value AS quote_value,
         lq.score AS quote_score,
-        lq.strategy_name AS quote_strategy_name,
+        vs.name AS quote_strategy_name,
         lq.calculated_at AS quote_calculated_at
       FROM latest_quotes lq
       INNER JOIN players p ON p.id = lq.player_id
+      INNER JOIN valuation_strategies vs ON vs.id = lq.strategy_id
       WHERE ${whereClause}
       ORDER BY lq.value DESC, lq.score DESC, p.id ASC
       LIMIT ${limitParam} OFFSET ${offsetParam}
