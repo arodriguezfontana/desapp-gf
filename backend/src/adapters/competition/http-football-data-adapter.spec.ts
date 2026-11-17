@@ -1,5 +1,6 @@
 import { AxiosInstance } from 'axios';
 import { HttpFootballDataAdapter } from './http-football-data-adapter';
+import { RedisCacheService } from '../../shared/cache/redis-cache.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -97,6 +98,51 @@ describe('HttpFootballDataAdapter', () => {
       expect(matches[1].status).toBe('SCHEDULED');
       expect(matches[1].homeScore).toBeNull();
       expect(matches[1].awayScore).toBeNull();
+    });
+  });
+
+  describe('Fallback ante fallas externas', () => {
+    it('retorna datos de caché si la llamada a Football-Data falla por 500 o timeout', async () => {
+      const mockCachedStandings = [{
+        position: 1,
+        teamId: 65,
+        teamName: 'Manchester City FC',
+        crestUrl: 'https://crests.football-data.org/65.png',
+        playedGames: 5,
+        form: 'W,W,W,D,W',
+        won: 4,
+        draw: 1,
+        lost: 0,
+        points: 13,
+        goalsFor: 12,
+        goalsAgainst: 3,
+        goalDifference: 9,
+      }];
+
+      const mockCache = {
+        get: jest.fn().mockResolvedValue(mockCachedStandings),
+        set: jest.fn(),
+      };
+
+      const resilientAdapter = new HttpFootballDataAdapter(
+        mockAxiosInstance as unknown as AxiosInstance,
+        mockCache as unknown as RedisCacheService,
+      );
+
+      mockAxiosInstance.get.mockRejectedValue(new Error('Network timeout (ETIMEDOUT)'));
+
+      const result = await resilientAdapter.fetchStandings('PL');
+
+      expect(result).toEqual(mockCachedStandings);
+      expect(mockCache.get).toHaveBeenCalledWith('futval:external:standings:PL');
+    });
+
+    it('retorna lista vacía sin arrojar 500 si la API externa falla y no hay caché disponible', async () => {
+      mockAxiosInstance.get.mockRejectedValue(new Error('500 Internal Server Error'));
+
+      const result = await adapter.fetchStandings('PL');
+
+      expect(result).toEqual([]);
     });
   });
 });
