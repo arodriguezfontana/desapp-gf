@@ -1,17 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { Counter, Gauge, Histogram } from 'prom-client';
 import {
+  BUSINESS_OPERATIONS,
   BUSINESS_METRIC_HELP,
   BUSINESS_METRIC_NAMES,
   BusinessMetrics,
   MetricSide,
+  NOTIFICATION_DELIVERIES,
   NotificationDelivery,
+  OPERATION_OUTCOMES,
   OperationOutcome,
   RECALCULATION_DURATION_BUCKETS_SECONDS,
+  RECALCULATION_OUTCOMES,
   RecalculationOutcome,
+  REJECTION_REASONS,
   RejectionReason,
+  RUN_TRIGGERS,
   RunTrigger,
+  SIDES,
   SYNC_DURATION_BUCKETS_SECONDS,
+  SYNC_OUTCOMES,
+  SYNC_SOURCES,
   SyncOutcome,
   SyncSource,
 } from '../../shared/observability/metrics/business-metrics';
@@ -102,6 +111,37 @@ export class BusinessMetricsService implements BusinessMetrics {
     // Sin etiquetas: existen desde el arranque, en 0.
     this.alertsTriggered.inc(0);
     this.sseConnections.set(0);
+    this.initializeSeries();
+  }
+
+  /**
+   * Inicializa en 0 todas las series de los conjuntos cerrados de etiquetas. Prometheus calcula `increase()` y
+   * `rate()` entre dos muestras: una serie que nace con el primer evento (ya en 1) no tiene muestra previa y ese primer
+   * evento no se cuenta. Con la serie en 0 desde el arranque, el primer evento sí cuenta.
+   * No se inicializa `sync_last_success_timestamp_seconds`: sin ninguna corrida exitosa no debe haber un valor.
+   */
+  private initializeSeries(): void {
+    this.safely(() => {
+      for (const operation of BUSINESS_OPERATIONS) {
+        for (const outcome of OPERATION_OUTCOMES) this.operations.inc({ operation, outcome }, 0);
+      }
+      for (const side of SIDES) {
+        this.tokensTraded.inc({ side }, 0);
+        this.volumeCredits.inc({ side }, 0);
+      }
+      for (const reason of REJECTION_REASONS) this.orderRejections.inc({ reason }, 0);
+      for (const source of SYNC_SOURCES) {
+        for (const trigger of RUN_TRIGGERS) {
+          this.syncDuration.zero({ source, trigger });
+          for (const outcome of SYNC_OUTCOMES) this.syncRuns.inc({ source, trigger, outcome }, 0);
+        }
+      }
+      for (const trigger of RUN_TRIGGERS) {
+        this.quoteRecalculationDuration.zero({ trigger });
+        for (const outcome of RECALCULATION_OUTCOMES) this.quoteRecalculations.inc({ trigger, outcome }, 0);
+      }
+      for (const delivery of NOTIFICATION_DELIVERIES) this.notificationsCreated.inc({ delivery }, 0);
+    });
   }
 
   recordOperation(operation: string, outcome: OperationOutcome): void {

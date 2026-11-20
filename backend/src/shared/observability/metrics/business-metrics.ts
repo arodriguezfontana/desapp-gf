@@ -15,6 +15,32 @@ export const BUSINESS_METRICS = Symbol('BUSINESS_METRICS');
 export const SIDES = ['buy', 'sell'] as const;
 export type MetricSide = (typeof SIDES)[number];
 
+/**
+ * Catálogo cerrado de operaciones de escritura (los valores de `@AuditedOperation`, más los tres nombres que resuelve
+ * `POST /orders` según el cuerpo). Se usa para inicializar en 0 las series de `business_operations_total`; un test
+ * verifica que cada `@AuditedOperation` de los controllers esté en esta lista.
+ */
+export const BUSINESS_OPERATIONS = [
+  'TOKENS_BOUGHT',
+  'TOKENS_SOLD',
+  'ORDER_PLACED',
+  'ORDER_CANCELLED',
+  'ALERT_CREATED',
+  'ALERT_DELETED',
+  'API_KEY_ISSUED',
+  'USER_REGISTERED',
+  'USER_LOGGED_IN',
+  'PLAYER_SYNC_TRIGGERED',
+  'FOOTBALL_DATA_SYNC_TRIGGERED',
+  'QUOTES_RECALCULATED',
+  'MARKET_SIMULATED',
+  'NOTIFICATION_READ',
+  'NOTIFICATIONS_ALL_READ',
+  'STRATEGY_SELECTED',
+  'STRATEGY_WEIGHTS_UPDATED',
+  'STRATEGY_POSITION_WEIGHTS_UPDATED',
+] as const;
+
 /** Resultado de una operación de escritura de la API. */
 export const OPERATION_OUTCOMES = ['success', 'rejected', 'unexpected'] as const;
 export type OperationOutcome = (typeof OPERATION_OUTCOMES)[number];

@@ -456,9 +456,7 @@ describe('Métricas de negocio en GET /metrics (e2e)', () => {
         const res = await request(restarted.app.getHttpServer()).get('/metrics');
         const samples = parsePrometheusText(res.text);
         expect(sampleValue(samples, 'sync_last_success_timestamp_seconds', { source: 'football_data' })).toBe(gauge);
-        expect(sampleValue(samples, 'sync_runs_total', { source: 'football_data', trigger: 'manual', outcome: 'success' })).toBe(
-          undefined,
-        );
+        expect(sampleValue(samples, 'sync_runs_total', { source: 'football_data', trigger: 'manual', outcome: 'success' })).toBe(0);
       } finally {
         await restarted.close();
       }

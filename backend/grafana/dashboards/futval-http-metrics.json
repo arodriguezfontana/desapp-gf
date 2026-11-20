@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 22,
+  "version": 23,
   "refresh": "15s",
   "time": {
     "from": "now-2h",
@@ -42,7 +42,7 @@
     {
       "id": 16,
       "type": "stat",
-      "title": "Operaciones de negocio",
+      "title": "Operaciones",
       "description": "Operaciones de escritura de negocio en el período del dashboard (compras, ventas, órdenes, alertas, sincronizaciones, recálculos, estrategias). No incluye login, registro ni API keys.",
       "datasource": {
         "type": "prometheus",
@@ -57,7 +57,11 @@
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
         "overrides": []
       },
@@ -71,7 +75,7 @@
         },
         "colorMode": "value",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "orientation": "auto"
       },
       "targets": [
@@ -89,10 +93,10 @@
       ]
     },
     {
-      "id": 17,
+      "id": 18,
       "type": "stat",
-      "title": "% de éxito",
-      "description": "Operaciones de negocio aceptadas sobre el total del período. success significa \"operación aceptada\" (para disparar una sync, \"corrida aceptada\", no terminada). Sin login, registro ni API keys.",
+      "title": "% de rechazos",
+      "description": "Operaciones de negocio rechazadas por una regla de negocio o fallidas de forma inesperada, sobre el total del período. Verde por debajo del 10 %, amarillo hasta el 30 % y rojo después. Sin login, registro ni API keys.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -101,76 +105,6 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 1
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit",
-          "decimals": 1,
-          "noValue": "sin datos",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "value": null,
-                "color": "red"
-              },
-              {
-                "value": 0.8,
-                "color": "yellow"
-              },
-              {
-                "value": 0.95,
-                "color": "green"
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value_and_name",
-        "orientation": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(increase(business_operations_total{outcome=\"success\",operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range])) / sum(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))",
-          "legendFormat": "éxito",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "id": 18,
-      "type": "stat",
-      "title": "% de rechazos",
-      "description": "Operaciones de negocio rechazadas por una regla de negocio o fallidas de forma inesperada, sobre el total del período. Sin login, registro ni API keys.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
         "y": 1
       },
       "fieldConfig": {
@@ -211,7 +145,7 @@
         },
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "orientation": "auto"
       },
       "targets": [
@@ -231,7 +165,7 @@
     {
       "id": 19,
       "type": "stat",
-      "title": "Tokens operados",
+      "title": "Tokens",
       "description": "Tokens operados en el período por compras y ventas registradas (market_tokens_traded_total, compra y venta juntas).",
       "datasource": {
         "type": "prometheus",
@@ -240,13 +174,17 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 12,
+        "x": 8,
         "y": 1
       },
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
         "overrides": []
       },
@@ -260,7 +198,7 @@
         },
         "colorMode": "value",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "orientation": "auto"
       },
       "targets": [
@@ -280,8 +218,8 @@
     {
       "id": 20,
       "type": "stat",
-      "title": "Volumen en créditos",
-      "description": "Volumen operado en créditos en el período (market_volume_credits_total, compra y venta juntas).",
+      "title": "Créditos",
+      "description": "Volumen operado en créditos en el período (market_volume_credits_total): la suma de cantidad × precio de cada cruce, compra y venta juntas.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -289,13 +227,17 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 16,
+        "x": 12,
         "y": 1
       },
       "fieldConfig": {
         "defaults": {
           "decimals": 2,
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
         "overrides": []
       },
@@ -309,7 +251,7 @@
         },
         "colorMode": "value",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "orientation": "auto"
       },
       "targets": [
@@ -327,9 +269,62 @@
       ]
     },
     {
+      "id": 41,
+      "type": "stat",
+      "title": "Precio / token",
+      "description": "Precio promedio por token operado en el período: volumen en créditos ÷ tokens operados. Si sube o baja sin que cambie la cantidad, el mercado se está moviendo.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "noValue": "sin datos",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(market_volume_credits_total[$__range])) / sum(increase(market_tokens_traded_total[$__range]))",
+          "legendFormat": "precio",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
       "id": 21,
       "type": "stat",
-      "title": "Conexiones SSE abiertas",
+      "title": "Conexiones SSE",
       "description": "Conexiones abiertas del stream de notificaciones en tiempo real en este momento (sse_connections_active).",
       "datasource": {
         "type": "prometheus",
@@ -344,7 +339,11 @@
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
         "overrides": []
       },
@@ -358,7 +357,7 @@
         },
         "colorMode": "value",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "orientation": "auto"
       },
       "targets": [
@@ -554,7 +553,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum by (operation) (round(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))))",
+          "expr": "sort_desc(sum by (operation) (round(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))) > 0)",
           "legendFormat": "{{operation}}",
           "instant": true,
           "range": false

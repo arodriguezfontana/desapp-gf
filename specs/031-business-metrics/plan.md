@@ -120,7 +120,7 @@ La sección "Negocio" está en `backend/grafana/dashboards/futval-http-metrics.j
 - Tarjetas de resumen del período arriba de todo y el mercado a la vista; alertas y notificaciones en una sección
   colapsada. Las demás métricas de negocio (`sync_*`, `quote_recalculation*`, tokens y créditos, rechazos por motivo y
   operaciones de cuenta) siguen en `/metrics` y Prometheus, sin panel.
-- Los porcentajes de éxito y de rechazos y las barras por tipo cuentan sólo operaciones de negocio: se excluyen
+- El porcentaje de rechazos y las barras por tipo cuentan sólo operaciones de negocio: se excluyen
   `USER_REGISTERED`, `USER_LOGGED_IN` y `API_KEY_ISSUED`, para que un login fallido no distorsione lo que importa.
 - Todo se mide dentro del rango del dashboard, en horas (2 h por defecto): los totales y las barras horizontales con
   `increase(...[$__range])`, y la evolución de operaciones por resultado y de tokens por lado del iniciador como líneas
