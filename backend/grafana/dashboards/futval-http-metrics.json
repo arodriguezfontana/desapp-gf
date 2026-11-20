@@ -7,10 +7,10 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 10,
+  "version": 22,
   "refresh": "15s",
   "time": {
-    "from": "now-30m",
+    "from": "now-2h",
     "to": "now"
   },
   "templating": {
@@ -27,6 +27,839 @@
   },
   "panels": [
     {
+      "id": 15,
+      "type": "row",
+      "title": "Negocio — Resumen del período",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Operaciones de negocio",
+      "description": "Operaciones de escritura de negocio en el período del dashboard (compras, ventas, órdenes, alertas, sincronizaciones, recálculos, estrategias). No incluye login, registro ni API keys.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))",
+          "legendFormat": "operaciones",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "% de éxito",
+      "description": "Operaciones de negocio aceptadas sobre el total del período. success significa \"operación aceptada\" (para disparar una sync, \"corrida aceptada\", no terminada). Sin login, registro ni API keys.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "noValue": "sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 0.8,
+                "color": "yellow"
+              },
+              {
+                "value": 0.95,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(business_operations_total{outcome=\"success\",operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range])) / sum(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))",
+          "legendFormat": "éxito",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "% de rechazos",
+      "description": "Operaciones de negocio rechazadas por una regla de negocio o fallidas de forma inesperada, sobre el total del período. Sin login, registro ni API keys.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "noValue": "sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 0.1,
+                "color": "yellow"
+              },
+              {
+                "value": 0.3,
+                "color": "red"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(business_operations_total{outcome!=\"success\",operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range])) / sum(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))",
+          "legendFormat": "rechazos",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "Tokens operados",
+      "description": "Tokens operados en el período por compras y ventas registradas (market_tokens_traded_total, compra y venta juntas).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(market_tokens_traded_total[$__range]))",
+          "legendFormat": "tokens",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "Volumen en créditos",
+      "description": "Volumen operado en créditos en el período (market_volume_credits_total, compra y venta juntas).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(market_volume_credits_total[$__range]))",
+          "legendFormat": "créditos",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Conexiones SSE abiertas",
+      "description": "Conexiones abiertas del stream de notificaciones en tiempo real en este momento (sse_connections_active).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(sse_connections_active)",
+          "legendFormat": "conexiones",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "row",
+      "title": "Negocio — Mercado",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": []
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "Operaciones por resultado",
+      "description": "Operaciones de negocio por minuto a lo largo del tiempo, por resultado: success = aceptada, rejected = rechazada por una regla de negocio, unexpected = fallida de forma inesperada. La columna Total de la leyenda suma el período. Sin login, registro ni API keys.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "min": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rejected"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unexpected"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (outcome) (increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__rate_interval]))",
+          "legendFormat": "{{outcome}}",
+          "interval": "1m"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "type": "bargauge",
+      "title": "Operaciones por tipo",
+      "description": "Cuántas veces ocurrió cada operación de negocio en el período, de mayor a menor. Sin login, registro ni API keys.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "min": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "valueMode": "text",
+        "namePlacement": "left",
+        "showUnfilled": true,
+        "sizing": "manual",
+        "minVizHeight": 18,
+        "maxVizHeight": 36,
+        "minVizWidth": 8,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 20
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sort_desc(sum by (operation) (round(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))))",
+          "legendFormat": "{{operation}}",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "type": "timeseries",
+      "title": "Tokens por lado del iniciador",
+      "description": "Tokens operados por minuto a lo largo del tiempo, por el lado de la orden que inicia el cruce (buy o sell). La columna Total de la leyenda suma el período. Una compra que toma una venta ya publicada suma sólo en buy, así que sell suele ser menor: no significa que haya habido pocas ventas.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "min": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "buy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sell"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (side) (increase(market_tokens_traded_total[$__rate_interval]))",
+          "legendFormat": "{{side}}",
+          "interval": "1m"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 40,
+      "type": "row",
+      "title": "Negocio — Alertas y notificaciones",
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "panels": [
+        {
+          "id": 34,
+          "type": "stat",
+          "title": "Alertas de precio disparadas",
+          "description": "Alertas de precio disparadas dentro del rango del dashboard (alerts_triggered_total).",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 23
+          },
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 0,
+              "noValue": "0"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "orientation": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(increase(alerts_triggered_total[$__range]))",
+              "legendFormat": "alertas",
+              "instant": true,
+              "range": false
+            }
+          ]
+        },
+        {
+          "id": 35,
+          "type": "bargauge",
+          "title": "Notificaciones por entrega",
+          "description": "Notificaciones creadas dentro del rango del dashboard: live = llegó al usuario conectado, stored_only = quedó guardada porque no estaba conectado.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 9,
+            "x": 6,
+            "y": 23
+          },
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 0,
+              "min": 0,
+              "noValue": "0",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "live"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "green"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "stored_only"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "blue"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "horizontal",
+            "displayMode": "basic",
+            "valueMode": "text",
+            "namePlacement": "left",
+            "showUnfilled": true,
+            "sizing": "manual",
+            "minVizHeight": 18,
+            "maxVizHeight": 36,
+            "minVizWidth": 8,
+            "text": {
+              "titleSize": 13,
+              "valueSize": 20
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by (delivery) (round(increase(notifications_created_total[$__range])))",
+              "legendFormat": "{{delivery}}",
+              "instant": true,
+              "range": false
+            }
+          ]
+        },
+        {
+          "id": 36,
+          "type": "timeseries",
+          "title": "Conexiones SSE abiertas en el tiempo",
+          "description": "Conexiones abiertas del stream de notificaciones en tiempo real (sse_connections_active).",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 9,
+            "x": 15,
+            "y": 23
+          },
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 0,
+              "min": 0,
+              "noValue": "0"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(sse_connections_active)",
+              "legendFormat": "conexiones"
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        }
+      ]
+    },
+    {
       "id": 10,
       "type": "row",
       "title": "Requests HTTP",
@@ -35,7 +868,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 23
       },
       "panels": []
     },
@@ -52,7 +885,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 1
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -86,7 +919,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 10
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -133,7 +966,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 10
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -176,7 +1009,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 41
       },
       "panels": []
     },
@@ -193,7 +1026,7 @@
         "h": 8,
         "w": 4,
         "x": 0,
-        "y": 19
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -239,7 +1072,7 @@
         "h": 8,
         "w": 10,
         "x": 4,
-        "y": 19
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -289,7 +1122,7 @@
         "h": 8,
         "w": 10,
         "x": 14,
-        "y": 19
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -341,7 +1174,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 27
+        "y": 50
       },
       "fieldConfig": {
         "defaults": {
@@ -384,7 +1217,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 27
+        "y": 50
       },
       "fieldConfig": {
         "defaults": {
@@ -418,7 +1251,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 27
+        "y": 50
       },
       "fieldConfig": {
         "defaults": {

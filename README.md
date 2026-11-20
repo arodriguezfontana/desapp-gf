@@ -85,7 +85,7 @@ El backend es NestJS, así que no usa Actuator. Estos endpoints públicos cubren
 3. Prometheus: http://localhost:9090 (en [`/targets`](http://localhost:9090/targets), `futval-backend` debe estar en **UP**).
 4. Grafana: http://localhost:3001 (usuario `admin`, contraseña `admin`). El dashboard [**FútVal — métricas del backend**](http://localhost:3001/d/futval-http-metrics) ya viene cargado.
    Trae paneles de latencia p95, tasa de error 5xx (la del SLA) y tasa de 4xx, y una sección del proceso Node. La tasa de 4xx es informativa: los 4xx no entran en la tasa de error del SLA.
-   El mismo dashboard tiene una fila **Negocio** con las métricas de negocio (ver abajo): mercado, sincronización de datos, cotización, y alertas y notificaciones.
+   Arriba de todo tiene la sección **Negocio** con las métricas de negocio (ver abajo): tarjetas de resumen del período y el mercado a la vista, y la sección de alertas y notificaciones colapsada (se abre con un clic). Todo se mide dentro del rango del dashboard, que abre en las últimas 2 horas. Los porcentajes de éxito y de rechazos no incluyen login, registro ni API keys. Las sincronizaciones de datos, los recálculos de cotización, los tokens y créditos operados, los rechazos por motivo y las operaciones de cuenta no tienen panel propio: sus métricas se consultan en `/metrics` o en Prometheus.
    Hay un segundo dashboard, [**FútVal — errores**](http://localhost:3001/d/futval-errors), con el detalle de los errores: totales de 4xx y 5xx, desglose por código de estado, endpoints con más errores y una tabla por método, ruta y código.
 
 ### Métricas de negocio
@@ -106,6 +106,8 @@ Además de cómo responde la API, `GET /metrics` expone cómo se usa y cómo fun
 | `alerts_triggered_total` | counter | — | Alertas de precio disparadas. |
 | `notifications_created_total` | counter | `delivery` (`live`, `stored_only`) | Notificaciones creadas: `live` llegó al usuario conectado, `stored_only` quedó guardada porque no estaba conectado. |
 | `sse_connections_active` | gauge | — | Conexiones abiertas del stream de notificaciones en tiempo real. |
+
+Los contadores arrancan en 0 y una serie recién aparece con su primer evento, así que con el backend recién levantado los paneles de la sección **Negocio** están vacíos hasta que haya actividad real (compras, ventas, recálculos, sincronizaciones). Ampliá el rango de tiempo si hace falta.
 
 **Decisión de diseño:** el negocio se mide por separado de la API (`BusinessMetricsService` junto a `MetricsService`, mismo `GET /metrics`) y sólo se cuenta lo que realmente ocurrió: el éxito de una orden se cuenta después de confirmar la transacción y desde la capa de servicios, así una operación revertida o que no se concretó nunca figura como exitosa. Medir nunca altera el resultado de la operación medida.
 

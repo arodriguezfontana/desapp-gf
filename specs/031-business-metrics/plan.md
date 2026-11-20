@@ -111,3 +111,21 @@ README.md                                           # EDITADO: lista de métrica
 ## Complexity Tracking
 
 Sin violaciones de la constitución que justificar.
+
+## Ajuste posterior: rediseño de la sección Negocio
+
+La sección "Negocio" está en `backend/grafana/dashboards/futval-http-metrics.json`, arriba de las métricas técnicas
+(un dashboard aparte se probó y se descartó). Se rediseñó así:
+
+- Tarjetas de resumen del período arriba de todo y el mercado a la vista; alertas y notificaciones en una sección
+  colapsada. Las demás métricas de negocio (`sync_*`, `quote_recalculation*`, tokens y créditos, rechazos por motivo y
+  operaciones de cuenta) siguen en `/metrics` y Prometheus, sin panel.
+- Los porcentajes de éxito y de rechazos y las barras por tipo cuentan sólo operaciones de negocio: se excluyen
+  `USER_REGISTERED`, `USER_LOGGED_IN` y `API_KEY_ISSUED`, para que un login fallido no distorsione lo que importa.
+- Todo se mide dentro del rango del dashboard, en horas (2 h por defecto): los totales y las barras horizontales con
+  `increase(...[$__range])`, y la evolución de operaciones por resultado y de tokens por lado del iniciador como líneas
+  en el tiempo con `increase(...[$__rate_interval])` (no barras verticales, que con actividad concentrada quedan como
+  líneas finas).
+- Colores fijos por resultado, por nombre exacto de serie.
+
+Se cumple el mismo FR-014 y no cambia ninguna métrica.
