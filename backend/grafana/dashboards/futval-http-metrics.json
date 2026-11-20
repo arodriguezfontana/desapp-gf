@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 23,
+  "version": 26,
   "refresh": "15s",
   "time": {
     "from": "now-2h",
@@ -391,7 +391,7 @@
       "id": 23,
       "type": "timeseries",
       "title": "Operaciones por resultado",
-      "description": "Operaciones de negocio por minuto a lo largo del tiempo, por resultado: success = aceptada, rejected = rechazada por una regla de negocio, unexpected = fallida de forma inesperada. La columna Total de la leyenda suma el período. Sin login, registro ni API keys.",
+      "description": "Operaciones de negocio por minuto a lo largo del tiempo, por resultado: success = aceptada, rejected = rechazada por una regla de negocio, unexpected = fallida de forma inesperada. Sólo aparecen los resultados que ocurrieron en el rango. Los totales del período están en las tarjetas y en la tabla de al lado. Sin login, registro ni API keys.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -478,18 +478,16 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (outcome) (increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__rate_interval]))",
+          "expr": "sum by (outcome) (increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__rate_interval])) and on(outcome) (sum by (outcome) (increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range])) > 0)",
           "legendFormat": "{{outcome}}",
           "interval": "1m"
         }
       ],
       "options": {
         "legend": {
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "bottom",
-          "calcs": [
-            "sum"
-          ]
+          "calcs": []
         },
         "tooltip": {
           "mode": "multi",
@@ -499,9 +497,9 @@
     },
     {
       "id": 24,
-      "type": "bargauge",
-      "title": "Operaciones por tipo",
-      "description": "Cuántas veces ocurrió cada operación de negocio en el período, de mayor a menor. Sin login, registro ni API keys.",
+      "type": "table",
+      "title": "Operaciones por tipo y resultado",
+      "description": "Cuántas veces ocurrió cada operación de negocio en el período, por resultado: success = aceptada, rejected = rechazada por una regla de negocio, unexpected = fallida de forma inesperada. Sólo aparecen las operaciones que ocurrieron. Sin login, registro ni API keys.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -515,37 +513,164 @@
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
-          "min": 0,
           "noValue": "0",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "blue"
+          "custom": {
+            "align": "right",
+            "cellOptions": {
+              "type": "auto"
+            }
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rejected"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unexpected"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "horizontal",
-        "displayMode": "basic",
-        "valueMode": "text",
-        "namePlacement": "left",
-        "showUnfilled": true,
-        "sizing": "manual",
-        "minVizHeight": 18,
-        "maxVizHeight": 36,
-        "minVizWidth": 8,
-        "text": {
-          "titleSize": 13,
-          "valueSize": 20
-        }
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "success",
+            "desc": true
+          }
+        ]
       },
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "operation": "Operación",
+              "Value #A": "success",
+              "Value #B": "rejected",
+              "Value #C": "unexpected"
+            },
+            "indexByName": {
+              "Operación": 0,
+              "Value #A": 1,
+              "Value #B": 2,
+              "Value #C": 3
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "type": "include",
+            "match": "any",
+            "filters": [
+              {
+                "fieldName": "success",
+                "config": {
+                  "id": "greater",
+                  "options": {
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "fieldName": "rejected",
+                "config": {
+                  "id": "greater",
+                  "options": {
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "fieldName": "unexpected",
+                "config": {
+                  "id": "greater",
+                  "options": {
+                    "value": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
       "targets": [
         {
           "refId": "A",
@@ -553,25 +678,50 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sort_desc(sum by (operation) (round(increase(business_operations_total{operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range]))) > 0)",
-          "legendFormat": "{{operation}}",
+          "expr": "sum by (operation) (round(increase(business_operations_total{outcome=\"success\",operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range])))",
+          "legendFormat": "success",
           "instant": true,
-          "range": false
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (operation) (round(increase(business_operations_total{outcome=\"rejected\",operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range])))",
+          "legendFormat": "rejected",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (operation) (round(increase(business_operations_total{outcome=\"unexpected\",operation!~\"USER_REGISTERED|USER_LOGGED_IN|API_KEY_ISSUED\"}[$__range])))",
+          "legendFormat": "unexpected",
+          "instant": true,
+          "range": false,
+          "format": "table"
         }
       ]
     },
     {
-      "id": 27,
+      "id": 42,
       "type": "timeseries",
-      "title": "Tokens por lado del iniciador",
-      "description": "Tokens operados por minuto a lo largo del tiempo, por el lado de la orden que inicia el cruce (buy o sell). La columna Total de la leyenda suma el período. Una compra que toma una venta ya publicada suma sólo en buy, así que sell suele ser menor: no significa que haya habido pocas ventas.",
+      "title": "Tokens comprados y vendidos",
+      "description": "Tokens operados por minuto, separados en comprados (buy) y vendidos (sell). Ojo con cómo se cuenta: cada cruce tiene un comprador y un vendedor, y se suma una sola vez, del lado de la orden que lo inicia. Si una compra toma una venta que ya estaba publicada, suma en comprados; si una venta toma una compra publicada, suma en vendidos. Por eso la suma de las dos líneas es el total de tokens operados, pero cada línea sola no es \"todo lo que se compró\" o \"todo lo que se vendió\".",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
+        "w": 12,
         "x": 0,
         "y": 14
       },
@@ -600,7 +750,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "buy"
+              "options": "comprados"
             },
             "properties": [
               {
@@ -615,7 +765,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "sell"
+              "options": "vendidos"
             },
             "properties": [
               {
@@ -636,18 +786,129 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (side) (increase(market_tokens_traded_total[$__rate_interval]))",
-          "legendFormat": "{{side}}",
+          "expr": "sum(increase(market_tokens_traded_total{side=\"buy\"}[$__rate_interval]))",
+          "legendFormat": "comprados",
+          "interval": "1m"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(market_tokens_traded_total{side=\"sell\"}[$__rate_interval]))",
+          "legendFormat": "vendidos",
           "interval": "1m"
         }
       ],
       "options": {
         "legend": {
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "bottom",
-          "calcs": [
-            "sum"
-          ]
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": "timeseries",
+      "title": "Créditos por token, comprados y vendidos",
+      "description": "Precio promedio por token, minuto a minuto, separado según el lado que inicia el cruce: comprados (buy) y vendidos (sell). Es créditos ÷ tokens de cada lado (market_volume_credits_total ÷ market_tokens_traded_total). Dos aclaraciones: en un mismo cruce comprador y vendedor pagan el mismo precio, así que la diferencia entre las dos líneas muestra a qué precio se cierra cuando empieza una compra frente a cuando empieza una venta; y sólo hay punto en los minutos con operaciones de ese lado. La tarjeta \"Precio / token\" es el promedio de los dos lados juntos.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "min": 0,
+          "noValue": "sin operaciones",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "comprados"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "vendidos"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(market_volume_credits_total{side=\"buy\"}[$__rate_interval])) / sum(increase(market_tokens_traded_total{side=\"buy\"}[$__rate_interval]))",
+          "legendFormat": "comprados",
+          "interval": "1m"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(market_volume_credits_total{side=\"sell\"}[$__rate_interval])) / sum(increase(market_tokens_traded_total{side=\"sell\"}[$__rate_interval]))",
+          "legendFormat": "vendidos",
+          "interval": "1m"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
         },
         "tooltip": {
           "mode": "multi",
