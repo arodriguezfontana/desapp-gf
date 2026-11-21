@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 27,
+  "version": 29,
   "refresh": "15s",
   "time": {
     "from": "now-2h",
@@ -1147,6 +1147,281 @@
       ]
     },
     {
+      "id": 44,
+      "type": "row",
+      "title": "Negocio — Actividad y salud",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "panels": []
+    },
+    {
+      "id": 45,
+      "type": "stat",
+      "title": "Última sync — WhoScored",
+      "description": "Horas desde la última corrida exitosa (success) de la sincronización de WhoScored (source=\"whoscored\"). Una corrida parcial o fallida no la reinicia. Verde hasta 192 h (8 días), amarillo hasta 240 h (10 días) y rojo después: las syncs son semanales y los datos alimentan las cotizaciones. No depende del rango del dashboard y sobrevive al reinicio del backend. Si dice \"nunca exitosa\", esa fuente todavía no tuvo ninguna corrida exitosa registrada.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "decimals": 1,
+          "noValue": "nunca exitosa",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 192,
+                "color": "yellow"
+              },
+              {
+                "value": 240,
+                "color": "red"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(time() - sync_last_success_timestamp_seconds{source=\"whoscored\"}) / 3600",
+          "legendFormat": "WhoScored",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "type": "stat",
+      "title": "Última sync — Football-Data",
+      "description": "Horas desde la última corrida exitosa (success) de la sincronización de Football-Data (source=\"football_data\"). Una corrida parcial o fallida no la reinicia. Verde hasta 192 h (8 días), amarillo hasta 240 h (10 días) y rojo después: las syncs son semanales y los datos alimentan las cotizaciones. No depende del rango del dashboard y sobrevive al reinicio del backend. Si dice \"nunca exitosa\", esa fuente todavía no tuvo ninguna corrida exitosa registrada.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "decimals": 1,
+          "noValue": "nunca exitosa",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 192,
+                "color": "yellow"
+              },
+              {
+                "value": 240,
+                "color": "red"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(time() - sync_last_success_timestamp_seconds{source=\"football_data\"}) / 3600",
+          "legendFormat": "Football-Data",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "type": "stat",
+      "title": "Usuarios nuevos",
+      "description": "Registros exitosos de usuarios en el período (business_operations_total, operación USER_REGISTERED): cuánto crece el producto.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(round(increase(business_operations_total{operation=\"USER_REGISTERED\",outcome=\"success\"}[$__range])))",
+          "legendFormat": "usuarios nuevos",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "type": "stat",
+      "title": "Logins rechazados",
+      "description": "Intentos de login rechazados en el período, por credenciales inválidas (business_operations_total, operación USER_LOGGED_IN con resultado rejected). Un pico es la señal más temprana de alguien probando contraseñas. Verde en 0, amarillo desde 1 y rojo desde 10.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 10,
+                "color": "red"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(round(increase(business_operations_total{operation=\"USER_LOGGED_IN\",outcome=\"rejected\"}[$__range])))",
+          "legendFormat": "logins rechazados",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
       "id": 10,
       "type": "row",
       "title": "Requests HTTP",
@@ -1155,7 +1430,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 32
       },
       "panels": []
     },
@@ -1172,7 +1447,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -1206,7 +1481,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 37
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -1253,7 +1528,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 37
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -1296,7 +1571,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 50
       },
       "panels": []
     },
@@ -1313,7 +1588,7 @@
         "h": 8,
         "w": 4,
         "x": 0,
-        "y": 46
+        "y": 51
       },
       "fieldConfig": {
         "defaults": {
@@ -1359,7 +1634,7 @@
         "h": 8,
         "w": 10,
         "x": 4,
-        "y": 46
+        "y": 51
       },
       "fieldConfig": {
         "defaults": {
@@ -1409,7 +1684,7 @@
         "h": 8,
         "w": 10,
         "x": 14,
-        "y": 46
+        "y": 51
       },
       "fieldConfig": {
         "defaults": {
@@ -1461,7 +1736,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 54
+        "y": 59
       },
       "fieldConfig": {
         "defaults": {
@@ -1504,7 +1779,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 54
+        "y": 59
       },
       "fieldConfig": {
         "defaults": {
@@ -1538,7 +1813,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 54
+        "y": 59
       },
       "fieldConfig": {
         "defaults": {
