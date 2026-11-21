@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SyncLastSuccessEntity } from '../../repositories/sync/entities/sync-last-success.entity';
 import { SyncLastSuccessRepository } from '../../repositories/sync/sync-last-success.repository';
-import { SyncLastSuccessService } from '../../services/observability/sync-last-success.service';
-import { MetricsModule } from './metrics.module';
+import { SyncLastSuccessService } from '../../services/sync/sync-last-success.service';
+import { MetricsModule } from '../observability/metrics.module';
 
 /**
  * Persistencia de la última sincronización exitosa por fuente (spec 031). Los módulos de sync lo importan

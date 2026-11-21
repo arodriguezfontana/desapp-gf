@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SyncLastSuccess, SyncSourceId } from '../../domain/sync/sync-last-success';
+import { SyncLastSuccess } from '../../domain/sync/sync-last-success';
+import { SyncSource } from '../../domain/sync/sync-source';
 import { SyncLastSuccessEntity } from './entities/sync-last-success.entity';
 
 /** Última sincronización exitosa por fuente (spec 031). Recibe y devuelve objetos de dominio. */
@@ -15,11 +16,11 @@ export class SyncLastSuccessRepository {
   /** Una fila por fuente que alguna vez tuvo una corrida exitosa. */
   async findAll(): Promise<SyncLastSuccess[]> {
     const entities = await this.repo.find();
-    return entities.map((entity) => ({ source: entity.source as SyncSourceId, succeededAt: entity.succeededAt }));
+    return entities.map((entity) => ({ source: entity.source as SyncSource, succeededAt: entity.succeededAt }));
   }
 
   /** Crea o reemplaza la fila de la fuente. */
-  async upsert(source: SyncSourceId, succeededAt: Date): Promise<void> {
+  async upsert(source: SyncSource, succeededAt: Date): Promise<void> {
     await this.repo.upsert({ source, succeededAt }, ['source']);
   }
 }

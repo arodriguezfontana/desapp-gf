@@ -20,7 +20,7 @@ import { CLOCK } from '../../modules/runtime/runtime.constants';
 import { BusinessMetrics, classifySyncRun, RunTrigger } from '../../shared/observability/metrics/business-metrics';
 import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
 import { safelyAsync } from '../../shared/observability/metrics/safely';
-import { SyncLastSuccessService } from '../observability/sync-last-success.service';
+import { SyncLastSuccessService } from '../sync/sync-last-success.service';
 
 export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
 

@@ -13,7 +13,7 @@ import { FootballDataSyncController } from '../../controllers/competition/footba
 import { ApiKeyModule } from '../api-key/api-key.module';
 import { RuntimeModule } from '../runtime/runtime.module';
 import { MetricsModule } from '../observability/metrics.module';
-import { SyncLastSuccessModule } from '../observability/sync-last-success.module';
+import { SyncLastSuccessModule } from '../sync/sync-last-success.module';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
 import {
   FOOTBALL_DATA_ADAPTER,

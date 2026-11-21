@@ -84,8 +84,8 @@ backend/
 │   ├── services/
 │   │   ├── observability/
 │   │   │   ├── business-metrics.service.ts    # NUEVO: implementa BusinessMetrics; comparte el Registry; nunca lanza
-│   │   │   ├── sync-last-success.service.ts   # NUEVO: escribe la tabla (sólo con success) y siembra el gauge al arrancar
 │   │   │   └── metrics.service.ts             # EDITADO: expone el Registry (getter)
+│   │   ├── sync/sync-last-success.service.ts  # NUEVO: escribe la tabla (sólo con success) y siembra el gauge al arrancar
 │   │   ├── orders/
 │   │   │   ├── orders.service.ts              # EDITADO: tokens/volumen tras el commit; rechazos
 │   │   │   └── order-rejection-reason.ts      # NUEVO: error de dominio -> motivo (fallback other)
@@ -98,7 +98,9 @@ backend/
 │   │       ├── alert-notification.listener.ts        # EDITADO: notifications_created_total{delivery}
 │   │       └── notifications.service.ts              # EDITADO: conexiones activas por usuario + gauge SSE
 │   ├── controllers/quotation/quotation.controller.ts # EDITADO: pasa trigger 'manual'
-│   ├── repositories/sync/                 # NUEVO: entity, mapper y SyncLastSuccessRepository
+│   ├── domain/sync/sync-source.ts         # NUEVO: la fuente de sync (una sola definición); sync-last-success.ts
+│   ├── repositories/sync/                 # NUEVO: entity y SyncLastSuccessRepository
+│   ├── modules/sync/sync-last-success.module.ts # NUEVO: cablea servicio, repository y entidad
 │   ├── database/migrations/               # NUEVO: CreateSyncLastSuccess
 │   └── modules/observability/metrics.module.ts  # EDITADO: provee/exporta BusinessMetricsService (token BUSINESS_METRICS)
 ├── grafana/dashboards/futval-http-metrics.json  # EDITADO: sección "Negocio"

@@ -16,7 +16,7 @@ import {
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
 } from '../../shared/observability/metrics/business-metrics.testing';
-import { SyncLastSuccessService } from '../observability/sync-last-success.service';
+import { SyncLastSuccessService } from '../sync/sync-last-success.service';
 import { PlayerSyncService } from './player-sync.service';
 
 const rawPlayer = (externalId: string): WhoScoredRawPlayer => ({

@@ -10,7 +10,7 @@ import { PlayerSyncService } from '../../services/player-sync/player-sync.servic
 import { PlayerSyncController } from '../../controllers/player-sync/player-sync.controller';
 import { ApiKeyGuard } from '../../guards/api-key/api-key.guard';
 import { MetricsModule } from '../observability/metrics.module';
-import { SyncLastSuccessModule } from '../observability/sync-last-success.module';
+import { SyncLastSuccessModule } from '../sync/sync-last-success.module';
 
 /**
  * Lado de escritura del catálogo (006-whoscored-catalog-sync): separado de

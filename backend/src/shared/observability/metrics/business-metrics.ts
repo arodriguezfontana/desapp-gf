@@ -58,8 +58,11 @@ export const REJECTION_REASONS = [
 ] as const;
 export type RejectionReason = (typeof REJECTION_REASONS)[number];
 
-export const SYNC_SOURCES = ['whoscored', 'football_data'] as const;
-export type SyncSource = (typeof SYNC_SOURCES)[number];
+import type { SyncSource } from '../../../domain/sync/sync-source';
+
+// La fuente de sync es del dominio (una sola definición); se re-exporta para quien ya importa las métricas.
+export { SYNC_SOURCES } from '../../../domain/sync/sync-source';
+export type { SyncSource } from '../../../domain/sync/sync-source';
 
 export const RUN_TRIGGERS = ['scheduled', 'manual'] as const;
 export type RunTrigger = (typeof RUN_TRIGGERS)[number];

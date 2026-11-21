@@ -11,7 +11,7 @@ import {
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
 } from '../../shared/observability/metrics/business-metrics.testing';
-import { SyncLastSuccessService } from '../observability/sync-last-success.service';
+import { SyncLastSuccessService } from '../sync/sync-last-success.service';
 import { FootballDataSyncService, TARGET_LEAGUES } from './football-data-sync.service';
 
 /** 031-US2: corridas de Football-Data por origen y resultado; sólo `success` avanza la última sync exitosa. */
