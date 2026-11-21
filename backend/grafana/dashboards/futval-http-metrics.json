@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 26,
+  "version": 27,
   "refresh": "15s",
   "time": {
     "from": "now-2h",
@@ -920,202 +920,229 @@
       "id": 40,
       "type": "row",
       "title": "Negocio — Alertas y notificaciones",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 22
       },
-      "panels": [
-        {
-          "id": 34,
-          "type": "stat",
-          "title": "Alertas de precio disparadas",
-          "description": "Alertas de precio disparadas dentro del rango del dashboard (alerts_triggered_total).",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 0,
-            "y": 23
-          },
-          "fieldConfig": {
-            "defaults": {
-              "decimals": 0,
-              "noValue": "0"
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "colorMode": "value",
-            "graphMode": "none",
-            "textMode": "value_and_name",
-            "orientation": "auto"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum(increase(alerts_triggered_total[$__range]))",
-              "legendFormat": "alertas",
-              "instant": true,
-              "range": false
-            }
-          ]
+      "panels": []
+    },
+    {
+      "id": 34,
+      "type": "stat",
+      "title": "Alertas disparadas",
+      "description": "Alertas de precio disparadas dentro del rango del dashboard (alerts_triggered_total).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
         {
-          "id": 35,
-          "type": "bargauge",
-          "title": "Notificaciones por entrega",
-          "description": "Notificaciones creadas dentro del rango del dashboard: live = llegó al usuario conectado, stored_only = quedó guardada porque no estaba conectado.",
+          "refId": "A",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "gridPos": {
-            "h": 8,
-            "w": 9,
-            "x": 6,
-            "y": 23
-          },
-          "fieldConfig": {
-            "defaults": {
-              "decimals": 0,
-              "min": 0,
-              "noValue": "0",
-              "color": {
-                "mode": "fixed",
-                "fixedColor": "blue"
-              }
+          "expr": "sum(increase(alerts_triggered_total[$__range]))",
+          "legendFormat": "alertas",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "type": "bargauge",
+      "title": "Notificaciones por entrega",
+      "description": "Notificaciones creadas dentro del rango del dashboard: live = llegó al usuario conectado, stored_only = quedó guardada porque no estaba conectado.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 6,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "min": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "live"
             },
-            "overrides": [
+            "properties": [
               {
-                "matcher": {
-                  "id": "byName",
-                  "options": "live"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "green"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "stored_only"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "blue"
-                    }
-                  }
-                ]
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
               }
             ]
           },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "stored_only"
             },
-            "orientation": "horizontal",
-            "displayMode": "basic",
-            "valueMode": "text",
-            "namePlacement": "left",
-            "showUnfilled": true,
-            "sizing": "manual",
-            "minVizHeight": 18,
-            "maxVizHeight": 36,
-            "minVizWidth": 8,
-            "text": {
-              "titleSize": 13,
-              "valueSize": 20
-            }
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum by (delivery) (round(increase(notifications_created_total[$__range])))",
-              "legendFormat": "{{delivery}}",
-              "instant": true,
-              "range": false
-            }
-          ]
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "valueMode": "text",
+        "namePlacement": "left",
+        "showUnfilled": true,
+        "sizing": "manual",
+        "minVizHeight": 18,
+        "maxVizHeight": 36,
+        "minVizWidth": 8,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 20
+        }
+      },
+      "targets": [
         {
-          "id": 36,
-          "type": "timeseries",
-          "title": "Conexiones SSE abiertas en el tiempo",
-          "description": "Conexiones abiertas del stream de notificaciones en tiempo real (sse_connections_active).",
+          "refId": "A",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "gridPos": {
-            "h": 8,
-            "w": 9,
-            "x": 15,
-            "y": 23
+          "expr": "sum by (delivery) (round(increase(notifications_created_total[$__range])))",
+          "legendFormat": "{{delivery}}",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "type": "stat",
+      "title": "% en vivo",
+      "description": "Porcentaje de las notificaciones del período que llegaron al usuario conectado en el momento (live) sobre el total (live + stored_only). Si baja, los usuarios no están conectados cuando se dispara su alerta y la notificación queda guardada en la bandeja. Verde desde el 80 %, amarillo desde el 50 %, rojo por debajo.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "noValue": "sin datos",
+          "color": {
+            "mode": "thresholds"
           },
-          "fieldConfig": {
-            "defaults": {
-              "decimals": 0,
-              "min": 0,
-              "noValue": "0"
-            },
-            "overrides": []
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
               },
-              "expr": "sum(sse_connections_active)",
-              "legendFormat": "conexiones"
-            }
-          ],
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
+              {
+                "value": 0.5,
+                "color": "yellow"
+              },
+              {
+                "value": 0.8,
+                "color": "green"
+              }
+            ]
           }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(notifications_created_total{delivery=\"live\"}[$__range])) / sum(increase(notifications_created_total[$__range]))",
+          "legendFormat": "en vivo",
+          "instant": true,
+          "range": false
         }
       ]
     },
@@ -1128,7 +1155,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 27
       },
       "panels": []
     },
@@ -1145,7 +1172,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 28
       },
       "fieldConfig": {
         "defaults": {
@@ -1179,7 +1206,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 33
+        "y": 37
       },
       "fieldConfig": {
         "defaults": {
@@ -1226,7 +1253,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 33
+        "y": 37
       },
       "fieldConfig": {
         "defaults": {
@@ -1269,7 +1296,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 45
       },
       "panels": []
     },
@@ -1286,7 +1313,7 @@
         "h": 8,
         "w": 4,
         "x": 0,
-        "y": 42
+        "y": 46
       },
       "fieldConfig": {
         "defaults": {
@@ -1332,7 +1359,7 @@
         "h": 8,
         "w": 10,
         "x": 4,
-        "y": 42
+        "y": 46
       },
       "fieldConfig": {
         "defaults": {
@@ -1382,7 +1409,7 @@
         "h": 8,
         "w": 10,
         "x": 14,
-        "y": 42
+        "y": 46
       },
       "fieldConfig": {
         "defaults": {
@@ -1434,7 +1461,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 50
+        "y": 54
       },
       "fieldConfig": {
         "defaults": {
@@ -1477,7 +1504,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 50
+        "y": 54
       },
       "fieldConfig": {
         "defaults": {
@@ -1511,7 +1538,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 50
+        "y": 54
       },
       "fieldConfig": {
         "defaults": {
