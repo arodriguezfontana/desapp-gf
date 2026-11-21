@@ -219,6 +219,11 @@ export class MarketSimulationService {
     try {
       const result = await this.seedQuotes(adminId, activePlayers, refPrices, tDate);
       outcome = 'success';
+      try {
+        this.metrics?.setQuoteLastRecalculation(this.clock.now());
+      } catch {
+        // Ignorado a propósito (spec 031, FR-013).
+      }
       return result;
     } finally {
       try {

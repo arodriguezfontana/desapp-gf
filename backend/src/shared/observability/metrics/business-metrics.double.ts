@@ -11,6 +11,7 @@ export function createBusinessMetricsDouble(): BusinessMetricsDouble {
     recordSyncRun: jest.fn(),
     setSyncLastSuccess: jest.fn(),
     recordQuoteRecalculation: jest.fn(),
+    setQuoteLastRecalculation: jest.fn(),
     recordAlertTriggered: jest.fn(),
     recordNotificationCreated: jest.fn(),
     sseConnectionOpened: jest.fn(),

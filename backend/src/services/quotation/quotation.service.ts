@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationBootstrap, Optional } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
 import { IdGenerator } from '../../adapters/runtime/id-generator';
 import { CLOCK, ID_GENERATOR } from '../../modules/runtime/runtime.constants';
@@ -54,7 +54,7 @@ export const QUOTATION_RECALCULATION_CRON = '0 3 * * 0';
  * recálculo global corriendo a la vez (409 si ya hay uno en curso).
  */
 @Injectable()
-export class QuotationService {
+export class QuotationService implements OnApplicationBootstrap {
   private readonly logger = new Logger(QuotationService.name);
   private readonly recalculationLock = new RunLock();
 
@@ -68,6 +68,23 @@ export class QuotationService {
     private readonly strategies: StrategyService,
     @Optional() @Inject(BUSINESS_METRICS) private readonly metrics?: BusinessMetrics,
   ) {}
+
+  /**
+   * Spec 031: siembra el momento del último recálculo desde la cotización más reciente guardada, para que la métrica
+   * `quote_last_recalculation_timestamp_seconds` sobreviva al reinicio. Sin cotizaciones no hay valor. Un fallo se
+   * registra en el log y nunca impide el arranque.
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    try {
+      const latest = await this.quoteRepository.findLatestCalculatedAt();
+      if (latest) this.metrics?.setQuoteLastRecalculation(latest);
+    } catch (error) {
+      this.logger.error(
+        'No se pudo sembrar el momento del último recálculo de cotizaciones.',
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
 
   /**
    * Calcula al vuelo el valor de un jugador, sin persistir nada.
@@ -166,6 +183,11 @@ export class QuotationService {
     try {
       const result = await this.runRecalculation();
       outcome = 'success';
+      try {
+        this.metrics?.setQuoteLastRecalculation(this.clock.now());
+      } catch {
+        // Ignorado a propósito: medir nunca altera el recálculo (spec 031, FR-013).
+      }
       return result;
     } finally {
       try {

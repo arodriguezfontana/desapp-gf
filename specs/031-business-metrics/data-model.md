@@ -31,6 +31,7 @@ Ninguna etiqueta lleva ids de usuario, jugador, orden, alerta ni corrida.
 | `sync_last_success_timestamp_seconds` | gauge | `source` | sólo tras una corrida `success` (no `partial` ni `failure`) y al arrancar (desde `sync_last_success`); ausente sin historial |
 | `quote_recalculations_total` | counter | `trigger`, `outcome` | al terminar cada recálculo (incluida la simulación de mercado, `manual`) |
 | `quote_recalculation_duration_seconds` | histogram | `trigger` | ídem; buckets `[0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300]` |
+| `quote_last_recalculation_timestamp_seconds` | gauge | — | tras cada recálculo exitoso (incluida la simulación de mercado) y al arrancar (desde la cotización más reciente guardada en `player_quotes`); vale 0 si todavía no hubo ninguno. Añadida después de la spec original |
 | `alerts_triggered_total` | counter | — | `QuoteRecalculatedListener`, por cada alerta que cumple su condición |
 | `notifications_created_total` | counter | `delivery` | `AlertNotificationListener`, tras persistir |
 | `sse_connections_active` | gauge | — | +1 al abrirse una conexión, −1 al cerrarse o fallar el stream |

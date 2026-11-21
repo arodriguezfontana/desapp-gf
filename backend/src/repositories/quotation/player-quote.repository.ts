@@ -46,6 +46,15 @@ export class PlayerQuoteRepository {
     return entities.map((entity) => this.mapper.toDomain(entity));
   }
 
+  /** Momento de la cotización más reciente guardada, o `null` si todavía no hay ninguna. */
+  async findLatestCalculatedAt(): Promise<Date | null> {
+    const row = await this.repo
+      .createQueryBuilder('quote')
+      .select('MAX(quote.calculatedAt)', 'latest')
+      .getRawOne<{ latest: Date | string | null }>();
+    return row?.latest ? new Date(row.latest) : null;
+  }
+
   async deleteAllByUserId(userId: string): Promise<void> {
     await this.repo.delete({ userId });
   }

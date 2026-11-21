@@ -119,7 +119,7 @@ La sección "Negocio" está en `backend/grafana/dashboards/futval-http-metrics.j
 
 - Tarjetas de resumen del período arriba de todo, el mercado, una fila de alertas y notificaciones (alertas
   disparadas, notificaciones por entrega y % entregadas en vivo) y una de actividad y salud (antigüedad de la última
-  sync exitosa de WhoScored y de Football-Data, usuarios nuevos y logins rechazados). Las demás (corridas de sync y su duración, `quote_recalculation*`, rechazos por motivo y API
+  sync exitosa de WhoScored y de Football-Data y del último recálculo, usuarios nuevos y logins rechazados). Las demás (corridas de sync y su duración, `quote_recalculation*`, rechazos por motivo y API
   keys emitidas) siguen en `/metrics` y Prometheus, sin panel.
 - El porcentaje de rechazos y las barras por tipo cuentan sólo operaciones de negocio: se excluyen
   `USER_REGISTERED`, `USER_LOGGED_IN` y `API_KEY_ISSUED`, para que un login fallido no distorsione lo que importa.

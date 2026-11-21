@@ -44,6 +44,7 @@ export class BusinessMetricsService implements BusinessMetrics {
   private readonly syncLastSuccess: Gauge<'source'>;
   private readonly quoteRecalculations: Counter<'trigger' | 'outcome'>;
   private readonly quoteRecalculationDuration: Histogram<'trigger'>;
+  private readonly quoteLastRecalculation: Gauge;
   private readonly alertsTriggered: Counter;
   private readonly notificationsCreated: Counter<'delivery'>;
   private readonly sseConnections: Gauge;
@@ -97,6 +98,11 @@ export class BusinessMetricsService implements BusinessMetrics {
       help: help.quoteRecalculationDuration,
       labelNames: ['trigger'],
       buckets: [...RECALCULATION_DURATION_BUCKETS_SECONDS],
+      registers,
+    });
+    this.quoteLastRecalculation = new Gauge({
+      name: names.quoteLastRecalculation,
+      help: help.quoteLastRecalculation,
       registers,
     });
     this.alertsTriggered = new Counter({ name: names.alertsTriggered, help: help.alertsTriggered, registers });
@@ -175,6 +181,10 @@ export class BusinessMetricsService implements BusinessMetrics {
       this.quoteRecalculations.inc({ trigger, outcome });
       this.quoteRecalculationDuration.observe({ trigger }, durationSeconds);
     });
+  }
+
+  setQuoteLastRecalculation(at: Date): void {
+    this.safely(() => this.quoteLastRecalculation.set(at.getTime() / 1000));
   }
 
   recordAlertTriggered(): void {

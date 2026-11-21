@@ -82,6 +82,7 @@ export const BUSINESS_METRIC_NAMES = {
   syncLastSuccess: 'sync_last_success_timestamp_seconds',
   quoteRecalculations: 'quote_recalculations_total',
   quoteRecalculationDuration: 'quote_recalculation_duration_seconds',
+  quoteLastRecalculation: 'quote_last_recalculation_timestamp_seconds',
   alertsTriggered: 'alerts_triggered_total',
   notificationsCreated: 'notifications_created_total',
   sseConnections: 'sse_connections_active',
@@ -103,6 +104,8 @@ export const BUSINESS_METRIC_HELP = {
     'Momento (segundos Unix) de la última sincronización exitosa de cada fuente; una corrida parcial o fallida no lo modifica',
   quoteRecalculations: 'Recálculos de cotizaciones por origen y resultado',
   quoteRecalculationDuration: 'Duración de los recálculos de cotizaciones, en segundos',
+  quoteLastRecalculation:
+    'Momento (segundos Unix) del último recálculo de cotizaciones exitoso, incluida la simulación de mercado; se siembra al arrancar desde la última cotización guardada y vale 0 si todavía no hubo ninguno',
   alertsTriggered: 'Alertas de precio disparadas',
   notificationsCreated: 'Notificaciones creadas, según llegaron en vivo o quedaron sólo guardadas',
   sseConnections: 'Conexiones abiertas del stream de notificaciones en tiempo real',
@@ -157,6 +160,8 @@ export interface BusinessMetrics {
   /** Fija el momento de la última sincronización exitosa de la fuente. */
   setSyncLastSuccess(source: SyncSource, at: Date): void;
   recordQuoteRecalculation(trigger: RunTrigger, outcome: RecalculationOutcome, durationSeconds: number): void;
+  /** Fija el momento del último recálculo de cotizaciones exitoso. */
+  setQuoteLastRecalculation(at: Date): void;
   recordAlertTriggered(): void;
   recordNotificationCreated(delivery: NotificationDelivery): void;
   sseConnectionOpened(): void;
