@@ -21,11 +21,9 @@ import {
 } from '../../domain/sync/sync-run';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
 import { RunLock } from '../../shared/concurrency/run-lock';
-import {
-  BUSINESS_METRICS,
-  BusinessMetrics,
-  classifySyncRun,
-} from '../../shared/observability/metrics/business-metrics';
+import { BusinessMetrics, classifySyncRun } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
+import { safelyAsync } from '../../shared/observability/metrics/safely';
 import { SyncLastSuccessService } from '../observability/sync-last-success.service';
 
 const MAX_RETAINED_RUNS = 20;
@@ -160,7 +158,7 @@ export class PlayerSyncService {
     aborted: boolean,
     startedAtMs: number,
   ): Promise<void> {
-    try {
+    await safelyAsync(async () => {
       const finishedAt = this.clock.now();
       const outcome = classifySyncRun({
         aborted,
@@ -172,9 +170,7 @@ export class PlayerSyncService {
       if (outcome === 'success') {
         await this.lastSuccess?.record('whoscored', finishedAt);
       }
-    } catch {
-      // Ignorado a propósito (spec 031, FR-013).
-    }
+    });
   }
 
   private async executeSync(summary: WhoScoredSyncSummary): Promise<void> {

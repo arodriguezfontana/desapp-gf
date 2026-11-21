@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MetricsController } from '../../controllers/observability/metrics.controller';
 import { BusinessMetricsService } from '../../services/observability/business-metrics.service';
 import { MetricsService } from '../../services/observability/metrics.service';
-import { BUSINESS_METRICS } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from './metrics.constants';
 import { REQUEST_METRICS_RECORDER } from './metrics.constants';
 
 /**

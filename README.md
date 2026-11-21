@@ -103,6 +103,7 @@ Además de cómo responde la API, `GET /metrics` expone cómo se usa y cómo fun
 | `sync_last_success_timestamp_seconds` | gauge | `source` | Momento de la última corrida **`success`** de cada fuente (una `partial` o `failure` no lo mueve). Se guarda en la base y sobrevive al reinicio; sin ninguna corrida exitosa, la serie no existe. |
 | `quote_recalculations_total` | counter | `trigger`, `outcome` (`success`, `failure`) | Recálculos de cotizaciones; la simulación de mercado cuenta como `manual`. |
 | `quote_recalculation_duration_seconds` | histogram | `trigger` | Duración de cada recálculo. |
+| `quote_last_recalculation_timestamp_seconds` | gauge | — | Momento (segundos Unix) del último recálculo exitoso, incluida la simulación de mercado. Se siembra al arrancar desde la última cotización guardada, así que sobrevive al reinicio; vale 0 si todavía no hubo ninguno. |
 | `alerts_triggered_total` | counter | — | Alertas de precio disparadas. |
 | `notifications_created_total` | counter | `delivery` (`live`, `stored_only`) | Notificaciones creadas: `live` llegó al usuario conectado, `stored_only` quedó guardada porque no estaba conectado. |
 | `sse_connections_active` | gauge | — | Conexiones abiertas del stream de notificaciones en tiempo real. |

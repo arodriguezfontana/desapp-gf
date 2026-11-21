@@ -3,7 +3,8 @@ import { Observable, tap } from 'rxjs';
 import { AuditRequest, getAuditedOperation, resolveOperation } from './audited-operation.decorator';
 import { classifyFailure, resolveActor } from './audit-outcome';
 import { RequestValidationException } from './request-validation.exception';
-import { BUSINESS_METRICS, BusinessMetrics } from '../metrics/business-metrics';
+import { BusinessMetrics } from '../metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../../modules/observability/metrics.constants';
 
 /** Mensaje fijo de toda línea de auditoría de negocio. */
 export const BUSINESS_AUDIT_MESSAGE = 'operación de negocio';

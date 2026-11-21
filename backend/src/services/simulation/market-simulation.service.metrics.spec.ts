@@ -21,7 +21,7 @@ import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { QuotationService } from '../quotation/quotation.service';
 import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { MarketSimulationService } from './market-simulation.service';

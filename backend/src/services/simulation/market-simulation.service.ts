@@ -24,7 +24,9 @@ import { UserRole } from '../../domain/auth/user-role';
 import { TokenHolding } from '../../domain/portfolio/token-holding';
 import { QuoteRecalculatedEvent, QUOTE_RECALCULATED_EVENT } from '../../domain/alerts/events/quote-recalculated.event';
 import { QuotationService } from '../quotation/quotation.service';
-import { BUSINESS_METRICS, BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
+import { BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
+import { safely } from '../../shared/observability/metrics/safely';
 import { StrategyProvisioningService } from '../quotation/strategy-provisioning.service';
 import { roundToTwoDecimals } from '../../shared/numbers/round2';
 import { SimulatedQuote, SimulationResult } from './simulation-result';
@@ -219,19 +221,13 @@ export class MarketSimulationService {
     try {
       const result = await this.seedQuotes(adminId, activePlayers, refPrices, tDate);
       outcome = 'success';
-      try {
-        this.metrics?.setQuoteLastRecalculation(this.clock.now());
-      } catch {
-        // Ignorado a propósito (spec 031, FR-013).
-      }
+      safely(() => this.metrics?.setQuoteLastRecalculation(this.clock.now()));
       return result;
     } finally {
-      try {
+      safely(() => {
         const durationSeconds = Math.max(0, (this.clock.now().getTime() - startedAtMs) / 1000);
         this.metrics?.recordQuoteRecalculation('manual', outcome, durationSeconds);
-      } catch {
-        // Ignorado a propósito: medir nunca altera la simulación (spec 031, FR-013).
-      }
+      });
     }
   }
 

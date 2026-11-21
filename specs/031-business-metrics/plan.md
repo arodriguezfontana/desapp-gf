@@ -6,7 +6,7 @@
 
 ## Summary
 
-Agregar al mismo `GET /metrics` doce métricas de negocio (`prom-client`, sin dependencias nuevas) con etiquetas de conjuntos cerrados: operaciones por tipo y resultado, tokens y volumen por lado, rechazos por motivo, corridas/duración/última exitosa de sync por fuente, recálculos de cotización por origen, alertas disparadas, notificaciones por forma de entrega y conexiones SSE abiertas. Un `BusinessMetricsService` nuevo, separado de `MetricsService`, comparte su `Registry`; sus métodos son tipados y **nunca lanzan**. Se agrega una fila "Negocio" al dashboard de Grafana de la 029 y se documenta en el README.
+Agregar al mismo `GET /metrics` trece métricas de negocio (las doce originales y la del último recálculo) (`prom-client`, sin dependencias nuevas) con etiquetas de conjuntos cerrados: operaciones por tipo y resultado, tokens y volumen por lado, rechazos por motivo, corridas/duración/última exitosa de sync por fuente, recálculos de cotización por origen, alertas disparadas, notificaciones por forma de entrega y conexiones SSE abiertas. Un `BusinessMetricsService` nuevo, separado de `MetricsService`, comparte su `Registry`; sus métodos son tipados y **nunca lanzan**. Se agrega una fila "Negocio" al dashboard de Grafana de la 029 y se documenta en el README.
 
 El plan del equipo se adopta con **cinco ajustes** que salieron de contrastarlo con el código:
 
@@ -101,7 +101,7 @@ backend/
 │   ├── repositories/sync/                 # NUEVO: entity, mapper y SyncLastSuccessRepository
 │   ├── database/migrations/               # NUEVO: CreateSyncLastSuccess
 │   └── modules/observability/metrics.module.ts  # EDITADO: provee/exporta BusinessMetricsService (token BUSINESS_METRICS)
-├── grafana/dashboards/futval-http-metrics.json  # EDITADO: fila "Negocio"
+├── grafana/dashboards/futval-http-metrics.json  # EDITADO: sección "Negocio"
 └── test/observability/business-metrics.e2e-spec.ts  # NUEVO
 README.md                                           # EDITADO: lista de métricas de negocio
 ```

@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
+import { SteppingClock } from '../../adapters/runtime/stepping-clock.testing';
 import { FixedClock } from '../../adapters/runtime/fake-runtime';
 import { FootballDataAdapter } from '../../adapters/competition/football-data-adapter';
 import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.error';
@@ -9,19 +10,9 @@ import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { SyncLastSuccessService } from '../observability/sync-last-success.service';
 import { FootballDataSyncService, TARGET_LEAGUES } from './football-data-sync.service';
-
-class SteppingClock implements Clock {
-  private current = Date.parse('2026-11-13T10:00:00.000Z');
-  constructor(private readonly stepMs: number) {}
-  now(): Date {
-    const date = new Date(this.current);
-    this.current += this.stepMs;
-    return date;
-  }
-}
 
 /** 031-US2: corridas de Football-Data por origen y resultado; sólo `success` avanza la última sync exitosa. */
 describe('FootballDataSyncService — métricas de negocio', () => {

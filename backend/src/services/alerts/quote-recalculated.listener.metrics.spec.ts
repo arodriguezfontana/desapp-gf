@@ -7,7 +7,7 @@ import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { QuoteRecalculatedListener } from './quote-recalculated.listener';
 
 /** 031-US4: `alerts_triggered_total` cuenta una vez por cada alerta que cumple su condición. */

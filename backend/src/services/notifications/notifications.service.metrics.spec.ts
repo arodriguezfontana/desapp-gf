@@ -7,7 +7,7 @@ import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { NotificationsService } from './notifications.service';
 
 /** 031-US4: conexiones SSE abiertas sin desfase y distinción entre "en vivo" y "sólo guardada". */

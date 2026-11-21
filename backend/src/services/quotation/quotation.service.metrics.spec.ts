@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
+import { SteppingClock } from '../../adapters/runtime/stepping-clock.testing';
 import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import { RecalculationInProgressError } from '../../domain/quotation/errors/recalculation-in-progress.error';
 import { PlayerQuoteRepository } from '../../repositories/quotation/player-quote.repository';
@@ -9,19 +10,9 @@ import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { QuotationService } from './quotation.service';
 import { StrategyService } from './strategy.service';
-
-class SteppingClock implements Clock {
-  private current = Date.parse('2026-11-13T03:00:00.000Z');
-  constructor(private readonly stepMs: number) {}
-  now(): Date {
-    const date = new Date(this.current);
-    this.current += this.stepMs;
-    return date;
-  }
-}
 
 /** 031-US3: recálculos de cotización por origen (obligatorio) y resultado, con su duración. */
 describe('QuotationService — métricas de negocio', () => {

@@ -3,7 +3,7 @@ import { SyncLastSuccessRepository } from '../../repositories/sync/sync-last-suc
 import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { SyncLastSuccessService } from './sync-last-success.service';
 
 describe('SyncLastSuccessService', () => {

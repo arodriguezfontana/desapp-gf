@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Clock } from '../../adapters/runtime/clock';
+import { SteppingClock } from '../../adapters/runtime/stepping-clock.testing';
 import { FixedClock, SequentialIdGenerator } from '../../adapters/runtime/fake-runtime';
 import {
   WhoScoredAdapter,
@@ -14,20 +15,9 @@ import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { SyncLastSuccessService } from '../observability/sync-last-success.service';
 import { PlayerSyncService } from './player-sync.service';
-
-/** Reloj que avanza `stepMs` en cada lectura: la duración de una corrida es (lecturas - 1) × stepMs. */
-class SteppingClock implements Clock {
-  private current = Date.parse('2026-11-13T10:00:00.000Z');
-  constructor(private readonly stepMs: number) {}
-  now(): Date {
-    const date = new Date(this.current);
-    this.current += this.stepMs;
-    return date;
-  }
-}
 
 const rawPlayer = (externalId: string): WhoScoredRawPlayer => ({
   externalId,

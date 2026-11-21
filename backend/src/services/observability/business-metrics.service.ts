@@ -24,6 +24,7 @@ import {
   SyncOutcome,
   SyncSource,
 } from '../../shared/observability/metrics/business-metrics';
+import { safely } from '../../shared/observability/metrics/safely';
 import { MetricsService } from './metrics.service';
 
 /**
@@ -127,7 +128,7 @@ export class BusinessMetricsService implements BusinessMetrics {
    * No se inicializa `sync_last_success_timestamp_seconds`: sin ninguna corrida exitosa no debe haber un valor.
    */
   private initializeSeries(): void {
-    this.safely(() => {
+    safely(() => {
       for (const operation of BUSINESS_OPERATIONS) {
         for (const outcome of OPERATION_OUTCOMES) this.operations.inc({ operation, outcome }, 0);
       }
@@ -151,64 +152,55 @@ export class BusinessMetricsService implements BusinessMetrics {
   }
 
   recordOperation(operation: string, outcome: OperationOutcome): void {
-    this.safely(() => this.operations.inc({ operation, outcome }));
+    safely(() => this.operations.inc({ operation, outcome }));
   }
 
   recordTokensTraded(side: MetricSide, tokens: number, credits: number): void {
-    this.safely(() => {
+    safely(() => {
       this.tokensTraded.inc({ side }, tokens);
       this.volumeCredits.inc({ side }, credits);
     });
   }
 
   recordOrderRejection(reason: RejectionReason): void {
-    this.safely(() => this.orderRejections.inc({ reason }));
+    safely(() => this.orderRejections.inc({ reason }));
   }
 
   recordSyncRun(source: SyncSource, trigger: RunTrigger, outcome: SyncOutcome, durationSeconds: number): void {
-    this.safely(() => {
+    safely(() => {
       this.syncRuns.inc({ source, trigger, outcome });
       this.syncDuration.observe({ source, trigger }, durationSeconds);
     });
   }
 
   setSyncLastSuccess(source: SyncSource, at: Date): void {
-    this.safely(() => this.syncLastSuccess.set({ source }, at.getTime() / 1000));
+    safely(() => this.syncLastSuccess.set({ source }, at.getTime() / 1000));
   }
 
   recordQuoteRecalculation(trigger: RunTrigger, outcome: RecalculationOutcome, durationSeconds: number): void {
-    this.safely(() => {
+    safely(() => {
       this.quoteRecalculations.inc({ trigger, outcome });
       this.quoteRecalculationDuration.observe({ trigger }, durationSeconds);
     });
   }
 
   setQuoteLastRecalculation(at: Date): void {
-    this.safely(() => this.quoteLastRecalculation.set(at.getTime() / 1000));
+    safely(() => this.quoteLastRecalculation.set(at.getTime() / 1000));
   }
 
   recordAlertTriggered(): void {
-    this.safely(() => this.alertsTriggered.inc());
+    safely(() => this.alertsTriggered.inc());
   }
 
   recordNotificationCreated(delivery: NotificationDelivery): void {
-    this.safely(() => this.notificationsCreated.inc({ delivery }));
+    safely(() => this.notificationsCreated.inc({ delivery }));
   }
 
   sseConnectionOpened(): void {
-    this.safely(() => this.sseConnections.inc());
+    safely(() => this.sseConnections.inc());
   }
 
   sseConnectionClosed(): void {
-    this.safely(() => this.sseConnections.dec());
-  }
-
-  /** Cualquier fallo interno de la medición se ignora: nunca debe llegar a la operación medida. */
-  private safely(work: () => void): void {
-    try {
-      work();
-    } catch {
-      // Ignorado a propósito (spec 031, FR-013).
-    }
+    safely(() => this.sseConnections.dec());
   }
 }

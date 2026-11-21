@@ -9,7 +9,7 @@ import {
   BusinessMetricsDouble,
   createBusinessMetricsDouble,
   makeBusinessMetricsDoubleThrow,
-} from '../../shared/observability/metrics/business-metrics.double';
+} from '../../shared/observability/metrics/business-metrics.testing';
 import { QuotationService } from './quotation.service';
 import { StrategyService } from './strategy.service';
 

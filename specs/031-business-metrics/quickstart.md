@@ -32,7 +32,7 @@ Escenarios cubiertos por el e2e (`test/observability/business-metrics.e2e-spec.t
 1. **Compra exitosa**: sube `business_operations_total{operation="TOKENS_BOUGHT",outcome="success"}`, `market_tokens_traded_total{side="buy"}` y `market_volume_credits_total{side="buy"}`.
 2. **Venta sin tokens**: sube `market_order_rejections_total{reason="insufficient_tokens"}` y `business_operations_total{...,outcome="rejected"}`; **no** sube ningún contador de éxito, tokens ni volumen.
 3. **Etiquetas cerradas**: todos los valores de `operation`, `outcome`, `side`, `reason`, `source`, `trigger` y `delivery` de `/metrics` pertenecen a los conjuntos de [data-model.md](data-model.md).
-4. **Presencia**: `/metrics` expone las doce familias.
+4. **Presencia**: `/metrics` expone las trece familias.
 5. **Medir no altera**: con el `BusinessMetrics` forzado a fallar internamente, la compra responde igual.
 6. **Recálculo manual** (`POST /quotes/recalculate`): sube `quote_recalculations_total{trigger="manual",outcome="success"}` y observa la duración.
 7. **Última sync exitosa**: tras una corrida `success` aparece el gauge y avanza; una `failure` y una `partial` no lo cambian ni lo crean; al recrear la app sobre la misma base, el gauge se siembra desde `sync_last_success`.
@@ -47,7 +47,7 @@ Escenarios cubiertos por el e2e (`test/observability/business-metrics.e2e-spec.t
 1. Con el backend corriendo, generar tráfico: registrarse, comprar y vender tokens (una venta de más tokens de los que se tienen), `POST /quotes/recalculate` y `POST /sync/football-data` con la API key de admin, y abrir `GET /notifications/stream` con un usuario con una alerta activa.
 2. `curl http://localhost:3000/metrics` y comprobar las series del contrato.
 3. Prometheus (`http://localhost:9090`): ejecutar las consultas de la tabla del contrato y comprobar que devuelven datos; `/targets` con `futval-backend` en **UP**.
-4. Grafana (`http://localhost:3001/d/futval-http-metrics`): verificar la fila **Negocio** (operaciones por resultado, tokens y volumen, rechazos por motivo, sync por fuente con duración y antigüedad, recálculos, alertas/notificaciones y conexiones SSE) sin paneles "No data" donde hubo actividad.
+4. Grafana (`http://localhost:3001/d/futval-http-metrics`): verificar la sección **Negocio**, arriba de todo: tarjetas de resumen (operaciones, % de rechazos, tokens, créditos, precio por token, conexiones SSE), mercado (operaciones por resultado, tabla por tipo y resultado, tokens comprados y vendidos, créditos por token), alertas y notificaciones, y actividad y salud (última sync y último recálculo, usuarios nuevos, logins rechazados), sin paneles vacíos donde hubo actividad.
 5. Reiniciar el backend: los contadores vuelven a 0 y la antigüedad de la última sync de cada fuente se conserva.
 
 ## 3. Calibración pendiente
@@ -66,6 +66,6 @@ El 2026-11-13, con Prometheus y Grafana levantados y el backend en el host: se g
 
 - `/metrics` expuso las 12 familias con los valores esperados (`insufficient_tokens`, `manual/success`, `live` y `stored_only`, `sse_connections_active` de vuelta en 0).
 - Prometheus: `futval-backend` en **UP**.
-- Grafana: el dashboard provisionado trae la fila **Negocio**; las consultas de sus 12 paneles devuelven datos a través del datasource.
+- Grafana: el dashboard provisionado trae la sección **Negocio**; las consultas de sus paneles devuelven datos a través del datasource (el diseño de los paneles cambió después de esta verificación; ver la nota al final de `plan.md`).
 - Reinicio del backend: los contadores vuelven a 0 y `sync_last_success_timestamp_seconds{source="football_data"}` conserva el mismo valor.
 - No se ejecutó la sincronización de WhoScored (scraping real).

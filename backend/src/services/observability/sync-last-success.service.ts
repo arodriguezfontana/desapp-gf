@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { SyncLastSuccessRepository } from '../../repositories/sync/sync-last-success.repository';
-import { BUSINESS_METRICS, BusinessMetrics, SyncSource } from '../../shared/observability/metrics/business-metrics';
+import { BusinessMetrics, SyncSource } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
 
 /**
  * Última sincronización exitosa por fuente (spec 031, FR-008). Persiste el momento en `sync_last_success` y

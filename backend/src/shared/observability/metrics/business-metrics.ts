@@ -7,9 +7,6 @@
  * jugador, una orden, una alerta ni una corrida puntual.
  */
 
-/** Token de inyección de `BusinessMetrics` (lo provee y exporta `MetricsModule`). */
-export const BUSINESS_METRICS = Symbol('BUSINESS_METRICS');
-
 // ---- Conjuntos cerrados de etiquetas ---------------------------------------------------------------
 
 export const SIDES = ['buy', 'sell'] as const;

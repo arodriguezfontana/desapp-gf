@@ -16,11 +16,9 @@ import { PlayerRepository } from '../../repositories/player/player.repository';
 import { PlayerNotFoundError } from '../../domain/player/errors/player-not-found.error';
 import { StrategyService } from './strategy.service';
 import { RunLock } from '../../shared/concurrency/run-lock';
-import {
-  BUSINESS_METRICS,
-  BusinessMetrics,
-  RunTrigger,
-} from '../../shared/observability/metrics/business-metrics';
+import { BusinessMetrics, RunTrigger } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
+import { safely } from '../../shared/observability/metrics/safely';
 
 export interface RecalculateResult {
   recalculated: Array<{ userId: string; playerId: string; value: number; score: number }>;
@@ -183,19 +181,13 @@ export class QuotationService implements OnApplicationBootstrap {
     try {
       const result = await this.runRecalculation();
       outcome = 'success';
-      try {
-        this.metrics?.setQuoteLastRecalculation(this.clock.now());
-      } catch {
-        // Ignorado a propósito: medir nunca altera el recálculo (spec 031, FR-013).
-      }
+      safely(() => this.metrics?.setQuoteLastRecalculation(this.clock.now()));
       return result;
     } finally {
-      try {
+      safely(() => {
         const durationSeconds = Math.max(0, (this.clock.now().getTime() - startedAtMs) / 1000);
         this.metrics?.recordQuoteRecalculation(trigger, outcome, durationSeconds);
-      } catch {
-        // Ignorado a propósito: medir nunca altera el recálculo (spec 031, FR-013).
-      }
+      });
     }
   }
 

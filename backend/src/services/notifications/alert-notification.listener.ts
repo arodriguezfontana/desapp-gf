@@ -5,7 +5,9 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Notification } from '../../domain/notifications/notification';
 import { ALERT_TRIGGERED_EVENT, AlertTriggeredEvent } from '../../domain/alerts/events/alert-triggered.event';
 import { NotificationsService } from './notifications.service';
-import { BUSINESS_METRICS, BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
+import { BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
+import { safely } from '../../shared/observability/metrics/safely';
 
 /**
  * Escucha alert.triggered, persiste la Notification correspondiente y la
@@ -35,10 +37,6 @@ export class AlertNotificationListener {
     const persisted = await this.notifications.persist(notification);
     const live = await this.notifications.pushToStream(persisted);
     // Spec 031: se cuenta DESPUÉS de persistir; `live` si el usuario tenía una conexión abierta al empujar.
-    try {
-      this.metrics?.recordNotificationCreated(live ? 'live' : 'stored_only');
-    } catch {
-      // Medir nunca altera la entrega (spec 031, FR-013).
-    }
+    safely(() => this.metrics?.recordNotificationCreated(live ? 'live' : 'stored_only'));
   }
 }

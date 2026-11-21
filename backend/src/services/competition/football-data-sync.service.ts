@@ -17,12 +17,9 @@ import { SyncInProgressError } from '../../domain/sync/errors/sync-in-progress.e
 import { RunLock } from '../../shared/concurrency/run-lock';
 import { Clock } from '../../adapters/runtime/clock';
 import { CLOCK } from '../../modules/runtime/runtime.constants';
-import {
-  BUSINESS_METRICS,
-  BusinessMetrics,
-  classifySyncRun,
-  RunTrigger,
-} from '../../shared/observability/metrics/business-metrics';
+import { BusinessMetrics, classifySyncRun, RunTrigger } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
+import { safelyAsync } from '../../shared/observability/metrics/safely';
 import { SyncLastSuccessService } from '../observability/sync-last-success.service';
 
 export const TARGET_LEAGUES = ['PL', 'BL1', 'PD', 'SA', 'FL1'];
@@ -120,7 +117,7 @@ export class FootballDataSyncService {
     aborted: boolean,
     startedAtMs: number,
   ): Promise<void> {
-    try {
+    await safelyAsync(async () => {
       const finishedAt = this.now();
       const failed = summary?.failedLeagues.length ?? 0;
       const outcome = classifySyncRun({
@@ -133,9 +130,7 @@ export class FootballDataSyncService {
       if (outcome === 'success') {
         await this.lastSuccess?.record('football_data', finishedAt);
       }
-    } catch {
-      // Ignorado a propósito (spec 031, FR-013).
-    }
+    });
   }
 
   private now(): Date {

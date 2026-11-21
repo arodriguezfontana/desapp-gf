@@ -19,7 +19,6 @@ import { PlayerEntity } from '../../src/repositories/player/entities/player.enti
 import { TokenHoldingEntity } from '../../src/repositories/portfolio/entities/token-holding.entity';
 import {
   BUSINESS_METRIC_NAMES,
-  BUSINESS_METRICS,
   NOTIFICATION_DELIVERIES,
   OPERATION_OUTCOMES,
   RECALCULATION_OUTCOMES,
@@ -29,6 +28,7 @@ import {
   SYNC_OUTCOMES,
   SYNC_SOURCES,
 } from '../../src/shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../src/modules/observability/metrics.constants';
 
 /** Football-Data de prueba: `failingLeagues` hace fallar esas ligas (o todas con `'ALL'`). Sin HTTP. */
 class ControllableFootballDataAdapter implements FootballDataAdapter {
@@ -274,7 +274,7 @@ describe('Métricas de negocio en GET /metrics (e2e)', () => {
       }
     });
 
-    it('/metrics expone las doce familias de negocio, con las aclaraciones de HELP', async () => {
+    it('/metrics expone todas las familias de negocio, con las aclaraciones de HELP', async () => {
       const { text } = await scrape();
       for (const name of Object.values(BUSINESS_METRIC_NAMES)) {
         expect(text).toContain(`# TYPE ${name} `);

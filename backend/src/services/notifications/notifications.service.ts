@@ -5,7 +5,9 @@ import { NotificationNotFoundError } from '../../domain/notifications/errors/not
 import { NotificationRepository } from '../../repositories/notifications/notification.repository';
 import { PlayerRepository } from '../../repositories/player/player.repository';
 import { WithPlayerName, withPlayerName } from '../../shared/presentation/with-player-name';
-import { BUSINESS_METRICS, BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
+import { BusinessMetrics } from '../../shared/observability/metrics/business-metrics';
+import { BUSINESS_METRICS } from '../../modules/observability/metrics.constants';
+import { safely } from '../../shared/observability/metrics/safely';
 
 /** Notificación enriquecida con el nombre del jugador, resuelto al vuelo (no se denormaliza en la tabla). */
 export type NotificationWithPlayerName = WithPlayerName<Notification>;
@@ -105,7 +107,7 @@ export class NotificationsService {
 
   private openConnection(userId: string): void {
     this.connections.set(userId, (this.connections.get(userId) ?? 0) + 1);
-    this.measure(() => this.metrics?.sseConnectionOpened());
+    safely(() => this.metrics?.sseConnectionOpened());
   }
 
   private closeConnection(userId: string): void {
@@ -117,15 +119,6 @@ export class NotificationsService {
     } else {
       this.connections.set(userId, remaining);
     }
-    this.measure(() => this.metrics?.sseConnectionClosed());
-  }
-
-  /** Medir nunca altera la conexión ni el push (spec 031, FR-013). */
-  private measure(work: () => void): void {
-    try {
-      work();
-    } catch {
-      // Ignorado a propósito.
-    }
+    safely(() => this.metrics?.sseConnectionClosed());
   }
 }
